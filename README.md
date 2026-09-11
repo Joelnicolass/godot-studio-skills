@@ -36,32 +36,13 @@ Generar un zip nuevo:
 
 Abrí un **chat nuevo** en Cursor después de instalar.
 
-## Instalar cuando el repo esté en GitHub
-
-El CLI oficial de skills espera un `OWNER/REPO` público o al que tengas acceso:
+## Instalar desde GitHub
 
 ```bash
-npx skills add OWNER/godot-studio-skills -g -a cursor -y
+npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 ```
 
-Hasta no existir el remoto, `OWNER` es un placeholder. Copiá `publish.env.example` → `publish.env` y reemplazá `OWNER`.
-
-## Publicar (placeholder)
-
-En esta máquina no hay `gh`. Cuando tengas GitHub:
-
-1. Creá un repo vacío llamado `godot-studio-skills` (o el nombre que elijas).
-2. En este directorio:
-
-```bash
-git init -b main
-git add .
-git commit -m "Add Godot Cursor skills pack (architecture, composition, MpKit)."
-git remote add origin git@github.com:OWNER/godot-studio-skills.git
-git push -u origin main
-```
-
-3. Sustituí `OWNER` en este README y en el comando `npx skills add`.
+Repo: https://github.com/Joelnicolass/godot-studio-skills
 
 Layout que descubre `npx skills add`:
 

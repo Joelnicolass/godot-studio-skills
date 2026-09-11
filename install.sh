@@ -29,7 +29,7 @@ Instalador de skills Godot para Cursor.
 
 Tras clonar el repo (cuando exista el remoto):
 
-  npx skills add OWNER/godot-studio-skills -g -a cursor -y
+  npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 
 EOF
 }
