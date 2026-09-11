@@ -5,6 +5,7 @@ description: >-
   MpKit (ENet, slots, handshake, snapshots) más glue del juego. Usar al copiar
   addons/mp_kit, host/join LAN, RPCs submit_*, MultiplayerSpawner, 1P offline,
   rejoin, autoridad de RigidBody, o al extraer netcode a otro proyecto.
+  Fuente canónica: repo Joelnicolass/godot-studio-skills (carpeta addons/mp_kit).
 ---
 
 # Godot — MpKit y multiplayer
@@ -29,11 +30,22 @@ En red eso se traduce a:
 | Capas | `addons/mp_kit` no nombra sesión, escenas, copy ni puntaje. Dedicated server futuro = reemplazar el addon. |
 | Composición | Transport (kit) + glue (cuándo empieza la ronda) + `GameSession` + pawns con `submit_*`. No un `NetworkManager.gd` de 2000 líneas. |
 | Editor | Spawners, replication config y escenas de pawn se arman como nodos. El kit no genera el mundo. |
-| Reuso | Copiar `addons/mp_kit/` tal cual. El juego nuevo escribe glue + dominio, no fork del kit “porque este título dispara”. |
+| Reuso | Copiar el addon canónico de este framework. El juego escribe glue + dominio; no forks del kit por título. |
+
+## Fuente canónica
+
+El plugin vive en el mismo repo que estas skills:
+
+- GitHub: `https://github.com/Joelnicolass/godot-studio-skills` → `addons/mp_kit/`
+- Instalar en un proyecto Godot: `./install.sh --addon /path/to/godot-project`
+
+No copiar desde un juego ejemplar (naves, CRT, `NetworkSession`). Si el addon y el juego divergen, gana esta copia.
+
+API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md).
 
 ## Qué es el kit / qué no
 
-Copiar `addons/mp_kit/` → autoload `MpKit`. API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md).
+Copiar `addons/mp_kit/` → autoload `MpKit`.
 
 **Hace:** ENet host/join/leave, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco, signals de sesión.
 

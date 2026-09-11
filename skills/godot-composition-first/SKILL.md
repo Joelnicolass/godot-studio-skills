@@ -70,7 +70,7 @@ No hacer:
 Antes de escribir un script en `features/<este-juego>/`:
 
 1. ¿Existe ya en `src/shared/` o `addons/`?
-2. Si no, ¿un segundo caller lo va a necesitar (otro feature, otro juego, editor preview)? → nacer en `shared/` o addon.
+2. Si no, ¿un segundo caller lo va a necesitar (otro feature, otro juego, editor preview)? → nacer en `shared/` del juego o en `addons/` del framework (`Joelnicolass/godot-studio-skills`), no fork por título.
 3. API del componente: signals + `@export`. Cero nombres de puntaje, slots o copy del producto.
 
 Patrones que se extraen, no se duplican:

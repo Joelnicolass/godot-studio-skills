@@ -1,57 +1,15 @@
-# Godot studio skills (Cursor)
+# Godot studio kit
 
-Skills de agente para armar **otro** juego Godot 4 con la misma base: capas limpias, composición, inspector primero, componentes reutilizables, y multiplayer host-authoritative con MpKit.
-
-| Skill | Qué cubre |
-|-------|-----------|
-| `godot-layered-architecture` | `features → core → domain`, sesión, eventos, cómo agregar features |
-| `godot-composition-first` | nodos hijos, `@export`, editor, `shared/` |
-| `godot-mp-kit` | addon `addons/mp_kit`, glue, handshake, `submit_*` |
-
-El código de ejemplo vive en el juego (carpeta `addons/mp_kit` del proyecto Godot). Este repo solo reparte las skills.
-
-## Instalar (local, sin GitHub)
-
-Desde este directorio:
-
-```bash
-chmod +x install.sh uninstall.sh pack.sh
-./install.sh          # ~/.cursor/skills/  (todos tus proyectos Cursor)
-./install.sh --project   # ./.cursor/skills/ del cwd
-```
-
-O con el zip:
-
-```bash
-unzip godot-studio-skills.zip
-cd godot-studio-skills
-./install.sh
-```
-
-Generar un zip nuevo:
-
-```bash
-./pack.sh    # dist/godot-studio-skills.zip
-```
-
-Abrí un **chat nuevo** en Cursor después de instalar.
-
-## Instalar desde GitHub
-
-```bash
-npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
-```
+Framework chico (y a propósito) para juegos Godot 4: **skills de Cursor** + **addons Godot**. Se agranda de a una pieza reusable. El juego (dominio, glue, escenas) no vive acá.
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
-Layout que descubre `npx skills add`:
+| Pieza | Dónde | Qué es |
+|-------|--------|--------|
+| Capas / composición / MP | `skills/` | Instrucciones para el agente |
+| MpKit | `addons/mp_kit/` | Plugin Godot: transporte, slots, RPCs de sesión. Cero gameplay |
 
-```
-skills/
-  godot-layered-architecture/SKILL.md
-  godot-composition-first/SKILL.md
-  godot-mp-kit/SKILL.md
-```
+Qué **no** entra en este repo: puntaje, naves, CRT, copy, `GameSession`, `SceneDirector`. Eso es glue del título.
 
 ## Prioridades (siempre)
 
@@ -61,3 +19,57 @@ Siempre se priorice:
 - siempre tienen prioridad las estructuras de composicion
 - siempre tienen prioirdad los nodos y las configuraciones sobre el editor
 - siempre se debe dar prioridad a la reusabilidad de los componenetes
+
+## Instalar skills (Cursor)
+
+```bash
+./install.sh                 # ~/.cursor/skills/  (todos tus proyectos)
+./install.sh --project       # ./.cursor/skills/ del cwd
+```
+
+Desde GitHub:
+
+```bash
+npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
+```
+
+`npx skills` solo copia `skills/`. El addon Godot va aparte (abajo).
+
+Abrí un **chat nuevo** en Cursor después de instalar.
+
+## Instalar MpKit en un proyecto Godot
+
+```bash
+./install.sh --addon /path/to/godot-project
+```
+
+Eso deja `addons/mp_kit/` en ese proyecto. Después, en `project.godot`, autoload **antes** del glue:
+
+```
+MpKit="*res://addons/mp_kit/mp_kit.gd"
+```
+
+Detalle: `addons/mp_kit/README.md` y skill `godot-mp-kit`.
+
+## Zip
+
+```bash
+./pack.sh    # dist/godot-studio-skills.zip  (skills + addons + instalador)
+unzip dist/godot-studio-skills.zip
+cd godot-studio-skills
+./install.sh
+./install.sh --addon /path/to/godot-project
+```
+
+## Layout
+
+```
+addons/mp_kit/                 # plugin Godot (canónico)
+skills/
+  godot-layered-architecture/
+  godot-composition-first/
+  godot-mp-kit/
+install.sh                     # skills y/o --addon
+```
+
+Cómo crece el framework: extraer a `addons/` o `skills/` cuando algo se reusa. No copiar un FX o un tracker de puntaje “por las dudas”.

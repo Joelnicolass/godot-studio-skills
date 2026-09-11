@@ -47,7 +47,8 @@ src/
   domain/            # trackers y resolvers puros
   features/<name>/   # una carpeta por feature: scripts + escenas juntas
   shared/            # Wrap, StateMachine, PostFx, copy, utils sin reglas
-addons/              # MpKit y otros plugins (cero gameplay)
+addons/              # MpKit y plugins del framework (cero gameplay).
+                     # Canónico: Joelnicolass/godot-studio-skills/addons/
 ```
 
 Nombres genéricos: `GameSession` (fachada), `GameEvents` (bus), `SceneDirector` (flow). En el ejemplar: `MatchSession`.

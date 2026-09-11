@@ -14,14 +14,19 @@ Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` n
 
 ## Install
 
-1. Copiar la carpeta a `res://addons/mp_kit/`.
-2. Autoload, **antes** del glue:
+Canónico: `addons/mp_kit/` en [Joelnicolass/godot-studio-skills](https://github.com/Joelnicolass/godot-studio-skills).
+
+```bash
+./install.sh --addon /path/to/godot-project
+```
+
+O copiar esa carpeta a `res://addons/mp_kit/`. Autoload, **antes** del glue:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
-3. `MpKit.configure(port, max_players, host_slot)` antes de `host()` / `join()`.
+`MpKit.configure(port, max_players, host_slot)` antes de `host()` / `join()`.
 
 ## Signals (el juego escucha)
 
