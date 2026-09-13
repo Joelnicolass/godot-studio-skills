@@ -41,7 +41,7 @@ Cuando consideres que reuniste suficiente detalle, creá un PRD estructurado que
 - Empezá con preguntas amplias y fundacionales antes de entrar en lo específico
 - Agrupá las preguntas relacionadas en una secuencia lógica
 - Adaptá las preguntas según mis respuestas anteriores
-- Solo hagas preguntas de seguimiento si son absolutamente necesarias para información crítica
+- Solo hacé preguntas de seguimiento si son absolutamente necesarias para información crítica
 - Priorizá temprano las preguntas sobre necesidades de usuario y funcionalidad central
 - NO hagas supuestos — siempre pedí aclaración sobre detalles importantes
 
