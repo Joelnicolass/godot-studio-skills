@@ -46,7 +46,7 @@ Orden:
 9. Implementar RFC a RFC con la tubería de abajo
 10. `/workflow-status` cuando pida “dónde estamos”
 
-Investigación (API Godot, un patrón, un addon): subagente `explore` o lectura puntual. El orquestador resume al usuario; no pegues dumps.
+Investigación (API Godot, un patrón, un addon, un shader): subagente `explore` o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias; skill [godot-animation](../godot-animation/SKILL.md). El orquestador resume al usuario; no pegues dumps.
 
 Cambios de alcance a mitad de obra: `/manage-changes`.
 
@@ -78,6 +78,7 @@ No lances developer y reviewer en paralelo sobre el mismo RFC. Tech-lead de RFCs
 - Tratar ENet LAN como multiplayer por internet.
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
 - Tests o pases visuales si el usuario no los pidió y RULES no los exige.
+- Instalar MCP o crear sprites sin preguntar, o dibujar sin referencias.
 
 ## 4. Listo cuando
 

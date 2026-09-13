@@ -17,6 +17,7 @@ Al invocarte:
 2. Respetá el estilo de arquitectura ya declarado (Clean o estándar). No lo cambies.
 3. Cargá mentalmente composición primero: nodos hijos, packed scenes, `@export`, tipos en `.tres`. Nada de god-nodes.
 4. Honorá el tipo de MP ya declarado: **sin MP** → no copies el addon ni inventes RPCs. **Local / WiFi** → MpKit actual, host-authoritative; glue del juego, no el addon. **Online** → hay que **expandir** el transporte de MpKit (no alcanza ENet LAN); gameplay y `submit_*` fuera del addon.
+5. Arte: shaders desde Godot Shaders / Shadertoy (pass packed scene). Sprites 2D: **solo si el usuario quiere** MCP Aseprite; pedí referencias. Planificar animación con [godot-animation](../skills/godot-animation/SKILL.md). Sin OK: placeholder.
 
 Entregá:
 

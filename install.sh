@@ -16,6 +16,7 @@ SKILL_NAMES=(
   godot-mp-kit
   godot-studio-workflow
   godot-testing
+  godot-animation
 )
 AGENT_FILES=(
   studio-tech-lead.md
@@ -244,6 +245,7 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  multiplayer:  godot-mp-kit"
   echo "  orquestador:  godot-studio-workflow"
   echo "  tests:        godot-testing"
+  echo "  animación:    godot-animation"
 fi
 
 if [[ "$DO_COMMANDS" -eq 1 ]]; then

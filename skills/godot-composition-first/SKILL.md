@@ -5,8 +5,9 @@ description: >-
   StateMachine, pases de FX, Resources (.tres) como plantillas de tipo,
   sockets @export tipados, %UniqueName, InputMap y valores del editor por
   encima de hardcode. Prioriza reutilizar componentes en shared/addons.
-  Usar al crear o editar .tscn, GDScript, shaders, FSM, HUD, o al decidir
-  entre herencia, constantes, Resources e inspector.
+  Usar al crear o editar .tscn, GDScript, shaders (Godot Shaders / Shadertoy),
+  sprites 2D (Aseprite MCP), FSM, HUD, o al decidir entre herencia, constantes,
+  Resources e inspector.
 ---
 
 # Godot — composición, editor y reuso
@@ -96,7 +97,9 @@ Antes de escribir un script en `features/` o `scenes/`:
 
 Un pass (bloom, grain, distorsión) = `BackBufferCopy` + `ColorRect` + shader propio. El stack no conoce el juego. Un pickup no mete lógica dentro del shader de otro pass: tweenea **ese** pass.
 
-Shaders: un efecto, un archivo.
+Shaders: un efecto, un archivo. **No inventes** el FX si hay catálogo: [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) primero; [Shadertoy](https://www.shadertoy.com) si hay que portar. Guía: [assets.md](assets.md).
+
+Sprites 2D: **preguntá** si quiere MCP/sprites y pedí **referencias**. Skill [godot-animation](../godot-animation/SKILL.md). Si dice que sí: MCP [Aseprite](https://github.com/diivi/aseprite-mcp) ([assets.md](assets.md)). Si no: placeholder. No un sprite inventado.
 
 ## 6. Cómo implementar un componente
 
@@ -123,5 +126,6 @@ Shaders: un efecto, un archivo.
 - [ ] ¿InputMap, no scancodes?
 - [ ] ¿Variantes = Resources?
 - [ ] ¿La escena corre con F6?
+- [ ] ¿Shader de catálogo o port documentado? ¿Sprite 2D: OK del usuario + referencias + Aseprite, o placeholder?
 
-Patrones: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Código: [examples.md](examples.md).
+Patrones: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Assets: [assets.md](assets.md). Código: [examples.md](examples.md).

@@ -198,6 +198,13 @@ Abrí un **chat nuevo** en Cursor después de instalar.
 9. `/manage-changes` cuando se mueve el alcance
 10. `/workflow-status`
 
+## Shaders y sprites 2D
+
+No inventar FX ni pixel art de memoria.
+
+- Shaders: [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) primero; [Shadertoy](https://www.shadertoy.com) si hay que portar. Un pass = una packed scene. Detalle: `skills/godot-composition-first/assets.md`.
+- Sprites 2D: **preguntá** si querés MCP Aseprite / crear sprites, y pedí **referencias**. Animación: skill `godot-animation` (12 principios). Sin OK: placeholder. Detalle: `skills/godot-composition-first/assets.md`.
+
 ## Instalar MpKit en un proyecto Godot
 
 ```bash
@@ -220,6 +227,7 @@ skills/
   godot-composition-first/
   godot-mp-kit/
   godot-testing/
+  godot-animation/
 agents/                        # studio-tech-lead, studio-developer, …
 commands/
 install.sh
