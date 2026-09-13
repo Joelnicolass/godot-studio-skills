@@ -1,40 +1,150 @@
 # Godot studio kit
 
-Framework chico (y a propósito) para juegos Godot 4. El **chat principal orquesta**: pregunta, corre commands de producto, investiga si hace falta, y reparte plan / código / review a subagentes. El juego (dominio, glue, escenas) no vive acá.
-
-Objetivo: una **base sencilla de escalar** a mano o con IA (composición, editor, Resources, scripts chicos).
+Un estudio chico para **Cursor + Godot 4**: el chat no “hace el juego”, **orquesta**. Pregunta, escribe PRD/RFC, y reparte plan / código / review a subagentes. El resultado no es un `World.gd` de mil líneas: es una **base chica, jugable y clara**, que un humano (o otra IA) puede seguir desde el inspector.
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
+`main` está en inglés. Esta rama (`release/spanish`) está en español.
+
+## Por qué existe
+
+Sin este kit, un agente suele:
+
+- asumir Clean Architecture o un género (wrap, CRT, plasma…)
+- mezclar puntaje, spawn, FX y red en un solo script
+- implementar el producto entero en un turno, sin PRD ni RFC
+
+Con el kit:
+
+- **vos** elegís Clean o estándar Godot **antes** de scaffoldear
+- cada feature es escena + `@export` + Resource `.tres`, no un `match kind`
+- un RFC a la vez, con plan aprobado, review, y MpKit aparte del gameplay
+- el juego vive en **otro** repo; acá solo hay skills, commands, agentes y el addon de transporte
+
 | Pieza | Dónde | Qué es |
 |-------|--------|--------|
-| Orquestador | `skills/godot-studio-workflow/` | El agente del chat: flujo PRD→RFC→implementar |
-| Arquitectura / composición / MP / tests | `skills/` | Cómo escribir y testear Godot |
-| Tech lead, developer, reviewer, tester, visual | `agents/` | Subagentes Cursor (`.cursor/agents/`) |
-| PRD → features → rules → RFCs | `commands/` | Slash commands (`/create-prd`, …) |
-| MpKit | `addons/mp_kit/` | Transporte LAN. Cero gameplay |
+| Orquestador | `skills/godot-studio-workflow/` | El agente del chat: entrevista + PRD→RFC→implementar |
+| Cómo escribir Godot | `skills/` | Capas, composición, MpKit, tests (GUT/GdUnit4) |
+| Subagentes | `agents/` | Tech lead, developer, reviewer; tester y visual opcionales |
+| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, … |
+| MpKit | `addons/mp_kit/` | LAN host-authoritative. **Cero** gameplay |
 
-Qué **no** entra en este repo: puntaje, copy de producto, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
+Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
+
+## Arquitectura del orquestador
+
+El chat principal habla con vos. No implementa el título solo. Carga skills Godot, corre commands de producto, e invoca **un rol a la vez**.
+
+```mermaid
+flowchart TB
+  you[Vos]
+  orch[Chat principal — orquestador]
+
+  you <--> orch
+
+  subgraph kit [Este framework]
+    skills[Skills Godot]
+    cmds[Commands PRD / RFC]
+    agents[Subagentes]
+    mpkit[MpKit addon]
+  end
+
+  subgraph game [Tu proyecto Godot]
+    arts[PRD FEATURES RULES RFCs]
+    code[Escenas Resources glue]
+  end
+
+  orch --> skills
+  orch --> cmds
+  cmds --> arts
+  orch --> agents
+  agents --> code
+  mpkit -.-> code
+```
+
+Roles (`Task` → `subagent_type`):
+
+| Rol | Subagente | Cuándo |
+|-----|-----------|--------|
+| Tech lead | `studio-tech-lead` | Plan de **un** RFC, sin código |
+| Developer | `studio-developer` | Implementa ese plan |
+| Reviewer | `studio-reviewer` | Después del código |
+| Tester | `studio-tester` | Solo si pedís tests o RULES los exige |
+| Visual | `studio-visual` | Solo si cambió HUD/menú/layout |
+
+Los subagentes **no** ven este chat. El prompt les pasa repo, RFC, estilo de arquitectura, y que lean los artefactos.
+
+## Arquitecturas Godot (siempre se pregunta)
+
+Hay **dos** estilos válidos. El agente no asume Clean. En ambos mandan composición, editor y Resources.
+
+```mermaid
+flowchart TB
+  ask{¿Clean o estándar?}
+
+  ask -->|Clean| clean[features → core → domain]
+  ask -->|Estándar| std[escenas + scripts juntos]
+
+  clean --> feat[features: nodos, física, RPC]
+  feat --> core[core: sesión, eventos, director]
+  core --> domain[domain: RefCounted, testeable]
+
+  std --> scenes[scenes/ junto al .gd]
+  scenes --> match[nodo Match en el mundo]
+
+  clean --> shared[Composición]
+  std --> shared
+
+  shared --> packed[Packed scenes + @export]
+  packed --> tres[Tipos = Resource .tres]
+  tres --> f6[Cada escena corre con F6]
+```
+
+| Estilo | Forma | Estado de partida |
+|--------|--------|-------------------|
+| **Clean** | `src/domain` + `core` + `features` | `GameSession` autoload **solo** si sobrevive el cambio de escena |
+| **Estándar** | Escena + script juntos; sin `src/domain/` | Nodo `Match` hijo del mundo |
+
+Dato de tipo → Resource. Helpers puros → `class_name` + `static func`. Comportamiento de actor → nodo hijo. Autoload solo para servicios globales (MpKit, bus de eventos).
+
+Red: copiá `addons/mp_kit`. El kit no nombra puntaje ni escenas. Tests: skill `godot-testing` (GUT / GdUnit4) **solo** si los pedís.
+
+## Flujo general de desarrollo
+
+De la idea a una base **jugable**. El primer RFC es el slice vertical, no infra eterna.
+
+```mermaid
+flowchart TD
+  idea[Idea del juego] --> arch[Elegir Clean o estándar]
+  arch --> prd["/create-prd → PRD / GDD"]
+  prd --> ver["/verify-prd"]
+  ver --> feat["/extract-features"]
+  feat --> rules["/generate-rules"]
+  rules --> rfcs["/generate-rfcs"]
+  rfcs --> slice[RFC-001 slice vertical]
+
+  slice --> plan[studio-tech-lead: plan]
+  plan --> ok{¿OK tuyo?}
+  ok -->|no| plan
+  ok -->|sí| dev[studio-developer]
+  dev --> rev[studio-reviewer]
+  rev --> more{¿Otro RFC?}
+  more -->|sí| plan
+  more -->|no| done[Base chica, jugable, escalable]
+```
+
+En un chat nuevo, con el kit instalado, pedí el juego. El orquestador corre esos commands **sin** que tipees cada slash. Tester y visual solo si los pedís. Alcance a mitad de obra: `/manage-changes`. Dónde estamos: `/workflow-status`.
+
+Listo cuando: el slice se juega; cada feature es escena / componente / `.tres`; un humano abre el inspector y entiende.
 
 ## Prioridades (siempre)
 
-Siempre se priorice:
+- arquitectura fácil de escalar y limpia en capas
+- siempre tienen prioridad las estructuras de composición
+- siempre tienen prioridad los nodos y las configuraciones sobre el editor
+- siempre se debe dar prioridad a la reusabilidad de los componentes
 
-- arquitectura facil de escalar y limpia en capas
-- siempre tienen prioridad las estructuras de composicion
-- siempre tienen prioirdad los nodos y las configuraciones sobre el editor
-- siempre se debe dar prioridad a la reusabilidad de los componenetes
-
-## Cómo se trabaja
-
-En un chat nuevo, con el kit instalado, pedí el juego. El orquestador:
-
-1. Pregunta Clean vs estándar (y lo que falte).
-2. Ejecuta `/create-prd` … `/generate-rfcs` sin que tengas que tipear cada slash.
-3. Investiga APIs Godot si hace falta.
-4. Por cada RFC: **tech lead** (plan) → tu OK → **developer** → **reviewer**. Tester y visual solo si los pedís.
-
-El desarrollador (humano o subagente) recibe un RFC + plan + RULES: camino corto, sin adivinar el resto del producto.
+En **estándar**, “capas” no significa carpetas `domain/core/features`. Significa scripts chicos y composición.
 
 ## Instalar (Cursor)
 
