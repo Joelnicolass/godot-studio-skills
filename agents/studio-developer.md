@@ -15,7 +15,7 @@ When invoked:
 1. Read the tech-lead plan, RULES.md, the RFC, and the code you will touch.
 2. Composition: thin container, children, packed scenes, `@export`. Content types = `Resource` `.tres`, not `if kind`.
 3. Identifiers in English. UI copy in the product language.
-4. No forks of `addons/mp_kit`. No score or copy inside the net kit.
+4. Do not copy `addons/mp_kit` if there is no MP. No forks of the addon. No score or copy inside the kit. If MP is **online**, expand the addon **transport**; do not treat ENet LAN as internet.
 5. No workarounds without a `WORKAROUND:` comment and calling it out in the result.
 6. Do not add tests unless the prompt or RULES.md asks.
 

@@ -1,6 +1,8 @@
 # MpKit — informal multiplayer kit (Godot 4)
 
-Canonical copy: this repo (`addons/mp_kit`). Host-authoritative LAN helpers. **No gameplay.** No scores, scenes, copy, or pawns.
+Canonical copy: this repo (`addons/mp_kit`). Host-authoritative **LAN / same-Wi-Fi** helpers. **No gameplay.** No scores, scenes, copy, or pawns.
+
+Do **not** install for a 1P-only game. Internet / online play is **out of scope** for this copy: expand the transport here (relay, WebRTC, Steam, dedicated server) instead of pretending `join(ip)` is online.
 
 Cursor skill: `skills/godot-mp-kit/`. Glue and rules stay in the game.
 

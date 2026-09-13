@@ -2,7 +2,7 @@ Target RFC: the ID provided after this command in my message — substitute it f
 
 If skill `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone: `studio-tech-lead` (plan) → approval → `studio-developer` → `studio-reviewer`. Tester and visual only if the user or RULES.md ask. One RFC at a time.
 
-Load `godot-layered-architecture` and `godot-composition-first`. If networked: `godot-mp-kit`. If tests: `godot-testing`.
+Load `godot-layered-architecture` and `godot-composition-first`. If local/Wi-Fi MP: `godot-mp-kit`. If online: `godot-mp-kit` and a plan to **expand the addon**. If no MP: do not load the kit. If tests: `godot-testing`.
 
 # Implementation Prompt for RFC-[ID]: [Title]
 

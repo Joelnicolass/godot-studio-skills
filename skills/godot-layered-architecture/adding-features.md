@@ -1,6 +1,6 @@
 # How to add a feature
 
-Read `SKILL.md` first (Clean vs standard already chosen). Types: [resources.md](../godot-composition-first/resources.md). Tests: [godot-testing](../godot-testing/SKILL.md). Networking: `godot-mp-kit` **only if MpKit is present**.
+Read `SKILL.md` first (Clean vs standard and MP type already chosen). Types: [resources.md](../godot-composition-first/resources.md). Tests: [godot-testing](../godot-testing/SKILL.md). Networking: `godot-mp-kit` **only** for local/Wi-Fi MP; if **online**, expand the addon; if no MP, the network block is N/A.
 
 If an item does not apply, write “N/A”. Do not skip it silently.
 
@@ -15,6 +15,8 @@ If an item does not apply, write “N/A”. Do not skip it silently.
 7. [ ] Local FX; UI copy in the product language; code in English.
 
 ## If networked (MpKit)
+
+Only if they chose **local / Wi-Fi**. If they chose **online**, this checklist applies **after** expanding the addon transport. If no MP: N/A.
 
 8. [ ] Local input distinguishes host vs guest (`rpc_id(1, …)`).
 9. [ ] Client → server RPC: allowlist, `any_peer` + sender vs `MpKit.peer_id_for(slot)`. No `call_local` that duplicates damage/spawn.

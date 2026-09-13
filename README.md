@@ -17,6 +17,7 @@ Without the kit, an agent often:
 With the kit:
 
 - **you** choose Clean or standard Godot **before** any scaffold
+- **you** choose whether there is multiplayer and which type (none · local/Wi-Fi · online)
 - each feature is a scene + `@export` + Resource `.tres`, not a `match kind`
 - one RFC at a time, with an approved plan, review, and MpKit kept off gameplay
 - the game lives in **another** repo; this one only has skills, commands, agents, and the transport addon
@@ -27,7 +28,7 @@ With the kit:
 | How to write Godot | `skills/` | Layers, composition, MpKit, tests (GUT/GdUnit4) |
 | Subagents | `agents/` | Tech lead, developer, reviewer; optional tester and visual |
 | Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, … |
-| MpKit | `addons/mp_kit/` | Host-authoritative LAN. **Zero** gameplay |
+| MpKit | `addons/mp_kit/` | LAN / Wi-Fi host-authoritative. **Zero** gameplay. Not needed if there is no MP. Online = it must be expanded. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -105,9 +106,28 @@ flowchart TB
 | **Clean** | `src/domain` + `core` + `features` | `GameSession` autoload **only** if it survives scene change |
 | **Standard** | Scene + script together; no `src/domain/` | `Match` node, child of the world |
 
-Type data → Resource. Pure helpers → `class_name` + `static func`. Actor behavior → child node. Autoload only for global services (MpKit, event bus).
+Type data → Resource. Pure helpers → `class_name` + `static func`. Actor behavior → child node. Autoload only for global services (MpKit **if there is MP**, event bus).
 
-Networking: copy `addons/mp_kit`. The kit does not name score or scenes. Tests: skill `godot-testing` (GUT / GdUnit4) **only** if you ask.
+## Multiplayer (always ask)
+
+Do not copy `addons/mp_kit` “just in case”. Ask the type **before** RPCs or the addon.
+
+```mermaid
+flowchart TB
+  mp{What multiplayer?}
+
+  mp -->|None| none[No MpKit, no RPCs]
+  mp -->|Local / Wi-Fi| lan[Current MpKit — ENet LAN]
+  mp -->|Online| net[Expand MpKit — relay / WebRTC / Steam / dedicated]
+```
+
+| Type | MpKit |
+|------|--------|
+| **No multiplayer** | Do not install |
+| **Local / Wi-Fi** | This repo’s addon is enough |
+| **Online** (internet) | **Expand** the addon transport. Glue and `submit_*` stay in the game |
+
+Tests: skill `godot-testing` (GUT / GdUnit4) **only** if you ask.
 
 ## Development flow
 
@@ -116,7 +136,9 @@ From idea to a **playable** base. The first RFC is the vertical slice, not endle
 ```mermaid
 flowchart TD
   idea[Game idea] --> arch[Choose Clean or standard]
+  idea --> mp[Choose MP type]
   arch --> prd["/create-prd → PRD / GDD"]
+  mp --> prd
   prd --> ver["/verify-prd"]
   ver --> feat["/extract-features"]
   feat --> rules["/generate-rules"]

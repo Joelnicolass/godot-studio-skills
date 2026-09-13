@@ -19,7 +19,9 @@ When invoked:
    - Types in `.tres`; instance look on `@export` / the scene.
    - Signal up, call down; no `get_node("../../")` across systems.
    - Autoloads only for global services.
-   - If MP: host authority, handshake, same 1P offline code.
+   - If no MP: MpKit and RPCs must not appear.
+   - If local/Wi-Fi MP: host authority, handshake, same 1P offline code; glue outside the addon.
+   - If online: current LAN transport is not enough; MpKit must be expanded, not a fake LAN `join(ip)`.
 4. Extra not in the RFC = flag it (scope).
 
 Verdict per dimension: PASS / NEEDS WORK / FAIL.

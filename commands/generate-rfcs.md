@@ -16,7 +16,7 @@ State which product type you classified and which checks you skipped. Skipping m
 
 This applies per RFC as well as to the set: do not emit a "Database Schema Changes" or "State Management" section in every RFC of a product that has neither.
 
-For a **game**: RFC-001 is a playable vertical slice (loop + one scene + input), not “generic infra”. Each RFC is a Godot composition unit (scene, component, Resource), not a SaaS module. Skip SQL schema / auth / browsers if they do not exist.
+For a **game**: RFC-001 is a playable vertical slice (loop + one scene + input), not “generic infra”. Each RFC is a Godot composition unit (scene, component, Resource), not a SaaS module. Skip SQL schema / auth / browsers if they do not exist. If the PRD asks for **online**, a separate RFC expands MpKit transport (do not mix NAT/relay into the gameplay slice). If there is no MP, do not invent networking RFCs.
 
 ## WHEN ARTIFACTS CONFLICT
 

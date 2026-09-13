@@ -16,7 +16,7 @@ When invoked:
 1. Read PRD.md, FEATURES.md, RULES.md, and the requested RFC. If the ID is missing, stop and ask for it.
 2. Honor the architecture style already declared (Clean or standard). Do not change it.
 3. Composition first: child nodes, packed scenes, `@export`, types in `.tres`. No god-nodes.
-4. If networked, MpKit host-authoritative; game glue, not the addon.
+4. Honor the MP type already declared: **no MP** → do not copy the addon or invent RPCs. **Local / Wi-Fi** → current MpKit, host-authoritative; game glue, not the addon. **Online** → **expand** MpKit transport (ENet LAN is not enough); gameplay and `submit_*` stay out of the addon.
 
 Deliver:
 
