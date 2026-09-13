@@ -1,76 +1,73 @@
 ---
 name: godot-mp-kit
 description: >-
-  Implementa multiplayer host-authoritative en Godot 4 con el addon informal
-  MpKit (ENet, slots, handshake, snapshots) más glue del juego. Usar al copiar
-  addons/mp_kit, host/join LAN, RPCs submit_*, MultiplayerSpawner, 1P offline,
-  rejoin, autoridad de RigidBody, o al extraer netcode a otro proyecto.
-  Fuente canónica: repo Joelnicolass/godot-studio-skills (carpeta addons/mp_kit).
+  Implement host-authoritative multiplayer in Godot 4 with the informal MpKit
+  addon (ENet, slots, handshake, snapshots) plus game glue. Use when copying
+  addons/mp_kit, hosting/joining LAN, submit_* RPCs, MultiplayerSpawner, 1P
+  offline, rejoin, RigidBody authority, or extracting netcode to another
+  project.
 ---
 
-# Godot — MpKit y multiplayer
+# Godot — MpKit and multiplayer
 
-Patrón listen-server: **un simulador (host)**. El invitado manda intenciones y pinta copias. El addon es pequeño a propósito: tubería reusable, cero gameplay.
+Listen-server pattern: **one simulator (host)**. The guest sends intents and paints copies. The addon is small on purpose: reusable pipe, zero gameplay.
 
-Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** Clean vs estándar; no asumir capas). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md).
+Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**ask** Clean vs standard; do not assume layers). Nodes/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md).
 
-Tipos de pawn/proyectil/enemigo: Resource `.tres` en el actor, no un RPC por `kind` string.
+Pawn/projectile/enemy types: Resource `.tres` on the actor, not an RPC per `kind` string.
 
-## Prioridades (siempre)
+## Priorities (always)
 
-Siempre se priorice:
+Always prioritize:
 
-- arquitectura facil de escalar y limpia en capas
-- siempre tienen prioridad las estructuras de composicion
-- siempre tienen prioirdad los nodos y las configuraciones sobre el editor
-- siempre se debe dar prioridad a la reusabilidad de los componenetes
+- architecture that is easy to scale and clean in layers
+- composition structures always take priority
+- nodes and editor configuration always take priority
+- component reusability always takes priority
 
-En red eso se traduce a:
+On the network that means:
 
-| Prioridad | En MpKit / glue |
+| Priority | In MpKit / glue |
 |-----------|-----------------|
-| Capas | `addons/mp_kit` no nombra sesión, escenas, copy ni puntaje. Dedicated server futuro = reemplazar el addon. |
-| Composición | Transport (kit) + glue (cuándo empieza la ronda) + `GameSession` + pawns con `submit_*`. No un `NetworkManager.gd` de 2000 líneas. |
-| Editor | Spawners, replication config y escenas de pawn se arman como nodos. El kit no genera el mundo. |
-| Reuso | Copiar el addon canónico de este framework. El juego escribe glue + dominio; no forks del kit por título. |
+| Layers | `addons/mp_kit` does not name session, scenes, copy, or score. Future dedicated server = replace the addon. |
+| Composition | Transport (kit) + glue (when the round starts) + `GameSession` + pawns with `submit_*`. Not a 2000-line `NetworkManager.gd`. |
+| Editor | Spawners, replication config, and pawn scenes are built as nodes. The kit does not generate the world. |
+| Reuse | Copy this framework’s canonical addon. The game writes glue + domain; no per-title forks of the kit. |
 
-## Fuente canónica
+## Canonical source
 
-El plugin vive en el mismo repo que estas skills:
+The plugin is `addons/mp_kit/` **inside the Godot project**. Copy that folder as-is to another title. Do not fork it per game.
 
-- GitHub: `https://github.com/Joelnicolass/godot-studio-skills` → `addons/mp_kit/`
-- Instalar en un proyecto Godot: `./install.sh --addon /path/to/godot-project`
+If the project addon and a loose copy diverge, `res://addons/mp_kit/` in this project wins.
 
-No copiar desde un juego ejemplar (naves, CRT, `NetworkSession`). Si el addon y el juego divergen, gana esta copia.
+API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Generic code: [examples.md](examples.md).
 
-API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md).
+## What the kit is / is not
 
-## Qué es el kit / qué no
+Copy `addons/mp_kit/` → autoload `MpKit`.
 
-Copiar `addons/mp_kit/` → autoload `MpKit`.
+**Does:** ENet host/join/leave, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push, session signals.
 
-**Hace:** ENet host/join/leave, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco, signals de sesión.
+**Does not:** score, combo, `change_scene`, copy, pawn input, advanced interpolation, Steam/WebRTC, “when the match starts”.
 
-**No hace:** score, combo, `change_scene`, copy, input de pawn, interpolación avanzada, Steam/WebRTC, “cuándo empieza la partida”.
+If you put score in `mp_kit.gd`, the kit stops being portable.
 
-Si metés puntaje en `mp_kit.gd`, el kit deja de ser portable.
-
-## Modelo obligatorio
+## Required model
 
 ```
-[Jugar solo]   no llames host(); OfflineMultiplayerPeer; local_slot() == host_slot
-[Host LAN]     MpKit.host()
-[Cliente]      MpKit.join(ip)
+[Play solo]    do not call host(); OfflineMultiplayerPeer; local_slot() == host_slot
+[LAN host]     MpKit.host()
+[Client]       MpKit.join(ip)
 ```
 
-- **Slot** estable: key de vidas/score/HUD. Slot 1 = listen-server.
-- **Peer id** volátil: validar RPCs con `MpKit.peer_id_for(slot)`. Nunca `get_unique_id()` como id de jugador.
+- Stable **slot**: key for lives/score/HUD. Slot 1 = listen-server.
+- Volatile **peer id**: validate RPCs with `MpKit.peer_id_for(slot)`. Never `get_unique_id()` as player id.
 
-Cliente: `apply_snapshot` **apaga** el tick de simulación de la sesión. El guest no tiquea el reloj.
+Client: `apply_snapshot` **turns off** the session simulation tick. The guest does not tick the clock.
 
-## Input y autoridad
+## Input and authority
 
-Pawns: el servidor es authority. Proxies `RigidBody2D` se freezan en kinematic (`MpAuthority.freeze_rigid_proxy`).
+Pawns: the server is authority. `RigidBody2D` proxies freeze kinematic (`MpAuthority.freeze_rigid_proxy`).
 
 ```
 if MpAuthority.should_send_command():
@@ -79,7 +76,7 @@ else:
     pawn.apply_x(payload)
 ```
 
-RPC en **tu** pawn, no en el kit:
+RPC on **your** pawn, not the kit:
 
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")
@@ -91,56 +88,56 @@ func submit_x(payload) -> void:
 	apply_x(payload)
 ```
 
-- Allowlist de `submit_*`. No `rpc add_score`.
-- No `call_local` en comandos de cliente (duplica spawn/daño).
-- Áreas de daño: `monitoring = is_multiplayer_authority()`.
+- Allowlist of `submit_*`. No `rpc add_score`.
+- No `call_local` on client commands (duplicates spawn/damage).
+- Damage areas: `monitoring = is_multiplayer_authority()`.
 
-## Handshake de spawn (obligatorio)
+## Spawn handshake (required)
 
-`MultiplayerSpawner` tira paquetes si el cliente aún no registró spawnable scenes.
+`MultiplayerSpawner` drops packets if the client has not registered spawnable scenes yet.
 
 ```
 Host broadcast_load_world()
-  → cliente carga escena, registra spawners, MpKit.request_world_ready()
-  → host espera client_world_ready
-  → recién ahí add_child(pawn, true)
+  → client loads scene, registers spawners, MpKit.request_world_ready()
+  → host waits for client_world_ready
+  → only then add_child(pawn, true)
 ```
 
-FX locales (post-process, atmósfera) se arman en `_ready` **también en el cliente**, antes del `return` del guest.
+Local FX (post-process, atmosphere) is built in `_ready` **on the client too**, before the guest `return`.
 
-Rejoin: no resetear score; snapshot + `load_world_to` + re-parent de hijos del spawner si hace falta reenviar.
+Rejoin: do not reset score; snapshot + `load_world_to` + re-parent spawner children if spawn must be resent.
 
 ## Snapshots vs transforms
 
-- Posición/rotación/visible: `MultiplayerSynchronizer` (`MpAuthority.ensure_sync`).
-- Timer/score/vidas: `GameSession.to_snapshot()` a 2–10 Hz vía `MpKit.push_snapshot`.
-- Eventos discretos (`+N` flotante): RPC `authority` en un nodo **vuestro**, no en MpKit.
+- Position/rotation/visible: `MultiplayerSynchronizer` (`MpAuthority.ensure_sync`).
+- Timer/score/lives: `GameSession.to_snapshot()` at 2–10 Hz via `MpKit.push_snapshot`.
+- Discrete events (floating `+N`): `authority` RPC on a node **of yours**, not MpKit.
 
-No metas 40 posiciones de asteroides en el dict si ya van por synchronizer.
+Do not put 40 prop positions in the dict if they already go through a synchronizer.
 
 ## 1P
 
-Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar siempre jugar solo **sin** `create_server`.
+Same collision and `submit_*` code (the local host does not send RPC). Always test play-solo **without** `create_server`.
 
-## Dedicated server más adelante
+## Dedicated server later
 
-Reemplazar este addon (o el transport dentro de `host()`/`join()`). Dominio y RPCs `submit_*` de los pawns se quedan.
+Replace this addon (or the transport inside `host()`/`join()`). Domain and pawn `submit_*` RPCs stay.
 
-## Anti-patrones
+## Anti-patterns
 
-- Cliente spawnea / `queue_free` / suma puntos.
-- `PlayerId` o `GameSession` importados desde `mp_kit.gd`.
-- Arrancar spawn en el mismo frame que `change_scene` del invitado.
-- `leave()` dejando `multiplayer_peer = null` (el kit pone `OfflineMultiplayerPeer`).
-- Tercer peer aceptado en silencio (el kit debe `disconnect_peer` al exceder cupo; la política de “sala llena” es glue + kit).
-- HUD que muestra el score del host porque usó peer id 1.
+- Client spawns / `queue_free` / adds points.
+- `PlayerId` or `GameSession` imported from `mp_kit.gd`.
+- Starting spawn on the same frame as the guest’s `change_scene`.
+- `leave()` leaving `multiplayer_peer = null` (the kit sets `OfflineMultiplayerPeer`).
+- A third peer accepted silently (the kit must `disconnect_peer` over capacity; “room full” policy is glue + kit).
+- HUD that shows the host score because it used peer id 1.
 
 ## Checklist
 
-- [ ] Autoload `MpKit` **antes** del glue. `configure(port, max_players)` antes de host/join.
-- [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado.
-- [ ] Slots en dominio; peers solo en RPC/authority.
-- [ ] Handshake `world_ready` antes del primer `add_child` replicado.
-- [ ] Guest no simula reglas; host valida sender.
-- [ ] 1P offline verificado.
-- [ ] Pawns son packed scenes componibles, no lógica de red incrustada en el kit.
+- [ ] Autoload `MpKit` **before** glue. `configure(port, max_players)` before host/join.
+- [ ] Own glue: when `start_match`, copy, scenes. Kit untouched.
+- [ ] Slots in domain; peers only in RPC/authority.
+- [ ] `world_ready` handshake before the first replicated `add_child`.
+- [ ] Guest does not simulate rules; host validates sender.
+- [ ] 1P offline verified.
+- [ ] Pawns are composable packed scenes, not netcode baked into the kit.

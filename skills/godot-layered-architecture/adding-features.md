@@ -1,50 +1,50 @@
-# Cómo agregar una feature (1P + LAN)
+# How to add a feature (1P + LAN)
 
-Leer primero `SKILL.md` (estilo Clean vs estándar ya elegido). Red: `godot-mp-kit`. Tipos de entidad: `godot-composition-first/resources.md`.
+Read `SKILL.md` first (Clean vs standard already chosen). Networking: `godot-mp-kit`. Entity types: `godot-composition-first/resources.md`.
 
 ## Checklist
 
-Si un ítem no aplica, escribir “N/A”. No saltearlo en silencio.
+If an item does not apply, write “N/A”. Do not skip it silently.
 
-1. [ ] Alcance de producto explícito.
-2. [ ] ¿Es un **tipo** (otra bala, otro enemigo, otro power-up)? → Resource `.tres` + la misma escena. No un script nuevo por skin de stats.
-3. [ ] Reglas de **ronda** (vidas, duración, layers): un solo lugar (`GameConstants` / `MatchRules.tres`). Look de instancia: `@export` en el nodo.
-4. [ ] Clean: ¿regla testeable sin escena? → `src/domain/` + test. Estándar: ¿el World se está hinchando? → nodo/componente nuevo, no domain inventado.
-5. [ ] Input local distingue host vs guest (`rpc_id(1, …)`).
-6. [ ] RPC cliente → servidor: allowlist, `any_peer` + `get_remote_sender_id()` vs `MpKit.peer_id_for(slot)`. No `call_local` que duplique daño/spawn.
-7. [ ] Spawn de simulación: **solo host** + `MultiplayerSpawner` registrado **antes** de `add_child`.
-8. [ ] Transform: `MultiplayerSynchronizer` (o `MpAuthority.ensure_sync`).
-9. [ ] Colisión / `queue_free` / puntos: autoridad del servidor.
-10. [ ] Guest no muta score/vidas/trackers.
-11. [ ] 1P: mismo código (`OfflineMultiplayerPeer`).
-12. [ ] 2P: no se duplican actores.
-13. [ ] Rejoin: decisión explícita.
-14. [ ] FX locales; copy de UI en el idioma del producto; código en inglés.
-15. [ ] El pawn no tiene RPC de score.
+1. [ ] Explicit product scope.
+2. [ ] Is it a **type** (another bullet, enemy, power-up)? → Resource `.tres` + the same scene. Not a new script per stats skin.
+3. [ ] **Round** rules (lives, duration, layers): one place (`GameConstants` / `MatchRules.tres`). Instance look: `@export` on the node.
+4. [ ] Clean: rule testable without a scene? → `src/domain/` + test. Standard: is World bloating? → new node/component, not invented domain.
+5. [ ] Local input distinguishes host vs guest (`rpc_id(1, …)`).
+6. [ ] Client → server RPC: allowlist, `any_peer` + `get_remote_sender_id()` vs `MpKit.peer_id_for(slot)`. No `call_local` that duplicates damage/spawn.
+7. [ ] Simulation spawn: **host only** + `MultiplayerSpawner` registered **before** `add_child`.
+8. [ ] Transform: `MultiplayerSynchronizer` (or `MpAuthority.ensure_sync`).
+9. [ ] Collision / `queue_free` / points: server authority.
+10. [ ] Guest does not mutate score/lives/trackers.
+11. [ ] 1P: same code (`OfflineMultiplayerPeer`).
+12. [ ] 2P: actors are not duplicated.
+13. [ ] Rejoin: explicit decision.
+14. [ ] Local FX; UI copy in the product language; code in English.
+15. [ ] The pawn has no score RPC.
 
-## Pipeline de input
+## Input pipeline
 
 ```
-Cliente (o 1P):
-  1. Leer control local
-  2. if not puede_actuar(local_slot()): return
+Client (or 1P):
+  1. Read local control
+  2. if not can_act(local_slot()): return
   3. if MpAuthority.should_send_command():
         rpc_id(1, submit_X, payload)
      else:
-        aplicar_en_host(payload)
+        apply_on_host(payload)
 
 Host:
-  4. Validar sender == MpKit.peer_id_for(slot)
-  5. Validar cooldown / munición (sesión o nodo Match)
-  6. Mutar física o spawn (Resource del tipo decide damage/speed/scene)
-  7. Puntos/vidas: un solo dueño de estado → eventos
-  8. FX local + RPC discreto de presentación si hace falta
+  4. Validate sender == MpKit.peer_id_for(slot)
+  5. Validate cooldown / ammo (session or Match node)
+  6. Mutate physics or spawn (the type Resource decides damage/speed/scene)
+  7. Points/lives: one state owner → events
+  8. Local FX + discrete presentation RPC if needed
 ```
 
-El nodo de input **no** instancia proyectiles ni suma puntos. Solo pide.
+The input node **does not** instantiate projectiles or add points. It only asks.
 
-## Presentación
+## Presentation
 
-- CRT, ripple, flashes: cada peer. No van en el snapshot de score.
-- Passes/FX como nodos intercambiables.
-- HUD: `mouse_filter = IGNORE` salvo controles que traguen el pointer.
+- Post-process, flashes: each peer. They do not go in the score snapshot.
+- Passes/FX as swappable nodes.
+- HUD: `mouse_filter = IGNORE` except controls that should eat the pointer.

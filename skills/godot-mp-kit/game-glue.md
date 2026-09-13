@@ -1,15 +1,15 @@
-# Glue del juego (lo que vos escribís)
+# Game glue (what you write)
 
-El kit no es tu juego. Mínimo dos piezas (pueden ser autoloads o un solo `NetGlue.gd` en un título chico):
+The kit is not your game. Minimum two pieces (autoloads or a single `NetGlue.gd` on a small title):
 
-1. **Flow** — escucha `load_world`, `snapshot_received`, `session_ended`, `server_lost`. Cambia escenas.
-2. **Lobby / policy** — `host()`/`join()`, cuándo arranca la ronda, handshake de spawn.
+1. **Flow** — listens to `load_world`, `snapshot_received`, `session_ended`, `server_lost`. Changes scenes.
+2. **Lobby / policy** — `host()`/`join()`, when the round starts, spawn handshake.
 
-Clean: `GameSession` + `SceneDirector`. Estándar: un nodo `Match` en el mundo (o glue único). El kit no cambia.
+Clean: `GameSession` + `SceneDirector`. Standard: a `Match` node in the world (or one glue). The kit does not change.
 
-Orden de autoload sugerido: `MpKit` → (sesión si Clean) → flow → glue de red.
+Suggested autoload order: `MpKit` → (session if Clean) → flow → net glue.
 
-## Configurar
+## Configure
 
 ```gdscript
 func _ready() -> void:
@@ -20,13 +20,13 @@ func _ready() -> void:
 	MpKit.join_failed.connect(_on_join_failed)
 ```
 
-Jugar solo: `MpKit.leave()` (deja offline) y cargar el mundo **sin** `host()`.
+Play solo: `MpKit.leave()` (goes offline) and load the world **without** `host()`.
 
-Lobby host: `"%s:%d" % [MpLan.get_local_ipv4(), port]`. Validar IP antes de `join`.
+Host lobby: `"%s:%d" % [MpLan.get_local_ipv4(), port]`. Validate IP before `join`.
 
-## Política de arranque (producto, no kit)
+## Start policy (product, not kit)
 
-El ejemplar arranca al conectar el 2.º peer. Un shooter puede esperar “listo”. Eso vive en glue.
+A valid policy: start when the 2nd peer connects. A shooter may wait for “ready”. That lives in glue.
 
 ```gdscript
 func _on_peer_joined(peer_id: int, slot: int) -> void:
@@ -34,10 +34,10 @@ func _on_peer_joined(peer_id: int, slot: int) -> void:
 		MpKit.push_snapshot_to(peer_id, game_session.to_snapshot())
 		MpKit.load_world_to(peer_id)
 		return
-	game_session.start([1, 2])  # o 1..N
+	game_session.start([1, 2])  # or 1..N
 	MpKit.push_snapshot_to(peer_id, game_session.to_snapshot())
 	MpKit.broadcast_load_world()
-	flow.goto_world()  # el host no recibe rpc_load_world
+	flow.goto_world()  # host does not receive rpc_load_world
 ```
 
 ## Flow
@@ -51,15 +51,15 @@ func _ready() -> void:
 	MpKit.server_lost.connect(_on_server_lost)
 ```
 
-Al terminar en host: `broadcast_session_ended` + ir a resultados.  
-`apply_snapshot` en cliente: `set_process(false)` en la sesión.
+On host end: `broadcast_session_ended` + go to results.  
+`apply_snapshot` on client: `set_process(false)` on the session.
 
-## Mundo (`_ready`)
+## World (`_ready`)
 
 ```gdscript
 func _ready() -> void:
 	$PawnSpawner.add_spawnable_scene("res://pawns/pawn.tscn")
-	# FX locales acá (también el cliente)
+	# local FX here (client too)
 
 	if not MpKit.is_networked():
 		_spawn_world()
@@ -70,26 +70,26 @@ func _ready() -> void:
 		MpKit.request_world_ready()
 		return
 
-	# Host: spawnea en _on_client_world_ready, no acá
+	# Host: spawn in _on_client_world_ready, not here
 ```
 
-`add_child(node, true)` — nombre estable para el spawner.
+`add_child(node, true)` — stable name for the spawner.
 
-Rejoin con mundo vivo: `remove_child` + `add_child(..., true)` para reenviar spawn.
+Rejoin with a live world: `remove_child` + `add_child(..., true)` to resend spawn.
 
-## Desconexión (definí producto)
+## Disconnect (define product)
 
-| Signal | El kit | Vos |
+| Signal | The kit | You |
 |--------|--------|-----|
-| `peer_left` | Limpia mapping | ¿Seguir 1P? ¿Pausar? ¿Marcar ausente? |
-| `server_lost` | Ya `leave()` | Notice + menú |
-| `join_failed` | Nada más | Notice + menú |
+| `peer_left` | Clears mapping | Keep 1P? Pause? Mark absent? |
+| `server_lost` | Already `leave()` | Notice + menu |
+| `join_failed` | Nothing else | Notice + menu |
 
-El ejemplar: guest drop no pausa el timer y deja la nave ausente. Otro género puede pausar. No lo pongas en el kit.
+A valid policy: guest drop does not pause the timer and leaves the pawn absent. Another genre may pause. Do not put that in the kit.
 
 ## Pawns
 
-En `_ready` del actor replicado:
+In `_ready` of the replicated actor:
 
 ```gdscript
 MpAuthority.claim_server(self)
@@ -97,11 +97,11 @@ MpAuthority.ensure_sync(self, PackedStringArray([".:position", ".:rotation", ".:
 MpAuthority.freeze_rigid_proxy(self)
 ```
 
-Componer trail/FSM/FX como hijos. La red no justifica un pawn monolítico.
+Compose trail/FSM/FX as children. Networking does not justify a monolithic pawn.
 
-## Snapshot periódico
+## Periodic snapshot
 
-Nodo vuestro en el mundo, solo host, 2–10 Hz:
+A node of yours in the world, host only, 2–10 Hz:
 
 ```gdscript
 if MpKit.is_server() and game_session.is_running:

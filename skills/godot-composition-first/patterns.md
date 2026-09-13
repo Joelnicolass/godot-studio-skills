@@ -1,50 +1,50 @@
-# Patrones de composición (ejemplar Godot 4)
+# Composition patterns (Godot 4)
 
 ## StateMachine
 
-Nodo padre con `@export var initial_state: State`. Hijos = estados. `transition(&"Aiming")` busca por nombre de nodo.
+Parent node with `@export var initial_state: State`. Children = states. `transition(&"Aiming")` looks up by node name.
 
 - `State.enter` / `exit` / `update`.
-- El estado puede pedir el actor con `machine.get_parent()`.
-- No guardar score en un estado.
+- The state may ask for the actor with `machine.get_parent()`.
+- Do not store score on a state.
 
 ## PostFx stack
 
 ```
-PostFxStack (CanvasLayer, layer alta)
+PostFxStack (CanvasLayer, high layer)
 ├── RipplePass.tscn    # BackBufferCopy + ColorRect + ripple.gdshader
 └── CrtPass.tscn       # BackBufferCopy + ColorRect + crt.gdshader
 ```
 
-- Orden de hijos = orden de composición.
-- Un pickup de gameplay **no** mete código en el shader CRT: el mundo llama `RipplePass.play()` (tween de un uniform).
-- `mouse_filter = IGNORE` en todo el stack.
-- Toggle: mostrar/ocultar el pass; no early-`return` en `fragment()` que deje el buffer en blanco.
+- Child order = composition order.
+- A gameplay pickup **does not** put code in the CRT shader: the world calls `RipplePass.play()` (tween a uniform).
+- `mouse_filter = IGNORE` on the whole stack.
+- Toggle: show/hide the pass; no early `return` in `fragment()` that leaves the buffer blank.
 
-## Pawn inercial
+## Physics pawn
 
-- Física y wrap en el body (`_integrate_forces`).
-- Look (color, trail, aim preview) en hijos, tinted desde un método del contenedor.
-- Input en un catcher externo que llama `apply_*` o `submit_*`.
+- Physics and wrap on the body (`_integrate_forces` or `_physics_process`).
+- Look (color, trail, aim preview) on children, tinted from a container method.
+- Input on an external catcher that calls `apply_*` or `submit_*`.
 
-## Preview en editor
+## Editor preview
 
-`@export_tool_button` para regenerar geometría (anillos, meshes). El preview no escribe `GameConstants` ni arranca ENet.
+`@export_tool_button` to regenerate geometry (rings, meshes). Preview does not write `GameConstants` or start ENet.
 
-## Plantilla Resource + escena
+## Resource template + scene
 
 ```
-bullet.tscn          # RigidBody/Area + script delgado
+bullet.tscn          # RigidBody/Area + thin script
 plasma.tres          # BulletData { damage, speed, scene? }
 spread.tres
 ```
 
-El arma exporta `BulletData`. Spawnea `data.scene` (o la escena única) y asigna `data`. Guía: [resources.md](resources.md).
+The weapon exports `BulletData`. It spawns `data.scene` (or the single scene) and assigns `data`. Guide: [resources.md](resources.md).
 
-## Cuándo sí va en código
+## When it does belong in code
 
-- Layers de física compartidas con las reglas (máscaras que el anti-cheat asume).
-- Autoridad multiplayer (`claim_server`, freeze del proxy).
-- Valores de **ronda** idénticos en host y guest (duración, vidas).
+- Physics layers shared with the rules (masks anti-cheat assumes).
+- Multiplayer authority (`claim_server`, proxy freeze).
+- **Round** values identical on host and guest (duration, lives).
 
-Tipos de contenido: Resource. Look de instancia: escena. Runtime: nodo.
+Content types: Resource. Instance look: scene. Runtime: node.

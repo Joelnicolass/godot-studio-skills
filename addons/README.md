@@ -1,14 +1,14 @@
 # Addons (Godot)
 
-Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **cada** juego. Cero reglas de partida, copy de producto o escenas.
+Reusable pieces of the framework. Copy them to `res://addons/<name>/` in **each** game. Zero match rules, product copy, or scenes.
 
-| Addon | Rol |
-|-------|-----|
-| `mp_kit` | Listen-server: ENet, slots, handshake, snapshots opacos |
+| Addon | Role |
+|-------|------|
+| `mp_kit` | Listen-server: ENet, slots, handshake, opaque snapshots |
 
-Nuevos addons nacen acá cuando un segundo juego (o un segundo feature) los necesita. No forks por título.
+New addons belong here when a second game (or a second feature) needs them. No per-title forks.
 
-Instalar en un proyecto:
+Install into a project:
 
 ```bash
 ./install.sh --addon /path/to/godot-project

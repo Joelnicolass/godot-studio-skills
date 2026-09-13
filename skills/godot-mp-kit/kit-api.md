@@ -1,53 +1,47 @@
-# MpKit — API del addon
+# MpKit — addon API
 
-Archivos (`res://addons/mp_kit/`):
+Files (`res://addons/mp_kit/`):
 
-| Archivo | Rol |
+| File | Role |
 |---------|-----|
-| `mp_kit.gd` | Autoload. ENet + RPCs de sesión + signals. **Sin** `class_name` (el autoload ya se llama `MpKit`). |
-| `mp_ids.gd` | `class_name MpIds` — slot ↔ peer; rejoin reusa slot |
+| `mp_kit.gd` | Autoload. ENet + session RPCs + signals. **No** `class_name` (the autoload is already `MpKit`). |
+| `mp_ids.gd` | `class_name MpIds` — slot ↔ peer; rejoin reuses slot |
 | `mp_lan.gd` | `class_name MpLan` — IPv4 |
 | `mp_authority.gd` | `class_name MpAuthority` — authority, freeze, synchronizer |
-| `plugin.cfg` | Visibilidad en el editor. El autoload real vive en `project.godot`. |
+| `plugin.cfg` | Editor visibility. The real autoload lives in `project.godot`. |
 
-Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` ni `submit_impulse`.
+These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or `submit_impulse`.
 
 ## Install
 
-Canónico: `addons/mp_kit/` en [Joelnicolass/godot-studio-skills](https://github.com/Joelnicolass/godot-studio-skills).
-
-```bash
-./install.sh --addon /path/to/godot-project
-```
-
-O copiar esa carpeta a `res://addons/mp_kit/`. Autoload, **antes** del glue:
+Copy `addons/mp_kit/` to `res://addons/mp_kit/` in the project. Autoload, **before** glue:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
-`MpKit.configure(port, max_players, host_slot)` antes de `host()` / `join()`.
+`MpKit.configure(port, max_players, host_slot)` before `host()` / `join()`.
 
-## Signals (el juego escucha)
+## Signals (the game listens)
 
-- `peer_joined(peer_id, slot)` — aceptado y sloteado
-- `peer_left(peer_id, slot)` — mapping limpio; el slot queda reservado para rejoin
-- `join_failed` — el cliente no llegó
-- `server_lost` — listen-server caído; el kit ya hizo `leave()`
-- `client_world_ready(peer_id)` — el cliente registró spawners
-- `load_world` — hay que abrir la escena de match
-- `snapshot_received(data)` — `Dictionary` vuestro
-- `session_ended(data)` — `Dictionary` vuestro
-- `slot_assigned(slot)` — este cliente aprendió su slot
+- `peer_joined(peer_id, slot)` — accepted and slotted
+- `peer_left(peer_id, slot)` — mapping cleared; the slot stays reserved for rejoin
+- `join_failed` — the client never arrived
+- `server_lost` — listen-server down; the kit already called `leave()`
+- `client_world_ready(peer_id)` — the client registered spawners
+- `load_world` — open the match scene
+- `snapshot_received(data)` — your `Dictionary`
+- `session_ended(data)` — your `Dictionary`
+- `slot_assigned(slot)` — this client learned its slot
 
-## RPCs del kit (lista cerrada)
+## Kit RPCs (closed list)
 
-Cliente → servidor: `rpc_world_ready`  
-Servidor → clientes: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`
+Client → server: `rpc_world_ready`  
+Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`
 
-Input de pawn **fuera** del kit.
+Pawn input **outside** the kit.
 
-## Métodos útiles
+## Useful methods
 
 - `host() -> Error` / `join(address) -> Error` / `leave()`
 - `is_networked()` / `is_server()`
@@ -58,36 +52,36 @@ Input de pawn **fuera** del kit.
 - `broadcast_session_ended(data)`
 - `is_peer_world_ready(peer_id)`
 
-`rpc_load_world` es `call_remote`: el **host no lo recibe**. El host entra al mundo por glue.
+`rpc_load_world` is `call_remote`: the **host does not receive it**. The host enters the world via glue.
 
 ## MpAuthority
 
 ```gdscript
 MpAuthority.claim_server(node)           # authority = peer 1
 MpAuthority.ensure_sync(node, PackedStringArray([".:position", ".:rotation"]))
-MpAuthority.freeze_rigid_proxy(body)     # no-op si sos authority
-MpAuthority.should_send_command()        # networked y no server
+MpAuthority.freeze_rigid_proxy(body)     # no-op if you are authority
+MpAuthority.should_send_command()        # networked and not server
 ```
 
 ## MpLan
 
-`MpLan.get_local_ipv4()` / `MpLan.is_valid_ipv4(ip)` para el lobby host.
+`MpLan.get_local_ipv4()` / `MpLan.is_valid_ipv4(ip)` for the host lobby.
 
-## MpIds (contrato)
+## MpIds (contract)
 
 - Slot 1 = listen-server = ENet peer 1.
-- Clientes: primer hueco en `2..max_players`.
-- `unbind_peer` deja el slot en `0` (libre para rebind), no borra el cupo.
-- `assign_client` reusa slot si el peer ya estaba, o rebind de slot vacío.
+- Clients: first hole in `2..max_players`.
+- `unbind_peer` sets the slot to `0` (free to rebind), does not delete the seat.
+- `assign_client` reuses the slot if the peer was already there, or rebinds an empty slot.
 
-## Fallos que el kit ya cubre
+## Failures the kit already covers
 
-| Fallo típico | Mitigación |
+| Typical failure | Mitigation |
 |--------------|------------|
-| 1P abre puerto | `is_networked()` false hasta `host()`/`join()` |
-| HUD usa unique_id | `local_slot()` |
-| Spawn antes de escena cliente | `request_world_ready` |
-| RigidBody cliente pelea con sync | `freeze_rigid_proxy` |
-| `leave()` con peer null | `OfflineMultiplayerPeer` |
-| Host se cae | `server_lost` |
-| IP basura | `join_failed` |
+| 1P opens a port | `is_networked()` false until `host()`/`join()` |
+| HUD uses unique_id | `local_slot()` |
+| Spawn before client scene | `request_world_ready` |
+| Client RigidBody fights sync | `freeze_rigid_proxy` |
+| `leave()` with null peer | `OfflineMultiplayerPeer` |
+| Host drops | `server_lost` |
+| Garbage IP | `join_failed` |

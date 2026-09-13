@@ -1,17 +1,17 @@
-# Camino estándar — escenas y scripts
+# Standard path — scenes and scripts
 
-Usar **solo** si el usuario eligió estándar (o el repo ya lo declara). No crear `src/domain/` ni una fachada de sesión “por las dudas”.
+Use **only** if the user chose standard (or the repo already declares it). Do not create `src/domain/` or a session facade “just in case”.
 
-Siguen valiendo: composición, editor, Resources, reuso, scripts chicos, señales arriba / llamadas abajo. Solo se omite la división Clean.
+Composition, editor, Resources, reuse, small scripts, signals up / calls down still apply. Only the Clean split is omitted.
 
-## Forma del proyecto (Godot idiomático)
+## Project shape (idiomatic Godot)
 
-Escena + script **juntos**. No un dump `scripts/` de 200 archivos desconectados de sus `.tscn`.
+Scene + script **together**. Not a `scripts/` dump of 200 files disconnected from their `.tscn`.
 
 ```
-scenes/                 # o res:// con carpetas por área
+scenes/                 # or res:// with folders by area
   actors/
-    bullet.tscn + .gd   # un cuerpo; el tipo llega por Resource
+    bullet.tscn + .gd   # one body; type arrives via Resource
     enemy.tscn + .gd
     pawn.tscn + .gd
   components/           # Health, Hitbox, Hurtbox, Trail (packed scenes)
@@ -24,39 +24,39 @@ resources/
 addons/mp_kit/
 ```
 
-Variante válida: carpetas por feature (`actors/bullet/`) con escena, script y `.tres` adentro. Lo que no es válido: un `Player.gd` de mil líneas y `match weapon`.
+Valid variant: folders per feature (`actors/bullet/`) with scene, script, and `.tres` inside. Invalid: a thousand-line `Player.gd` and `match weapon`.
 
-## Scripts pequeños y responsabilidades
+## Small scripts and responsibilities
 
-- Un nodo = un trabajo. Movimiento ≠ HP ≠ disparo ≠ HUD.
-- Extraer componente (escena hija) cuando el script pasa de orquestar a implementar dos sistemas.
-- Herencia rasa: `State extends Node`. No `EliteFlyingEnemy extends FlyingEnemy extends Enemy`.
-- El mundo **compone** spawners, cámara, FX. No puntúa en el mismo archivo que spawnea.
+- One node = one job. Movement ≠ HP ≠ fire ≠ HUD.
+- Extract a component (child scene) when the script goes from orchestrating to implementing two systems.
+- Thin inheritance: `State extends Node`. Not `EliteFlyingEnemy extends FlyingEnemy extends Enemy`.
+- The world **composes** spawners, camera, FX. It does not score in the same file that spawns.
 
-Comunicación (docs Godot — organización de escenas):
+Communication (Godot docs — scene organization):
 
-- Signals **hacia arriba** (el hijo no nombra al padre).
-- Métodos **hacia abajo** (el padre usa la API pública del hijo).
-- Autoload de eventos solo entre sistemas que no son padre-hijo.
+- Signals **upward** (the child does not name the parent).
+- Methods **downward** (the parent uses the child’s public API).
+- Event autoload only between systems that are not parent-child.
 
-Escenas lo más autónomas posible: lo que necesitan, lo traen o lo reciben por `@export`.
+Scenes as autonomous as possible: what they need, they own or receive via `@export`.
 
-## Estado de partida sin domain
+## Match state without domain
 
-Si hay score / vidas / timer:
+If there is score / lives / timer:
 
-- Un nodo chico `Match` (hijo del mundo o autoload **solo si** sobrevive el cambio de escena), no variables sueltas en cada enemigo.
-- Catálogo de tipos sigue siendo Resource, no `enum` + `match` en el Match.
-- Con red: el host sigue siendo el único que muta ese estado (skill MpKit). El estándar no autoriza al cliente a simular.
+- A small `Match` node (child of the world, or autoload **only if** it survives scene change), not loose variables on every enemy.
+- Type catalog is still a Resource, not `enum` + `match` on Match.
+- With networking: the host is still the only one that mutates that state (MpKit skill). Standard does not let the client simulate.
 
 ## Autoloads
 
-Sí: `GameEvents` (bus), audio, director de escenas, `MpKit`.  
-No: `EnemyManager`, `BulletFactory` global, el inventario del run si puede vivir en el árbol de la partida.
+Yes: `GameEvents` (bus), audio, scene director, `MpKit`.  
+No: `EnemyManager`, global `BulletFactory`, run inventory if it can live in the match tree.
 
-## Checklist extra de este camino
+## Extra checklist for this path
 
-- [ ] ¿Cada `.tscn` se entiende abierta sola?
-- [ ] ¿Las variantes son `.tres` (o otra packed scene si cambia la **estructura**), no `if type`?
-- [ ] ¿El script cabe en una lectura corta? Si no, componé.
-- [ ] ¿No se introdujo `src/domain/` sin que el usuario pidiera Clean?
+- [ ] Can each `.tscn` be understood opened alone?
+- [ ] Are variants `.tres` (or another packed scene if the **structure** changes), not `if type`?
+- [ ] Does the script fit a short read? If not, compose.
+- [ ] Was `src/domain/` not introduced without the user asking for Clean?

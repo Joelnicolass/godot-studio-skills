@@ -1,36 +1,36 @@
 ---
 name: godot-composition-first
 description: >-
-  Diseña escenas Godot 4 por composición: nodos hijos, packed scenes,
-  StateMachine, stacks de FX, Resources (.tres) como plantillas de balas,
-  enemigos y power-ups, @export y valores del editor por encima de hardcode.
-  Prioriza reutilizar componentes en shared/addons. Usar al crear o editar
-  .tscn, GDScript, shaders, FSM, trails, HUD, o al decidir entre herencia,
-  constantes, Resources e inspector.
+  Design Godot 4 scenes by composition: child nodes, packed scenes,
+  StateMachine, FX stacks, Resources (.tres) as bullet, enemy, and power-up
+  templates, @export and editor values over hardcoding. Prefer reusing
+  components in shared/addons. Use when creating or editing .tscn, GDScript,
+  shaders, FSM, trails, HUD, or choosing between inheritance, constants,
+  Resources, and the inspector.
 ---
 
-# Godot — composición, editor y reuso
+# Godot — composition, editor, and reuse
 
-Acompañante de [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (ese skill **pregunta** Clean vs estándar). Esta skill decide **cómo se arma el árbol y los datos**, no si hay carpeta `domain/`.
+Companion to [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (that skill **asks** Clean vs standard). This skill decides **how the tree and data are built**, not whether a `domain/` folder exists.
 
-## Prioridades (siempre)
+## Priorities (always)
 
-Siempre se priorice:
+Always prioritize:
 
-- arquitectura facil de escalar y limpia en capas
-- siempre tienen prioridad las estructuras de composicion
-- siempre tienen prioirdad los nodos y las configuraciones sobre el editor
-- siempre se debe dar prioridad a la reusabilidad de los componenetes
+- architecture that is easy to scale and clean in layers
+- composition structures always take priority
+- nodes and editor configuration always take priority
+- component reusability always takes priority
 
-## 1. Composición gana a herencia
+## 1. Composition beats inheritance
 
-El pawn / actor es un **contenedor delgado**: física + orquestación. El comportamiento vive en hijos.
+The pawn / actor is a **thin container**: physics + orchestration. Behavior lives in children.
 
 ```
-Pawn (RigidBody2D / CharacterBody2D)     ← poco código, claims de autoridad
+Pawn (RigidBody2D / CharacterBody2D)     ← little code, authority claims
 ├── Hull          Polygon2D / Sprite2D
-├── Trail         componente reusable
-├── Feedback      preview de fuerza, aim, etc.
+├── Trail         reusable component
+├── Feedback      force preview, aim, etc.
 ├── States        StateMachine
 │   ├── Coasting
 │   ├── Aiming
@@ -38,91 +38,89 @@ Pawn (RigidBody2D / CharacterBody2D)     ← poco código, claims de autoridad
 └── MultiplayerSynchronizer
 ```
 
-- Estados = nodos `State` bajo un `StateMachine`, no un `enum` + `match` de 200 líneas en el pawn.
-- Input (swipe, botón) es **otro nodo** (a menudo hermano en el mundo), no mezclado con física.
-- Un FX nuevo es un hijo o una packed scene, no un parámetro más en la superclase.
+- States = `State` nodes under a `StateMachine`, not a 200-line `enum` + `match` on the pawn.
+- Input (stick, button, pointer) is **another node** (often a sibling in the world), not mixed with physics.
+- A new FX is a child or packed scene, not another parameter on the superclass.
 
-Herencia solo para el contrato mínimo (`State extends Node`, `CrtPass extends Control`). Si vas a `class BigShip extends Ship` con más sistemas, paramá: componé.
+Inheritance only for the minimum contract (`State extends Node`, `CrtPass extends Control`). If you are about to write `class EliteEnemy extends Enemy` with more systems, stop: compose.
 
-El ejemplar: nave = `RigidBody2D` + trail + force feedback + FSM; post-FX = stack de passes.
+## 2. Nodes and editor config beat code
 
-## 2. Nodos y configuración del editor ganan al código
+The `.tscn` and the inspector are the source of truth for **look, layout, and per-instance tunables**.
 
-El `.tscn` y el inspector son la fuente de verdad del **look, layout y tunables de instancia**.
+Do:
 
-Hacer:
+- `@export` / `@export_group` / `@export_range` for knobs a human will tweak (colors, shader amplitudes, lags, “react to audio”).
+- Leave the default on the scene. The script declares the type and a reasonable fallback; it **does not** overwrite the saved value.
+- Materials and shaders: knobs on the pass material, not rewritten from a constants autoload.
+- HUD layout: anchors, `mouse_filter`, layers — on the scene.
 
-- `@export` / `@export_group` / `@export_range` para knobs que un humano va a tweakear (colores, amplitudes de shader, lags, “react to audio”).
-- Dejar el default en la escena. El script declara el tipo y un fallback razonable; **no** pisa el valor guardado.
-- Materiales y shaders: knobs en el material del pass, no reescritos desde un autoload de constantes.
-- Layout HUD: anclas, `mouse_filter`, capas — en la escena.
+Do not:
 
-No hacer:
+- `_init` / `_ready` that copies `GameConstants.FOO` onto a look `@export`. That kills the editor.
+- A single `GameConstants` with 80 shader/post-process floats. That does not scale to another title or two different instances.
+- Early `return` in `fragment()` or other hacks that leave the `ColorRect` opaque when toggling a pass.
 
-- `_init` / `_ready` que copie `GameConstants.FOO` sobre un `@export` de apariencia (“para que coincida con el PRD”). Eso mata el editor.
-- Un único `GameConstants` con 80 floats de vórtice/CRT. Eso no escala a otro título ni a dos instancias distintas.
-- `return` temprano en `fragment()` u otros hacks que dejen el `ColorRect` opaco al togglear un pass.
+`GameConstants` (or a `MatchRules.tres`) stays for **round rules**: duration, lives, layers. If you tweak look in play and lose the value on reload, the knob was in the wrong place.
 
-`GameConstants` (o un `MatchRules.tres`) queda para **reglas de ronda**: duración, vidas, layers. Si tweakeás el look en play y perdés el valor al recargar, el knob estaba en el lugar equivocado.
+## 2.1 Resources = type templates (priority)
 
-## 2.1 Resources = plantillas de tipo (prioridad)
+Numbers / refs that define **a content type** (another bullet, enemy, power-up): **not** an `enum` + `match` or 40 constants. They go in a `class_name XData extends Resource` and one `.tres` per type.
 
-Números / refs que definen **un tipo** de contenido (otra bala, otro enemigo, otro power-up): **no** van como `enum` + `match` ni como 40 constantes. Van en un `class_name XData extends Resource` y un `.tres` por tipo.
+- One `bullet.tscn`; `plasma.tres` / `spread.tres` assigned to `@export var data`.
+- Definition stats (damage, speed, icon, PackedScene) on the Resource.
+- Current HP, active cooldown: on the node. Do not mutate the shared `.tres` (`duplicate()` if you need a working copy).
+- External `.tres` if several scenes reuse it; built-in only if it belongs to that instance.
 
-- Una escena `bullet.tscn`; `plasma.tres` / `spread.tres` se asignan al `@export var data`.
-- Stats de definición (damage, speed, icon, PackedScene) en el Resource.
-- HP actual, cooldown en curso: en el nodo. No mutar el `.tres` compartido (`duplicate()` si hace falta una copia).
-- `.tres` externo si lo reusan varias escenas; built-in solo si es de esa instancia.
+Full guide: [resources.md](resources.md).
 
-Guía completa: [resources.md](resources.md).
+## 3. Component reuse
 
-## 3. Reusabilidad de componentes
+Before writing a script in `features/` or `scenes/`:
 
-Antes de escribir un script en `features/` o `scenes/`:
+1. Does it already exist in `src/shared/` or `addons/`?
+2. If not, will a second caller need it (another feature, another game, editor preview)? → born in the game’s `shared/` or the framework `addons/`, not forked per title.
+3. Component API: signals + `@export`. Zero score names, slots, or product copy.
 
-1. ¿Existe ya en `src/shared/` o `addons/`?
-2. Si no, ¿un segundo caller lo va a necesitar (otro feature, otro juego, editor preview)? → nacer en `shared/` del juego o en `addons/` del framework (`Joelnicolass/godot-studio-skills`), no fork por título.
-3. API del componente: signals + `@export`. Cero nombres de puntaje, slots o copy del producto.
+Patterns to extract, not duplicate:
 
-Patrones que se extraen, no se duplican:
-
-| Pieza | Forma reusable |
+| Piece | Reusable form |
 |-------|----------------|
-| Wrap de mundo | helper estático (`Wrap2D.wrap_position`) |
-| FSM | `StateMachine` + `State` genéricos; el estado puede preguntar al parent |
-| Post-proceso | `PostFxStack` (CanvasLayer) + **un pass = una packed scene** intercambiable |
-| Autoridad / sync | `MpAuthority` (addon), no copiado en cada pawn |
-| Copy de UI | un módulo de strings, no literales en cada botón |
-| Tipos de entidad | `class_name` Resource + `.tres` plantilla, no un script por variante de stats |
+| World wrap | static helper (`Wrap2D.wrap_position`) |
+| FSM | generic `StateMachine` + `State`; the state may ask the parent |
+| Post-process | `PostFxStack` (CanvasLayer) + **one pass = one packed scene** |
+| Authority / sync | `MpAuthority` (addon), not copied into every pawn |
+| UI copy | a strings module, not literals on every button |
+| Entity types | `class_name` Resource + `.tres` template, not a script per stats variant |
 
-Un pass (CRT, ripple, bloom) es un nodo con `BackBufferCopy` + `ColorRect` + shader propio. El stack no conoce el juego. Encender slow-time no mezcla ripple **dentro** del shader CRT: se tweenea el pass ripple.
+A pass (CRT, ripple, bloom) is a node with `BackBufferCopy` + `ColorRect` + its own shader. The stack does not know the game. Turning on slow-time does not mix ripple **inside** the CRT shader: tween the ripple pass.
 
-Shaders: un efecto, un archivo. Componer en el árbol, no en un uber-shader.
+Shaders: one effect, one file. Compose in the tree, not in an uber-shader.
 
-## 4. Cómo implementar un componente nuevo
+## 4. How to implement a new component
 
-1. Packed scene chica (`shared/` o `scenes/components/`) + script `class_name`.
-2. Knobs `@export`. Probar en el inspector con el juego pausado / tool button si hace falta preview.
-3. El feature **instancia** el componente (hijo en la escena del mundo o del pawn). No `load` el shader y setea uniforms a mano desde el arena.
-4. Comunicación: `GameEvents` o signals del propio nodo. El CRT no llama a `GameSession`.
-5. Si el componente tiene variante por jugador (color de estela), recibe un tint por método público — no lee `PlayerId` por dentro si se puede evitar.
+1. Small packed scene (`shared/` or `scenes/components/`) + `class_name` script.
+2. `@export` knobs. Try them in the inspector with the game paused / a tool button if preview is needed.
+3. The feature **instances** the component (child of the world or pawn scene). Do not `load` the shader and set uniforms by hand from the arena.
+4. Communication: `GameEvents` or the node’s own signals. The CRT does not call `GameSession`.
+5. If the component has a per-player variant (trail color), it receives a tint via a public method — it does not read `PlayerId` internally if that can be avoided.
 
-## 5. Anti-patrones
+## 5. Anti-patterns
 
-- God-node `Arena.gd` / `World.gd` que dibuja FX, spawnea, puntúa y cambia de escena.
-- `match state` o `match bullet_kind` gigante en el pawn.
-- Duplicar `crt.gdshader` “un poquito distinto” en dos features.
-- Configurar collision layers solo en código **y** distinto en el inspector (elegí inspector + una constante de **layer index** de negocio).
-- Hijos creados 100% en código cuando una escena packed los haría editables.
-- Mutar `plasma.tres` en runtime y afectar a todas las balas.
+- God-node `Arena.gd` / `World.gd` that draws FX, spawns, scores, and changes scene.
+- Giant `match state` or `match bullet_kind` on the pawn.
+- Duplicating `crt.gdshader` “a little different” in two features.
+- Collision layers set only in code **and** differently in the inspector (pick inspector + one business **layer index** constant).
+- Children created 100% in code when a packed scene would make them editable.
+- Mutating `plasma.tres` at runtime and affecting every bullet.
 
 ## Checklist
 
-- [ ] ¿Se puede apagar/reordenar este comportamiento sacando o moviendo un nodo hijo?
-- [ ] ¿Un diseñador puede tunearlo en el inspector (nodo o `.tres`) sin tocar GDScript?
-- [ ] ¿El script del contenedor sigue orquestando, no implementando el efecto?
-- [ ] ¿Las variantes de tipo son Resources, no `if kind`?
-- [ ] ¿Vive en `shared/` o `addons/` si no es regla de este género?
-- [ ] ¿El componente no puntúa ni mezcla responsabilidades?
+- [ ] Can this behavior be turned off/reordered by removing or moving a child node?
+- [ ] Can a designer tune it in the inspector (node or `.tres`) without touching GDScript?
+- [ ] Does the container script still orchestrate, not implement the effect?
+- [ ] Are type variants Resources, not `if kind`?
+- [ ] Does it live in `shared/` or `addons/` if it is not a rule of this genre?
+- [ ] Does the component not score or mix responsibilities?
 
-Patrones concretos: [patterns.md](patterns.md). Resources: [resources.md](resources.md).
+Concrete patterns: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Generic code: [examples.md](examples.md).

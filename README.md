@@ -1,60 +1,78 @@
 # Godot studio kit
 
-Framework chico (y a propósito) para juegos Godot 4: **skills de Cursor** + **addons Godot**. Se agranda de a una pieza reusable. El juego (dominio, glue, escenas) no vive acá.
+A small (on purpose) framework for Godot 4 games: **Cursor skills**, **product commands** (PRD / RFC), and **Godot addons**. It grows one reusable piece at a time. The game (domain, glue, scenes) does not live here.
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
-| Pieza | Dónde | Qué es |
+| Piece | Where | What it is |
 |-------|--------|--------|
-| Arquitectura (Clean **o** estándar; **preguntar**) / composición / Resources / MP | `skills/` | Instrucciones para el agente |
-| MpKit | `addons/mp_kit/` | Plugin Godot: transporte, slots, RPCs de sesión. Cero gameplay |
+| Architecture (Clean **or** standard; **ask**) / composition / Resources / MP | `skills/` | Agent instructions |
+| PRD → features → rules → RFCs → implement / review | `commands/` | Cursor slash commands (`/create-prd`, …) |
+| MpKit | `addons/mp_kit/` | Godot plugin: transport, slots, session RPCs. Zero gameplay |
 
-Qué **no** entra en este repo: puntaje, naves, CRT, copy, `GameSession`, `SceneDirector`. Eso es glue del título.
+What **does not** belong in this repo: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
-## Prioridades (siempre)
+## Priorities (always)
 
-Siempre se priorice:
+Always prioritize:
 
-- arquitectura facil de escalar y limpia en capas
-- siempre tienen prioridad las estructuras de composicion
-- siempre tienen prioirdad los nodos y las configuraciones sobre el editor
-- siempre se debe dar prioridad a la reusabilidad de los componenetes
+- architecture that is easy to scale and clean in layers
+- composition structures always take priority
+- nodes and editor configuration always take priority
+- component reusability always takes priority
 
-## Instalar skills (Cursor)
+## Install skills (Cursor)
 
 ```bash
-./install.sh                 # ~/.cursor/skills/  (todos tus proyectos)
-./install.sh --project       # ./.cursor/skills/ del cwd
+./install.sh                 # ~/.cursor/skills/ and ~/.cursor/commands/
+./install.sh --project       # ./.cursor/skills/ and ./.cursor/commands/ of cwd
 ```
 
-Desde GitHub:
+From GitHub:
 
 ```bash
 npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 ```
 
-`npx skills` solo copia `skills/`. El addon Godot va aparte (abajo).
+`npx skills` only copies `skills/`. Commands and the Godot addon go through `./install.sh`.
 
-Abrí un **chat nuevo** en Cursor después de instalar.
+Open a **new chat** in Cursor after installing.
 
-## Instalar MpKit en un proyecto Godot
+## Product commands
+
+They land as slash commands (`/create-prd`, …). Flow:
+
+1. `/create-prd` → `PRD.md`
+2. `/verify-prd` → `PRD-REVIEW.md`
+3. `/extract-features` → `FEATURES.md`
+4. `/generate-rules` → `RULES.md`
+5. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+6. `/test-strategy` → `TEST-STRATEGY.md`
+7. `/implement-rfc <id>`
+8. `/review-rfc <id>`
+9. `/manage-changes` when scope moves
+10. `/workflow-status` at any time
+
+`npx skills` does not install these files; use `./install.sh`.
+
+## Install MpKit in a Godot project
 
 ```bash
 ./install.sh --addon /path/to/godot-project
 ```
 
-Eso deja `addons/mp_kit/` en ese proyecto. Después, en `project.godot`, autoload **antes** del glue:
+That leaves `addons/mp_kit/` in that project. Then, in `project.godot`, autoload **before** glue:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
-Detalle: `addons/mp_kit/README.md` y skill `godot-mp-kit`.
+Details: `addons/mp_kit/README.md` and the `godot-mp-kit` skill.
 
 ## Zip
 
 ```bash
-./pack.sh    # dist/godot-studio-skills.zip  (skills + addons + instalador)
+./pack.sh    # dist/godot-studio-skills.zip  (skills + commands + addons + installer)
 unzip dist/godot-studio-skills.zip
 cd godot-studio-skills
 ./install.sh
@@ -64,12 +82,13 @@ cd godot-studio-skills
 ## Layout
 
 ```
-addons/mp_kit/                 # plugin Godot (canónico)
+addons/mp_kit/                 # canonical Godot plugin
 skills/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
-install.sh                     # skills y/o --addon
+commands/                      # /create-prd, /generate-rfcs, /implement-rfc, …
+install.sh                     # skills, commands, and/or --addon
 ```
 
-Cómo crece el framework: extraer a `addons/` o `skills/` cuando algo se reusa. No copiar un FX o un tracker de puntaje “por las dudas”.
+How the framework grows: extract into `addons/` or `skills/` when something is reused. Do not copy an FX or a score tracker “just in case”.
