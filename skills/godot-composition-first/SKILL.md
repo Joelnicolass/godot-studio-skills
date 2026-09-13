@@ -5,8 +5,9 @@ description: >-
   StateMachine, FX passes, Resources (.tres) as type templates, typed @export
   sockets, %UniqueName, InputMap, and editor values over hardcoding. Prefer
   reusing components in shared/addons. Use when creating or editing .tscn,
-  GDScript, shaders, FSM, HUD, or choosing between inheritance, constants,
-  Resources, and the inspector.
+  GDScript, shaders (Godot Shaders / Shadertoy), 2D sprites (Aseprite MCP),
+  FSM, HUD, or choosing between inheritance, constants, Resources, and the
+  inspector.
 ---
 
 # Godot — composition, editor, and reuse
@@ -96,7 +97,9 @@ Before writing a script in `features/` or `scenes/`:
 
 A pass (bloom, grain, distortion) = `BackBufferCopy` + `ColorRect` + its own shader. The stack does not know the game. A pickup does not put logic inside another pass’s shader: it tweens **that** pass.
 
-Shaders: one effect, one file.
+Shaders: one effect, one file. **Do not invent** the FX if a catalog exists: [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) first; [Shadertoy](https://www.shadertoy.com) if you need to port. Guide: [assets.md](assets.md).
+
+2D sprites: **ask** if they want MCP/sprites and ask for **references**. Skill [godot-animation](../godot-animation/SKILL.md). If yes: [Aseprite](https://github.com/diivi/aseprite-mcp) MCP ([assets.md](assets.md)). If no: placeholder. Do not invent a sprite.
 
 ## 6. How to implement a component
 
@@ -123,5 +126,6 @@ Shaders: one effect, one file.
 - [ ] InputMap, not scancodes?
 - [ ] Variants = Resources?
 - [ ] Does the scene run with F6?
+- [ ] Catalog shader or documented port? 2D sprite: user OK + references + Aseprite, or placeholder?
 
-Patterns: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Code: [examples.md](examples.md).
+Patterns: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Assets: [assets.md](assets.md). Code: [examples.md](examples.md).

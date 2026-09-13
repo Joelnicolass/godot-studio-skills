@@ -46,7 +46,7 @@ Order:
 9. Implement RFC by RFC with the pipeline below
 10. `/workflow-status` when they ask where things stand
 
-Research (Godot API, a pattern, an addon): `explore` subagent or a targeted read. The orchestrator summarizes; do not paste dumps.
+Research (Godot API, a pattern, an addon, a shader): `explore` subagent or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references; skill [godot-animation](../godot-animation/SKILL.md). The orchestrator summarizes; do not paste dumps.
 
 Mid-work scope changes: `/manage-changes`.
 
@@ -78,6 +78,7 @@ Do not launch developer and reviewer in parallel on the same RFC. Tech-lead on i
 - Treat ENet LAN as internet multiplayer.
 - Put score, copy, or title netcode in `addons/mp_kit`.
 - Tests or visual passes if the user did not ask and RULES does not require them.
+- Install MCP or create sprites without asking, or draw without references.
 
 ## 4. Done when
 

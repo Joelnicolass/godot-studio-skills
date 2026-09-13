@@ -26,6 +26,7 @@ PostFxStack (CanvasLayer, high layer)
 - Gameplay **does not** put code in another pass’s shader: it tweens the matching pass.
 - `mouse_filter = IGNORE`.
 - Toggle: show/hide the pass; no early-`return` in `fragment()` that leaves the buffer blank.
+- Source: Godot Shaders / ported Shadertoy. See [assets.md](assets.md).
 
 ## Actor with physics
 

@@ -12,7 +12,7 @@ If an item does not apply, write “N/A”. Do not skip it silently.
 4. [ ] InputMap: semantic actions (`move_left`, `attack`), not `KEY_*`. Hold in `_physics_process`; gameplay one-shot in `_unhandled_input`.
 5. [ ] `@export` / `%UniqueName` sockets for own nodes. Scene playable with F6.
 6. [ ] Clean: testable rule with no scene? → `src/domain/` + test. Standard: is World bloating? → component, not invented domain.
-7. [ ] Local FX; UI copy in the product language; code in English.
+7. [ ] Local FX; shaders from [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) / [Shadertoy](https://www.shadertoy.com). 2D sprites: does the user want MCP/art? If yes, references + [godot-animation](../godot-animation/SKILL.md). If no, placeholder. UI copy in the product language; code in English.
 
 ## If networked (MpKit)
 

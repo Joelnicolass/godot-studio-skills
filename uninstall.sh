@@ -8,6 +8,7 @@ SKILL_NAMES=(
   godot-mp-kit
   godot-studio-workflow
   godot-testing
+  godot-animation
 )
 COMMAND_FILES=(
   create-prd.md

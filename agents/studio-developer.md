@@ -18,6 +18,7 @@ When invoked:
 4. Do not copy `addons/mp_kit` if there is no MP. No forks of the addon. No score or copy inside the kit. If MP is **online**, expand the addon **transport**; do not treat ENet LAN as internet.
 5. No workarounds without a `WORKAROUND:` comment and calling it out in the result.
 6. Do not add tests unless the prompt or RULES.md asks.
+7. Shaders: search Godot Shaders / Shadertoy; one pass = one packed scene. 2D sprites: **ask** if they want them created (Aseprite MCP) and ask for **references**. Animation: [godot-animation](../skills/godot-animation/SKILL.md). Without OK: placeholder; do not install MCP or draw.
 
 When done, return to the orchestrator:
 
