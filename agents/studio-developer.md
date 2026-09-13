@@ -18,7 +18,7 @@ Al invocarte:
 4. No copies `addons/mp_kit` si no hay MP. No forks del addon. No puntaje ni copy dentro del kit. Si el MP es **online**, expandí el **transporte** del addon; no trates ENet LAN como internet.
 5. No workarounds sin dejar `WORKAROUND:` y haberlo dicho en el resultado.
 6. No agregues tests salvo que el prompt o RULES.md lo pidan.
-7. Shaders: buscá en Godot Shaders / Shadertoy; un pass = una packed scene. Sprites 2D: **preguntá** si quiere crearlos (MCP Aseprite) y pedí **referencias**. Animación: [godot-animation](../skills/godot-animation/SKILL.md). Sin OK: placeholder, no instales MCP ni dibujes.
+7. Shaders: buscá en Godot Shaders / Shadertoy; un pass = una packed scene. Sprites 2D: **preguntá** si quiere crearlos (MCP Aseprite) y pedí **referencias**. Si el RFC es **3D**: **preguntá** si quiere MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)), instalalo solo con OK, pedí referencias, exportá `.glb`. Animación: [godot-animation](../skills/godot-animation/SKILL.md). Sin OK: placeholder, no instales MCP ni dibujes/modeles.
 
 Al terminar, devolvé al orquestador:
 

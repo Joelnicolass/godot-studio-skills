@@ -6,8 +6,8 @@ description: >-
   sockets @export tipados, %UniqueName, InputMap y valores del editor por
   encima de hardcode. Prioriza reutilizar componentes en shared/addons.
   Usar al crear o editar .tscn, GDScript, shaders (Godot Shaders / Shadertoy),
-  sprites 2D (Aseprite MCP), FSM, HUD, o al decidir entre herencia, constantes,
-  Resources e inspector.
+  sprites 2D (Aseprite MCP), modelos 3D (Blender MCP), FSM, HUD, o al decidir
+  entre herencia, constantes, Resources e inspector.
 ---
 
 # Godot — composición, editor y reuso
@@ -101,6 +101,8 @@ Shaders: un efecto, un archivo. **No inventes** el FX si hay catálogo: [Godot S
 
 Sprites 2D: **preguntá** si quiere MCP/sprites y pedí **referencias**. Skill [godot-animation](../godot-animation/SKILL.md). Si dice que sí: MCP [Aseprite](https://github.com/diivi/aseprite-mcp) ([assets.md](assets.md)). Si no: placeholder. No un sprite inventado.
 
+3D: **preguntá** si quiere el MCP de [Blender](https://www.blender.org/lab/mcp-server/). Si sí: instalalo, pedí referencias, exportá `.glb`. Si no: placeholder. Detalle en [assets.md](assets.md).
+
 ## 6. Cómo implementar un componente
 
 1. Packed scene chica + `class_name`.
@@ -126,6 +128,6 @@ Sprites 2D: **preguntá** si quiere MCP/sprites y pedí **referencias**. Skill [
 - [ ] ¿InputMap, no scancodes?
 - [ ] ¿Variantes = Resources?
 - [ ] ¿La escena corre con F6?
-- [ ] ¿Shader de catálogo o port documentado? ¿Sprite 2D: OK del usuario + referencias + Aseprite, o placeholder?
+- [ ] ¿Shader de catálogo o port documentado? ¿Sprite 2D: OK del usuario + referencias + Aseprite, o placeholder? ¿3D: OK + Blender MCP + `.glb`, o placeholder?
 
 Patrones: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Assets: [assets.md](assets.md). Código: [examples.md](examples.md).

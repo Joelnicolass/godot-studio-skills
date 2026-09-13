@@ -198,12 +198,13 @@ Abrí un **chat nuevo** en Cursor después de instalar.
 9. `/manage-changes` cuando se mueve el alcance
 10. `/workflow-status`
 
-## Shaders y sprites 2D
+## Shaders, sprites 2D y 3D
 
-No inventar FX ni pixel art de memoria.
+No inventar FX ni arte de memoria.
 
-- Shaders: [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) primero; [Shadertoy](https://www.shadertoy.com) si hay que portar. Un pass = una packed scene. Detalle: `skills/godot-composition-first/assets.md`.
-- Sprites 2D: **preguntá** si querés MCP Aseprite / crear sprites, y pedí **referencias**. Animación: skill `godot-animation` (12 principios). Sin OK: placeholder. Detalle: `skills/godot-composition-first/assets.md`.
+- Shaders: [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) primero; [Shadertoy](https://www.shadertoy.com) si hay que portar. Un pass = una packed scene.
+- Sprites 2D: **preguntá** si querés MCP Aseprite / crear sprites, y pedí **referencias**. Animación: skill `godot-animation`. Sin OK: placeholder.
+- **3D**: **preguntá** si querés el MCP de [Blender](https://www.blender.org/lab/mcp-server/). Si sí: instalalo (Blender 5.1 + add-on Lab + server en Cursor), pedí referencias, exportá `.glb` al juego. Sin OK: placeholder. Detalle: `skills/godot-composition-first/assets.md`.
 
 ## Instalar MpKit en un proyecto Godot
 

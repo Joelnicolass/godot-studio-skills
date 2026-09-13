@@ -41,6 +41,6 @@ Composición: [godot-composition-first](../godot-composition-first/SKILL.md). As
 
 En Aseprite (MCP): paleta y silueta primero (12, 11). Poses clave (4), squash en el impacto (1), frame de anticipación (2), ease en los extremos (6), trayectoria curva (7), pelo/ropa un frame tarde (5), un detalle extra que no compita (8), duración de frame = peso (9), pose más fuerte que la real (10). El clip se lee solo (3). `export_frame` a 8×; onion skin entre poses.
 
-En Godot: spritesheet / `SpriteFrames` → `AnimatedSprite2D`. Motion de nodos (cámara, squash de escala, arcos) → `AnimationPlayer` con interpolación. No animes gameplay en un shader de otro pass.
+En Godot: spritesheet / `SpriteFrames` → `AnimatedSprite2D`. Motion de nodos (cámara, squash de escala, arcos) → `AnimationPlayer` con interpolación. 3D: mesh/animación desde Blender MCP (solo con OK) exportado a `.glb`; mismos principios (1–12) en poses y curvas. No animes gameplay en un shader de otro pass.
 
 Un ciclo = un tag / un `SpriteFrames` animation. Idle no es un solo frame estático si el personaje debe vivir (8, 9).

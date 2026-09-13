@@ -12,7 +12,7 @@ Si un ítem no aplica, escribir “N/A”. No saltearlo en silencio.
 4. [ ] InputMap: acciones semánticas (`move_left`, `attack`), no `KEY_*`. Hold en `_physics_process`; one-shot de gameplay en `_unhandled_input`.
 5. [ ] Sockets `@export` / `%UniqueName` para nodos propios. Escena jugable con F6.
 6. [ ] Clean: ¿regla testeable sin escena? → `src/domain/` + test. Estándar: ¿el World se hincha? → componente, no domain inventado.
-7. [ ] FX locales; shaders de [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) / [Shadertoy](https://www.shadertoy.com). Sprites 2D: ¿el usuario quiere MCP/arte? Si sí, referencias + [godot-animation](../godot-animation/SKILL.md). Si no, placeholder. Copy de UI en el idioma del producto; código en inglés.
+7. [ ] FX locales; shaders de [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) / [Shadertoy](https://www.shadertoy.com). Sprites 2D: ¿el usuario quiere MCP/arte? Si sí, referencias + [godot-animation](../godot-animation/SKILL.md). Si el feature es **3D**: ¿quiere MCP Blender? Si sí, referencias + [assets.md](../godot-composition-first/assets.md). Si no, placeholder. Copy de UI en el idioma del producto; código en inglés.
 
 ## Si hay red (MpKit)
 

@@ -1,6 +1,6 @@
-# Assets — shaders y sprites 2D
+# Assets — shaders, 2D y 3D
 
-No inventes arte o FX “de memoria” si hay catálogo o herramienta. El juego (PNG, `.gdshader`) vive en el **proyecto Godot**, no en este framework.
+No inventes arte o FX “de memoria” si hay catálogo o herramienta. El juego (PNG, `.gdshader`, `.glb`) vive en el **proyecto Godot**, no en este framework.
 
 ## Shaders
 
@@ -60,3 +60,28 @@ En Cursor → Settings → MCP, o en `~/.cursor/mcp.json` / `.cursor/mcp.json` d
 En macOS el `uv` suele estar en `/opt/homebrew/bin/uv`. Chat **nuevo** después de guardar.
 
 Si el MCP no arranca: no finjas el sprite; avisá qué falta (Aseprite, path, uv) y usá un placeholder `PlaceholderTexture2D` **solo** hasta que el usuario lo habilite.
+
+## Modelos 3D (Blender MCP)
+
+Fuente oficial: [MCP Server — Blender](https://www.blender.org/lab/mcp-server/).
+
+**Preguntá primero** (solo si el juego es **3D** o 2D+3D). No instales el MCP de Blender ni ejecutes código en la escena hasta que el usuario diga que sí. Pedí **referencias** (imágenes, conceptos, escala, poly budget, estilo). Sin OK: `PlaceholderMesh` / caja y seguí con código.
+
+Si dijo que sí:
+
+1. Instalá y configurá el MCP oficial (abajo). Blender tiene que estar **abierto** con el add-on arrancado.
+2. Modelá / ajustá en Blender vía MCP. Exportá **glTF 2.0** (`.glb`) a `res://assets/…` del juego.
+3. En Godot: `MeshInstance3D` / packed scene. No dejes el `.blend` como único asset de runtime.
+
+El servidor ejecuta Python generado por la IA **sin** sandbox. No lo uses sobre archivos con datos sensibles. Preferí una copia de trabajo.
+
+### Instalar el MCP de Blender
+
+Requisitos (docs oficiales): **Blender 5.1 o más nuevo**, add-on Lab, cliente MCP (Cursor), servidor MCP.
+
+1. Blender → Edit → Preferences → Extensions → Get Extensions. Buscá **MCP** / Blender Lab e instalá el add-on oficial. (Drag & drop del repo Lab: dos veces — primero el repositorio, después el add-on.)
+2. En las preferencias del add-on: **Start MCP Server** (suele escuchar `localhost:9876`).
+3. En Cursor: Settings → MCP. Si el cliente acepta **`.mcpb`**, bajá el bundle de la [página de releases](https://www.blender.org/lab/mcp-server/) y agregalo. Si no: seguí las *setup instructions* de esa misma página (no uses un `uvx blender-mcp` comunitario: es **otro** protocolo).
+4. Chat **nuevo**. Verificá que las tools de Blender aparezcan. Si no: Blender abierto + server started + recargar MCP.
+
+Si no arranca: no inventes un mesh; avisá qué falta (versión 5.1, add-on, server, Cursor MCP).
