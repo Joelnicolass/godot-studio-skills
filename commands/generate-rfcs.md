@@ -16,7 +16,7 @@ Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir deb
 
 Esto aplica tanto por RFC como al conjunto: no emitas una sección "Database Schema Changes" o "State Management" en cada RFC de un producto que no tiene ninguna de las dos.
 
-En un **juego**: el RFC-001 es un slice vertical jugable (loop + una escena + input), no “infraestructura genérica”. Cada RFC es una unidad de composición Godot (escena, componente, Resource), no un módulo de SaaS. Omití schema SQL / auth / browsers si no existen.
+En un **juego**: el RFC-001 es un slice vertical jugable (loop + una escena + input), no “infraestructura genérica”. Cada RFC es una unidad de composición Godot (escena, componente, Resource), no un módulo de SaaS. Omití schema SQL / auth / browsers si no existen. Si el PRD pide **online**, un RFC aparte expande el transporte de MpKit (no mezclar NAT/relay con el slice de gameplay). Si no hay MP, no inventes RFCs de red.
 
 ## CUANDO LOS ARTEFACTOS ENTRAN EN CONFLICTO
 

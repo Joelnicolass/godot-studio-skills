@@ -34,7 +34,7 @@ Generá el RULES.md así:
 3. ESTÁNDARES DE DESARROLLO:
    - Requisitos de testing y expectativas de cobertura (en un juego: opcional salvo que el usuario los pida; si existen, anclar al runner real)
    - Requisitos de manejo de errores y logging
-   - En un juego Godot: composición, `@export`/inspector, Resources `.tres` para tipos, UI en idioma del producto e IDs en inglés. Citar las skills `godot-layered-architecture`, `godot-composition-first`, y `godot-mp-kit` si hay red. Si hay tests: `godot-testing` (GUT para GDScript, GdUnit4 para C#). Arquitectura Clean **o** estándar, la ya elegida.
+   - En un juego Godot: composición, `@export`/inspector, Resources `.tres` para tipos, UI en idioma del producto e IDs en inglés. Citar `godot-layered-architecture` y `godot-composition-first`. Citar `godot-mp-kit` **solo** si hay MP local/WiFi; si es online, declarar que hay que expandir el addon (no alcanza ENet LAN); si no hay MP, no cites el kit. Si hay tests: `godot-testing` (GUT para GDScript, GdUnit4 para C#). Arquitectura Clean **o** estándar, la ya elegida.
    - No copiar checklist web (responsive, auth, SQL) a un juego que no los tiene
 
 4. PRIORIDADES DE IMPLEMENTACIÓN:

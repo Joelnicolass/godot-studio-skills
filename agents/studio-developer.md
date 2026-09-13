@@ -15,7 +15,7 @@ Al invocarte:
 1. Leé el plan del tech lead, RULES.md, el RFC y el código que vas a tocar.
 2. Seguí composición: contenedor flaco, hijos, packed scenes, `@export`. Tipos de contenido = `Resource` `.tres`, no `if kind`.
 3. Identificadores en inglés. Copy de UI en el idioma del producto.
-4. No forks de `addons/mp_kit`. No puntaje ni copy dentro del kit de red.
+4. No copies `addons/mp_kit` si no hay MP. No forks del addon. No puntaje ni copy dentro del kit. Si el MP es **online**, expandí el **transporte** del addon; no trates ENet LAN como internet.
 5. No workarounds sin dejar `WORKAROUND:` y haberlo dicho en el resultado.
 6. No agregues tests salvo que el prompt o RULES.md lo pidan.
 

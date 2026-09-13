@@ -14,11 +14,11 @@ Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir deb
 
 El archivo sigue llamándose `PRD.md` (el resto de commands lo busca), pero el contenido es un **GDD corto y vivo**, no un PRD de SaaS.
 
-Preguntá y documentá: fantasía y pilares, no-goals, loop central, feel (cámara, juice, how-to-fail), duración de sesión, plataformas, dispositivos de input, 1P vs multiplayer, slice vertical jugable.
+Preguntá y documentá: fantasía y pilares, no-goals, loop central, feel (cámara, juice, how-to-fail), duración de sesión, plataformas, dispositivos de input, **tipo de multiplayer** (sin MP · local/WiFi · online), slice vertical jugable.
 
 Omití salvo que el usuario lo pida: modelo de negocio, SQL/inyección, auth de usuarios, diseño responsive web, APIs REST, personas de marketing. En su lugar: loop, feel, contenido (tipos como datos), y qué queda fuera del primer slice.
 
-Preguntá Clean vs estándar si aún no está en RULES.md / el chat (ver skill `godot-layered-architecture`).
+Preguntá Clean vs estándar si aún no está en RULES.md / el chat (ver skill `godot-layered-architecture`). Preguntá el tipo de MP si aún no está (ver `godot-mp-kit`): sin MP no copies el addon; local/WiFi = MpKit actual; online = hay que expandir el kit.
 
 Cuando consideres que reuniste suficiente detalle, creá un PRD estructurado que incluya (sin limitarse a):
 

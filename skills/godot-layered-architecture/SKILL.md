@@ -13,7 +13,7 @@ description: >-
 
 Base para juegos Godot 4 (GDScript). Hay **dos estilos** válidos. El agente **no asume Clean**.
 
-Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md). Si hay red: [godot-mp-kit](../godot-mp-kit/SKILL.md). Un título nuevo o un RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
+Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md). Multiplayer: **preguntar** (ninguno / local-WiFi / online) — [godot-mp-kit](../godot-mp-kit/SKILL.md) solo si hay MP. Un título nuevo o un RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
 
 ## Prioridades (siempre)
 

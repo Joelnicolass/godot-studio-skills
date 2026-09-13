@@ -2,9 +2,11 @@
 name: godot-mp-kit
 description: >-
   Implementa multiplayer host-authoritative en Godot 4 con el addon informal
-  MpKit (ENet, slots, handshake, snapshots) más glue del juego. Usar al copiar
-  addons/mp_kit, host/join LAN, RPCs submit_*, MultiplayerSpawner, 1P offline,
-  rejoin, o al extraer netcode a otro proyecto.
+  MpKit (ENet, slots, handshake, snapshots) más glue del juego. Preguntá antes
+  el tipo: sin MP (no copies el addon), local/WiFi (kit actual), u online
+  (hay que expandir el transporte). Usar al copiar addons/mp_kit, host/join
+  LAN, RPCs submit_*, MultiplayerSpawner, 1P offline, rejoin, o al extraer
+  netcode a otro proyecto.
 ---
 
 # Godot — MpKit y multiplayer
@@ -12,6 +14,18 @@ description: >-
 Patrón listen-server: **un simulador (host)**. El invitado manda intenciones y pinta copias. El addon es pequeño a propósito: tubería reusable, cero gameplay.
 
 Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** Clean vs estándar; no asumir capas). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md).
+
+## Alcance de red (obligatorio)
+
+**Preguntar siempre** (AskQuestion si está disponible) **antes** de copiar el addon o de escribir RPCs. No asumas LAN.
+
+| Elección | Qué hacer |
+|----------|-----------|
+| **Sin multiplayer** | No instales MpKit. Sin autoload, sin RPC, sin `MultiplayerSpawner`. |
+| **Local / WiFi** (mismo dispositivo o misma LAN) | Copiá el MpKit **actual**. ENet listen-server. Alcanza. |
+| **Online** (internet, NAT, matchmaking, Steam, etc.) | El kit actual **no alcanza**. **Expandí MpKit**: otro transporte (relay, WebRTC, Steam/EOS, dedicated server) **dentro** de `addons/mp_kit` (o reemplazando `host()`/`join()`). Glue, puntaje y `submit_*` de los actores se quedan en el juego. No fingir que un `join(ip)` de LAN es online. |
+
+No preguntar de nuevo si el usuario ya eligió en este chat o el PRD/RULES lo declara.
 
 Tipos de pawn/proyectil/enemigo: Resource `.tres` en el actor, no un RPC por `kind` string.
 
@@ -118,9 +132,9 @@ No metas 40 posiciones de props en el dict si ya van por synchronizer.
 
 Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar siempre jugar solo **sin** `create_server`.
 
-## Dedicated server más adelante
+## Dedicated server / online
 
-Reemplazar este addon (o el transport dentro de `host()`/`join()`). Dominio y RPCs `submit_*` de los pawns se quedan.
+El MpKit de hoy es **LAN**. Online o dedicated: **expandir este addon** (o el transport dentro de `host()`/`join()`). Dominio y RPCs `submit_*` de los pawns se quedan. No pongas matchmaking en un script del título si pertenece al transporte.
 
 ## Anti-patrones
 
@@ -133,8 +147,9 @@ Reemplazar este addon (o el transport dentro de `host()`/`join()`). Dominio y RP
 
 ## Checklist
 
+- [ ] Tipo de MP declarado (ninguno / local-WiFi / online). Sin MP: este checklist no aplica.
 - [ ] Autoload `MpKit` **antes** del glue. `configure(port, max_players)` antes de host/join.
-- [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado.
+- [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado (salvo expansión de transporte si es online).
 - [ ] Slots en dominio; peers solo en RPC/authority.
 - [ ] Handshake `world_ready` antes del primer `add_child` replicado.
 - [ ] Guest no simula reglas; host valida sender.
