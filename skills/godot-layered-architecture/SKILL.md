@@ -4,17 +4,16 @@ description: >-
   Elige y aplica arquitectura Godot 4 (GDScript): Clean en capas (domain
   RefCounted, core autoloads, features) o estándar por escenas y scripts
   pequeños. Siempre pregunta al usuario cuál usar. Prioriza composición,
-  Resources (.tres) para tipos de balas/enemigos/power-ups, editor y
-  componentes reutilizables. Usar al crear o modificar un proyecto Godot,
-  GDScript, escenas, reglas de partida, GameSession, GameEvents, features,
-  HUD o al arrancar un juego nuevo.
+  Resources (.tres) como plantillas de tipo, editor y componentes
+  reutilizables. Usar al crear o modificar un proyecto Godot, GDScript,
+  escenas, reglas de partida, features, HUD o al arrancar un juego nuevo.
 ---
 
 # Godot — arquitectura
 
 Base para juegos Godot 4 (GDScript). Hay **dos estilos** válidos. El agente **no asume Clean**.
 
-Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md) (incluye Resources). Si hay red: [godot-mp-kit](../godot-mp-kit/SKILL.md). Un título nuevo o un RFC de feature: [godot-studio-workflow](../godot-studio-workflow/SKILL.md) (el chat principal orquesta commands y subagentes).
+Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md). Si hay red: [godot-mp-kit](../godot-mp-kit/SKILL.md). Un título nuevo o un RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
 
 ## Prioridades (siempre)
 
@@ -25,39 +24,43 @@ Siempre se priorice:
 - siempre tienen prioirdad los nodos y las configuraciones sobre el editor
 - siempre se debe dar prioridad a la reusabilidad de los componenetes
 
-En el camino **estándar**, “capas” no significa carpetas `domain/core/features`. Significa scripts chicos, una responsabilidad por pieza, y composición de nodos/Resources. La excepción es solo la división Clean; el resto de lineamientos **no se relaja**.
+En el camino **estándar**, “capas” **no** significa carpetas `domain/core/features` ni scaffoldear Clean. Significa scripts chicos, una responsabilidad por pieza, y composición de nodos/Resources. El bullet de capas de arriba aplica al camino Clean; en estándar no se inventa `src/domain/`.
 
 ## 1. Elegir estilo (obligatorio)
 
 **Preguntar siempre** al usuario, con AskQuestion si está disponible, **antes** de crear carpetas, autoloads o una feature que fije la forma del proyecto.
 
-Opciones:
+1. **Clean / en capas** — `features → core → domain`. Ver [clean.md](clean.md).
+2. **Estándar Godot** — escenas + scripts junto a la escena. Ver [standard.md](standard.md).
 
-1. **Clean / en capas** — `features → core → domain`. Reglas en `RefCounted` sin `Node`. Fachada de sesión + eventos. Ver [clean.md](clean.md).
-2. **Estándar Godot** — escenas + scripts junto a la escena, sin capas domain/core. Misma calidad de código. Ver [standard.md](standard.md).
+No preguntar de nuevo si: el usuario ya eligió en este chat; pidió un estilo por nombre; o el repo **ya lo declara** **y** el trabajo es sobre ese mismo juego.
 
-Prompt sugerido:
+Si no hay respuesta, **no** scaffoldear `src/domain/` ni un `scripts/` gigante.
 
-> ¿Qué arquitectura querés para este proyecto / este cambio?
-> - Clean (domain / core / features)
-> - Estándar (escenas y scripts; sin capas Clean)
-
-No preguntar de nuevo si: el usuario ya eligió en este chat; pidió un estilo por nombre; o el repo **ya lo declara** (AGENTS.md / README) **y** el trabajo es sobre ese mismo juego (no un título nuevo).
-
-Si el usuario no responde aún, **no** scaffoldear `src/domain/` ni un `scripts/` gigante: esperar.
-
-## 2. Lineamientos comunes (los dos caminos)
+## 2. Lineamientos comunes
 
 | Prioridad | En código |
 |-----------|-----------|
-| Composición | Árbol de nodos + packed scenes. No superclase de 800 líneas. |
+| Composición | Árbol + packed scenes. No superclase de 800 líneas. |
 | Editor | Knobs en `@export` y `.tscn`. No pisar el inspector en `_init`/`_ready`. |
-| Resources | Tipos de bala / enemigo / power-up / arma = `class_name` + `.tres` plantilla. Una escena, muchos datos. Ver [resources.md](../godot-composition-first/resources.md). |
+| Resources | Tipos de contenido = `class_name` + `.tres`. Una escena, muchos datos. |
 | Reuso | Extraer a `shared/` o `addons/` al segundo caller. |
-| Scripts chicos | Una responsabilidad. Si crece, hijo o componente, no “un if más”. |
-| Señales | Hijo → padre con signals. Padre llama API del hijo. Entre sistemas no relacionados: bus de eventos, no `get_node("../../")`. |
+| Scripts chicos | Una responsabilidad. Si crece, hijo o componente. |
+| Señales | Nombre en **pasado**, tipadas (`signal died(who: Node)`). El padre conecta; el hijo no nombra al padre. |
 
-Autoloads solo para servicios de verdad globales (eventos, audio, cambio de escena, MpKit). Un spawner o el puntaje de *esta* partida no es un singleton eterno.
+### Escenas autónomas (docs Godot)
+
+Diseñá cada packed scene para correr **sola** (F6). Sin deps externas. Si necesita al mundo: el **padre inyecta** (`@export var health: Health`). SceneTree es **relacional**, no espacial: hijo solo si al borrar el padre debe borrarse el hijo; si no, sibling + `RemoteTransform2D`/`RemoteTransform3D`. Split típico: `Main` persistente, `World` (se swapean niveles), `GUI` hermana (no se borra con el nivel).
+
+### Dónde vive el dato (no todo es autoload)
+
+| Qué | Usar | No |
+|-----|------|-----|
+| Dato de tipo / catálogo | `class_name` `Resource` + `.tres` | Autoload con stats |
+| Helpers puros | `class_name` + `static func` | Singleton vacío |
+| Comportamiento de un actor | Nodo `class_name` hijo / packed scene | Manager global |
+| Servicio global, aislado, sobrevive `change_scene` | Autoload (MpKit, bus de eventos) | Autoload que guarda nodos visuales o el puntaje de *esta* ronda |
+| Puntaje / vidas de *esta* partida | Nodo `Match` (o sesión Clean si sobrevive el cambio de escena) | `ScoreManager` eterno |
 
 UI en el idioma del producto; identificadores de código en inglés.
 
@@ -65,38 +68,34 @@ UI en el idioma del producto; identificadores de código en inglés.
 
 | Cosa | Dónde |
 |------|--------|
-| Catálogo de tipos (plasma vs spread, grunt vs tank, slow-time vs shield) | **Resource** `.tres` (plantilla). Una clase de datos, N archivos. |
-| Look de *esta* instancia en *esta* escena | `@export` en el nodo / material |
-| Reglas de partida compartidas host/guest (duración, vidas, layers) | Clean: `GameConstants` o un `MatchRules.tres`. Estándar: un Resource de reglas o constantes únicas — no literales copiados. |
-| HP actual, cooldown en curso, combo | Estado **runtime** en el nodo o tracker; **no** mutar el `.tres` de definición |
+| Catálogo de tipos (proyectil A vs B, enemigo scout vs tank) | **Resource** `.tres` |
+| Look de *esta* instancia | `@export` en el nodo / material |
+| Reglas de ronda (duración, vidas, layers) | `MatchRules.tres` (o constantes únicas). No literales copiados. |
+| HP actual, cooldown en curso | Runtime en el nodo; **no** mutar el `.tres` |
 
 ## 4. Cómo agregar una feature
 
-Clasificar antes del sprite. Checklist: [adding-features.md](adding-features.md).
+Checklist: [adding-features.md](adding-features.md). Tests: [godot-testing](../godot-testing/SKILL.md).
 
 | Tipo | Dueño | Ejemplos |
 |------|--------|----------|
-| **A. Input** | Cliente lee; host aplica | puntero, disparar |
+| **A. Input** | Cliente lee; host aplica | acciones InputMap |
 | **B. Simulación** | Solo host si hay red | proyectil, enemigo |
-| **C. Estado de partida** | Clean: sesión/domain. Estándar: nodo de match chico, no el World dios | munición, combo |
-| **D. Presentación** | Local, sin RPC de daño | flash, post-proceso |
+| **C. Estado de partida** | Sesión Clean o nodo Match | munición, vidas |
+| **D. Presentación** | Local | flash, post-proceso |
 | **E. UI** | HUD / menús | icono cooldown |
-| **F. Definición de tipo** | Resource plantilla | `plasma.tres`, `grunt.tres` |
+| **F. Definición de tipo** | Resource plantilla | `projectile_fast.tres` |
 
 ## 5. IDs (si hay multiplayer)
 
-- **Slot lógico**: key de score/vidas/HUD.
-- **Peer ENet**: solo RPC y authority.
+Slot lógico = HUD/vidas. Peer ENet = solo RPC. HUD: `MpKit.local_slot()`.
 
-HUD: `MpKit.local_slot()`, nunca `get_unique_id()`.
+## Anti-patrones
 
-## Anti-patrones (ambos caminos)
-
-- `World.gd` / `Arena.gd` que pinta, spawnea, puntúa y cambia de escena.
-- `if bullet_kind == "plasma"` en el proyectil en vez de un `.tres`.
-- Mutar un Resource compartido (`data.damage = 3`) y romper todas las instancias.
+- `World.gd` que pinta, spawnea, puntúa y cambia de escena.
+- `if kind == "fast"` en el proyectil en vez de un `.tres`.
+- Mutar un Resource compartido (`data.damage = 3`).
 - Feature nueva por herencia profunda.
-- Literales de negocio copiados (`60`, `3`, `7777`).
-- Copiar un componente en vez de extraerlo.
+- Autoload para algo que es un nodo o un Resource.
 
-Ejemplos de código genéricos: [examples.md](examples.md).
+Ejemplos: [examples.md](examples.md).

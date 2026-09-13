@@ -28,6 +28,8 @@ Aplicá solo las secciones y controles que correspondan a ese tipo. Para una lib
 
 Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir debe ser visible y auditable, nunca silencioso: un "no se identificaron vectores de inyección SQL" generado en una librería que no tiene SQL fabrica falsa confianza.
 
+En un **juego Godot**: cargar la skill `godot-testing`. GUT para GDScript, GdUnit4 para C#. Preferí `godot --headless` + el runner del proyecto. Omití API/DB/auth/cross-browser salvo que el título los tenga. Feel = playtest, no un assert de shader.
+
 Para una librería de funciones puras, la mayoría de las secciones 2-6 de abajo no aplicarán; los equivalentes útiles son corrección numérica, inmutabilidad de datos que pertenecen al caller, determinismo, superficie de API, tamaño del bundle y cadena de suministro. Reemplazá las secciones inaplicables en lugar de rellenarlas.
 
 ## Secciones del plan de tests

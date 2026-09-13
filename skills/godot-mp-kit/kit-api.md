@@ -10,7 +10,7 @@ Archivos (`res://addons/mp_kit/`):
 | `mp_authority.gd` | `class_name MpAuthority` — authority, freeze, synchronizer |
 | `plugin.cfg` | Visibilidad en el editor. El autoload real vive en `project.godot`. |
 
-Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` ni `submit_impulse`.
+Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` ni `submit_action`.
 
 ## Install
 

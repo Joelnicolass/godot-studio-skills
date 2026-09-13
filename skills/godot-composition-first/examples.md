@@ -2,26 +2,25 @@
 
 Nada de un título concreto. Copiá y adaptá.
 
-## Pawn como contenedor
+## Actor como contenedor
 
 ```
-Pawn (RigidBody2D)
-├── Hull          Polygon2D / Sprite2D
-├── Trail         packed scene reusable
-├── Feedback      preview de fuerza / aim
-├── States        StateMachine
-│   ├── Coasting
-│   ├── Aiming
-│   └── Eliminated
+Actor (CharacterBody2D)
+├── Visual         Sprite2D
+├── Health         packed scene
+├── States         StateMachine
+│   ├── Idle
+│   ├── Move
+│   └── Hurt
 └── MultiplayerSynchronizer
 ```
 
 ```gdscript
-# states/state_machine.gd
 class_name StateMachine
 extends Node
 
 @export var initial_state: State
+@export var actor: Node
 
 var _current: State
 
@@ -41,27 +40,28 @@ func transition(state_name: StringName) -> void:
 	_current.enter()
 ```
 
+## Socket `@export` + UniqueName
+
+```gdscript
+@export var health: Health
+@onready var sprite: Sprite2D = %Sprite2D
+
+
+func _get_configuration_warnings() -> PackedStringArray:
+	if health == null:
+		return PackedStringArray(["Assign a Health component."])
+	return PackedStringArray()
+```
+
 ## Resource de tipo + una escena
 
 ```gdscript
-class_name BulletData
+class_name ProjectileData
 extends Resource
 
-@export var display_name: String = "Plasma"
+@export var display_name: String = "Default"
 @export var damage: int = 1
-@export var speed: float = 520.0
-@export var lifetime_sec: float = 1.4
+@export var speed: float = 400.0
 ```
 
-```gdscript
-# bullet.gd
-extends Area2D
-
-@export var data: BulletData
-
-
-func _ready() -> void:
-	assert(data != null)
-```
-
-Un `plasma.tres` y un `spread.tres` apuntan a la misma `bullet.tscn`.
+Un `projectile_fast.tres` y un `projectile_slow.tres` apuntan a la misma `projectile.tscn`.

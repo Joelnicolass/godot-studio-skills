@@ -4,7 +4,7 @@ description: >-
   Implementa multiplayer host-authoritative en Godot 4 con el addon informal
   MpKit (ENet, slots, handshake, snapshots) más glue del juego. Usar al copiar
   addons/mp_kit, host/join LAN, RPCs submit_*, MultiplayerSpawner, 1P offline,
-  rejoin, autoridad de RigidBody, o al extraer netcode a otro proyecto.
+  rejoin, o al extraer netcode a otro proyecto.
 ---
 
 # Godot — MpKit y multiplayer
@@ -29,7 +29,7 @@ En red eso se traduce a:
 | Prioridad | En MpKit / glue |
 |-----------|-----------------|
 | Capas | `addons/mp_kit` no nombra sesión, escenas, copy ni puntaje. Dedicated server futuro = reemplazar el addon. |
-| Composición | Transport (kit) + glue (cuándo empieza la ronda) + `GameSession` + pawns con `submit_*`. No un `NetworkManager.gd` de 2000 líneas. |
+| Composición | Transport (kit) + glue + (`GameSession` **o** nodo Match) + actores con `submit_*`. No un `NetworkManager.gd` de 2000 líneas. |
 | Editor | Spawners, replication config y escenas de pawn se arman como nodos. El kit no genera el mundo. |
 | Reuso | Copiar el addon canónico de este framework. El juego escribe glue + dominio; no forks del kit por título. |
 
@@ -47,7 +47,7 @@ Copiar `addons/mp_kit/` → autoload `MpKit`.
 
 **Hace:** ENet host/join/leave, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco, signals de sesión.
 
-**No hace:** score, combo, `change_scene`, copy, input de pawn, interpolación avanzada, Steam/WebRTC, “cuándo empieza la partida”.
+**No hace:** score, `change_scene`, copy, input de actor, interpolación avanzada, Steam/WebRTC, “cuándo empieza la partida”.
 
 Si metés puntaje en `mp_kit.gd`, el kit deja de ser portable.
 
@@ -66,7 +66,7 @@ Cliente: `apply_snapshot` **apaga** el tick de simulación de la sesión. El gue
 
 ## Input y autoridad
 
-Pawns: el servidor es authority. Proxies `RigidBody2D` se freezan en kinematic (`MpAuthority.freeze_rigid_proxy`).
+Actores: el servidor es authority. Si el body es `RigidBody2D`/`RigidBody3D`, los proxies se freezan (`MpAuthority.freeze_rigid_proxy`). No asumas RigidBody en todo pawn.
 
 ```
 if MpAuthority.should_send_command():
@@ -109,7 +109,7 @@ Rejoin: no resetear score; snapshot + `load_world_to` + re-parent de hijos del s
 ## Snapshots vs transforms
 
 - Posición/rotación/visible: `MultiplayerSynchronizer` (`MpAuthority.ensure_sync`).
-- Timer/score/vidas: `GameSession.to_snapshot()` a 2–10 Hz vía `MpKit.push_snapshot`.
+- Timer/score/vidas: `to_snapshot()` a 2–10 Hz vía `MpKit.push_snapshot` (Timer, no cada frame de `_process`).
 - Eventos discretos (`+N` flotante): RPC `authority` en un nodo **vuestro**, no en MpKit.
 
 No metas 40 posiciones de props en el dict si ya van por synchronizer.

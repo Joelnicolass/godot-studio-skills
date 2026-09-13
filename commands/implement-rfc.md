@@ -2,7 +2,7 @@ RFC objetivo: el ID provisto después de este comando en mi mensaje — sustitui
 
 Si está cargada la skill `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo: `studio-tech-lead` (plan) → aprobación → `studio-developer` → `studio-reviewer`. Tester y visual solo si el usuario o RULES.md lo piden. Un RFC por vez.
 
-Cargar `godot-layered-architecture` y `godot-composition-first`. Si hay red: `godot-mp-kit`.
+Cargar `godot-layered-architecture` y `godot-composition-first`. Si hay red: `godot-mp-kit`. Si hay tests: `godot-testing`.
 
 # Prompt de implementación para RFC-[ID]: [Título]
 

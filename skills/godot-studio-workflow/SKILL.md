@@ -12,7 +12,7 @@ description: >-
 
 El **agente principal de este chat** es el orquestador. Habla con el usuario. No descarga el producto entero en un solo subagente.
 
-Objetivo: un juego Godot 4 con **base chica y clara**, fácil de seguir a mano o con IA. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables. Cargar también [godot-layered-architecture](../godot-layered-architecture/SKILL.md) y [godot-composition-first](../godot-composition-first/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md).
+Objetivo: un juego Godot 4 con **base chica y clara**, fácil de seguir a mano o con IA. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables. Cargar también [godot-layered-architecture](../godot-layered-architecture/SKILL.md) y [godot-composition-first](../godot-composition-first/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md) (GUT / GdUnit4) **solo** si el usuario los pide o RULES los exige.
 
 Roles (subagentes del kit; `Task` con `subagent_type` = su `name`):
 
