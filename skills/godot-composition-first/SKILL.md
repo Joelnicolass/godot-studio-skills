@@ -6,8 +6,8 @@ description: >-
   sockets, %UniqueName, InputMap, and editor values over hardcoding. Prefer
   reusing components in shared/addons. Use when creating or editing .tscn,
   GDScript, shaders (Godot Shaders / Shadertoy), 2D sprites (Aseprite MCP),
-  FSM, HUD, or choosing between inheritance, constants, Resources, and the
-  inspector.
+  3D models (Blender MCP), FSM, HUD, or choosing between inheritance,
+  constants, Resources, and the inspector.
 ---
 
 # Godot — composition, editor, and reuse
@@ -101,6 +101,8 @@ Shaders: one effect, one file. **Do not invent** the FX if a catalog exists: [Go
 
 2D sprites: **ask** if they want MCP/sprites and ask for **references**. Skill [godot-animation](../godot-animation/SKILL.md). If yes: [Aseprite](https://github.com/diivi/aseprite-mcp) MCP ([assets.md](assets.md)). If no: placeholder. Do not invent a sprite.
 
+3D: **ask** if they want the [Blender](https://www.blender.org/lab/mcp-server/) MCP. If yes: install it, ask for references, export `.glb`. If no: placeholder. Details in [assets.md](assets.md).
+
 ## 6. How to implement a component
 
 1. Small packed scene + `class_name`.
@@ -126,6 +128,6 @@ Shaders: one effect, one file. **Do not invent** the FX if a catalog exists: [Go
 - [ ] InputMap, not scancodes?
 - [ ] Variants = Resources?
 - [ ] Does the scene run with F6?
-- [ ] Catalog shader or documented port? 2D sprite: user OK + references + Aseprite, or placeholder?
+- [ ] Catalog shader or documented port? 2D sprite: user OK + references + Aseprite, or placeholder? 3D: OK + Blender MCP + `.glb`, or placeholder?
 
 Patterns: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Assets: [assets.md](assets.md). Code: [examples.md](examples.md).

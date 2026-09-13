@@ -14,11 +14,11 @@ State which product type you classified and which checks you skipped. Skipping m
 
 The file is still named `PRD.md` (the other commands look for it), but the content is a **short living GDD**, not a SaaS PRD.
 
-Ask and document: fantasy and pillars, non-goals, core loop, feel (camera, juice, how-to-fail), session length, platforms, input devices, **multiplayer type** (none · local/Wi-Fi · online), playable vertical slice.
+Ask and document: fantasy and pillars, non-goals, core loop, feel (camera, juice, how-to-fail), session length, platforms, input devices, **2D / 3D / both**, **multiplayer type** (none · local/Wi-Fi · online), playable vertical slice.
 
 Skip unless the user asks: business model, SQL/injection, user auth, responsive web, REST APIs, marketing personas. Instead: loop, feel, content (types as data), and what is out of the first slice.
 
-Ask Clean vs standard if it is not already in RULES.md / this chat (see skill `godot-layered-architecture`). Ask MP type if it is not already (see `godot-mp-kit`): no MP → do not copy the addon; local/Wi-Fi = current MpKit; online = the kit must be expanded.
+Ask Clean vs standard if it is not already in RULES.md / this chat (see skill `godot-layered-architecture`). Ask MP type if it is not already (see `godot-mp-kit`): no MP → do not copy the addon; local/Wi-Fi = current MpKit; online = the kit must be expanded. Ask 2D/3D: Aseprite MCP only with OK; if 3D, ask and install the Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) only with OK + references.
 
 Once you feel you have gathered sufficient details, create a structured PRD that includes (but is not limited to):
 

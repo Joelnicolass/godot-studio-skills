@@ -41,6 +41,6 @@ Do **not** install Aseprite MCP, do **not** call Aseprite tools, and do **not** 
 
 In Aseprite (MCP): palette and silhouette first (12, 11). Key poses (4), squash on impact (1), anticipation frame (2), ease at the extremes (6), curved path (7), hair/cloth a frame late (5), one extra detail that does not compete (8), frame duration = weight (9), a stronger pose than real life (10). The clip reads on its own (3). `export_frame` at 8×; onion skin between poses.
 
-In Godot: spritesheet / `SpriteFrames` → `AnimatedSprite2D`. Node motion (camera, scale squash, arcs) → `AnimationPlayer` with interpolation. Do not animate gameplay inside another pass’s shader.
+In Godot: spritesheet / `SpriteFrames` → `AnimatedSprite2D`. Node motion (camera, scale squash, arcs) → `AnimationPlayer` with interpolation. 3D: mesh/animation from Blender MCP (only with OK) exported to `.glb`; same principles (1–12) on poses and curves. Do not animate gameplay inside another pass’s shader.
 
 One cycle = one tag / one `SpriteFrames` animation. Idle is not a single frozen frame if the character should feel alive (8, 9).

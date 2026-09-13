@@ -13,7 +13,7 @@ description: >-
 
 Base for Godot 4 games (GDScript). Two styles are valid. The agent **does not assume Clean**.
 
-Always also load [godot-composition-first](../godot-composition-first/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md). Multiplayer: **ask** (none / local-Wi-Fi / online) — [godot-mp-kit](../godot-mp-kit/SKILL.md) only if there is MP. A new title or RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
+Always also load [godot-composition-first](../godot-composition-first/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md). Multiplayer: **ask** (none / local-Wi-Fi / online) — [godot-mp-kit](../godot-mp-kit/SKILL.md) only if there is MP. 2D/3D: **ask**; if 3D, Blender MCP only with OK. A new title or RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
 
 ## Priorities (always)
 

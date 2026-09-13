@@ -2,7 +2,7 @@
 name: godot-studio-workflow
 description: >-
   Orchestrates a Godot 4 game from idea to a simple scalable base: interviews
-  the user (Clean vs standard, and multiplayer: none / local-Wi-Fi / online),
+  the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP),
   runs product commands (PRD, features, rules, RFCs), researches when needed,
   then delegates tech-lead / developer / reviewer (optional tester and visual).
   Use when starting a game, a Godot project, PRD, RFC, feature implementation,
@@ -37,16 +37,19 @@ Order:
    - **Local / Wi-Fi** (same device or LAN) — **current** MpKit (ENet listen-server).
    - **Online** (internet, NAT, matchmaking) — the current kit is **not enough**. **Expand MpKit** (transport: relay, WebRTC, Steam/EOS, dedicated server). Glue and `submit_*` stay; do not pretend LAN is online.
    No answer: do not copy the addon.
-3. `/create-prd` → `PRD.md` (for games: a short GDD; see that command). Document the MP type.
-4. `/verify-prd`
-5. `/extract-features` → `FEATURES.md`
-6. `/generate-rules` → `RULES.md` (must cite these skills; `godot-mp-kit` only if there is MP)
-7. `/generate-rfcs` — first RFC = playable vertical slice, not endless infra. If they chose **online**, an RFC to expand transport in the addon (not mixed with gameplay).
-8. `/test-strategy` only if the user wants tests or the PRD asks for them
-9. Implement RFC by RFC with the pipeline below
-10. `/workflow-status` when they ask where things stand
+3. 2D / 3D — **ask** (or both).
+   - **2D**: sprites via Aseprite MCP **only** if the user wants (references). Skill [godot-animation](../godot-animation/SKILL.md).
+   - **3D**: **ask** if they want the Blender MCP ([official docs](https://www.blender.org/lab/mcp-server/)). If yes: install it, ask for references, export `.glb` into the game. If no: 3D placeholder. Guide: [assets.md](../godot-composition-first/assets.md).
+4. `/create-prd` → `PRD.md` (for games: a short GDD; see that command). Document MP type and 2D/3D.
+5. `/verify-prd`
+6. `/extract-features` → `FEATURES.md`
+7. `/generate-rules` → `RULES.md` (must cite these skills; `godot-mp-kit` only if there is MP)
+8. `/generate-rfcs` — first RFC = playable vertical slice, not endless infra. If they chose **online**, an RFC to expand transport in the addon (not mixed with gameplay).
+9. `/test-strategy` only if the user wants tests or the PRD asks for them
+10. Implement RFC by RFC with the pipeline below
+11. `/workflow-status` when they ask where things stand
 
-Research (Godot API, a pattern, an addon, a shader): `explore` subagent or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references; skill [godot-animation](../godot-animation/SKILL.md). The orchestrator summarizes; do not paste dumps.
+Research (Godot API, a pattern, an addon, a shader): `explore` subagent or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references; skill [godot-animation](../godot-animation/SKILL.md). If **3D**: **ask** and install the Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) only with OK + references. The orchestrator summarizes; do not paste dumps.
 
 Mid-work scope changes: `/manage-changes`.
 
@@ -78,7 +81,7 @@ Do not launch developer and reviewer in parallel on the same RFC. Tech-lead on i
 - Treat ENet LAN as internet multiplayer.
 - Put score, copy, or title netcode in `addons/mp_kit`.
 - Tests or visual passes if the user did not ask and RULES does not require them.
-- Install MCP or create sprites without asking, or draw without references.
+- Install MCP (Aseprite or Blender) or create art without asking, or draw/model without references.
 
 ## 4. Done when
 

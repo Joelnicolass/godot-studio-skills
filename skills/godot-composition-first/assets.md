@@ -1,6 +1,6 @@
-# Assets — shaders and 2D sprites
+# Assets — shaders, 2D and 3D
 
-Do not invent art or FX from memory when a catalog or tool exists. The game (PNG, `.gdshader`) lives in the **Godot project**, not in this framework.
+Do not invent art or FX from memory when a catalog or tool exists. The game (PNG, `.gdshader`, `.glb`) lives in the **Godot project**, not in this framework.
 
 ## Shaders
 
@@ -60,3 +60,28 @@ In Cursor → Settings → MCP, or in `~/.cursor/mcp.json` / the **game’s** `.
 On macOS `uv` is often `/opt/homebrew/bin/uv`. Open a **new** chat after saving.
 
 If the MCP does not start: do not fake the sprite; say what is missing (Aseprite, path, uv) and use a `PlaceholderTexture2D` **only** until the user enables it.
+
+## 3D models (Blender MCP)
+
+Official source: [MCP Server — Blender](https://www.blender.org/lab/mcp-server/).
+
+**Ask first** (only if the game is **3D** or 2D+3D). Do not install the Blender MCP or run code in the scene until the user says yes. Ask for **references** (images, concepts, scale, poly budget, style). Without OK: `PlaceholderMesh` / a box and continue with code.
+
+If they said yes:
+
+1. Install and configure the official MCP (below). Blender must be **open** with the add-on started.
+2. Model / tweak in Blender via MCP. Export **glTF 2.0** (`.glb`) to `res://assets/…` in the game.
+3. In Godot: `MeshInstance3D` / packed scene. Do not leave the `.blend` as the only runtime asset.
+
+The server executes LLM-generated Python **with no** sandbox. Do not use it on files with sensitive data. Prefer a working copy.
+
+### Install the Blender MCP
+
+Official requirements: **Blender 5.1 or newer**, Lab add-on, MCP client (Cursor), MCP server.
+
+1. Blender → Edit → Preferences → Extensions → Get Extensions. Search **MCP** / Blender Lab and install the official add-on. (Drag & drop the Lab repo: twice — first the repository, then the add-on.)
+2. In the add-on preferences: **Start MCP Server** (typically `localhost:9876`).
+3. In Cursor: Settings → MCP. If the client accepts **`.mcpb`**, download the bundle from the [release / docs page](https://www.blender.org/lab/mcp-server/) and add it. Otherwise follow the *setup instructions* on that same page (do not use a community `uvx blender-mcp`: it is a **different** protocol).
+4. **New** chat. Confirm Blender tools appear. If not: Blender open + server started + reload MCP.
+
+If it does not start: do not invent a mesh; say what is missing (5.1, add-on, server, Cursor MCP).

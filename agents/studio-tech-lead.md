@@ -17,7 +17,7 @@ When invoked:
 2. Honor the architecture style already declared (Clean or standard). Do not change it.
 3. Composition first: child nodes, packed scenes, `@export`, types in `.tres`. No god-nodes.
 4. Honor the MP type already declared: **no MP** → do not copy the addon or invent RPCs. **Local / Wi-Fi** → current MpKit, host-authoritative; game glue, not the addon. **Online** → **expand** MpKit transport (ENet LAN is not enough); gameplay and `submit_*` stay out of the addon.
-5. Art: shaders from Godot Shaders / Shadertoy (pass packed scene). 2D sprites: **only if the user wants** Aseprite MCP; ask for references. Plan animation with [godot-animation](../skills/godot-animation/SKILL.md). Without OK: placeholder.
+5. Art: shaders from Godot Shaders / Shadertoy (pass packed scene). 2D sprites: **only if the user wants** Aseprite MCP; ask for references. If **3D**: **only if the user wants** Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)); ask for references; export `.glb`. Plan animation with [godot-animation](../skills/godot-animation/SKILL.md). Without OK: placeholder.
 
 Deliver:
 
