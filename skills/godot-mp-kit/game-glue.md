@@ -3,9 +3,11 @@
 El kit no es tu juego. Mínimo dos piezas (pueden ser autoloads o un solo `NetGlue.gd` en un título chico):
 
 1. **Flow** — escucha `load_world`, `snapshot_received`, `session_ended`, `server_lost`. Cambia escenas.
-2. **Lobby / policy** — `host()`/`join()`, cuándo `GameSession.start`, handshake de spawn.
+2. **Lobby / policy** — `host()`/`join()`, cuándo arranca la ronda, handshake de spawn.
 
-Orden de autoload sugerido: `MpKit` → `GameSession` → `SceneDirector` → glue de red.
+Clean: `GameSession` + `SceneDirector`. Estándar: un nodo `Match` en el mundo (o glue único). El kit no cambia.
+
+Orden de autoload sugerido: `MpKit` → (sesión si Clean) → flow → glue de red.
 
 ## Configurar
 

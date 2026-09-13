@@ -31,10 +31,20 @@ PostFxStack (CanvasLayer, layer alta)
 
 `@export_tool_button` para regenerar geometría (anillos, meshes). El preview no escribe `GameConstants` ni arranca ENet.
 
+## Plantilla Resource + escena
+
+```
+bullet.tscn          # RigidBody/Area + script delgado
+plasma.tres          # BulletData { damage, speed, scene? }
+spread.tres
+```
+
+El arma exporta `BulletData`. Spawnea `data.scene` (o la escena única) y asigna `data`. Guía: [resources.md](resources.md).
+
 ## Cuándo sí va en código
 
-- Layers de física compartidas con el dominio (máscaras que el anti-cheat asume).
+- Layers de física compartidas con las reglas (máscaras que el anti-cheat asume).
 - Autoridad multiplayer (`claim_server`, freeze del proxy).
-- Valores que **deben** ser idénticos en host y guest para reglas (impulso máximo, duración).
+- Valores de **ronda** idénticos en host y guest (duración, vidas).
 
-Todo lo demás: escena.
+Tipos de contenido: Resource. Look de instancia: escena. Runtime: nodo.

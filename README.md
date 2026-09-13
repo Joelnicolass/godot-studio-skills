@@ -6,7 +6,7 @@ Repo: https://github.com/Joelnicolass/godot-studio-skills
 
 | Pieza | Dónde | Qué es |
 |-------|--------|--------|
-| Capas / composición / MP | `skills/` | Instrucciones para el agente |
+| Arquitectura (Clean **o** estándar; **preguntar**) / composición / Resources / MP | `skills/` | Instrucciones para el agente |
 | MpKit | `addons/mp_kit/` | Plugin Godot: transporte, slots, RPCs de sesión. Cero gameplay |
 
 Qué **no** entra en este repo: puntaje, naves, CRT, copy, `GameSession`, `SceneDirector`. Eso es glue del título.

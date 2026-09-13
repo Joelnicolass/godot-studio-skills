@@ -1,19 +1,20 @@
 ---
 name: godot-layered-architecture
 description: >-
-  Aplica arquitectura en capas para juegos Godot 4 (GDScript): domain RefCounted
-  sin Node, core autoloads, features como nodos/escenas. Prioriza capas
-  escalables, composición, configuración en el editor y componentes reutilizables.
-  Usar al crear o modificar un proyecto Godot, GDScript, escenas, reglas de
-  partida, MatchSession/GameSession, GameEvents, features, HUD o al arrancar un
-  juego nuevo con esta base.
+  Elige y aplica arquitectura Godot 4 (GDScript): Clean en capas (domain
+  RefCounted, core autoloads, features) o estándar por escenas y scripts
+  pequeños. Siempre pregunta al usuario cuál usar. Prioriza composición,
+  Resources (.tres) para tipos de balas/enemigos/power-ups, editor y
+  componentes reutilizables. Usar al crear o modificar un proyecto Godot,
+  GDScript, escenas, reglas de partida, GameSession, GameEvents, features,
+  HUD o al arrancar un juego nuevo.
 ---
 
-# Godot — arquitectura en capas
+# Godot — arquitectura
 
-Base extraída de un listen-server 1P/LAN (Godot 4, GDScript). El juego de origen es solo el ejemplar: los nombres (`MatchSession`, `GameEvents`) se adaptan; las capas no.
+Base para juegos Godot 4 (GDScript). Hay **dos estilos** válidos. El agente **no asume Clean**.
 
-Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md). Si hay red, LAN, RPC o `MpKit`, cargar [godot-mp-kit](../godot-mp-kit/SKILL.md).
+Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md) (incluye Resources). Si hay red: [godot-mp-kit](../godot-mp-kit/SKILL.md).
 
 ## Prioridades (siempre)
 
@@ -24,108 +25,76 @@ Siempre se priorice:
 - siempre tienen prioirdad los nodos y las configuraciones sobre el editor
 - siempre se debe dar prioridad a la reusabilidad de los componenetes
 
-Operación (sin excepciones de conveniencia):
+En el camino **estándar**, “capas” no significa carpetas `domain/core/features`. Significa scripts chicos, una responsabilidad por pieza, y composición de nodos/Resources. La excepción es solo la división Clean; el resto de lineamientos **no se relaja**.
 
-| Prioridad | Significa en código |
-|-----------|---------------------|
-| Capas limpias | Dependencias solo hacia adentro. Una feature nueva no “ataja” reglas en el nodo. |
-| Composición | Escena = árbol de componentes. No una superclase de 800 líneas. |
-| Editor | Knobs de look/feel en `@export` y en el `.tscn`. No pisar el inspector desde constantes en `_init`/`_ready`. |
-| Reuso | Extraer a `src/shared/` (o `addons/`) en cuanto un segundo caller lo necesite. Copiar-pegar un pass/FX/util es un fallo. |
+## 1. Elegir estilo (obligatorio)
 
-## Capas
+**Preguntar siempre** al usuario, con AskQuestion si está disponible, **antes** de crear carpetas, autoloads o una feature que fije la forma del proyecto.
 
-```
-features (Nodes, .tscn, física, RPCs de pawn, spawners)
-    → core (autoloads: sesión, eventos, director de escenas, glue de red)
-        → domain (RefCounted: reglas de partida)
-```
+Opciones:
 
-```
-src/
-  core/autoload/     # GameConstants, GameEvents, GameSession, SceneDirector
-  domain/            # trackers y resolvers puros
-  features/<name>/   # una carpeta por feature: scripts + escenas juntas
-  shared/            # Wrap, StateMachine, PostFx, copy, utils sin reglas
-addons/              # MpKit y plugins del framework (cero gameplay).
-                     # Canónico: Joelnicolass/godot-studio-skills/addons/
-```
+1. **Clean / en capas** — `features → core → domain`. Reglas en `RefCounted` sin `Node`. Fachada de sesión + eventos. Ver [clean.md](clean.md).
+2. **Estándar Godot** — escenas + scripts junto a la escena, sin capas domain/core. Misma calidad de código. Ver [standard.md](standard.md).
 
-Nombres genéricos: `GameSession` (fachada), `GameEvents` (bus), `SceneDirector` (flow). En el ejemplar: `MatchSession`.
+Prompt sugerido:
 
-### Domain (`src/domain/`)
+> ¿Qué arquitectura querés para este proyecto / este cambio?
+> - Clean (domain / core / features)
+> - Estándar (escenas y scripts; sin capas Clean)
 
-- `extends RefCounted` (o `class_name` sobre RefCounted). Se instancia con `new()`.
-- Prohibido: `Node`, `Input`, `MultiplayerAPI`, `get_tree()`, `@rpc`, `await` de señales de escena.
-- Recibe números por constructor. Los tests no leen autoloads.
-- No sabe si hay red ni si hay HUD.
+No preguntar de nuevo si: el usuario ya eligió en este chat; pidió un estilo por nombre; o el repo **ya lo declara** (AGENTS.md / README) **y** el trabajo es sobre ese mismo juego (no un título nuevo).
 
-Ejemplos de unidades: reloj, puntaje, combo, vidas, cooldowns, “¿quién gana?”.
+Si el usuario no responde aún, **no** scaffoldear `src/domain/` ni un `scripts/` gigante: esperar.
 
-### Core
+## 2. Lineamientos comunes (los dos caminos)
 
-- **GameSession**: arma trackers por slot, `start` / `abort`, `submit_*`, `to_snapshot` / `apply_snapshot`. El cliente **apaga** el tick (`set_process(false)`) al aplicar snapshot.
-- **GameEvents**: bus de signals para HUD/FX. Los nodos escuchan; no leen score crudo de la nave.
-- **SceneDirector**: cambia de escena. No puntúa.
-- **GameConstants**: únicos tunables de **negocio y física de reglas** (duración, vidas, layers, impulso máximo). No es un dumping de look.
+| Prioridad | En código |
+|-----------|-----------|
+| Composición | Árbol de nodos + packed scenes. No superclase de 800 líneas. |
+| Editor | Knobs en `@export` y `.tscn`. No pisar el inspector en `_init`/`_ready`. |
+| Resources | Tipos de bala / enemigo / power-up / arma = `class_name` + `.tres` plantilla. Una escena, muchos datos. Ver [resources.md](../godot-composition-first/resources.md). |
+| Reuso | Extraer a `shared/` o `addons/` al segundo caller. |
+| Scripts chicos | Una responsabilidad. Si crece, hijo o componente, no “un if más”. |
+| Señales | Hijo → padre con signals. Padre llama API del hijo. Entre sistemas no relacionados: bus de eventos, no `get_node("../../")`. |
 
-1P es un host local de un jugador: misma sesión que 2P. No dupliques reglas “para solo”.
-
-### Features
-
-Nodos Godot. Pueden tener `@rpc`, física, spawners. **No** guardan puntaje/vidas/timer en variables sueltas del pawn.
+Autoloads solo para servicios de verdad globales (eventos, audio, cambio de escena, MpKit). Un spawner o el puntaje de *esta* partida no es un singleton eterno.
 
 UI en el idioma del producto; identificadores de código en inglés.
 
-### Shared
+## 3. Datos: qué va dónde
 
-Utilidades y componentes de escena sin reglas de partida. Si un FX, wrap, FSM o pass sirve en otro feature o juego, vive acá (o en un addon), no dentro de `features/arena/`.
+| Cosa | Dónde |
+|------|--------|
+| Catálogo de tipos (plasma vs spread, grunt vs tank, slow-time vs shield) | **Resource** `.tres` (plantilla). Una clase de datos, N archivos. |
+| Look de *esta* instancia en *esta* escena | `@export` en el nodo / material |
+| Reglas de partida compartidas host/guest (duración, vidas, layers) | Clean: `GameConstants` o un `MatchRules.tres`. Estándar: un Resource de reglas o constantes únicas — no literales copiados. |
+| HP actual, cooldown en curso, combo | Estado **runtime** en el nodo o tracker; **no** mutar el `.tres` de definición |
 
-## Constantes vs inspector
+## 4. Cómo agregar una feature
 
-- Regla de partida / anti-cheat / física de negocio → `GameConstants` (un literal, un lugar).
-- Apariencia, audio-react, shaders, offsets visuales, “cómo se siente este nodo en esta escena” → `@export` en el componente; el valor canónico es el del editor (`.tscn`).
-- Prohibido: `_copy_defaults_from_constants()` que pise `@export` de look en runtime.
-
-Detalle y patrones de escena: [godot-composition-first](../godot-composition-first/SKILL.md).
-
-## Cómo agregar una feature
-
-Antes de codear, clasificar. Si no entra en una caja, no empieces por el sprite.
+Clasificar antes del sprite. Checklist: [adding-features.md](adding-features.md).
 
 | Tipo | Dueño | Ejemplos |
 |------|--------|----------|
-| **A. Input** | Cada cliente lee control local; el host aplica | swipe, botón disparar |
-| **B. Simulación** | Solo host spawnea, mueve, colisiona | proyectil, enemigo |
-| **C. Estado de partida** | `GameSession` / domain | munición, combo, cooldown |
-| **D. Presentación local** | Cada máquina, sin RPC de daño | flash, CRT, partículas |
-| **E. UI** | HUD / menús | icono de cooldown |
+| **A. Input** | Cliente lee; host aplica | swipe, disparar |
+| **B. Simulación** | Solo host si hay red | proyectil, enemigo |
+| **C. Estado de partida** | Clean: sesión/domain. Estándar: nodo de match chico, no el World dios | munición, combo |
+| **D. Presentación** | Local, sin RPC de daño | flash, CRT |
+| **E. UI** | HUD / menús | icono cooldown |
+| **F. Definición de tipo** | Resource plantilla | `plasma.tres`, `grunt.tres` |
 
-Checklist y pipeline de input: [adding-features.md](adding-features.md).
+## 5. IDs (si hay multiplayer)
 
-## IDs
+- **Slot lógico**: key de score/vidas/HUD.
+- **Peer ENet**: solo RPC y authority.
 
-Dos espacios. Mezclarlos es un bug.
+HUD: `MpKit.local_slot()`, nunca `get_unique_id()`.
 
-- **Slot lógico** (1 = anfitrión / jugador solo, 2..N = invitados): key de score, vidas, HUD.
-- **Peer ENet** (1 = servidor; el cliente puede ser 42 y al rejoin 87): solo para RPC y `set_multiplayer_authority`.
+## Anti-patrones (ambos caminos)
 
-HUD local: `MpKit.local_slot()`, nunca `multiplayer.get_unique_id()`.
-
-## Anti-patrones
-
-- Puntaje o vidas en el pawn / `World.gd` dios.
-- `rpc()` dentro de un tracker de dominio.
-- Cliente que tiquea el reloj o spawnea actores de simulación.
-- Feature nueva como subclase profunda en vez de nodos hijos + signals.
-- Literales de negocio (`60`, `3`, `7777`) copiados en features.
-- Copiar un shader/pass/util a otra feature en vez de extraerlo a `shared/`.
-
-## Checklist de cambio
-
-- [ ] ¿La regla es testeable sin escena? → domain primero.
-- [ ] ¿El nodo solo llama `GameSession.submit_*` y escucha `GameEvents`?
-- [ ] ¿Look/feel está en `@export` / escena, no pisado por código?
-- [ ] ¿El componente nuevo es componible (hijo, packed scene, pass) y no un `if genre ==` en una clase existente?
-- [ ] ¿1P usa el mismo camino que el host LAN?
-- [ ] Si hay red: allowlist `submit_*`, autoridad host, ver skill MpKit.
+- `World.gd` / `Arena.gd` que pinta, spawnea, puntúa y cambia de escena.
+- `if bullet_kind == "plasma"` en el proyectil en vez de un `.tres`.
+- Mutar un Resource compartido (`data.damage = 3`) y romper todas las instancias.
+- Feature nueva por herencia profunda.
+- Literales de negocio copiados (`60`, `3`, `7777`).
+- Copiar un componente en vez de extraerlo.

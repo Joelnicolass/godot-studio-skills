@@ -12,7 +12,9 @@ description: >-
 
 Patrón listen-server: **un simulador (host)**. El invitado manda intenciones y pinta copias. El addon es pequeño a propósito: tubería reusable, cero gameplay.
 
-Arquitectura de capas: [godot-layered-architecture](../godot-layered-architecture/SKILL.md). Nodos/FX: [godot-composition-first](../godot-composition-first/SKILL.md).
+Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** Clean vs estándar; no asumir capas). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md).
+
+Tipos de pawn/proyectil/enemigo: Resource `.tres` en el actor, no un RPC por `kind` string.
 
 ## Prioridades (siempre)
 
