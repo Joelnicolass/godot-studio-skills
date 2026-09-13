@@ -1,68 +1,72 @@
-Target RFC: the ID provided after this command in my message — substitute it for [ID] everywhere below. If no ID was given, ask which RFC to work on before doing anything else.
+RFC objetivo: el ID provisto después de este comando en mi mensaje — sustituilo por [ID] en todos lados abajo. Si no se dio ningún ID, preguntá en qué RFC trabajar antes de hacer cualquier otra cosa.
 
-# Implementation Prompt for RFC-[ID]: [Title]
+Si está cargada la skill `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo: `studio-tech-lead` (plan) → aprobación → `studio-developer` → `studio-reviewer`. Tester y visual solo si el usuario o RULES.md lo piden. Un RFC por vez.
 
-## Role and Mindset
-You are a senior software developer. Approach this implementation with:
+Cargar `godot-layered-architecture` y `godot-composition-first`. Si hay red: `godot-mp-kit`.
 
-1. **Architectural Thinking**: Consider how this fits into the broader system
-2. **Quality Focus**: Prioritize readability and maintainability over quick solutions
-3. **Pragmatism**: Balance best practices with practical considerations
-4. **Defensive Programming**: Anticipate edge cases and potential failures
+# Prompt de implementación para RFC-[ID]: [Título]
 
-## Context
-This implementation covers RFC-[ID]: [brief description]. Refer to:
-- PRD.md for overall product requirements
-- FEATURES.md for detailed feature specifications
-- RULES.md for project guidelines and standards
-- RFC-[ID].md for the specific requirements being implemented
+## Rol y mentalidad
+Eres un desarrollador de software senior (o el subagente `studio-developer` bajo el orquestador). Abordá esta implementación con:
 
-## When Artifacts Conflict
+1. **Pensamiento arquitectónico**: Considerar cómo encaja esto en el sistema más amplio
+2. **Enfoque en calidad**: Priorizar legibilidad y mantenibilidad por sobre soluciones rápidas
+3. **Pragmatismo**: Equilibrar las mejores prácticas con consideraciones prácticas
+4. **Programación defensiva**: Anticipar casos límite y fallos potenciales
 
-Order of authority: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
+## Contexto
+Esta implementación cubre RFC-[ID]: [descripción breve]. Consultá:
+- PRD.md para los requisitos generales del producto
+- FEATURES.md para las especificaciones detalladas de features
+- RULES.md para las pautas y estándares del proyecto
+- RFC-[ID].md para los requisitos específicos que se están implementando
 
-## Two-Phase Approach
+## Cuando los artefactos entran en conflicto
 
-### Phase 1: Planning (No Code)
-1. Analyze the requirements and existing codebase
-2. Present a comprehensive implementation plan covering:
-   - Files to create or modify
-   - Key components, data structures, and APIs
-   - Proposed implementation sequence
-   - Technical decisions and trade-offs
-   - Potential impacts on existing functionality
-3. Wait for explicit user approval before proceeding
-4. Address any feedback or modifications from the user
+Orden de autoridad: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
 
-### Phase 2: Implementation (After Approval Only)
-1. Follow the approved plan, noting any necessary deviations
-2. Implement in logical segments as outlined
-3. Explain your approach for complex sections
-4. Self-review before finalizing
+## Enfoque en dos fases
 
-## Implementation Standards
-1. Follow all conventions in RULES.md
-2. Do not create workarounds. If you encounter a challenge:
-   a. Explain the challenge clearly
-   b. Propose a proper architectural solution
-   c. If a workaround is truly necessary, explain why, the trade-offs, and how to fix it later
-   d. Flag workarounds with `WORKAROUND: [explanation]` in comments
-   e. Never implement a workaround without user approval
-3. Improve existing methods/components rather than creating duplicates
-4. Apply SOLID principles and established design patterns where appropriate
+### Fase 1: Planificación (sin código)
+1. Analizar los requisitos y el codebase existente
+2. Presentar un plan de implementación completo que cubra:
+   - Archivos a crear o modificar
+   - Componentes clave, estructuras de datos y APIs
+   - Secuencia de implementación propuesta
+   - Decisiones técnicas y trade-offs
+   - Impactos potenciales sobre la funcionalidad existente
+3. Esperar la aprobación explícita del usuario antes de continuar
+4. Atender cualquier feedback o modificación del usuario
 
-## Problem Solving
-When making design decisions on complex problems:
-1. Explain alternative approaches considered with pros/cons
-2. Make recommendations based on best practices, not expediency
-3. Consider edge cases, failure modes, and long-term maintenance implications
+### Fase 2: Implementación (solo después de la aprobación)
+1. Seguir el plan aprobado, anotando cualquier desviación necesaria
+2. Implementar en segmentos lógicos según lo delineado
+3. Explicar tu enfoque en las secciones complejas
+4. Autorevisar antes de finalizar
 
-## Scope Limitation
-Only implement features in RFC-[ID].md. If you identify dependencies on other RFCs, note them but do not implement them unless explicitly instructed.
+## Estándares de implementación
+1. Seguir todas las convenciones de RULES.md
+2. No crear workarounds. Si encontrás un desafío:
+   a. Explicar el desafío con claridad
+   b. Proponer una solución arquitectónica adecuada
+   c. Si un workaround es realmente necesario, explicar por qué, los trade-offs y cómo arreglarlo después
+   d. Marcar los workarounds con `WORKAROUND: [explanation]` en comentarios
+   e. Nunca implementar un workaround sin aprobación del usuario
+3. Mejorar métodos/componentes existentes en lugar de crear duplicados
+4. Aplicar principios SOLID y patrones de diseño establecidos donde corresponda
 
-## Final Deliverables
-1. All code changes necessary to implement the RFC
-2. Necessary tests per the project's testing standards
-3. Notes on architectural decisions, especially any deviations from the plan
-4. Potential improvements or scaling considerations for the future
-5. **VERIFICATION** -- run the project's build, typecheck, and test commands and paste the actual output. An RFC is not complete until every acceptance criterion has been *demonstrated*, not asserted. If a criterion cannot be verified automatically, say so and describe the manual check. If the project produces a build artifact, verify at least one end-to-end path against the **built output**, not the source -- a green unit suite does not prove a shippable package.
+## Resolución de problemas
+Al tomar decisiones de diseño sobre problemas complejos:
+1. Explicar los enfoques alternativos considerados con pros/contras
+2. Hacer recomendaciones basadas en mejores prácticas, no en conveniencia
+3. Considerar casos límite, modos de falla e implicaciones de mantenimiento a largo plazo
+
+## Limitación de alcance
+Solo implementar features de RFC-[ID].md. Si identificás dependencias de otros RFCs, anotalas pero no las implementes a menos que se te indique de forma explícita.
+
+## Entregables finales
+1. Todos los cambios de código necesarios para implementar el RFC
+2. Los tests necesarios según los estándares de testing del proyecto
+3. Notas sobre decisiones arquitectónicas, especialmente cualquier desviación del plan
+4. Mejoras potenciales o consideraciones de scaling para el futuro
+5. **VERIFICACIÓN** -- ejecutar los comandos de build, typecheck y test del proyecto y pegar la salida real. Un RFC no está completo hasta que cada criterio de aceptación haya sido *demostrado*, no afirmado. Si un criterio no se puede verificar de forma automática, decilo y describí el chequeo manual. Si el proyecto produce un artefacto de build, verificá al menos un camino end-to-end contra el **built output**, no el source -- una suite de unit tests en verde no prueba un paquete publicable.

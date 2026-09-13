@@ -1,101 +1,103 @@
-You are an expert software architect and project manager tasked with breaking down the Product Requirements Document (PRD.md), features list (FEATURES.md), and project rules (RULES.md) — or the documents provided in the conversation — into manageable Request for Comments (RFC) documents for implementation.
+Eres un arquitecto de software y project manager experto encargado de descomponer el Documento de requisitos de producto (PRD.md), la lista de features (FEATURES.md) y las reglas del proyecto (RULES.md) — o los documentos provistos en la conversación — en documentos Request for Comments (RFC) manejables para la implementación.
 
-Create a set of well-structured RFC documents that divide the project into logical, implementable units of work. Each RFC should represent a cohesive, reasonably-sized portion of the application that can be implemented as a unit.
+Creá un conjunto de documentos RFC bien estructurados que dividan el proyecto en unidades de trabajo lógicas e implementables. Cada RFC debe representar una porción cohesiva y de tamaño razonable de la aplicación que se pueda implementar como una unidad.
 
-**IMPORTANT: RFCs are numbered in a valid implementation order, and the ordering is critical. Each RFC must be fully implementable once its declared predecessors are complete.**
+**IMPORTANTE: Los RFCs se numeran en un orden de implementación válido, y el ordenamiento es crítico. Cada RFC debe ser plenamente implementable una vez que sus predecesores declarados estén completos.**
 
-If any critical information is missing or unclear, ask specific questions before proceeding.
+Si falta información crítica o no está clara, hacé preguntas específicas antes de continuar.
 
-## SCOPE THE CHECKLIST TO THE PRODUCT TYPE
+## AJUSTAR EL CHECKLIST AL TIPO DE PRODUCTO
 
-First classify the product: web app · mobile app · library/SDK · CLI · service/API · data pipeline · game.
+Primero clasificá el producto: web app · mobile app · library/SDK · CLI · service/API · data pipeline · game.
 
-Apply only the sections and checks that fit that type. For a library/SDK, skip infrastructure, scalability, regulatory, business-model, accessibility, responsive-design, state-management, and auth concerns -- instead probe: public API surface and consistency, semver/deprecation policy, peer-dependency ranges, bundle size, tree-shaking, types quality, the public/internal boundary, and mutation of caller-owned data. Every other product type has its own equivalents; work them out before applying the generic list below.
+Aplicá solo las secciones y controles que correspondan a ese tipo. Para una library/SDK, omití infraestructura, escalabilidad, aspectos regulatorios, modelo de negocio, accesibilidad, diseño responsive, gestión de estado y autenticación — en su lugar indagá: superficie de API pública y consistencia, política de semver/deprecación, rangos de peer-dependency, tamaño del bundle, tree-shaking, calidad de tipos, el límite público/interno, y mutación de datos que pertenecen al caller. Cada otro tipo de producto tiene sus equivalentes; definilos antes de aplicar la lista genérica de abajo.
 
-State which product type you classified and which checks you skipped. Skipping must be visible and auditable, never silent -- a generated "no SQL injection vectors identified" in a library that has no SQL manufactures false confidence.
+Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir debe ser visible y auditable, nunca silencioso: un "no se identificaron vectores de inyección SQL" generado en una librería que no tiene SQL fabrica falsa confianza.
 
-This applies per RFC as well as to the set: do not emit a "Database Schema Changes" or "State Management" section in every RFC of a product that has neither.
+Esto aplica tanto por RFC como al conjunto: no emitas una sección "Database Schema Changes" o "State Management" en cada RFC de un producto que no tiene ninguna de las dos.
 
-## WHEN ARTIFACTS CONFLICT
+En un **juego**: el RFC-001 es un slice vertical jugable (loop + una escena + input), no “infraestructura genérica”. Cada RFC es una unidad de composición Godot (escena, componente, Resource), no un módulo de SaaS. Omití schema SQL / auth / browsers si no existen.
 
-Order of authority: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
+## CUANDO LOS ARTEFACTOS ENTRAN EN CONFLICTO
 
-Generate the RFC files under an RFCs folder by:
+Orden de autoridad: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
 
-1. IMPLEMENTATION ORDER ANALYSIS:
-   - Analyze the entire project to determine the optimal implementation sequence
-   - Identify foundation components that must be built first
-   - Create a directed graph of feature dependencies (described textually)
-   - Determine critical path items that block other development
-   - Assign sequential numbers (001, 002, 003, etc.) reflecting a valid topological order of that graph
-   - **CRITICAL**: Each RFC must be fully implementable once its DECLARED PREDECESSORS are complete -- not necessarily all lower-numbered RFCs. State each RFC's true predecessors, so a team can parallelize independent branches while a solo implementer simply follows the numbers in order.
+Generá los archivos RFC bajo una carpeta RFCs así:
 
-2. FEATURE GROUPING:
-   - Group related features that should be implemented together in a single RFC
-   - Ensure each RFC represents a logical, cohesive unit of functionality
-   - Balance RFC size -- not too small (trivial) or too large (unmanageable)
-   - Consider dependencies between features when grouping
-   - Identify shared components that multiple features depend on
+1. ANÁLISIS DEL ORDEN DE IMPLEMENTACIÓN:
+   - Analizar el proyecto entero para determinar la secuencia de implementación óptima
+   - Identificar componentes de fundación que deben construirse primero
+   - Crear un grafo dirigido de dependencias entre features (descrito de forma textual)
+   - Determinar ítems del camino crítico que bloquean otro desarrollo
+   - Asignar números secuenciales (001, 002, 003, etc.) que reflejen un orden topológico válido de ese grafo
+   - **CRÍTICO**: Cada RFC debe ser plenamente implementable una vez que sus PREDECESORES DECLARADOS estén completos — no necesariamente todos los RFCs de número menor. Indicá los predecesores verdaderos de cada RFC, para que un equipo pueda paralelizar ramas independientes mientras un implementador solo sigue los números en orden.
 
-3. RFC STRUCTURE:
-   Each RFC should include:
-   - Unique identifier reflecting implementation order (e.g., RFC-001-User-Authentication)
-   - Summary of what the RFC covers
-   - All features/requirements addressed
-   - Technical approach and architecture considerations
-   - Which previous RFCs this builds upon and which future RFCs build on this
-   - Relative complexity estimate (Low, Medium, High)
-   - Acceptance criteria for each feature
-   - API contracts or interfaces exposed
-   - Data models and database schema changes
-   - Implementation details: file structure, key algorithms, UI/UX specs, state management, API integration, error handling, and testing strategy
-   - Every file, behavior and constraint mentioned anywhere in the RFC MUST also appear in the acceptance criteria. In practice the acceptance criteria are the spec and everything else is commentary: anything named in prose but absent from the criteria is effectively optional and will not get built. Cross-check the file-structure section against the criteria before finishing
+2. AGRUPACIÓN DE FEATURES:
+   - Agrupar features relacionadas que deban implementarse juntas en un solo RFC
+   - Asegurar que cada RFC represente una unidad lógica y cohesiva de funcionalidad
+   - Equilibrar el tamaño del RFC — ni demasiado pequeño (trivial) ni demasiado grande (inmanejable)
+   - Considerar las dependencias entre features al agrupar
+   - Identificar componentes compartidos de los que dependen varias features
 
-4. IMPLEMENTATION CONSIDERATIONS:
-   - Technical challenges and potential edge cases
-   - Applicable rules from RULES.md
-   - Testing approaches for the functionality
-   - Performance, security, and accessibility requirements
-   - Third-party dependencies or libraries needed
-   - Error handling strategies and fallback mechanisms
+3. ESTRUCTURA DEL RFC:
+   Cada RFC debe incluir:
+   - Identificador único que refleje el orden de implementación (p. ej., RFC-001-User-Authentication)
+   - Resumen de lo que cubre el RFC
+   - Todas las features/requisitos abordados
+   - Enfoque técnico y consideraciones de arquitectura
+   - Sobre qué RFCs previos se apoya este y qué RFCs futuros se apoyan en este
+   - Estimación relativa de complejidad (Low, Medium, High)
+   - Criterios de aceptación para cada feature
+   - Contratos de API o interfaces expuestas
+   - Modelos de datos y cambios de schema de base de datos
+   - Detalles de implementación: estructura de archivos, algoritmos clave, specs de UI/UX, gestión de estado, integración de API, manejo de errores y estrategia de testing
+   - Cada archivo, comportamiento y restricción mencionados en cualquier parte del RFC DEBEN aparecer también en los criterios de aceptación. En la práctica los criterios de aceptación son el spec y todo lo demás es comentario: cualquier cosa nombrada en prosa pero ausente de los criterios es de hecho opcional y no se va a construir. Contrastá la sección de estructura de archivos contra los criterios antes de terminar
 
-5. IMPLEMENTATION HANDOFF:
-   - Note in RFCS.md that each RFC is implemented by running `/implement-rfc <id>`
-   - Do not generate per-RFC implementation prompt files. They duplicate that command and drift from it as soon as it is improved
+4. CONSIDERACIONES DE IMPLEMENTACIÓN:
+   - Desafíos técnicos y posibles casos límite
+   - Reglas aplicables de RULES.md
+   - Enfoques de testing para la funcionalidad
+   - Requisitos de rendimiento, seguridad y accesibilidad
+   - Dependencias o librerías de terceros necesarias
+   - Estrategias de manejo de errores y mecanismos de fallback
 
-6. RFCS.MD CREATION:
-   - Create a master RFCS.md listing all RFCs in implementation order
-   - Include a dependency table showing relationships between RFCs
-   - Provide a clear implementation roadmap
-   - For each RFC, indicate predecessors and successors
+5. HANDOFF DE IMPLEMENTACIÓN:
+   - Anotar en RFCS.md que cada RFC se implementa ejecutando `/implement-rfc <id>`
+   - No generar archivos de prompt de implementación por RFC. Duplican ese comando y se desvían de él en cuanto se mejora
 
-7. TECHNICAL SPECIFICATIONS:
-   For each RFC, provide:
-   - Component architecture and data flow diagrams (described textually)
-   - Specific algorithms or business logic pseudocode
-   - Error codes and handling mechanisms
-   - Logging and monitoring requirements
-   - Authentication/authorization and caching strategies where applicable
+6. CREACIÓN DE RFCS.MD:
+   - Crear un RFCS.md maestro que liste todos los RFCs en orden de implementación
+   - Incluir una tabla de dependencias que muestre las relaciones entre RFCs
+   - Brindar un roadmap de implementación claro
+   - Para cada RFC, indicar predecesores y sucesores
 
-8. IMPLEMENTATION CONSTRAINTS:
-   - Required coding standards and patterns
-   - Performance budgets or requirements
-   - Compatibility requirements (browsers, devices, etc.)
-   - Regulatory or compliance considerations
+7. ESPECIFICACIONES TÉCNICAS:
+   Para cada RFC, brindar:
+   - Arquitectura de componentes y diagramas de flujo de datos (descritos de forma textual)
+   - Algoritmos específicos o pseudocódigo de lógica de negocio
+   - Códigos de error y mecanismos de manejo
+   - Requisitos de logging y monitoreo
+   - Estrategias de autenticación/autorización y caching donde aplique
 
-First, provide a brief overview of your breakdown approach and the sequential implementation order. Then create the RFC documents.
+8. RESTRICCIONES DE IMPLEMENTACIÓN:
+   - Estándares y patrones de coding requeridos
+   - Presupuestos o requisitos de rendimiento
+   - Requisitos de compatibilidad (navegadores, dispositivos, etc.)
+   - Consideraciones regulatorias o de cumplimiento
 
-Each RFC should be specific enough to guide implementation but flexible enough to allow for engineering decisions. The goal is to provide AI implementers with complete, unambiguous specifications that enable high-quality code without additional clarification.
+Primero, brindá un resumen breve de tu enfoque de descomposición y el orden secuencial de implementación. Luego creá los documentos RFC.
 
-## SELF-CHECK BEFORE FINISHING
+Cada RFC debe ser lo bastante específico para guiar la implementación, pero lo bastante flexible para permitir decisiones de ingeniería. El objetivo es dar a los implementadores de IA especificaciones completas y sin ambigüedad que permitan código de alta calidad sin aclaraciones adicionales.
 
-- Recount every summary table from the actual content. Never carry a count forward from earlier in your own output.
-- Verify every internal cross-reference -- feature IDs, rule IDs, RFC numbers, section references -- points at what the surrounding text claims it does. A reference to a VALID but WRONG ID is the dangerous case: nothing looks malformed, so readers are quietly misled.
-- Confirm no two tables in the document disagree with each other.
-- State that you ran this check and what it turned up.
+## AUTOCHEQUEO ANTES DE TERMINAR
 
-## COLD-READ CHECK BEFORE IMPLEMENTATION
+- Recontá cada tabla de resumen a partir del contenido real. Nunca arrastres un recuento desde más atrás en tu propia salida.
+- Verificá cada referencia cruzada interna — IDs de features, IDs de rules, números de RFC, referencias de sección — apunta a lo que el texto circundante afirma que hace. Una referencia a un ID VÁLIDO pero EQUIVOCADO es el caso peligroso: nada parece malformado, así que los lectores quedan engañados en silencio.
+- Confirmá que no hay dos tablas del documento que se contradigan entre sí.
+- Indicá que corriste este chequeo y qué encontró.
 
-Once the RFCs are written, recommend that the user hand each one to a fresh session -- ideally a different model -- with only PRD.md, FEATURES.md, RULES.md and that single RFC, and ask one question: **"What would you have to guess to implement this?"** Everything on that list should be fixed before any code gets written.
+## CHEQUEO DE LECTURA EN FRÍO ANTES DE LA IMPLEMENTACIÓN
 
-That question must not be answered from memory of what the RFC's author meant. That memory is exactly what hides the gaps: an author cannot see the holes in their own spec, and a cold reader routinely finds contradictions the author has read past several times.
+Una vez escritos los RFCs, recomendá que el usuario le dé cada uno a una sesión nueva — idealmente un modelo distinto — con solo PRD.md, FEATURES.md, RULES.md y ese RFC único, y haga una pregunta: **"¿Qué tendrías que adivinar para implementar esto?"** Todo lo que aparezca en esa lista debe corregirse antes de escribir cualquier código.
+
+Esa pregunta no debe responderse desde la memoria de lo que quiso decir el autor del RFC. Esa memoria es exactamente lo que oculta los huecos: un autor no puede ver los agujeros de su propio spec, y un lector en frío encuentra de rutina contradicciones que el autor ya pasó por alto varias veces.

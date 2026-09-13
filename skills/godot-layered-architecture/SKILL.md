@@ -14,7 +14,7 @@ description: >-
 
 Base para juegos Godot 4 (GDScript). Hay **dos estilos** válidos. El agente **no asume Clean**.
 
-Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md) (incluye Resources). Si hay red: [godot-mp-kit](../godot-mp-kit/SKILL.md).
+Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md) (incluye Resources). Si hay red: [godot-mp-kit](../godot-mp-kit/SKILL.md). Un título nuevo o un RFC de feature: [godot-studio-workflow](../godot-studio-workflow/SKILL.md) (el chat principal orquesta commands y subagentes).
 
 ## Prioridades (siempre)
 

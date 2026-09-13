@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Quita estas skills y commands de producto. No toca otras en ~/.cursor.
+# Quita skills, commands y subagentes de este kit. No toca otras piezas en ~/.cursor.
 set -euo pipefail
 
 SKILL_NAMES=(
   godot-layered-architecture
   godot-composition-first
   godot-mp-kit
+  godot-studio-workflow
 )
 COMMAND_FILES=(
   create-prd.md
@@ -18,6 +19,13 @@ COMMAND_FILES=(
   test-strategy.md
   verify-prd.md
   workflow-status.md
+)
+AGENT_FILES=(
+  studio-tech-lead.md
+  studio-developer.md
+  studio-reviewer.md
+  studio-tester.md
+  studio-visual.md
 )
 
 MODE="global"
@@ -42,14 +50,18 @@ case "$MODE" in
   global)
     SKILL_TARGET="${HOME}/.cursor/skills"
     CMD_TARGET="${HOME}/.cursor/commands"
+    AGENT_TARGET="${HOME}/.cursor/agents"
     ;;
   project)
     SKILL_TARGET="$(pwd)/.cursor/skills"
     CMD_TARGET="$(pwd)/.cursor/commands"
+    AGENT_TARGET="$(pwd)/.cursor/agents"
     ;;
   custom)
     SKILL_TARGET="$DEST"
-    CMD_TARGET="$(cd "$(dirname "$DEST")" && pwd)/commands"
+    parent="$(cd "$(dirname "$DEST")" && pwd)"
+    CMD_TARGET="${parent}/commands"
+    AGENT_TARGET="${parent}/agents"
     ;;
 esac
 
@@ -73,3 +85,4 @@ remove_named() {
 
 remove_named "$SKILL_TARGET" "${SKILL_NAMES[@]}"
 remove_named "$CMD_TARGET" "${COMMAND_FILES[@]}"
+remove_named "$AGENT_TARGET" "${AGENT_FILES[@]}"

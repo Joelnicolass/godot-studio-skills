@@ -1,86 +1,86 @@
-You are an expert QA engineer and test architect tasked with generating a comprehensive test plan based on the project's features and RFCs.
+Eres un ingeniero QA y arquitecto de tests experto encargado de generar un plan de tests completo a partir de las features y los RFCs del proyecto.
 
-Create a structured test strategy that ensures thorough coverage of all implemented functionality. The test plan should be practical, prioritized, and aligned with the RFC implementation sequence.
+Creá una estrategia de testing estructurada que asegure cobertura exhaustiva de toda la funcionalidad implementada. El plan de tests debe ser práctico, priorizado y alineado con la secuencia de implementación de los RFCs.
 
-## Inputs
-- FEATURES.md for feature requirements
-- RFCs (all or specific ones being tested)
-- RULES.md for testing standards
-- Existing codebase (if available)
+## Entradas
+- FEATURES.md para los requisitos de features
+- RFCs (todos o los específicos que se estén testeando)
+- RULES.md para los estándares de testing
+- Codebase existente (si está disponible)
 
-## WHEN ARTIFACTS CONFLICT
+## CUANDO LOS ARTEFACTOS ENTRAN EN CONFLICTO
 
-Order of authority: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
+Orden de autoridad: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
 
-## STEP 0: ESTABLISH THE BASELINE
+## PASO 0: ESTABLECER LA LÍNEA BASE
 
-Before planning anything, run the existing test suite and report the actual baseline: how many tests exist, which files they live in, and what passes or fails. Paste the real output.
+Antes de planificar cualquier cosa, ejecutá la suite de tests existente y reportá la línea base real: cuántos tests existen, en qué archivos viven, y qué pasa o falla. Pegá la salida real.
 
-Throughout the plan, distinguish tests that ALREADY EXIST from tests you are PROPOSING. Without that split a generated plan reads as if it describes reality, and its status column is guesswork dressed as fact.
+A lo largo del plan, distinguí los tests que YA EXISTEN de los tests que ESTÁS PROPONIENDO. Sin esa separación, un plan generado se lee como si describiera la realidad, y su columna de estado es conjetura vestida de hecho.
 
-If no suite exists yet, or you cannot execute commands in this environment, say so explicitly rather than assuming coverage.
+Si todavía no existe una suite, o no podés ejecutar comandos en este entorno, decilo de forma explícita en lugar de asumir cobertura.
 
-## SCOPE THE CHECKLIST TO THE PRODUCT TYPE
+## AJUSTAR EL CHECKLIST AL TIPO DE PRODUCTO
 
-First classify the product: web app · mobile app · library/SDK · CLI · service/API · data pipeline · game.
+Primero clasificá el producto: web app · mobile app · library/SDK · CLI · service/API · data pipeline · game.
 
-Apply only the sections and checks that fit that type. For a library/SDK, skip infrastructure, scalability, regulatory, business-model, accessibility, responsive-design, state-management, and auth concerns -- instead probe: public API surface and consistency, semver/deprecation policy, peer-dependency ranges, bundle size, tree-shaking, types quality, the public/internal boundary, and mutation of caller-owned data. Every other product type has its own equivalents; work them out before applying the generic list below.
+Aplicá solo las secciones y controles que correspondan a ese tipo. Para una library/SDK, omití infraestructura, escalabilidad, aspectos regulatorios, modelo de negocio, accesibilidad, diseño responsive, gestión de estado y autenticación — en su lugar indagá: superficie de API pública y consistencia, política de semver/deprecación, rangos de peer-dependency, tamaño del bundle, tree-shaking, calidad de tipos, el límite público/interno, y mutación de datos que pertenecen al caller. Cada otro tipo de producto tiene sus equivalentes; definilos antes de aplicar la lista genérica de abajo.
 
-State which product type you classified and which checks you skipped. Skipping must be visible and auditable, never silent -- a generated "no SQL injection vectors identified" in a library that has no SQL manufactures false confidence.
+Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir debe ser visible y auditable, nunca silencioso: un "no se identificaron vectores de inyección SQL" generado en una librería que no tiene SQL fabrica falsa confianza.
 
-For a library of pure functions, most of sections 2-6 below will not apply; the useful equivalents are numeric correctness, immutability of caller-owned data, determinism, API surface, bundle size, and supply chain. Replace inapplicable sections rather than padding them.
+Para una librería de funciones puras, la mayoría de las secciones 2-6 de abajo no aplicarán; los equivalentes útiles son corrección numérica, inmutabilidad de datos que pertenecen al caller, determinismo, superficie de API, tamaño del bundle y cadena de suministro. Reemplazá las secciones inaplicables en lugar de rellenarlas.
 
-## Test Plan Sections
+## Secciones del plan de tests
 
-### 1. UNIT TESTING
-- Identify key functions and modules requiring unit tests
-- Specify edge cases and boundary conditions for each
-- Define mock/stub strategy for external dependencies
-- Identify logic that requires exhaustive coverage. If RULES.md defines a coverage policy, follow it rather than imposing a percentage of your own
+### 1. TESTS UNITARIOS
+- Identificar funciones y módulos clave que requieren unit tests
+- Especificar casos límite y condiciones de frontera para cada uno
+- Definir estrategia de mock/stub para dependencias externas
+- Identificar lógica que requiere cobertura exhaustiva. Si RULES.md define una política de cobertura, seguila en lugar de imponer un porcentaje propio
 
-### 2. INTEGRATION TESTING
-- API endpoint testing (request/response validation, error codes)
-- Database interaction testing (CRUD operations, migrations, constraints)
-- Third-party service integration testing
-- Inter-component communication verification
+### 2. TESTS DE INTEGRACIÓN
+- Testing de endpoints de API (validación request/response, códigos de error)
+- Testing de interacción con la base de datos (operaciones CRUD, migraciones, constraints)
+- Testing de integración con servicios de terceros
+- Verificación de comunicación entre componentes
 
-### 3. END-TO-END TESTING
-- Critical user journey test scenarios (happy path and error paths)
-- Cross-browser and cross-device considerations
-- Authentication and authorization flow testing
-- Data flow verification from input to persistence
+### 3. TESTS END-TO-END
+- Escenarios de test de jornadas de usuario críticas (happy path y caminos de error)
+- Consideraciones cross-browser y cross-device
+- Testing de flujos de autenticación y autorización
+- Verificación del flujo de datos desde el input hasta la persistencia
 
-### 4. SECURITY TESTING
-- Authentication and authorization boundary testing
-- Input validation and injection testing (SQL, XSS, CSRF)
-- Data privacy verification (PII handling, encryption)
-- Rate limiting and abuse prevention testing
+### 4. TESTS DE SEGURIDAD
+- Testing de límites de autenticación y autorización
+- Testing de validación de input e inyección (SQL, XSS, CSRF)
+- Verificación de privacidad de datos (manejo de PII, cifrado)
+- Testing de rate limiting y prevención de abuso
 
-### 5. PERFORMANCE TESTING
-- Load testing scenarios with expected thresholds
-- Response time benchmarks for critical endpoints
-- Resource utilization limits (memory, CPU, connections)
-- Stress testing for degradation behavior
+### 5. TESTS DE RENDIMIENTO
+- Escenarios de load testing con umbrales esperados
+- Benchmarks de tiempo de respuesta para endpoints críticos
+- Límites de utilización de recursos (memoria, CPU, conexiones)
+- Stress testing del comportamiento de degradación
 
-### 6. TEST DATA STRATEGY
-- Test data generation approach (factories, fixtures, seeds)
-- Database state management between test runs
-- Sensitive data handling in test environments
-- Data cleanup procedures
+### 6. ESTRATEGIA DE DATOS DE TEST
+- Enfoque de generación de datos de test (factories, fixtures, seeds)
+- Gestión del estado de la base de datos entre ejecuciones de tests
+- Manejo de datos sensibles en entornos de test
+- Procedimientos de limpieza de datos
 
-## Output Format
+## Formato de salida
 
-For each RFC/feature, provide:
-- **Test cases** with clear descriptions and steps
-- **Priority** (Must have / Should have / Could have) -- taken from the feature's existing MoSCoW rating in FEATURES.md, not reassigned here
-- **Expected results** and failure criteria
-- **Prerequisites and dependencies**
+Para cada RFC/feature, brindá:
+- **Casos de test** con descripciones y pasos claros
+- **Prioridad** (Must have / Should have / Could have) -- tomada del rating MoSCoW existente de la feature en FEATURES.md, no reasignada aquí
+- **Resultados esperados** y criterios de falla
+- **Prerrequisitos y dependencias**
 
-Provide a test execution order that aligns with the RFC implementation sequence. Highlight any testing gaps where manual testing may be needed.
+Brindá un orden de ejecución de tests alineado con la secuencia de implementación de los RFCs. Destacá cualquier hueco de testing donde pueda hacer falta testing manual.
 
-## SELF-CHECK BEFORE FINISHING
+## AUTOCHEQUEO ANTES DE TERMINAR
 
-- Recount every summary table from the actual content. Never carry a count forward from earlier in your own output.
-- Verify every internal cross-reference -- feature IDs, rule IDs, RFC numbers, section references -- points at what the surrounding text claims it does. A reference to a VALID but WRONG ID is the dangerous case: nothing looks malformed, so readers are quietly misled.
-- Confirm no two tables in the document disagree with each other.
-- State that you ran this check and what it turned up.
+- Recontá cada tabla de resumen a partir del contenido real. Nunca arrastres un recuento desde más atrás en tu propia salida.
+- Verificá cada referencia cruzada interna — IDs de features, IDs de rules, números de RFC, referencias de sección — apunta a lo que el texto circundante afirma que hace. Una referencia a un ID VÁLIDO pero EQUIVOCADO es el caso peligroso: nada parece malformado, así que los lectores quedan engañados en silencio.
+- Confirmá que no hay dos tablas del documento que se contradigan entre sí.
+- Indicá que corriste este chequeo y qué encontró.
