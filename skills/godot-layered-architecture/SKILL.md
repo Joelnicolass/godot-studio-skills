@@ -13,7 +13,7 @@ description: >-
 
 Base for Godot 4 games (GDScript). Two styles are valid. The agent **does not assume Clean**.
 
-Always also load [godot-composition-first](../godot-composition-first/SKILL.md) (includes Resources). If there is networking: [godot-mp-kit](../godot-mp-kit/SKILL.md).
+Always also load [godot-composition-first](../godot-composition-first/SKILL.md) (includes Resources). If there is networking: [godot-mp-kit](../godot-mp-kit/SKILL.md). A new title or a feature RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md) (the main chat orchestrates commands and subagents).
 
 ## Priorities (always)
 

@@ -16,6 +16,8 @@ State which product type you classified and which checks you skipped. Skipping m
 
 This applies per RFC as well as to the set: do not emit a "Database Schema Changes" or "State Management" section in every RFC of a product that has neither.
 
+For a **game**: RFC-001 is a playable vertical slice (loop + one scene + input), not “generic infra”. Each RFC is a Godot composition unit (scene, component, Resource), not a SaaS module. Skip SQL schema / auth / browsers if they do not exist.
+
 ## WHEN ARTIFACTS CONFLICT
 
 Order of authority: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.

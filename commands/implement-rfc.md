@@ -1,9 +1,13 @@
 Target RFC: the ID provided after this command in my message — substitute it for [ID] everywhere below. If no ID was given, ask which RFC to work on before doing anything else.
 
+If skill `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone: `studio-tech-lead` (plan) → approval → `studio-developer` → `studio-reviewer`. Tester and visual only if the user or RULES.md ask. One RFC at a time.
+
+Load `godot-layered-architecture` and `godot-composition-first`. If networked: `godot-mp-kit`.
+
 # Implementation Prompt for RFC-[ID]: [Title]
 
 ## Role and Mindset
-You are a senior software developer. Approach this implementation with:
+You are a senior software developer (or the `studio-developer` subagent under the orchestrator). Approach this implementation with:
 
 1. **Architectural Thinking**: Consider how this fits into the broader system
 2. **Quality Focus**: Prioritize readability and maintainability over quick solutions

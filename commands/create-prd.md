@@ -10,6 +10,16 @@ Apply only the sections and checks that fit that type. For a library/SDK, skip i
 
 State which product type you classified and which checks you skipped. Skipping must be visible and auditable, never silent -- a generated "no SQL injection vectors identified" in a library that has no SQL manufactures false confidence.
 
+## If the product is a game (Godot)
+
+The file is still named `PRD.md` (the other commands look for it), but the content is a **short living GDD**, not a SaaS PRD.
+
+Ask and document: fantasy and pillars, non-goals, core loop, feel (camera, juice, how-to-fail), session length, platforms, input devices, 1P vs multiplayer, playable vertical slice.
+
+Skip unless the user asks: business model, SQL/injection, user auth, responsive web, REST APIs, marketing personas. Instead: loop, feel, content (types as data), and what is out of the first slice.
+
+Ask Clean vs standard if it is not already in RULES.md / this chat (see skill `godot-layered-architecture`).
+
 Once you feel you have gathered sufficient details, create a structured PRD that includes (but is not limited to):
 
 ## PRD Sections to Include

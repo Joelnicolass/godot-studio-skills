@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
-# Install Cursor skills, product commands, and/or the Godot MpKit addon.
-#   ./install.sh                      # skills → ~/.cursor/skills/  commands → ~/.cursor/commands/
-#   ./install.sh --project            # ./.cursor/skills/ and ./.cursor/commands/
+# Install Cursor skills, commands, subagents, and/or the Godot MpKit addon.
+#   ./install.sh                      # ~/.cursor/skills, commands, agents
+#   ./install.sh --project            # ./.cursor/skills, commands, agents
 #   ./install.sh --addon GODOT_ROOT   # addons/mp_kit → GODOT_ROOT/addons/mp_kit
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="${ROOT}/skills"
 CMD_SRC="${ROOT}/commands"
+AGENT_SRC="${ROOT}/agents"
 ADDON_SRC="${ROOT}/addons/mp_kit"
 SKILL_NAMES=(
   godot-layered-architecture
   godot-composition-first
   godot-mp-kit
+  godot-studio-workflow
+)
+AGENT_FILES=(
+  studio-tech-lead.md
+  studio-developer.md
+  studio-reviewer.md
+  studio-tester.md
+  studio-visual.md
 )
 
 MODE="global"
@@ -21,19 +30,20 @@ CMD_DEST=""
 GODOT_ROOT=""
 DO_SKILLS=1
 DO_COMMANDS=1
+DO_AGENTS=1
 
 usage() {
   cat <<'EOF'
-Godot studio kit installer (Cursor skills + product commands + MpKit addon).
+Godot studio kit installer (skills + commands + subagents + MpKit addon).
 
-  ./install.sh                      Skills in ~/.cursor/skills/ and commands in ~/.cursor/commands/
-  ./install.sh --project            Skills and commands in ./.cursor/ of cwd
-  ./install.sh --dest DIR           Skills in DIR (commands beside it: ../commands)
-  ./install.sh --addon GODOT_ROOT   Copy addons/mp_kit into the Godot project
+  ./install.sh                      ~/.cursor/skills, commands y agents
+  ./install.sh --project            ./.cursor/skills, commands y agents del cwd
+  ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
+  ./install.sh --addon GODOT_ROOT   Copia addons/mp_kit al proyecto Godot
   ./install.sh --addon-only GODOT_ROOT
-                                    Addon only, no skills or commands
-  ./install.sh --list               What would be installed
-  ./install.sh --pack               Build dist/godot-studio-skills.zip
+                                    Addon only
+  ./install.sh --list               Qué se instalaría
+  ./install.sh --pack               Genera dist/godot-studio-skills.zip
 
   npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 
@@ -67,6 +77,7 @@ while [[ $# -gt 0 ]]; do
       GODOT_ROOT="${2:?--addon-only requires the Godot project root}"
       DO_SKILLS=0
       DO_COMMANDS=0
+      DO_AGENTS=0
       shift 2
       ;;
     --list)
@@ -91,6 +102,11 @@ fi
 
 if [[ "$DO_COMMANDS" -eq 1 && ! -d "$CMD_SRC" ]]; then
   echo "Cannot find ${CMD_SRC}." >&2
+  exit 1
+fi
+
+if [[ "$DO_AGENTS" -eq 1 && ! -d "$AGENT_SRC" ]]; then
+  echo "Cannot find ${AGENT_SRC}." >&2
   exit 1
 fi
 
@@ -130,6 +146,19 @@ resolve_command_dest() {
   esac
 }
 
+resolve_agent_dest() {
+  case "$MODE" in
+    global) echo "${HOME}/.cursor/agents" ;;
+    project) echo "$(pwd)/.cursor/agents" ;;
+    custom)
+      local parent
+      parent="$(cd "$(dirname "$DEST")" && pwd)"
+      echo "${parent}/agents"
+      ;;
+    *) echo "" ;;
+  esac
+}
+
 install_addon() {
   local project="$1"
   if [[ ! -d "$project" ]]; then
@@ -161,6 +190,17 @@ install_commands() {
   done
 }
 
+install_agents() {
+  local target="$1"
+  mkdir -p "$target"
+  echo "Agents → ${target}"
+  local name
+  for name in "${AGENT_FILES[@]}"; do
+    cp "${AGENT_SRC}/${name}" "${target}/${name}"
+    echo "  ok  ${name%.md}"
+  done
+}
+
 if [[ "$MODE" == "list" ]]; then
   echo "Skills:"
   for name in "${SKILL_NAMES[@]}"; do
@@ -172,12 +212,18 @@ if [[ "$MODE" == "list" ]]; then
     echo "  - /$(basename "$f" .md)"
   done
   echo
+  echo "Subagents:"
+  for name in "${AGENT_FILES[@]}"; do
+    echo "  - ${name%.md}"
+  done
+  echo
   echo "Addon:"
   echo "  - addons/mp_kit  (./install.sh --addon /path/to/godot-project)"
   echo
   echo "Skills dest (global): ${HOME}/.cursor/skills"
   echo "Commands dest (global): ${HOME}/.cursor/commands"
-  echo "Dest (--project): $(pwd)/.cursor/skills and $(pwd)/.cursor/commands"
+  echo "Agents dest (global): ${HOME}/.cursor/agents"
+  echo "Dest (--project): $(pwd)/.cursor/{skills,commands,agents}"
   exit 0
 fi
 
@@ -195,6 +241,7 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  layers:       godot-layered-architecture"
   echo "  composition:  godot-composition-first"
   echo "  multiplayer:  godot-mp-kit"
+  echo "  orchestrator: godot-studio-workflow"
 fi
 
 if [[ "$DO_COMMANDS" -eq 1 ]]; then
@@ -205,12 +252,19 @@ if [[ "$DO_COMMANDS" -eq 1 ]]; then
   echo "Done (commands). In Cursor: /create-prd, /generate-rfcs, /implement-rfc, …"
 fi
 
+if [[ "$DO_AGENTS" -eq 1 ]]; then
+  echo
+  install_agents "$(resolve_agent_dest)"
+  echo
+  echo "Done (subagents). New chat to reload. The main agent orchestrates; it does not implement the whole game alone."
+fi
+
 if [[ -n "$GODOT_ROOT" ]]; then
   echo
   install_addon "$GODOT_ROOT"
 fi
 
-if [[ "$DO_SKILLS" -eq 0 && "$DO_COMMANDS" -eq 0 && -z "$GODOT_ROOT" ]]; then
+if [[ "$DO_SKILLS" -eq 0 && "$DO_COMMANDS" -eq 0 && "$DO_AGENTS" -eq 0 && -z "$GODOT_ROOT" ]]; then
   echo "Nothing to do." >&2
   exit 1
 fi

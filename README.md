@@ -1,14 +1,18 @@
 # Godot studio kit
 
-A small (on purpose) framework for Godot 4 games: **Cursor skills**, **product commands** (PRD / RFC), and **Godot addons**. It grows one reusable piece at a time. The game (domain, glue, scenes) does not live here.
+A small (on purpose) framework for Godot 4 games. The **main chat orchestrates**: it asks questions, runs product commands, researches when needed, and hands plan / code / review to subagents. The game (domain, glue, scenes) does not live here.
+
+Goal: a **simple base that scales** by hand or with AI (composition, editor, Resources, small scripts).
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
 | Piece | Where | What it is |
 |-------|--------|--------|
-| Architecture (Clean **or** standard; **ask**) / composition / Resources / MP | `skills/` | Agent instructions |
-| PRD → features → rules → RFCs → implement / review | `commands/` | Cursor slash commands (`/create-prd`, …) |
-| MpKit | `addons/mp_kit/` | Godot plugin: transport, slots, session RPCs. Zero gameplay |
+| Orchestrator | `skills/godot-studio-workflow/` | The chat agent: PRD→RFC→implement flow |
+| Architecture / composition / MP | `skills/` | How to write Godot |
+| Tech lead, developer, reviewer, tester, visual | `agents/` | Cursor subagents (`.cursor/agents/`) |
+| PRD → features → rules → RFCs | `commands/` | Slash commands (`/create-prd`, …) |
+| MpKit | `addons/mp_kit/` | LAN transport. Zero gameplay |
 
 What **does not** belong in this repo: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -21,11 +25,22 @@ Always prioritize:
 - nodes and editor configuration always take priority
 - component reusability always takes priority
 
-## Install skills (Cursor)
+## How work runs
+
+In a new chat, with the kit installed, ask for the game. The orchestrator:
+
+1. Asks Clean vs standard (and whatever else is missing).
+2. Runs `/create-prd` … `/generate-rfcs` without you typing every slash.
+3. Researches Godot APIs if needed.
+4. Per RFC: **tech lead** (plan) → your OK → **developer** → **reviewer**. Tester and visual only if you ask.
+
+The developer (human or subagent) gets one RFC + plan + RULES: a short path, no guessing the rest of the product.
+
+## Install (Cursor)
 
 ```bash
-./install.sh                 # ~/.cursor/skills/ and ~/.cursor/commands/
-./install.sh --project       # ./.cursor/skills/ and ./.cursor/commands/ of cwd
+./install.sh                 # ~/.cursor/skills, commands, agents
+./install.sh --project       # ./.cursor/ of cwd
 ```
 
 From GitHub:
@@ -34,26 +49,22 @@ From GitHub:
 npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 ```
 
-`npx skills` only copies `skills/`. Commands and the Godot addon go through `./install.sh`.
+`npx skills` only copies `skills/`. Commands, subagents, and the addon go through `./install.sh`.
 
 Open a **new chat** in Cursor after installing.
 
 ## Product commands
 
-They land as slash commands (`/create-prd`, …). Flow:
-
-1. `/create-prd` → `PRD.md`
+1. `/create-prd` → `PRD.md` (for games: a short GDD)
 2. `/verify-prd` → `PRD-REVIEW.md`
 3. `/extract-features` → `FEATURES.md`
 4. `/generate-rules` → `RULES.md`
-5. `/generate-rfcs` → `RFCs/` + `RFCS.md`
-6. `/test-strategy` → `TEST-STRATEGY.md`
-7. `/implement-rfc <id>`
+5. `/generate-rfcs` → `RFCs/` + `RFCS.md` (the first is the vertical slice)
+6. `/test-strategy` → optional
+7. `/implement-rfc <id>` (subagent pipeline)
 8. `/review-rfc <id>`
 9. `/manage-changes` when scope moves
-10. `/workflow-status` at any time
-
-`npx skills` does not install these files; use `./install.sh`.
+10. `/workflow-status`
 
 ## Install MpKit in a Godot project
 
@@ -61,34 +72,24 @@ They land as slash commands (`/create-prd`, …). Flow:
 ./install.sh --addon /path/to/godot-project
 ```
 
-That leaves `addons/mp_kit/` in that project. Then, in `project.godot`, autoload **before** glue:
+Autoload **before** glue:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
-Details: `addons/mp_kit/README.md` and the `godot-mp-kit` skill.
-
-## Zip
-
-```bash
-./pack.sh    # dist/godot-studio-skills.zip  (skills + commands + addons + installer)
-unzip dist/godot-studio-skills.zip
-cd godot-studio-skills
-./install.sh
-./install.sh --addon /path/to/godot-project
-```
-
 ## Layout
 
 ```
-addons/mp_kit/                 # canonical Godot plugin
+addons/mp_kit/
 skills/
+  godot-studio-workflow/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
-commands/                      # /create-prd, /generate-rfcs, /implement-rfc, …
-install.sh                     # skills, commands, and/or --addon
+agents/                        # studio-tech-lead, studio-developer, …
+commands/
+install.sh
 ```
 
 How the framework grows: extract into `addons/` or `skills/` when something is reused. Do not copy an FX or a score tracker “just in case”.

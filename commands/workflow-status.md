@@ -1,4 +1,6 @@
-You are guiding a project through an RFC-driven development workflow with these stages:
+You are guiding a project through an RFC-driven development workflow with these stages.
+
+The orchestrator (`godot-studio-workflow`) runs these steps; the user does not have to type every slash if they asked to make the game. Stage 6 is optional if there are no tests.
 
 | # | Stage | Artifact | Command / Prompt |
 |---|-------|----------|------------------|
