@@ -5,7 +5,6 @@ description: >-
   MpKit (ENet, slots, handshake, snapshots) más glue del juego. Usar al copiar
   addons/mp_kit, host/join LAN, RPCs submit_*, MultiplayerSpawner, 1P offline,
   rejoin, autoridad de RigidBody, o al extraer netcode a otro proyecto.
-  Fuente canónica: repo Joelnicolass/godot-studio-skills (carpeta addons/mp_kit).
 ---
 
 # Godot — MpKit y multiplayer
@@ -36,14 +35,11 @@ En red eso se traduce a:
 
 ## Fuente canónica
 
-El plugin vive en el mismo repo que estas skills:
+El plugin es `addons/mp_kit/` **dentro del proyecto Godot**. Copiá esa carpeta tal cual a otro título. No forkearla por juego.
 
-- GitHub: `https://github.com/Joelnicolass/godot-studio-skills` → `addons/mp_kit/`
-- Instalar en un proyecto Godot: `./install.sh --addon /path/to/godot-project`
+Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/` de este proyecto.
 
-No copiar desde un juego ejemplar (naves, CRT, `NetworkSession`). Si el addon y el juego divergen, gana esta copia.
-
-API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md).
+API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Código genérico: [examples.md](examples.md).
 
 ## Qué es el kit / qué no
 
@@ -116,7 +112,7 @@ Rejoin: no resetear score; snapshot + `load_world_to` + re-parent de hijos del s
 - Timer/score/vidas: `GameSession.to_snapshot()` a 2–10 Hz vía `MpKit.push_snapshot`.
 - Eventos discretos (`+N` flotante): RPC `authority` en un nodo **vuestro**, no en MpKit.
 
-No metas 40 posiciones de asteroides en el dict si ya van por synchronizer.
+No metas 40 posiciones de props en el dict si ya van por synchronizer.
 
 ## 1P
 

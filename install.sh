@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Instala skills Cursor y/o el addon Godot MpKit.
-#   ./install.sh                      # skills → ~/.cursor/skills/
-#   ./install.sh --project            # skills → ./.cursor/skills/
+# Instala skills Cursor, commands de producto y/o el addon Godot MpKit.
+#   ./install.sh                      # skills → ~/.cursor/skills/  commands → ~/.cursor/commands/
+#   ./install.sh --project            # ./.cursor/skills/ y ./.cursor/commands/
 #   ./install.sh --addon GODOT_ROOT   # addons/mp_kit → GODOT_ROOT/addons/mp_kit
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="${ROOT}/skills"
+CMD_SRC="${ROOT}/commands"
 ADDON_SRC="${ROOT}/addons/mp_kit"
 SKILL_NAMES=(
   godot-layered-architecture
@@ -16,19 +17,21 @@ SKILL_NAMES=(
 
 MODE="global"
 DEST=""
+CMD_DEST=""
 GODOT_ROOT=""
 DO_SKILLS=1
+DO_COMMANDS=1
 
 usage() {
   cat <<'EOF'
-Instalador del kit Godot studio (skills Cursor + addon MpKit).
+Instalador del kit Godot studio (skills Cursor + commands de producto + addon MpKit).
 
-  ./install.sh                      Skills en ~/.cursor/skills/
-  ./install.sh --project            Skills en ./.cursor/skills/
-  ./install.sh --dest DIR           Skills en DIR
+  ./install.sh                      Skills en ~/.cursor/skills/ y commands en ~/.cursor/commands/
+  ./install.sh --project            Skills y commands en ./.cursor/ del cwd
+  ./install.sh --dest DIR           Skills en DIR (commands al lado: ../commands)
   ./install.sh --addon GODOT_ROOT   Copia addons/mp_kit al proyecto Godot
   ./install.sh --addon-only GODOT_ROOT
-                                    Solo el addon, sin skills
+                                    Solo el addon, sin skills ni commands
   ./install.sh --list               Qué se instalaría
   ./install.sh --pack               Genera dist/godot-studio-skills.zip
 
@@ -63,6 +66,7 @@ while [[ $# -gt 0 ]]; do
     --addon-only)
       GODOT_ROOT="${2:?--addon-only requiere la raíz del proyecto Godot}"
       DO_SKILLS=0
+      DO_COMMANDS=0
       shift 2
       ;;
     --list)
@@ -85,6 +89,11 @@ if [[ "$DO_SKILLS" -eq 1 && ! -d "$SRC" ]]; then
   exit 1
 fi
 
+if [[ "$DO_COMMANDS" -eq 1 && ! -d "$CMD_SRC" ]]; then
+  echo "No encuentro ${CMD_SRC}." >&2
+  exit 1
+fi
+
 if [[ -n "$GODOT_ROOT" && ! -d "$ADDON_SRC" ]]; then
   echo "No encuentro ${ADDON_SRC}" >&2
   exit 1
@@ -99,11 +108,24 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   done
 fi
 
-resolve_dest() {
+resolve_skill_dest() {
   case "$MODE" in
     global) echo "${HOME}/.cursor/skills" ;;
     project) echo "$(pwd)/.cursor/skills" ;;
     custom) echo "$DEST" ;;
+    *) echo "" ;;
+  esac
+}
+
+resolve_command_dest() {
+  case "$MODE" in
+    global) echo "${HOME}/.cursor/commands" ;;
+    project) echo "$(pwd)/.cursor/commands" ;;
+    custom)
+      local parent
+      parent="$(cd "$(dirname "$DEST")" && pwd)"
+      echo "${parent}/commands"
+      ;;
     *) echo "" ;;
   esac
 }
@@ -128,22 +150,39 @@ install_addon() {
   echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
 }
 
+install_commands() {
+  local target="$1"
+  mkdir -p "$target"
+  echo "Commands → ${target}"
+  local f
+  for f in "${CMD_SRC}"/*.md; do
+    cp "$f" "${target}/$(basename "$f")"
+    echo "  ok  $(basename "$f" .md)"
+  done
+}
+
 if [[ "$MODE" == "list" ]]; then
   echo "Skills:"
   for name in "${SKILL_NAMES[@]}"; do
     echo "  - ${name}"
   done
   echo
+  echo "Commands (producto / PRD / RFC):"
+  for f in "${CMD_SRC}"/*.md; do
+    echo "  - /$(basename "$f" .md)"
+  done
+  echo
   echo "Addon:"
   echo "  - addons/mp_kit  (./install.sh --addon /path/to/godot-project)"
   echo
   echo "Destino skills (global): ${HOME}/.cursor/skills"
-  echo "Destino skills (--project): $(pwd)/.cursor/skills"
+  echo "Destino commands (global): ${HOME}/.cursor/commands"
+  echo "Destino (--project): $(pwd)/.cursor/skills y $(pwd)/.cursor/commands"
   exit 0
 fi
 
 if [[ "$DO_SKILLS" -eq 1 ]]; then
-  TARGET="$(resolve_dest)"
+  TARGET="$(resolve_skill_dest)"
   mkdir -p "$TARGET"
   echo "Skills → ${TARGET}"
   for name in "${SKILL_NAMES[@]}"; do
@@ -158,12 +197,20 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  multiplayer:  godot-mp-kit"
 fi
 
+if [[ "$DO_COMMANDS" -eq 1 ]]; then
+  CMD_DEST="$(resolve_command_dest)"
+  echo
+  install_commands "$CMD_DEST"
+  echo
+  echo "Listo (commands). En Cursor: /create-prd, /generate-rfcs, /implement-rfc, …"
+fi
+
 if [[ -n "$GODOT_ROOT" ]]; then
   echo
   install_addon "$GODOT_ROOT"
 fi
 
-if [[ "$DO_SKILLS" -eq 0 && -z "$GODOT_ROOT" ]]; then
+if [[ "$DO_SKILLS" -eq 0 && "$DO_COMMANDS" -eq 0 && -z "$GODOT_ROOT" ]]; then
   echo "Nada que hacer." >&2
   exit 1
 fi

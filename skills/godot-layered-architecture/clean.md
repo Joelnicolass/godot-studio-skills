@@ -15,10 +15,10 @@ src/
   features/<name>/   # scripts + escenas juntas
   shared/            # Wrap, StateMachine, PostFx
   resources/         # class_name + .tres (balas, enemigos, power-ups)
-addons/              # MpKit (Joelnicolass/godot-studio-skills/addons/)
+addons/              # MpKit y plugins del framework (cero gameplay)
 ```
 
-Nombres genéricos: `GameSession`, `GameEvents`, `SceneDirector`. Ejemplar: `MatchSession`.
+Nombres de fachada: `GameSession`, `GameEvents`, `SceneDirector`. No uses nombres de un título anterior.
 
 ### Domain
 

@@ -26,7 +26,7 @@ Lobby host: `"%s:%d" % [MpLan.get_local_ipv4(), port]`. Validar IP antes de `joi
 
 ## Política de arranque (producto, no kit)
 
-El ejemplar arranca al conectar el 2.º peer. Un shooter puede esperar “listo”. Eso vive en glue.
+Una política válida: arrancar al conectar el 2.º peer. Un shooter puede esperar “listo”. Eso vive en glue.
 
 ```gdscript
 func _on_peer_joined(peer_id: int, slot: int) -> void:
@@ -85,7 +85,7 @@ Rejoin con mundo vivo: `remove_child` + `add_child(..., true)` para reenviar spa
 | `server_lost` | Ya `leave()` | Notice + menú |
 | `join_failed` | Nada más | Notice + menú |
 
-El ejemplar: guest drop no pausa el timer y deja la nave ausente. Otro género puede pausar. No lo pongas en el kit.
+Una política válida: guest drop no pausa el timer y deja el pawn ausente. Otro género puede pausar. No lo pongas en el kit.
 
 ## Pawns
 

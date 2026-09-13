@@ -1,15 +1,16 @@
 # Godot studio kit
 
-Framework chico (y a propósito) para juegos Godot 4: **skills de Cursor** + **addons Godot**. Se agranda de a una pieza reusable. El juego (dominio, glue, escenas) no vive acá.
+Framework chico (y a propósito) para juegos Godot 4: **skills de Cursor**, **commands de producto** (PRD / RFC) y **addons Godot**. Se agranda de a una pieza reusable. El juego (dominio, glue, escenas) no vive acá.
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
 | Pieza | Dónde | Qué es |
 |-------|--------|--------|
 | Arquitectura (Clean **o** estándar; **preguntar**) / composición / Resources / MP | `skills/` | Instrucciones para el agente |
+| PRD → features → rules → RFCs → implement / review | `commands/` | Slash commands de Cursor (`/create-prd`, …) |
 | MpKit | `addons/mp_kit/` | Plugin Godot: transporte, slots, RPCs de sesión. Cero gameplay |
 
-Qué **no** entra en este repo: puntaje, naves, CRT, copy, `GameSession`, `SceneDirector`. Eso es glue del título.
+Qué **no** entra en este repo: puntaje, copy de producto, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
 
 ## Prioridades (siempre)
 
@@ -23,8 +24,8 @@ Siempre se priorice:
 ## Instalar skills (Cursor)
 
 ```bash
-./install.sh                 # ~/.cursor/skills/  (todos tus proyectos)
-./install.sh --project       # ./.cursor/skills/ del cwd
+./install.sh                 # ~/.cursor/skills/ y ~/.cursor/commands/
+./install.sh --project       # ./.cursor/skills/ y ./.cursor/commands/ del cwd
 ```
 
 Desde GitHub:
@@ -33,9 +34,26 @@ Desde GitHub:
 npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 ```
 
-`npx skills` solo copia `skills/`. El addon Godot va aparte (abajo).
+`npx skills` solo copia `skills/`. Commands y el addon Godot van con `./install.sh`.
 
 Abrí un **chat nuevo** en Cursor después de instalar.
+
+## Commands de producto
+
+Quedan como slash commands (`/create-prd`, …). Flujo:
+
+1. `/create-prd` → `PRD.md`
+2. `/verify-prd` → `PRD-REVIEW.md`
+3. `/extract-features` → `FEATURES.md`
+4. `/generate-rules` → `RULES.md`
+5. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+6. `/test-strategy` → `TEST-STRATEGY.md`
+7. `/implement-rfc <id>`
+8. `/review-rfc <id>`
+9. `/manage-changes` cuando se mueve el alcance
+10. `/workflow-status` en cualquier momento
+
+`npx skills` no instala estos archivos; usá `./install.sh`.
 
 ## Instalar MpKit en un proyecto Godot
 
@@ -69,7 +87,8 @@ skills/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
-install.sh                     # skills y/o --addon
+commands/                      # /create-prd, /generate-rfcs, /implement-rfc, …
+install.sh                     # skills, commands y/o --addon
 ```
 
 Cómo crece el framework: extraer a `addons/` o `skills/` cuando algo se reusa. No copiar un FX o un tracker de puntaje “por las dudas”.

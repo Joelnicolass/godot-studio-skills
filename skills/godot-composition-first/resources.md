@@ -76,12 +76,12 @@ Tablas: Resource que exporta `Array[EnemyData]` o `Dictionary` de Resources — 
 
 `GameConstants` / `MatchRules.tres`: pocos valores de **ronda**.  
 Catálogo de contenido: Resources.  
-Look de un vórtice en *esta* arena: `@export` del nodo.
+Look de un glow en *esta* escena: `@export` del nodo.
 
 ## Anti-patrones
 
 - `enum BulletKind` + `match` de stats en el proyectil.
 - Un `.tres` por *instancia viva* (eso es el nodo).
 - Inner class `class Foo extends Resource`.
-- Pisar `@export var data` desde código en `_ready` “para que coincida con el PRD”.
+- Pisar `@export var data` desde código en `_ready` para forzar un número de diseño.
 - Meter PackedScenes pesadas y `duplicate(true)` profundo sin necesidad (compartí la definición, instanciá la escena).

@@ -18,6 +18,7 @@ trap 'rm -rf "$TMP"' EXIT
 STAGE="${TMP}/${NAME}"
 mkdir -p "$STAGE"
 cp -R "${ROOT}/skills" "$STAGE/"
+cp -R "${ROOT}/commands" "$STAGE/"
 cp -R "${ROOT}/addons" "$STAGE/"
 cp "${ROOT}/install.sh" "${ROOT}/uninstall.sh" "${ROOT}/pack.sh" \
   "${ROOT}/README.md" "${ROOT}/publish.env.example" "$STAGE/"

@@ -14,13 +14,7 @@ Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` n
 
 ## Install
 
-Canónico: `addons/mp_kit/` en [Joelnicolass/godot-studio-skills](https://github.com/Joelnicolass/godot-studio-skills).
-
-```bash
-./install.sh --addon /path/to/godot-project
-```
-
-O copiar esa carpeta a `res://addons/mp_kit/`. Autoload, **antes** del glue:
+Copiá `addons/mp_kit/` a `res://addons/mp_kit/` del proyecto. Autoload, **antes** del glue:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"

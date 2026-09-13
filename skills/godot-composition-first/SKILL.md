@@ -39,12 +39,10 @@ Pawn (RigidBody2D / CharacterBody2D)     ← poco código, claims de autoridad
 ```
 
 - Estados = nodos `State` bajo un `StateMachine`, no un `enum` + `match` de 200 líneas en el pawn.
-- Input (swipe, botón) es **otro nodo** (a menudo hermano en el mundo), no mezclado con física.
+- Input (stick, botón, puntero) es **otro nodo** (a menudo hermano en el mundo), no mezclado con física.
 - Un FX nuevo es un hijo o una packed scene, no un parámetro más en la superclase.
 
-Herencia solo para el contrato mínimo (`State extends Node`, `CrtPass extends Control`). Si vas a `class BigShip extends Ship` con más sistemas, paramá: componé.
-
-El ejemplar: nave = `RigidBody2D` + trail + force feedback + FSM; post-FX = stack de passes.
+Herencia solo para el contrato mínimo (`State extends Node`, `CrtPass extends Control`). Si vas a `class EliteEnemy extends Enemy` con más sistemas, paramá: componé.
 
 ## 2. Nodos y configuración del editor ganan al código
 
@@ -59,8 +57,8 @@ Hacer:
 
 No hacer:
 
-- `_init` / `_ready` que copie `GameConstants.FOO` sobre un `@export` de apariencia (“para que coincida con el PRD”). Eso mata el editor.
-- Un único `GameConstants` con 80 floats de vórtice/CRT. Eso no escala a otro título ni a dos instancias distintas.
+- `_init` / `_ready` que copie `GameConstants.FOO` sobre un `@export` de apariencia. Eso mata el editor.
+- Un único `GameConstants` con 80 floats de shader/post-proceso. Eso no escala a otro título ni a dos instancias distintas.
 - `return` temprano en `fragment()` u otros hacks que dejen el `ColorRect` opaco al togglear un pass.
 
 `GameConstants` (o un `MatchRules.tres`) queda para **reglas de ronda**: duración, vidas, layers. Si tweakeás el look en play y perdés el valor al recargar, el knob estaba en el lugar equivocado.
@@ -81,7 +79,7 @@ Guía completa: [resources.md](resources.md).
 Antes de escribir un script en `features/` o `scenes/`:
 
 1. ¿Existe ya en `src/shared/` o `addons/`?
-2. Si no, ¿un segundo caller lo va a necesitar (otro feature, otro juego, editor preview)? → nacer en `shared/` del juego o en `addons/` del framework (`Joelnicolass/godot-studio-skills`), no fork por título.
+2. Si no, ¿un segundo caller lo va a necesitar (otro feature, otro juego, editor preview)? → nacer en `shared/` del juego o en `addons/` del framework, no fork por título.
 3. API del componente: signals + `@export`. Cero nombres de puntaje, slots o copy del producto.
 
 Patrones que se extraen, no se duplican:
@@ -125,4 +123,4 @@ Shaders: un efecto, un archivo. Componer en el árbol, no en un uber-shader.
 - [ ] ¿Vive en `shared/` o `addons/` si no es regla de este género?
 - [ ] ¿El componente no puntúa ni mezcla responsabilidades?
 
-Patrones concretos: [patterns.md](patterns.md). Resources: [resources.md](resources.md).
+Patrones concretos: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Código genérico: [examples.md](examples.md).

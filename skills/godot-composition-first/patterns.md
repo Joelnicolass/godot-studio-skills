@@ -1,4 +1,4 @@
-# Patrones de composición (ejemplar Godot 4)
+# Patrones de composición (Godot 4)
 
 ## StateMachine
 
@@ -21,9 +21,9 @@ PostFxStack (CanvasLayer, layer alta)
 - `mouse_filter = IGNORE` en todo el stack.
 - Toggle: mostrar/ocultar el pass; no early-`return` en `fragment()` que deje el buffer en blanco.
 
-## Pawn inercial
+## Pawn con física
 
-- Física y wrap en el body (`_integrate_forces`).
+- Física y wrap en el body (`_integrate_forces` o `_physics_process`).
 - Look (color, trail, aim preview) en hijos, tinted desde un método del contenedor.
 - Input en un catcher externo que llama `apply_*` o `submit_*`.
 

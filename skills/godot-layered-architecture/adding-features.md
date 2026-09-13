@@ -45,6 +45,6 @@ El nodo de input **no** instancia proyectiles ni suma puntos. Solo pide.
 
 ## Presentación
 
-- CRT, ripple, flashes: cada peer. No van en el snapshot de score.
+- Post-proceso, flashes: cada peer. No van en el snapshot de score.
 - Passes/FX como nodos intercambiables.
 - HUD: `mouse_filter = IGNORE` salvo controles que traguen el pointer.

@@ -76,10 +76,10 @@ Clasificar antes del sprite. Checklist: [adding-features.md](adding-features.md)
 
 | Tipo | Dueño | Ejemplos |
 |------|--------|----------|
-| **A. Input** | Cliente lee; host aplica | swipe, disparar |
+| **A. Input** | Cliente lee; host aplica | puntero, disparar |
 | **B. Simulación** | Solo host si hay red | proyectil, enemigo |
 | **C. Estado de partida** | Clean: sesión/domain. Estándar: nodo de match chico, no el World dios | munición, combo |
-| **D. Presentación** | Local, sin RPC de daño | flash, CRT |
+| **D. Presentación** | Local, sin RPC de daño | flash, post-proceso |
 | **E. UI** | HUD / menús | icono cooldown |
 | **F. Definición de tipo** | Resource plantilla | `plasma.tres`, `grunt.tres` |
 
@@ -98,3 +98,5 @@ HUD: `MpKit.local_slot()`, nunca `get_unique_id()`.
 - Feature nueva por herencia profunda.
 - Literales de negocio copiados (`60`, `3`, `7777`).
 - Copiar un componente en vez de extraerlo.
+
+Ejemplos de código genéricos: [examples.md](examples.md).
