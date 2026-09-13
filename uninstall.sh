@@ -7,6 +7,7 @@ SKILL_NAMES=(
   godot-composition-first
   godot-mp-kit
   godot-studio-workflow
+  godot-testing
 )
 COMMAND_FILES=(
   create-prd.md

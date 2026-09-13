@@ -9,7 +9,7 @@ Repo: https://github.com/Joelnicolass/godot-studio-skills
 | Piece | Where | What it is |
 |-------|--------|--------|
 | Orchestrator | `skills/godot-studio-workflow/` | The chat agent: PRD→RFC→implement flow |
-| Architecture / composition / MP | `skills/` | How to write Godot |
+| Architecture / composition / MP / tests | `skills/` | How to write and test Godot |
 | Tech lead, developer, reviewer, tester, visual | `agents/` | Cursor subagents (`.cursor/agents/`) |
 | PRD → features → rules → RFCs | `commands/` | Slash commands (`/create-prd`, …) |
 | MpKit | `addons/mp_kit/` | LAN transport. Zero gameplay |
@@ -87,6 +87,7 @@ skills/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
+  godot-testing/
 agents/                        # studio-tech-lead, studio-developer, …
 commands/
 install.sh

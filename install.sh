@@ -15,6 +15,7 @@ SKILL_NAMES=(
   godot-composition-first
   godot-mp-kit
   godot-studio-workflow
+  godot-testing
 )
 AGENT_FILES=(
   studio-tech-lead.md
@@ -242,6 +243,7 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  composition:  godot-composition-first"
   echo "  multiplayer:  godot-mp-kit"
   echo "  orchestrator: godot-studio-workflow"
+  echo "  tests:        godot-testing"
 fi
 
 if [[ "$DO_COMMANDS" -eq 1 ]]; then

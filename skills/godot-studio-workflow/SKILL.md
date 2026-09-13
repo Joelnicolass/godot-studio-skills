@@ -12,7 +12,7 @@ description: >-
 
 The **main agent in this chat** is the orchestrator. It talks to the user. It does not dump the whole product into one subagent.
 
-Goal: a Godot 4 game with a **small, clear base**, easy to continue by hand or with AI. Priorities: clean layers, composition, editor/`@export`, reusable components. Also load [godot-layered-architecture](../godot-layered-architecture/SKILL.md) and [godot-composition-first](../godot-composition-first/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md).
+Goal: a Godot 4 game with a **small, clear base**, easy to continue by hand or with AI. Priorities: clean layers, composition, editor/`@export`, reusable components. Also load [godot-layered-architecture](../godot-layered-architecture/SKILL.md) and [godot-composition-first](../godot-composition-first/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md) (GUT / GdUnit4) **only** if the user asks or RULES requires them.
 
 Roles (kit subagents; `Task` `subagent_type` = their `name`):
 

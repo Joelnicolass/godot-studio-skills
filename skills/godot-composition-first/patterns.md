@@ -2,49 +2,55 @@
 
 ## StateMachine
 
-Parent node with `@export var initial_state: State`. Children = states. `transition(&"Aiming")` looks up by node name.
+Parent with `@export var initial_state: State`. Children = states. `transition(&"Hurt")` looks up by node name.
 
 - `State.enter` / `exit` / `update`.
-- The state may ask for the actor with `machine.get_parent()`.
-- Do not store score on a state.
+- The actor is **injected**: `@export var actor: Node` (the parent assigns it). Not `machine.get_parent()` as API.
+- Do not store score in a state.
+
+## Health / Hitbox / Hurtbox
+
+`Health` (`class_name` node): `max_hp` may come from the type Resource; current `hp` on the node. `signal damaged(amount: int)` / `signal died`. The parent orchestrates (animation, `queue_free`).
+
+Hitbox / Hurtbox = `Area2D` packed scenes. Optional: `"hurtbox"` group if the exact type does not matter; `@export` sockets win.
 
 ## PostFx stack
 
 ```
 PostFxStack (CanvasLayer, high layer)
-├── RipplePass.tscn    # BackBufferCopy + ColorRect + ripple.gdshader
-└── CrtPass.tscn       # BackBufferCopy + ColorRect + crt.gdshader
+├── BloomPass.tscn     # BackBufferCopy + ColorRect + shader
+└── GrainPass.tscn
 ```
 
 - Child order = composition order.
-- A gameplay pickup **does not** put code in the CRT shader: the world calls `RipplePass.play()` (tween a uniform).
-- `mouse_filter = IGNORE` on the whole stack.
-- Toggle: show/hide the pass; no early `return` in `fragment()` that leaves the buffer blank.
+- Gameplay **does not** put code in another pass’s shader: it tweens the matching pass.
+- `mouse_filter = IGNORE`.
+- Toggle: show/hide the pass; no early-`return` in `fragment()` that leaves the buffer blank.
 
-## Physics pawn
+## Actor with physics
 
-- Physics and wrap on the body (`_integrate_forces` or `_physics_process`).
-- Look (color, trail, aim preview) on children, tinted from a container method.
-- Input on an external catcher that calls `apply_*` or `submit_*`.
+- Simulation in `_physics_process` (or `_integrate_forces` if it is a `RigidBody`).
+- Look on children. Input on a catcher that uses InputMap and calls `apply_*` / `submit_*`.
+- If the body is a `RigidBody`, `MpAuthority.freeze_rigid_proxy` on proxies. Do not assume RigidBody on every actor.
 
 ## Editor preview
 
-`@export_tool_button` to regenerate geometry (rings, meshes). Preview does not write `GameConstants` or start ENet.
+`@export_tool_button` to regenerate geometry. Preview does not write `MatchRules` or start ENet.
 
 ## Resource template + scene
 
 ```
-bullet.tscn          # RigidBody/Area + thin script
-plasma.tres          # BulletData { damage, speed, scene? }
-spread.tres
+projectile.tscn
+projectile_fast.tres    # ProjectileData { damage, speed, scene? }
+projectile_slow.tres
 ```
 
-The weapon exports `BulletData`. It spawns `data.scene` (or the single scene) and assigns `data`. Guide: [resources.md](resources.md).
+The weapon exports `ProjectileData`. It spawns `data.scene` (or the single scene) and assigns `data`.
 
 ## When it does belong in code
 
-- Physics layers shared with the rules (masks anti-cheat assumes).
-- Multiplayer authority (`claim_server`, proxy freeze).
-- **Round** values identical on host and guest (duration, lives).
+- Physics layers shared with the rules.
+- Multiplayer authority.
+- **Round** values identical on host and guest.
 
-Content types: Resource. Instance look: scene. Runtime: node.
+Types: Resource. Instance look: scene. Runtime: node.

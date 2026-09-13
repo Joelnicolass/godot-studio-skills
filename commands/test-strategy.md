@@ -28,6 +28,8 @@ Apply only the sections and checks that fit that type. For a library/SDK, skip i
 
 State which product type you classified and which checks you skipped. Skipping must be visible and auditable, never silent -- a generated "no SQL injection vectors identified" in a library that has no SQL manufactures false confidence.
 
+For a **Godot game**: load skill `godot-testing`. GUT for GDScript, GdUnit4 for C#. Prefer `godot --headless` + the project runner. Skip API/DB/auth/cross-browser unless the title has them. Feel = playtest, not a shader-float assert.
+
 For a library of pure functions, most of sections 2-6 below will not apply; the useful equivalents are numeric correctness, immutability of caller-owned data, determinism, API surface, bundle size, and supply chain. Replace inapplicable sections rather than padding them.
 
 ## Test Plan Sections

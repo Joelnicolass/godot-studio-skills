@@ -1,87 +1,68 @@
 # Resources — data templates (Godot 4)
 
-Engine docs: [Resources](https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html), [Node alternatives](https://docs.godotengine.org/en/stable/tutorials/best_practices/node_alternatives.html).
+Docs: [Resources](https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html), [Node alternatives](https://docs.godotengine.org/en/stable/tutorials/best_practices/node_alternatives.html).
 
-Nodes do (draw, simulate, fire). Resources **are data**. Godot loads each file once and shares it: that is why they work as a catalog.
+Nodes do. Resources **are data**. Godot loads each file once and shares it.
 
-## When to use Resource (priority)
+## When to use a Resource
 
-If there are **several types** that share the same scene and change numbers, refs, or PackedScenes:
+Several types, same scene, numbers / refs / PackedScenes change: projectiles, enemies, items, weapons, spawn tables.
 
-- Bullets / projectiles (`damage`, `speed`, `lifetime`, `scene`)
-- Enemies / NPCs (`max_hp`, `speed`, `loot`, `scene`)
-- Power-ups / items (`id`, `duration`, `icon`)
-- Weapons / abilities (`fire_rate`, `projectile`, `sfx`)
-- Tables (spawn weights, waves, loot)
+One `projectile.tscn`. Ten `.tres`. Zero `if kind ==`.
 
-One `bullet.tscn`. Ten `.tres`. Zero `if kind ==`.
+If the tree **structure** changes: a different packed scene, not a Resource with 40 flags.
 
-If the tree **structure** changes (another collider, another child), a different packed scene or composition — not a Resource with 40 “enable_wing” flags.
-
-An inner `class` that extends Resource **does not serialize**. Always a file script + `class_name`.
+An inner `class` that extends Resource **does not serialize**. File script + `class_name`.
 
 ## Recipe
 
-1. Script `extends Resource` + `class_name BulletData`.
-2. `@export` / `@export_group` / `@export_range`. Every `_init` parameter needs a default (otherwise the inspector fails).
-3. FileSystem → Create Resource → `BulletData` → `plasma.tres`, `spread.tres` (text `.tres` for git).
-4. On the actor: `@export var data: BulletData`. Drag the `.tres`.
-5. Runtime reads `data.speed`. Live state (`hp` now) on the node, not the `.tres`.
+1. `extends Resource` + `class_name ProjectileData`.
+2. `@export` with defaults (otherwise the inspector fails).
+3. Create Resource → `projectile_fast.tres`, `projectile_slow.tres` (text `.tres` for git).
+4. On the actor: `@export var data: ProjectileData`.
+5. If `data == null`: `_get_configuration_warnings()`; `assert` only as extra debug.
 
 ```gdscript
-class_name BulletData
+class_name ProjectileData
 extends Resource
 
-@export var display_name: String = "Plasma"
+@export var display_name: String = "Default"
 @export var damage: int = 1
-@export var speed: float = 520.0
-@export var lifetime_sec: float = 1.4
-@export var scene: PackedScene  # if the type changes visuals
+@export var speed: float = 400.0
+@export var lifetime_sec: float = 1.5
+@export var scene: PackedScene
 ```
 
 ```gdscript
-# bullet.gd — one script for every type
-@export var data: BulletData
+@export var data: ProjectileData
 
-func _ready() -> void:
-	assert(data != null)
+func _get_configuration_warnings() -> PackedStringArray:
+	if data == null:
+		return PackedStringArray(["Assign a ProjectileData resource."])
+	return PackedStringArray()
 ```
-
-The weapon/spawner holds the Resource (or the Resource holds the `PackedScene`) and does `data.scene.instantiate()` + assigns `data`.
 
 ## External vs built-in
 
-| | When |
-|--|--------|
-| External `.tres` | Shared by several scenes (player, enemy, UI). **Default for templates.** |
-| Built-in in the `.tscn` | Data for one instance, not reusable. |
+External `.tres` = default for shared templates. Built-in = data for a single instance.
 
 ## Do not mutate the template
 
-`load("res://resources/bullets/plasma.tres")` returns **the same** instance. `data.damage = 3` at runtime dirties every bullet (and in the editor may write the asset).
+`load("res://resources/projectiles/projectile_fast.tres")` is **the same** instance. `data.damage = 3` dirties every user.
 
 - Definition: read-only.
-- Working copy: `data.duplicate()` (buffs, rolls).
-- Scene instance: `resource_local_to_scene` if the override belongs to that `.tscn`.
-
-Max HP on the Resource; current HP on the node (or `duplicate()` on spawn).
+- Working copy: `data.duplicate()`.
+- Max HP on the Resource; current HP on the node.
 
 ## Where they live
 
-Clean: `src/resources/<family>/`. Standard: `resources/<family>/` or next to the actor. The class `.gd` next to the `.tres` files.
+Clean: `src/resources/<family>/`. Standard: `resources/<family>/`.
 
-Tables: a Resource that exports `Array[EnemyData]` or a `Dictionary` of Resources — not hand-parsed JSON if the inspector can edit it.
-
-## Relation to constants
-
-`GameConstants` / `MatchRules.tres`: few **round** values.  
-Content catalog: Resources.  
-Look of a glow in *this* scene: `@export` on the node.
+`MatchRules.tres`: few **round** values. Catalog: Resources. Instance look: node `@export`.
 
 ## Anti-patterns
 
-- `enum BulletKind` + `match` of stats on the projectile.
-- One `.tres` per *live instance* (that is the node).
+- `enum Kind` + `match` of stats on the projectile.
+- One `.tres` per live instance.
 - Inner class `class Foo extends Resource`.
-- Overwriting `@export var data` from code in `_ready` to force a design number.
-- Heavy PackedScenes and deep `duplicate(true)` without need (share the definition, instance the scene).
+- Overwriting `@export var data` in `_ready` to force a design number.

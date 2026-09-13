@@ -49,7 +49,7 @@ Enable the plugin in the editor for visibility; headless/CI still need the autol
 Client → server: `rpc_world_ready`  
 Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`
 
-Pawn input (`submit_impulse`, `submit_fire`, …) stays on **your** nodes.
+Pawn input (`submit_action`, `submit_fire`, …) stays on **your** nodes.
 
 ## Handshake (spawn)
 

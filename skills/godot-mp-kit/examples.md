@@ -1,27 +1,27 @@
 # Examples — MpKit (generic)
 
-No specific title. The kit does not name these classes.
+Nothing from a concrete title. The kit does not name these classes.
 
-## Intent RPC on the pawn
+## Intent RPC on the actor
 
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")
-func submit_impulse(dir: Vector2, force: float) -> void:
+func submit_action(dir: Vector2, strength: float) -> void:
 	if not multiplayer.is_server():
 		return
 	if multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):
 		return
-	apply_impulse(dir, force)
+	apply_action(dir, strength)
 
 
-func try_impulse(dir: Vector2, force: float) -> void:
+func try_action(dir: Vector2, strength: float) -> void:
 	if MpAuthority.should_send_command():
-		submit_impulse.rpc_id(1, dir, force)
+		submit_action.rpc_id(1, dir, strength)
 	else:
-		apply_impulse(dir, force)
+		apply_action(dir, strength)
 ```
 
-## Glue: start on second peer
+## Glue: start on the second peer
 
 ```gdscript
 func _on_peer_joined(peer_id: int, slot: int) -> void:
@@ -35,10 +35,18 @@ func _on_peer_joined(peer_id: int, slot: int) -> void:
 	flow.goto_world()
 ```
 
-## Periodic snapshot (host only)
+## Periodic snapshot (host only, 2–10 Hz)
 
 ```gdscript
-func _process(_delta: float) -> void:
+func _ready() -> void:
+	var timer := Timer.new()
+	timer.wait_time = 0.2
+	timer.timeout.connect(_push_if_host)
+	add_child(timer)
+	timer.start()
+
+
+func _push_if_host() -> void:
 	if not MpKit.is_server() or not game_session.is_running:
 		return
 	MpKit.push_snapshot(game_session.to_snapshot())

@@ -1,6 +1,6 @@
 # Examples — architecture (generic)
 
-No specific title. Copy and adapt names to the current game.
+Nothing from a concrete title. Copy and adapt names to the current game.
 
 ## Clean — minimal session
 
@@ -60,13 +60,13 @@ func start(slots: Array) -> void:
 	lives.clear()
 	for slot in slots:
 		lives[int(slot)] = 3
-	set_process(true)
+	set_physics_process(true)
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not MpKit.is_networked() or MpKit.is_server():
 		time_left = maxf(time_left - delta, 0.0)
 		if time_left <= 0.0:
-			set_process(false)
+			set_physics_process(false)
 			finished.emit(0)
 ```

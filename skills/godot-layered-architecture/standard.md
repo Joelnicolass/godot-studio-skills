@@ -2,61 +2,61 @@
 
 Use **only** if the user chose standard (or the repo already declares it). Do not create `src/domain/` or a session facade “just in case”.
 
-Composition, editor, Resources, reuse, small scripts, signals up / calls down still apply. Only the Clean split is omitted.
+Still required: composition, editor, Resources, reuse, small scripts, signals up / calls down.
 
-## Project shape (idiomatic Godot)
+## Project shape
 
-Scene + script **together**. Not a `scripts/` dump of 200 files disconnected from their `.tscn`.
+Scene + script **together**.
 
 ```
-scenes/                 # or res:// with folders by area
+scenes/
   actors/
-    bullet.tscn + .gd   # one body; type arrives via Resource
+    projectile.tscn + .gd
     enemy.tscn + .gd
-    pawn.tscn + .gd
-  components/           # Health, Hitbox, Hurtbox, Trail (packed scenes)
+    actor.tscn + .gd
+  components/           # Health, Hitbox, Hurtbox (packed scenes)
   world/
   ui/
 resources/
-  bullets/              # bullet_data.gd + plasma.tres + spread.tres
+  projectiles/          # projectile_data.gd + projectile_fast.tres + projectile_slow.tres
   enemies/
-  powerups/
 addons/mp_kit/
 ```
 
-Valid variant: folders per feature (`actors/bullet/`) with scene, script, and `.tres` inside. Invalid: a thousand-line `Player.gd` and `match weapon`.
+Valid variant: folders per feature. Invalid: a thousand-line `Player.gd` and `match weapon`.
 
-## Small scripts and responsibilities
+## Autonomous scenes
 
-- One node = one job. Movement ≠ HP ≠ fire ≠ HUD.
-- Extract a component (child scene) when the script goes from orchestrating to implementing two systems.
-- Thin inheritance: `State extends Node`. Not `EliteFlyingEnemy extends FlyingEnemy extends Enemy`.
+Each `.tscn` should open with **F6** and work (or warn). Docs: [scene organization](https://docs.godotengine.org/en/stable/tutorials/best_practices/scene_organization.html).
+
+- Zero environment deps. What is missing, the parent injects: `@export var health: Health`, Callable, or Node.
+- Signals in the **past tense** and typed. The **parent** does `child.died.connect(...)`. The child does not call `get_parent().on_died()`.
+- Internals of *this* scene: `%UniqueName` (`%Sprite`). Between scenes: `@export` socket, not `get_node("../../Audio")`.
+- If a required socket is empty: `@tool` + `_get_configuration_warnings()`.
+- Relational, not spatial: should deleting the parent delete the child? If not, sibling. Relative position: `RemoteTransform2D` / `RemoteTransform3D`.
+- `Main` (entry) → `World` (levels replace) + `GUI` (sibling; does not die with the level).
+
+## Small scripts
+
+- One node = one job. Movement ≠ HP ≠ shooting ≠ HUD.
+- Extract a child packed scene when the script implements two systems.
+- Shallow inheritance: `State extends Node`. Not `EliteFlyingEnemy extends FlyingEnemy extends Enemy`.
 - The world **composes** spawners, camera, FX. It does not score in the same file that spawns.
-
-Communication (Godot docs — scene organization):
-
-- Signals **upward** (the child does not name the parent).
-- Methods **downward** (the parent uses the child’s public API).
-- Event autoload only between systems that are not parent-child.
-
-Scenes as autonomous as possible: what they need, they own or receive via `@export`.
 
 ## Match state without domain
 
-If there is score / lives / timer:
-
-- A small `Match` node (child of the world, or autoload **only if** it survives scene change), not loose variables on every enemy.
-- Type catalog is still a Resource, not `enum` + `match` on Match.
-- With networking: the host is still the only one that mutates that state (MpKit skill). Standard does not let the client simulate.
+- Small `Match` node (child of the world). Autoload **only if** it survives scene change.
+- Type catalog = Resource, not `enum` + `match` on Match.
+- If networked: only the host mutates that state.
 
 ## Autoloads
 
-Yes: `GameEvents` (bus), audio, scene director, `MpKit`.  
-No: `EnemyManager`, global `BulletFactory`, run inventory if it can live in the match tree.
+See the table in `SKILL.md`. Yes: event bus, `MpKit`.  
+No: `EnemyManager`, global projectile factory, run inventory if it can live in the tree. Audio: `AudioStreamPlayer` / `class_name` component in scene; sound autoload only if it is an isolated bus.
 
-## Extra checklist for this path
+## Extra checklist
 
-- [ ] Can each `.tscn` be understood opened alone?
-- [ ] Are variants `.tres` (or another packed scene if the **structure** changes), not `if type`?
-- [ ] Does the script fit a short read? If not, compose.
-- [ ] Was `src/domain/` not introduced without the user asking for Clean?
+- [ ] Does the scene run with F6? Deps via `@export`? Warning if the socket is missing?
+- [ ] Variants = `.tres` (or packed scene if the **structure** changes)?
+- [ ] Does the script fit in a short read?
+- [ ] Was `src/domain/` introduced without asking for Clean?

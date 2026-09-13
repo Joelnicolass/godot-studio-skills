@@ -34,7 +34,7 @@ Generate the RULES.md by:
 3. DEVELOPMENT STANDARDS:
    - Testing requirements and coverage expectations (for a game: optional unless the user asks; if tests exist, bind to the real runner)
    - Error handling and logging requirements
-   - For a Godot game: composition, `@export`/inspector, Resource `.tres` types, UI in the product language and IDs in English. Cite skills `godot-layered-architecture`, `godot-composition-first`, and `godot-mp-kit` if networked. Architecture Clean **or** standard, whichever was chosen.
+   - For a Godot game: composition, `@export`/inspector, Resource `.tres` types, UI in the product language and IDs in English. Cite skills `godot-layered-architecture`, `godot-composition-first`, and `godot-mp-kit` if networked. If there are tests: `godot-testing` (GUT for GDScript, GdUnit4 for C#). Architecture Clean **or** standard, whichever was chosen.
    - Do not copy a web checklist (responsive, auth, SQL) onto a game that has none of those
 
 4. IMPLEMENTATION PRIORITIES:
