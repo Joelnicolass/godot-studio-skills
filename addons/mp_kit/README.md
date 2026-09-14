@@ -277,7 +277,7 @@ HUD: `MpKit.local_slot()` (0 = proceso dedicated). Nunca `get_unique_id()` como 
 |------|------|
 | 1P | F5 → Jugar solo. Sin `create_server`. |
 | LAN | Debug → Run Multiple Instances. A: Host LAN. B: sala de la lista o `127.0.0.1`. |
-| Dedicated | `godot --headless --path . -- --dedicated` y un cliente Join `127.0.0.1`. |
+| Dedicated | CLI: `godot --headless --path . -- --dedicated`. Editor: instancia hub con etiqueta `dedicated_server` (marcá Anular argumentos si ponés `--headless -- --dedicated` en Argumentos de Inicio). Cliente Join `127.0.0.1`. |
 
 ## Túnel custom (Dictionary)
 

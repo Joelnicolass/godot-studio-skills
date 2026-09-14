@@ -35,7 +35,7 @@ godot --headless --path example -- --dedicated
 
 Después, un cliente editor: Unirse `127.0.0.1`.
 
-`--headless` **solo** no es dedicated (GUT/CI también van headless). Hace falta `-- --dedicated` o un export Dedicated Server.
+`--headless` **solo** no es dedicated (GUT/CI también van headless). Hace falta `-- --dedicated`, la etiqueta `dedicated_server`, o un export Dedicated Server. En Ejecutar Instancias, si no marcás **Anular argumentos**, Godot puede ignorar los Argumentos de Inicio de esa fila.
 
 ## Qué mirar
 

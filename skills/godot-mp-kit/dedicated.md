@@ -28,12 +28,15 @@ godot --headless --path . -- --dedicated
 # Clientes: otra instancia, Join 127.0.0.1
 ```
 
-En el editor: Debug → múltiples instancias, o dos runs. `MpBoot.is_dedicated_process()` es true con:
+En el editor: Debug → Customize Run Instances / Ejecutar Instancias. `MpBoot.is_dedicated_process()` es true con:
 
+- etiqueta de característica **`dedicated_server`** (o `dedicated`) en **esa** instancia
+- `--dedicated` en args de línea (user args `-- --dedicated` **o** el flag suelto; el kit lee `get_cmdline_args` y `get_cmdline_user_args`)
 - export **Dedicated Server** → `OS.has_feature("dedicated_server")`
-- o `-- --dedicated` (user args)
 
-**No** uses solo `--headless` como señal: GUT/CI también van headless.
+Si «Anular Argumentos Principales» está **desmarcado**, Godot **puede ignorar** los Argumentos de Inicio de esa fila. Marcá anular en la instancia hub, o usá la etiqueta `dedicated_server` (las etiquetas se combinan aunque no anules).
+
+**No** uses solo `--headless` como señal: GUT/CI también van headless, y un cliente headless no abre el puerto.
 
 Puerto opcional en glue: `int(MpBoot.user_value("mp-port", "7777"))`.
 
