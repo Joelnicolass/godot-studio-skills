@@ -27,8 +27,8 @@ With the kit:
 | Orchestrator | `skills/godot-studio-workflow/` | The chat agent: interview + PRD→RFC→implement |
 | How to write Godot | `skills/` | Layers, composition, MpKit, tests (GUT/GdUnit4) |
 | Subagents | `agents/` | Tech lead, developer, reviewer; optional tester and visual |
-| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, … |
-| MpKit | `addons/mp_kit/` | LAN / Wi-Fi host-authoritative. **Zero** gameplay. Not needed if there is no MP. Online = it must be expanded. |
+| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, `/new-mp-feature`, … |
+| MpKit | `addons/mp_kit/` | Listen or dedicated, replication nodes, Dictionary tunnel. **Zero** gameplay. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -212,15 +212,20 @@ Do not invent FX or art from memory.
 ./install.sh --addon /path/to/godot-project
 ```
 
-Autoload **before** glue:
+Enable the **MpKit** plugin (autoload + Tools). CI/headless:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
+A ready demo lives in [`example/`](example/README.md) (1P, LAN, dedicated, 2D and 3D worlds with placeholders, PRD→RFC flow).
+
+Cursor/VS Code snippets: `.vscode/mpkit.code-snippets` (the installer copies them). Editor: `skills/godot-mp-kit/editor.md`. Online / VPS: `skills/godot-mp-kit/dedicated.md`.
+
 ## Layout
 
 ```
+example/                       # Godot 4.7 demo (1P + LAN + dedicated, 2D and 3D)
 addons/mp_kit/
 skills/
   godot-studio-workflow/

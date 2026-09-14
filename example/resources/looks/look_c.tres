@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ActorLook" format=3]
+
+[ext_resource type="Script" path="res://resources/looks/actor_look.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+tint = Color(0.35, 0.8, 0.45, 1)
+badge = "C"
+move_speed = 180.0

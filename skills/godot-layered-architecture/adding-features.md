@@ -18,7 +18,7 @@ If an item does not apply, write “N/A”. Do not skip it silently.
 
 Only if they chose **local / Wi-Fi**. If they chose **online**, this checklist applies **after** expanding the addon transport. If no MP: N/A.
 
-8. [ ] Local input distinguishes host vs guest (`rpc_id(1, …)`).
+8. [ ] Local input distinguishes host vs guest (`rpc_id(1, …)`). `send_custom` tunnel only if `submit_*` / Resource is not enough.
 9. [ ] Client → server RPC: allowlist, `any_peer` + sender vs `MpKit.peer_id_for(slot)`. No `call_local` that duplicates damage/spawn.
 10. [ ] Simulation spawn: **host only** + `MultiplayerSpawner` **before** `add_child`.
 11. [ ] Transform: `MultiplayerSynchronizer` (or `MpAuthority.ensure_sync`).

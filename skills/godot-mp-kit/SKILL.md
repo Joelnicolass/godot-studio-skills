@@ -3,17 +3,18 @@ name: godot-mp-kit
 description: >-
   Implement host-authoritative multiplayer in Godot 4 with the informal MpKit
   addon (ENet, slots, handshake, snapshots) plus game glue. Ask the MP type
-  first: none (do not copy the addon), local/Wi-Fi (current kit), or online
-  (expand the transport). Use when copying addons/mp_kit, hosting/joining LAN,
-  submit_* RPCs, MultiplayerSpawner, 1P offline, rejoin, or extracting netcode
+  first: none (do not copy the addon), local/Wi-Fi (listen-server), or online
+  (dedicated server, same project, VPS). Use when copying addons/mp_kit,
+  host/host_dedicated/join, submit_* RPCs, Dictionary tunnel, MultiplayerSpawner,
+  1P offline, rejoin, dedicated export, feature scaffold, or extracting netcode
   to another project.
 ---
 
 # Godot — MpKit and multiplayer
 
-Listen-server pattern: **one simulator (host)**. The guest sends intents and paints copies. The addon is small on purpose: reusable pipe, zero gameplay.
+One simulator (the server). Clients send intents and paint copies. The addon is small on purpose: reusable pipe, zero gameplay.
 
-Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**ask** Clean vs standard; do not assume layers). Nodes/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md).
+Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**ask** Clean vs standard; do not assume layers). Nodes/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md). Dedicated / VPS: [dedicated.md](dedicated.md).
 
 ## Network scope (required)
 
@@ -22,8 +23,8 @@ Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 | Choice | What to do |
 |----------|-----------|
 | **No multiplayer** | Do not install MpKit. No autoload, no RPC, no `MultiplayerSpawner`. |
-| **Local / Wi-Fi** (same device or same LAN) | Copy the **current** MpKit. ENet listen-server. It is enough. |
-| **Online** (internet, NAT, matchmaking, Steam, etc.) | The current kit is **not enough**. **Expand MpKit**: another transport (relay, WebRTC, Steam/EOS, dedicated server) **inside** `addons/mp_kit` (or by replacing `host()`/`join()`). Glue, score, and actor `submit_*` stay in the game. Do not pretend a LAN `join(ip)` is online. |
+| **Local / Wi-Fi** (same device or same LAN) | `MpKit.host()` listen-server. The host process **is** a player (slot 1 / peer 1). |
+| **Online** (internet, VPS) | **Dedicated server** in the **same project**. `MpKit.host_dedicated()`; clients `join(ip)`. Peer 1 is **not** a player. Develop that way from day one (headless + clients to `127.0.0.1`); the VPS is the same binary with a public IP and open UDP. Steam / WebRTC / matchmaking: only if the product asks, **later**, not instead of dedicated. |
 
 Do not ask again if the user already chose in this chat or PRD/RULES declares it.
 
@@ -42,8 +43,8 @@ On the network that means:
 
 | Priority | In MpKit / glue |
 |-----------|-----------------|
-| Layers | `addons/mp_kit` does not name session, scenes, copy, or score. Future dedicated server = replace the addon. |
-| Composition | Transport (kit) + glue + (`GameSession` **or** Match node) + actors with `submit_*`. Not a 2000-line `NetworkManager.gd`. |
+| Layers | `addons/mp_kit` does not name session, scenes, copy, or score. Online = dedicated in the addon, not a title `NetworkManager`. |
+| Composition | Transport (kit) + glue + (`GameSession` **or** Match node) + actors with `submit_*`. |
 | Editor | Spawners, replication config, and pawn scenes are built as nodes. The kit does not generate the world. |
 | Reuse | Copy this framework’s canonical addon. The game writes glue + domain; no per-title forks of the kit. |
 
@@ -53,30 +54,31 @@ The plugin is `addons/mp_kit/` **inside the Godot project**. Copy that folder as
 
 If the project addon and a loose copy diverge, `res://addons/mp_kit/` in this project wins.
 
-API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Generic code: [examples.md](examples.md).
+API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / tunnel / scaffold: [editor.md](editor.md). Generic code: [examples.md](examples.md).
 
 ## What the kit is / is not
 
 Copy `addons/mp_kit/` → autoload `MpKit`.
 
-**Does:** ENet host/join/leave, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push, session signals.
+**Does:** ENet listen or dedicated, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push (snapshot **and** `send_custom` tunnel), signals, replication nodes, `MpBoot`.
 
-**Does not:** score, `change_scene`, copy, actor input, advanced interpolation, Steam/WebRTC, “when the match starts”.
+**Does not:** score, `change_scene`, copy, actor input, advanced interpolation, Steam/WebRTC/matchmaking, “when the match starts”.
 
 If you put score in `mp_kit.gd`, the kit stops being portable.
 
 ## Required model
 
 ```
-[Play alone]   do not call host(); OfflineMultiplayerPeer; local_slot() == host_slot
-[Host LAN]     MpKit.host()
-[Client]       MpKit.join(ip)
+[Play alone]     do not call host(); OfflineMultiplayerPeer; local_slot() == host_slot
+[Host LAN]       MpKit.host()
+[Dedicated]      MpKit.host_dedicated()     local_slot() == 0
+[Client]         MpKit.join(ip)
 ```
 
-- Stable **slot**: key for lives/score/HUD. Slot 1 = listen-server.
-- Volatile **peer id**: validate RPCs with `MpKit.peer_id_for(slot)`. Never `get_unique_id()` as a player id.
+- Stable **slot**: key for lives/score/HUD. Listen: slot 1 = hosting player. Dedicated: slots 1..N = clients only.
+- Volatile **peer id**: validate RPCs with `MpKit.peer_id_for(slot)`. Never `get_unique_id()` as a player id. Peer 1 on dedicated is **not** a slot.
 
-Client: `apply_snapshot` **turns off** the session simulation tick. The guest does not tick the clock.
+Client: `apply_snapshot` **turns off** the session simulation tick. The guest does not tick the clock. Dedicated does simulate (it is the server).
 
 ## Input and authority
 
@@ -104,21 +106,27 @@ func submit_x(payload) -> void:
 - Allowlist of `submit_*`. No `rpc add_score`.
 - No `call_local` on client commands (duplicates spawn/damage).
 - Damage areas: `monitoring = is_multiplayer_authority()`.
+- Dedicated never sends `submit_*` (no local player).
 
 ## Spawn handshake (required)
 
-`MultiplayerSpawner` drops packets if the client has not registered spawnable scenes yet.
+Godot’s `MultiplayerSpawner` replicates children on `peer_connected`, while the client is **still on the lobby**; that spawn is lost. `MpSpawner` (default `hold_until_world_ready`) uses the `MultiplayerSynchronizer` per-peer visibility: actors spawn hidden and each peer is revealed on `client_world_ready`; only then does Godot deliver spawn + sync, paired.
 
 ```
-Host broadcast_load_world()
-  → client loads scene, registers spawners, MpKit.request_world_ready()
-  → host waits for client_world_ready
-  → only then add_child(pawn, true)
+Server broadcast_load_world() + glue loads the world on the server process
+  → listen host add_child(local pawn) in _ready; hidden to not-ready peers
+  → client loads scene, MpWorldReady → request_world_ready()
+  → MpSpawner reveals the peer (set_visibility_for) → Godot sends spawn + sync
+  → glue ensure_pawn for the slot that just joined
 ```
+
+Do not unparent actors in glue: the kit already reveals on `client_world_ready`.
+
+Actor identity (`player_slot`, etc.): `MultiplayerSynchronizer` properties with `spawn = true`, or the node name (`Pawn_2` / `Ship_2`).
 
 Local FX (post-process, atmosphere) are built in `_ready` **on the client too**, before the guest `return`.
 
-Rejoin: do not reset score; snapshot + `load_world_to` + re-parent spawner children if they need to be resent.
+Rejoin: do not reset score; snapshot + `load_world_to`. `MpSpawner` reveals again for the new peer id.
 
 ## Snapshots vs transforms
 
@@ -132,26 +140,28 @@ Do not put 40 prop positions in the dict if they already go through a synchroniz
 
 Same collision and `submit_*` code (the local host does not send an RPC). Always test play-alone **without** `create_server`.
 
-## Dedicated server / online
-
-Today’s MpKit is **LAN**. Online or dedicated: **expand this addon** (or the transport inside `host()`/`join()`). Domain and pawn `submit_*` RPCs stay. Do not put matchmaking in a title script if it belongs to the transport.
-
 ## Anti-patterns
 
 - Client spawns / `queue_free` / adds points.
 - `PlayerId` or `GameSession` imported from `mp_kit.gd`.
-- Starting spawn on the same frame as the guest’s `change_scene`.
+- Starting spawn on the same frame as the guest’s `change_scene` (the kit covers this; do not “fix” it by unparenting in glue).
 - `leave()` leaving `multiplayer_peer = null` (the kit sets `OfflineMultiplayerPeer`).
 - A third peer accepted silently (the kit must `disconnect_peer` when over capacity; “room full” policy is glue + kit).
 - HUD that shows the host score because it used peer id 1.
+- Dedicated with a pawn for itself, or developing online as a listen-server.
+- Pretending a LAN `host()` behind NAT is online.
+- Auto-broadcast of the custom tunnel (the server must choose).
+- Putting game rules or bullet `kind` in the tunnel dict.
 
 ## Checklist
 
 - [ ] MP type declared (none / local-Wi-Fi / online). No MP: this checklist does not apply.
 - [ ] Autoload `MpKit` **before** glue. `configure(port, max_players)` before host/join.
-- [ ] Own glue: when to `start_match`, copy, scenes. Kit untouched (except transport expansion if online).
+- [ ] Own glue: when to `start_match`, copy, scenes. Kit untouched.
+- [ ] Online: `MpBoot` + `host_dedicated()`; clients `join`; dedicated export; spawn only `occupied_slots()`.
 - [ ] Slots in domain; peers only in RPC/authority.
-- [ ] `world_ready` handshake before the first replicated `add_child`.
-- [ ] Guest does not simulate rules; host validates sender.
+- [ ] `MpWorldReady` + `MpSpawner` with `hold_until_world_ready` (default). No pawn restage in glue.
+- [ ] Guest does not simulate rules; server validates sender.
 - [ ] 1P offline verified.
 - [ ] Pawns are composable packed scenes, not netcode embedded in the kit.
+- [ ] New features: Tools scaffold or `/new-mp-feature`; tunnel only for what is not `submit_*` / Resource.
