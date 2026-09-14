@@ -21,6 +21,8 @@ var max_players: int = 2
 ## Empty = every channel. Non-empty = drop unknown names (controlled low-level).
 var custom_channels: PackedStringArray = PackedStringArray()
 var ids: MpIds = MpIds.new()
+var rooms: MpRoomDirectory
+var matchmaker: MpMatchmaker
 
 var _peer: ENetMultiplayerPeer
 var _world_ready: Dictionary = {}
@@ -28,6 +30,7 @@ var _broadcasting_custom: bool = false
 
 
 func _ready() -> void:
+	_ensure_hub_children()
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connection_failed.connect(_on_connection_failed)
@@ -132,8 +135,13 @@ func join(address: String) -> Error:
 
 
 func leave() -> void:
+	if rooms:
+		rooms.reset()
+	if matchmaker:
+		matchmaker.reset()
 	_world_ready.clear()
 	ids.reset_offline()
+	## Keep Rooms / Matchmaker. Only free LAN beacon and late-join helper.
 	for child in get_children():
 		if child is MpLanBeacon or child.name == "MpBootLateJoin":
 			child.queue_free()
@@ -230,6 +238,19 @@ func push_custom_to(peer_id: int, channel: StringName, data: Dictionary) -> void
 	if not is_custom_channel_allowed(channel):
 		return
 	rpc_custom_from_server.rpc_id(peer_id, String(channel), data.duplicate(true))
+
+
+func _ensure_hub_children() -> void:
+	rooms = get_node_or_null("Rooms") as MpRoomDirectory
+	if rooms == null:
+		rooms = MpRoomDirectory.new()
+		rooms.name = "Rooms"
+		add_child(rooms)
+	matchmaker = get_node_or_null("Matchmaker") as MpMatchmaker
+	if matchmaker == null:
+		matchmaker = MpMatchmaker.new()
+		matchmaker.name = "Matchmaker"
+		add_child(matchmaker)
 
 
 func _enet_max_clients() -> int:

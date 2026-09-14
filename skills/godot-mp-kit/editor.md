@@ -46,7 +46,7 @@ O un nodo `MpCustomPipe` por feature (`@export channel`, signal `packet`).
 
 No metas meshes, puntaje ni `kind` de bala acá: Resources + `submit_*` del actor. El túnel es el escape hatch (emote, debug, un handshake vuestro).
 
-Paso a paso humano (mandar / recibir / reenviar al servidor, con diagramas): `addons/mp_kit/README.md`.
+Paso a paso humano (mandar / recibir / reenviar al servidor, salas hub y cola, con diagramas): `addons/mp_kit/README.md`.
 
 ## Estructura de una feature
 

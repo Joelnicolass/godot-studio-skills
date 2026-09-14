@@ -13,7 +13,7 @@ Godot 4: **el mismo proyecto** es servidor y cliente. El servidor dedicado no es
 
 ENet UDP alcanza en internet si el servidor tiene **IP pública** (o puerto reenviado) y el firewall abre el puerto. Eso es “online” en este kit. Un `host()` listen detrás de NAT **no** es online.
 
-Steam, WebRTC, matchmaking, orquestar N instancias: fuera de alcance hasta que el producto los pida.
+Varias salas concurrentes en **un** proceso dedicated (`MpRoomDirectory` / `MpMatchmaker`) **sí son el kit**. Steam, WebRTC y process-per-match (un proceso Godot por partida) siguen fuera.
 
 ## Cómo se desarrolla (igual que producción)
 
@@ -68,7 +68,7 @@ Spawn: `for slot in MpKit.occupied_slots()`. Dedicated no incluye peer 1. Listen
 1. Preset Linux (típico en VPS). Resources → **Export Mode: Export as dedicated server**. Eso fuerza headless y el feature `dedicated_server`. Podés strippear texturas/audio.
 2. Exportá el binario. En la VPS: UDP `port` abierto (firewall / security group). Bind es `0.0.0.0`.
 3. Corré el binario (el preset dedicated ya va headless). Clientes: `join(IP_PUBLICA)`.
-4. systemd o Docker: un proceso, un puerto. Orquestar muchas salas no es el kit.
+4. systemd o Docker: un proceso, un puerto. Varias hub rooms en ese proceso (`MpKit.rooms`). Un proceso por match o Steam: fuera del kit.
 
 Misma escena, mismos `submit_*`, misma autoridad. El servidor simula; los clientes pintan.
 
@@ -77,5 +77,5 @@ Misma escena, mismos `submit_*`, misma autoridad. El servidor simula; los client
 - Dedicated que spawnea un pawn para sí (`local_slot() == 0`).
 - Desarrollar solo con `host()` listen y esperar que eso corra en la VPS sin jugador.
 - Tratar `--headless` de tests como dedicated.
-- Matchmaking o Steam metidos en `mp_kit.gd`.
+- Steam o un proceso Godot por partida metidos en `mp_kit.gd` (las salas in-process ya están en `MpKit.rooms`).
 - Segundo proyecto “solo server”.

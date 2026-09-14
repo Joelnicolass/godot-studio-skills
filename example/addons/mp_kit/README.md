@@ -16,6 +16,7 @@ Esta guía es para **configuración manual en el editor**. Los identificadores d
 6. [Qué va por cada canal](#qué-va-por-cada-canal)
 7. [Menú Tools](#menú-tools)
 8. [Piezas del addon](#piezas-del-addon)
+9. [Salas hub y cola (opcional)](#salas-hub-y-cola-opcional)
 
 ## Instalar
 
@@ -50,6 +51,8 @@ Mismo ENet, **mismo proyecto** que los clientes:
 
 1P: **no** llames `host()`. `MpKit.leave()` deja `OfflineMultiplayerPeer`.
 
+Varias partidas a la vez en **un** dedicated: [Salas hub y cola](#salas-hub-y-cola-opcional). Un match a la vez: no hace falta tocar eso.
+
 ## Mapa mental
 
 ```mermaid
@@ -60,6 +63,7 @@ flowchart TB
     Spawn[MpSlotSpawner]
     Rep[MpReplicate + Synchronizer]
     Pipe[MpCustomPipe / send_custom]
+    Hub[Rooms + Matchmaker — opt-in]
   end
 
   subgraph game [Tu juego]
@@ -76,6 +80,7 @@ flowchart TB
   Spawn --> Pawn
   Pawn --> Rep
   Pawn --> Pipe
+  MpKit --> Hub
   Rules -.->|nunca acá| MpKit
 ```
 
@@ -152,7 +157,7 @@ func _ready() -> void:
 	beacon.rooms_changed.connect(_on_rooms)
 ```
 
-3. Lista LAN: al elegir una fila, poné `address` en el LineEdit. Click Unirse.
+3. Lista LAN: al elegir una fila, poné `address` en el LineEdit. Click Unirse. Esa lista es **LAN browse** (`MpLan.rooms_changed`), no las hub rooms de `MpKit.rooms`.
 4. Dedicated: `MpFlow` hace `host_dedicated()` solo. El menú puede ocultarse si `MpBoot.is_dedicated_process()`.
 
 ### 3. Escena de match
@@ -391,9 +396,9 @@ El glue (autoload) sigue haciendo el reflect `from_peer != 1` → `broadcast_cus
 | Posición, rotación, visible | `MultiplayerSynchronizer` (`MpReplicate`) |
 | “Quiero mover / disparar” | `submit_*` en **tu** pawn + `accept_command` |
 | Tipo de arma / look | Resource `.tres` en el actor, `spawn = true` si hace falta al nacer |
-| Timer / score / vidas | `MpKit.push_snapshot` 2–10 Hz (dict vuestro) |
-| Emote, ping, debug | Túnel custom |
-| Cuándo empieza la partida | `MpFlow.start_when` / `start_match()`, no el túnel |
+| Timer / score / vidas | Un match: `MpKit.push_snapshot`. Varias salas: `MpKit.rooms.push_snapshot_to_room` |
+| Emote, ping, debug | Túnel custom. Varias salas: `push_custom_to_room`, no `broadcast_custom` |
+| Cuándo empieza la partida | `MpFlow.start_when` / `start_match()`, o `match_assembled` si usás cola |
 
 No metas meshes, puntaje ni `kind` de bala en el túnel.
 
@@ -412,8 +417,10 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 
 | Archivo | Rol |
 |---------|-----|
-| `mp_kit.gd` | ENet + slots + RPCs de sesión + túnel Dictionary |
+| `mp_kit.gd` | ENet + slots + RPCs de sesión + túnel Dictionary. Hijos `Rooms` / `Matchmaker`. |
 | `mp_ids.gd` | slot ↔ peer |
+| `mp_room_directory.gd` | hub rooms (opt-in); asiento de sala ≠ slot del hub |
+| `mp_matchmaker.gd` | cola FIFO; arma una room al llenar `party_size` |
 | `mp_boot.gd` | detectar proceso dedicated |
 | `mp_flow.gd` | escenas, host/join/1P, catálogo de mundos |
 | `mp_world_ref.gd` | un mundo del catálogo |
@@ -423,7 +430,172 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 | `mp_boot_menu.gd` / `.tscn` | lobby drop-in |
 | `mp_custom_pipe.gd` | un canal del túnel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
-| `mp_authority.gd` | `accept_command`, freeze, sync |
+| `mp_authority.gd` | `accept_command`, `accept_room_command`, freeze, sync |
 | `mp_world_ready.gd` | legado (no-op si hay `MpSpawner`) |
 
 Handshake de spawn: `hold_until_world_ready` (actores ocultos hasta `client_world_ready`; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en glue.
+
+## Salas hub y cola (opcional)
+
+Sirve cuando **un** `host_dedicated()` tiene que correr **varias partidas a la vez** en el mismo proceso (cola 1v1, 2v2, código para un amigo).
+
+Si tu juego es un match por servidor, **no toques esto**. El `example/` no usa cola ni `create_room`.
+
+No es la lista LAN del boot. Esa es `MpLan.browse` → `rooms_changed` (nombre + IP de un listen host). Las hub rooms viven en `MpKit.rooms`.
+
+El kit **agrupa peers**. No cambia de escena, no instancia N mundos y no pone puntaje. Eso es glue.
+
+### Qué aparece solo
+
+Al arrancar, `MpKit` crea dos hijos. No hace falta agregar nodos a mano.
+
+```
+/root/MpKit
+├── Rooms        # MpRoomDirectory — asientos + código. Tiene RPC
+└── Matchmaker   # MpMatchmaker    — cola FIFO. Sin RPC
+```
+
+`MpKit.leave()` vacía directorio y cola; **no** borra estos nodos.
+
+### Cuatro IDs distintos (no los mezcles)
+
+| Nombre | Qué es | Ejemplo |
+|--------|--------|---------|
+| ENet `peer_id` | Ruteo de RPC | `2`, `3`, `4` |
+| Hub **slot** (`local_slot()`) | Conexión a este proceso. Dedicated: clientes `1..max_players` | slot 3 |
+| Room **id** + **seat** | Sala y asiento **dentro de esa sala** | `r_1`, seat `0` o `1` |
+| Room **code** | Para unirse a mano (mayúsculas, sin `0 O 1 I`) | `K7P2` |
+
+El HUD de “sos el jugador 1 de esta partida” usa el **seat**, no `local_slot()`.
+
+`max_players` es el cupo de **conexiones al hub**, no el tamaño de una partida. 16 salas de 2 = `configure(..., 32)`.
+
+### Inspector (Remote, en play)
+
+Con el dedicated corriendo: Árbol remoto → `MpKit` → `Rooms` / `Matchmaker`.
+
+| Nodo | Propiedad | Default | Para qué |
+|------|-----------|---------|----------|
+| `Rooms` | `max_rooms` | 16 | Tope de salas (las vacías también cuentan hasta `close_room`) |
+| `Rooms` | `seats_per_room` | 2 | Asientos si `create_room()` no pasa tamaño |
+| `Rooms` | `code_length` | 4 | Largo del código |
+| `Matchmaker` | `party_size` | 2 | Cuántos saca la cola para armar una sala |
+
+Desde glue, antes de encolar:
+
+```gdscript
+MpKit.rooms.max_rooms = 16
+MpKit.rooms.seats_per_room = 2
+MpKit.matchmaker.party_size = 2
+```
+
+### Camino A — cola automática
+
+El servidor mete peers a la cola. Cuando hay `party_size`, el kit arma la sala **al toque** (sin botón Accept, sin nick, sin `change_scene`).
+
+```gdscript
+func _ready() -> void:
+	super._ready()
+	MpKit.peer_joined.connect(_on_peer_joined)
+	MpKit.matchmaker.match_assembled.connect(_on_match)
+
+func _on_peer_joined(peer_id: int, _slot: int) -> void:
+	if not MpKit.is_server():
+		return
+	MpKit.matchmaker.enqueue(peer_id)
+
+func _on_match(room_id: StringName, peer_ids: PackedInt32Array) -> void:
+	# glue: spawn / lógica de ESA sala. peer_ids ya están sentados 0..n-1
+	print(room_id, MpKit.rooms.code_for_room(room_id), peer_ids)
+```
+
+`enqueue` ignora si el peer ya está en cola o ya sentado. Si se desconecta, sale de la cola. Si `create_room` falla (tope de salas), **quedan en cola** y no hay `match_assembled`.
+
+```mermaid
+sequenceDiagram
+  participant A as Cliente A
+  participant B as Cliente B
+  participant S as Dedicated
+  participant Q as Matchmaker
+  participant R as Rooms
+  A->>S: join
+  S->>Q: enqueue(A)
+  B->>S: join
+  S->>Q: enqueue(B)
+  Q->>R: create_room(2)
+  Q->>R: join_room(A) join_room(B)
+  R->>A: rpc_assign_room
+  R->>B: rpc_assign_room
+  Q->>S: match_assembled(r_1, [A, B])
+```
+
+### Camino B — código privado
+
+Sin cola. El servidor crea una sala vacía, le das el código a un amigo, el glue sienta a quien lo manda.
+
+```gdscript
+# servidor (host de la sala, o un operador)
+var room_id := MpKit.rooms.create_room(2)
+var code := MpKit.rooms.code_for_room(room_id)
+# mostrá `code` en UI / copiá al clipboard — el kit no tiene pantalla
+
+# cuando un cliente manda el código (túnel o submit_* vuestro):
+func _seat_with_code(peer_id: int, code: String) -> void:
+	if MpKit.rooms.join_room_by_code(peer_id, code) != OK:
+		return
+```
+
+El cliente recibe `MpKit.rooms.room_assigned(room_id, seat)` (RPC). `create_room` **no** sienta a nadie.
+
+Sala llena → señal `room_ready` en el servidor. `leave_room` libera el asiento y **no** cierra la sala. `close_room` saca a todos y borra (así deja de contar en `max_rooms`).
+
+### Sincronizar datos solo a esa sala
+
+`push_snapshot` / `broadcast_custom` llegan a **todo el hub**. Con varias partidas eso cruza datos. Usá:
+
+```gdscript
+MpKit.rooms.push_snapshot_to_room(room_id, {"elapsed": t})
+MpKit.rooms.push_custom_to_room(room_id, &"emote", data)
+```
+
+```mermaid
+flowchart LR
+  subgraph hub [Dedicated]
+    R1[sala r_1]
+    R2[sala r_2]
+  end
+  push_snapshot_to_room[push_snapshot_to_room r_1] --> R1
+  R1 --> A[peers de r_1]
+  R1 -.->|no| B[peers de r_2]
+```
+
+### Comandos de gameplay en una sala
+
+El `submit_*` de un match único sigue con `accept_command(self, player_slot)` (slot del **hub**).
+
+Si el pawn representa un asiento de sala:
+
+```gdscript
+@rpc("any_peer", "call_remote", "reliable")
+func submit_move(dir: Vector2) -> void:
+	if not MpAuthority.accept_room_command(self, room_id, seat):
+		return
+	apply_move(dir)
+```
+
+`accept_command` no se reemplaza: son dos chequeos distintos.
+
+### Probar en local
+
+1. Dedicated: `godot --headless --path . -- --dedicated` (`max_players` ≥ gente conectada).
+2. Dos (o `party_size`) clientes Join `127.0.0.1`.
+3. En el debugger del servidor: `MpKit.matchmaker.enqueue(MpKit.peer_id_for(1))` y lo mismo para el slot 2 → una `r_1`. Otro par → `r_2`.
+4. Código: `create_room()` + `join_room_by_code` con un string de 4 chars.
+
+### Qué no hacer
+
+- Usar `local_slot()` como asiento de la partida.
+- `push_snapshot` / `broadcast_custom` a todo el hub si hay más de una sala.
+- Esperar que el kit abra un match scene por sala.
+- Meter Steam, WebRTC o un proceso Godot por partida en el addon. Cero puntaje / copy de título acá.
+
