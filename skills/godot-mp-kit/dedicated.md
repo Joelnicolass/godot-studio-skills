@@ -13,7 +13,7 @@ Godot 4: the **same project** is server and client. A dedicated server is not a 
 
 ENet UDP is enough on the internet if the server has a **public IP** (or a forwarded port) and the firewall opens that port. That is “online” in this kit. A listen `host()` behind NAT is **not** online.
 
-Steam, WebRTC, matchmaking, N-instance orchestration: out of scope until the product asks for them.
+Several concurrent rooms in **one** dedicated process (`MpRoomDirectory` / `MpMatchmaker`) **are** the kit. Steam, WebRTC, and process-per-match (one Godot process per match) stay out of scope.
 
 ## How you develop (same as production)
 
@@ -68,7 +68,7 @@ Spawn: `for slot in MpKit.occupied_slots()`. Dedicated does not include peer 1. 
 1. Linux preset (typical on a VPS). Resources → **Export Mode: Export as dedicated server**. That forces headless and the `dedicated_server` feature. You may strip textures/audio.
 2. Export the binary. On the VPS: UDP `port` open (firewall / security group). Bind is `0.0.0.0`.
 3. Run the binary (dedicated export is already headless). Clients: `join(PUBLIC_IP)`.
-4. systemd or Docker: one process, one port. Orchestrating many rooms is not the kit.
+4. systemd or Docker: one process, one port. Several hub rooms in that process (`MpKit.rooms`). One process per match or Steam: outside the kit.
 
 Same scene, same `submit_*`, same authority. The server simulates; clients paint.
 
@@ -77,5 +77,5 @@ Same scene, same `submit_*`, same authority. The server simulates; clients paint
 - Dedicated spawning a pawn for itself (`local_slot() == 0`).
 - Developing only with listen `host()` and expecting that to run on a VPS with no player.
 - Treating test `--headless` as dedicated.
-- Matchmaking or Steam inside `mp_kit.gd`.
+- Steam or one Godot process per match inside `mp_kit.gd` (in-process rooms already live on `MpKit.rooms`).
 - A second “server-only” project.

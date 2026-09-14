@@ -4,12 +4,14 @@ Files (`res://addons/mp_kit/`):
 
 | File | Role |
 |---------|-----|
-| `mp_kit.gd` | Autoload. ENet + session RPCs + signals. **No** `class_name` (the autoload is already `MpKit`). |
+| `mp_kit.gd` | Autoload. ENet + session RPCs + signals. Children `Rooms` / `Matchmaker`. **No** `class_name` (the autoload is already `MpKit`). |
 | `mp_ids.gd` | `class_name MpIds` — slot ↔ peer; rejoin reuses slot |
+| `mp_room_directory.gd` | `class_name MpRoomDirectory` — hub rooms (opt-in); room seat ≠ hub slot |
+| `mp_matchmaker.gd` | `class_name MpMatchmaker` — FIFO queue; `create_room` when `party_size` is reached |
 | `mp_boot.gd` | `class_name MpBoot` — `dedicated_server` / `--dedicated` |
 | `mp_lan.gd` | `class_name MpLan` — IPv4 + `advertise` / `browse` |
 | `mp_lan_beacon.gd` | `class_name MpLanBeacon` — UDP `MPKIT1` |
-| `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer |
+| `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer, `accept_room_command` |
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — one tunnel channel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / optional lerp |
 | `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner that waits for `world_ready` |
@@ -48,15 +50,17 @@ MpKit="*res://addons/mp_kit/mp_kit.gd"
 ## Kit RPCs (closed list)
 
 Client → server: `rpc_world_ready`, `rpc_custom_to_server`  
-Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`
+Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`  
+`MpRoomDirectory`: `rpc_assign_room` (authority → that peer; `room_id` travels as `String`)
 
 Pawn input and custom-dict meaning **outside** the kit.
 
 ## Useful methods
 
 - `host(dedicated=false) -> Error` / `host_dedicated() -> Error` / `join(address) -> Error` / `leave()`
+- `rooms` / `matchmaker` — children `Rooms` and `Matchmaker`. `leave()` **resets** them (closes rooms, clears the queue), does not `queue_free` them.
 - `is_networked()` / `is_server()` / `is_dedicated()` / `is_listen_host()`
-- `local_slot()` — `0` on dedicated (no local player)
+- `local_slot()` — `0` on dedicated (no local player). **Not** a hub-room seat.
 - `occupied_slots()` / `peer_id_for(slot)` / `slot_for_peer(peer_id)`
 - `request_world_ready()`
 - `broadcast_load_world()` / `load_world_to(peer)`
@@ -87,7 +91,57 @@ MpAuthority.ensure_sync(node, PackedStringArray([".:position", ".:rotation"]))
 MpAuthority.freeze_rigid_proxy(body)     # RigidBody2D/3D; no-op if you are authority
 MpAuthority.should_send_command()        # networked and not server
 MpAuthority.accept_command(self, player_slot)  # in submit_*: server + sender == slot peer
+MpAuthority.accept_room_command(self, room_id, seat)  # server + sender == peer_for_seat
 ```
+
+`accept_command` does not change: it still validates the **hub slot**. `accept_room_command` validates the **seat in that room**.
+
+| Method | Condition |
+|--------|-----------|
+| `accept_command(node, player_slot)` | Server and `get_remote_sender_id() == MpKit.peer_id_for(player_slot)` |
+| `accept_room_command(node, room_id, seat)` | Server and `get_remote_sender_id() == MpKit.rooms.peer_for_seat(room_id, seat)` |
+
+## MpRoomDirectory
+
+Child `Rooms` of the autoload (`MpKit.rooms`). Mutators **server only** (client: no-op, `FAILED`, empty id). Empty rooms count toward `max_rooms` until `close_room`.
+
+`@export`: `max_rooms` (16), `seats_per_room` (2), `code_length` (4). Code alphabet: `A-Z0-9` without `0O1I`.
+
+Identity: ENet `peer_id` = RPC; hub **slot** (`MpIds` / `local_slot()`) = connection to the process; room **id** (`StringName`, e.g. `r_1`); room **seat** = `0..seats-1` in that room.
+
+| Method | What it does |
+|--------|----------|
+| `create_room(seats=-1) -> StringName` | Empty room. `-1` → `seats_per_room`. Empty id if at cap. Unique code. Seats **nobody**. |
+| `join_room(peer_id, room_id) -> Error` | Next free seat; `room_assigned` RPC to that peer. If already in another room: `leave_room` then seat. Same room: idempotent `OK`. |
+| `join_room_by_code(peer_id, code) -> Error` | Normalizes to uppercase. |
+| `leave_room(peer_id)` | Frees the seat. Does not close the room. |
+| `close_room(room_id)` | Unseats everyone and deletes the room. |
+| `reset()` | Clears maps **without** RPC (`MpKit.leave()`). |
+| `room_id_for_peer` / `seat_for_peer` | Room / seat (`-1` if not seated). |
+| `peer_for_seat(room_id, seat)` | Peer in that seat (`0` if empty). |
+| `peers_in_room` / `code_for_room` / `is_room_full` / `room_count` | Queries. |
+| `push_snapshot_to_room` / `push_custom_to_room` | `MpKit.push_snapshot_to` / `push_custom_to` **per member**. Never `push_snapshot` to the whole hub. |
+
+Signals (server): `room_created(room_id, code)`, `peer_seated(room_id, peer_id, seat)`, `room_ready(room_id)` (every seat taken), `peer_unseated(...)`, `room_closed(room_id)`.
+
+Client: `room_assigned(room_id, seat)` from `rpc_assign_room`.
+
+`MpKit.peer_left` → `leave_room`. No forfeit rules.
+
+## MpMatchmaker
+
+Child `Matchmaker` (`MpKit.matchmaker`). **No** RPCs. Uses `MpKit.rooms`, not paths. `@export party_size = 2`.
+
+| Method | What it does |
+|--------|----------|
+| `enqueue(peer_id)` | Ignores if already queued **or** already seated. |
+| `dequeue(peer_id)` | Idempotent. |
+| `queued_count()` / `is_queued(peer_id)` | Queries. |
+| `reset()` | Clears the queue (`MpKit.leave()`). |
+
+When `queued_count() >= party_size`: FIFO takes `party_size`, `create_room(party_size)`, `join_room` each, emits `match_assembled(room_id, peer_ids: PackedInt32Array)`. Instant (no Accept). If `create_room` fails: they stay queued and it does not emit.
+
+`MpKit.peer_left` → `dequeue`. No theme, nick, or `change_scene`.
 
 ## MpSpawner
 
@@ -160,7 +214,7 @@ MpFlow.select_world(&"3d")
 
 ```gdscript
 MpLan.advertise(parent, "Room")   # UDP; parent to a node that survives change_scene (autoload)
-MpLan.browse(parent)              # signal rooms_changed(rooms: Array)
+MpLan.browse(parent)              # signal rooms_changed(rooms: Array) — **LAN browse**, not hub rooms
 ```
 
 ## MpIds (contract)

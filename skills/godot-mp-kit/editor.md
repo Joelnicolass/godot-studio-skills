@@ -46,7 +46,7 @@ Or one `MpCustomPipe` node per feature (`@export channel`, signal `packet`).
 
 Do not put meshes, score, or bullet `kind` here: Resources + actor `submit_*`. The tunnel is the escape hatch (emote, debug, your own handshake).
 
-Human step-by-step (send / receive / server forward, with diagrams): `addons/mp_kit/README.md`.
+Human step-by-step (send / receive / server forward, hub rooms and queue, with diagrams): `addons/mp_kit/README.md`.
 
 ## Feature layout
 

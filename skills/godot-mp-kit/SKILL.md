@@ -24,7 +24,7 @@ Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 |----------|-----------|
 | **No multiplayer** | Do not install MpKit. No autoload, no RPC, no `MultiplayerSpawner`. |
 | **Local / Wi-Fi** (same device or same LAN) | `MpKit.host()` listen-server. The host process **is** a player (slot 1 / peer 1). |
-| **Online** (internet, VPS) | **Dedicated server** in the **same project**. `MpKit.host_dedicated()`; clients `join(ip)`. Peer 1 is **not** a player. Develop that way from day one (headless + clients to `127.0.0.1`); the VPS is the same binary with a public IP and open UDP. Steam / WebRTC / matchmaking: only if the product asks, **later**, not instead of dedicated. |
+| **Online** (internet, VPS) | **Dedicated server** in the **same project**. `MpKit.host_dedicated()`; clients `join(ip)`. Peer 1 is **not** a player. Develop that way from day one (headless + clients to `127.0.0.1`); the VPS is the same binary with a public IP and open UDP. Several matches = **in-process rooms** (`MpKit.rooms` / `MpKit.matchmaker`) on that process. Steam / WebRTC / process-per-match: only if the product asks, **later**, not instead of dedicated. |
 
 Do not ask again if the user already chose in this chat or PRD/RULES declares it.
 
@@ -56,7 +56,7 @@ If the project addon and a loose copy diverge, `res://addons/mp_kit/` in this pr
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / tunnel / scaffold: [editor.md](editor.md). Generic code: [examples.md](examples.md).
 
-Human guide (inspector, step-by-step, custom tunnel with diagrams): `addons/mp_kit/README.md`.
+Human guide (inspector, step-by-step, custom tunnel, hub rooms and queue): `addons/mp_kit/README.md`.
 
 ## Quickstart (5 steps)
 
@@ -70,9 +70,9 @@ Human guide (inspector, step-by-step, custom tunnel with diagrams): `addons/mp_k
 
 Copy `addons/mp_kit/` → autoload `MpKit`.
 
-**Does:** ENet listen or dedicated, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push (snapshot **and** `send_custom` tunnel), signals, replication nodes, `MpBoot`. Optional: `MpFlow` (boot/world scenes, not rules).
+**Does:** ENet listen or dedicated, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push (snapshot **and** `send_custom` tunnel), signals, replication nodes, `MpBoot`. Optional: `MpFlow` (boot/world scenes, not rules). Optional: in-process hub rooms (`MpRoomDirectory` + FIFO `MpMatchmaker`) on a dedicated.
 
-**Does not:** score, title copy, actor input, prediction, Steam/WebRTC/matchmaking, “who wins”. `MpReplicate.interpolate` is an optional proxy lerp, not rollback.
+**Does not:** score, title copy, actor input, prediction, Steam/WebRTC, process-per-match, “who wins”. `MpReplicate.interpolate` is an optional proxy lerp, not rollback.
 
 If you put score in `mp_kit.gd`, the kit stops being portable.
 
@@ -166,7 +166,7 @@ Same collision and `submit_*` code (the local host does not send an RPC). Always
 - [ ] MP type declared (none / local-Wi-Fi / online). No MP: this checklist does not apply.
 - [ ] Autoload `MpKit` **before** glue. `configure(port, max_players)` before host/join.
 - [ ] `MpFlow` autoload (Tools → New session flow) or `extends MpFlow`. Several maps: `add_world` + `select_world`. Extra glue only for copy or a tunnel.
-- [ ] Online: `MpBoot` + `host_dedicated()`; clients `join`; dedicated export; spawn only `occupied_slots()`.
+- [ ] Online: `MpBoot` + `host_dedicated()`; clients `join`; dedicated export; spawn only `occupied_slots()`. Optional hub: `MpKit.rooms` / `MpKit.matchmaker` on the same process; score still stays out of the addon.
 - [ ] Slots in domain; peers only in RPC/authority.
 - [ ] `MpSpawner` or `MpSlotSpawner` with `hold_until_world_ready` (default). The client does not need `MpWorldReady`. No pawn restage in glue.
 - [ ] Guest does not simulate rules; server validates sender.

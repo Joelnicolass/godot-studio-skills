@@ -16,6 +16,7 @@ This guide is for **manual setup in the editor**. Code identifiers stay in Engli
 6. [What goes on each channel](#what-goes-on-each-channel)
 7. [Tools menu](#tools-menu)
 8. [Addon pieces](#addon-pieces)
+9. [Hub rooms and queue (optional)](#hub-rooms-and-queue-optional)
 
 ## Install
 
@@ -50,6 +51,8 @@ Same ENet, **same project** as the clients:
 
 1P: do **not** call `host()`. `MpKit.leave()` leaves an `OfflineMultiplayerPeer`.
 
+Several matches at once on **one** dedicated process: [Hub rooms and queue](#hub-rooms-and-queue-optional). One match at a time: you can ignore that.
+
 ## Mental map
 
 ```mermaid
@@ -60,6 +63,7 @@ flowchart TB
     Spawn[MpSlotSpawner]
     Rep[MpReplicate + Synchronizer]
     Pipe[MpCustomPipe / send_custom]
+    Hub[Rooms + Matchmaker — opt-in]
   end
 
   subgraph game [Your game]
@@ -76,6 +80,7 @@ flowchart TB
   Spawn --> Pawn
   Pawn --> Rep
   Pawn --> Pipe
+  MpKit --> Hub
   Rules -.->|never here| MpKit
 ```
 
@@ -152,7 +157,7 @@ func _ready() -> void:
 	beacon.rooms_changed.connect(_on_rooms)
 ```
 
-3. LAN list: when picking a row, put `address` in the LineEdit. Click Join.
+3. LAN list: when picking a row, put `address` in the LineEdit. Click Join. That list is **LAN browse** (`MpLan.rooms_changed`), not hub rooms on `MpKit.rooms`.
 4. Dedicated: `MpFlow` calls `host_dedicated()` on its own. The menu can hide if `MpBoot.is_dedicated_process()`.
 
 ### 3. Match scene
@@ -391,9 +396,9 @@ The glue (autoload) still does the reflect `from_peer != 1` → `broadcast_custo
 | Position, rotation, visible | `MultiplayerSynchronizer` (`MpReplicate`) |
 | “I want to move / shoot” | `submit_*` on **your** pawn + `accept_command` |
 | Weapon type / look | Resource `.tres` on the actor, `spawn = true` if needed at spawn |
-| Timer / score / lives | `MpKit.push_snapshot` 2–10 Hz (your dict) |
-| Emote, ping, debug | Custom tunnel |
-| When the match starts | `MpFlow.start_when` / `start_match()`, not the tunnel |
+| Timer / score / lives | One match: `MpKit.push_snapshot`. Several rooms: `MpKit.rooms.push_snapshot_to_room` |
+| Emote, ping, debug | Custom tunnel. Several rooms: `push_custom_to_room`, not `broadcast_custom` |
+| When the match starts | `MpFlow.start_when` / `start_match()`, or `match_assembled` if you use the queue |
 
 Do not put meshes, scores, or bullet `kind` in the tunnel.
 
@@ -412,8 +417,10 @@ Enable copies templates to `res://script_templates/` (CharacterBody / Node2D / N
 
 | File | Role |
 |------|------|
-| `mp_kit.gd` | ENet + slots + session RPCs + Dictionary tunnel |
+| `mp_kit.gd` | ENet + slots + session RPCs + Dictionary tunnel. Children `Rooms` / `Matchmaker`. |
 | `mp_ids.gd` | slot ↔ peer |
+| `mp_room_directory.gd` | hub rooms (opt-in); room seat ≠ hub slot |
+| `mp_matchmaker.gd` | FIFO queue; opens a room when `party_size` is reached |
 | `mp_boot.gd` | detect dedicated process |
 | `mp_flow.gd` | scenes, host/join/1P, world catalog |
 | `mp_world_ref.gd` | one world in the catalog |
@@ -423,7 +430,171 @@ Enable copies templates to `res://script_templates/` (CharacterBody / Node2D / N
 | `mp_boot_menu.gd` / `.tscn` | drop-in lobby |
 | `mp_custom_pipe.gd` | one tunnel channel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
-| `mp_authority.gd` | `accept_command`, freeze, sync |
+| `mp_authority.gd` | `accept_command`, `accept_room_command`, freeze, sync |
 | `mp_world_ready.gd` | leftover (no-op if an `MpSpawner` is present) |
 
 Spawn handshake: `hold_until_world_ready` (actors hidden until `client_world_ready`; Godot sends spawn + sync together). Dedicated: no pawn for peer 1. Do not reparent actors in glue.
+
+## Hub rooms and queue (optional)
+
+Use this when **one** `host_dedicated()` must run **several matches at once** in the same process (1v1 queue, 2v2, a code for a friend).
+
+If your game is one match per server, **leave this alone**. The `example/` does not call `enqueue` or `create_room`.
+
+This is not the LAN list on the boot menu. That is `MpLan.browse` → `rooms_changed` (name + IP of a listen host). Hub rooms live on `MpKit.rooms`.
+
+The kit **groups peers**. It does not change scene, instance N worlds, or keep score. That is glue.
+
+### What shows up on its own
+
+On boot, `MpKit` creates two children. You do not add these nodes by hand.
+
+```
+/root/MpKit
+├── Rooms        # MpRoomDirectory — seats + code. Has an RPC
+└── Matchmaker   # MpMatchmaker    — FIFO queue. No RPCs
+```
+
+`MpKit.leave()` clears the directory and the queue; it does **not** free these nodes.
+
+### Four different IDs (do not mix them)
+
+| Name | What it is | Example |
+|------|------------|---------|
+| ENet `peer_id` | RPC routing | `2`, `3`, `4` |
+| Hub **slot** (`local_slot()`) | Connection to this process. Dedicated: clients `1..max_players` | slot 3 |
+| Room **id** + **seat** | Room and seat **inside that room** | `r_1`, seat `0` or `1` |
+| Room **code** | Join by hand (uppercase, no `0 O 1 I`) | `K7P2` |
+
+The HUD “you are player 1 of this match” uses the **seat**, not `local_slot()`.
+
+`max_players` is **hub connections**, not party size. 16 rooms of 2 = `configure(..., 32)`.
+
+### Inspector (Remote, while playing)
+
+With the dedicated process running: Remote tree → `MpKit` → `Rooms` / `Matchmaker`.
+
+| Node | Property | Default | What for |
+|------|----------|---------|----------|
+| `Rooms` | `max_rooms` | 16 | Room cap (empty rooms still count until `close_room`) |
+| `Rooms` | `seats_per_room` | 2 | Seats if `create_room()` is called with no size |
+| `Rooms` | `code_length` | 4 | Code length |
+| `Matchmaker` | `party_size` | 2 | How many the queue pulls to open a room |
+
+From glue, before enqueueing:
+
+```gdscript
+MpKit.rooms.max_rooms = 16
+MpKit.rooms.seats_per_room = 2
+MpKit.matchmaker.party_size = 2
+```
+
+### Path A — automatic queue
+
+The server puts peers in the queue. When `party_size` is reached, the kit opens the room **immediately** (no Accept button, no nick, no `change_scene`).
+
+```gdscript
+func _ready() -> void:
+	super._ready()
+	MpKit.peer_joined.connect(_on_peer_joined)
+	MpKit.matchmaker.match_assembled.connect(_on_match)
+
+func _on_peer_joined(peer_id: int, _slot: int) -> void:
+	if not MpKit.is_server():
+		return
+	MpKit.matchmaker.enqueue(peer_id)
+
+func _on_match(room_id: StringName, peer_ids: PackedInt32Array) -> void:
+	# glue: spawn / logic for THAT room. peer_ids are already seated 0..n-1
+	print(room_id, MpKit.rooms.code_for_room(room_id), peer_ids)
+```
+
+`enqueue` ignores a peer already queued or already seated. Disconnect → drop from the queue. If `create_room` fails (room cap), they **stay queued** and there is no `match_assembled`.
+
+```mermaid
+sequenceDiagram
+  participant A as Client A
+  participant B as Client B
+  participant S as Dedicated
+  participant Q as Matchmaker
+  participant R as Rooms
+  A->>S: join
+  S->>Q: enqueue(A)
+  B->>S: join
+  S->>Q: enqueue(B)
+  Q->>R: create_room(2)
+  Q->>R: join_room(A) join_room(B)
+  R->>A: rpc_assign_room
+  R->>B: rpc_assign_room
+  Q->>S: match_assembled(r_1, [A, B])
+```
+
+### Path B — private code
+
+No queue. The server creates an empty room, you give a friend the code, glue seats whoever sends it.
+
+```gdscript
+# server (room host, or an operator)
+var room_id := MpKit.rooms.create_room(2)
+var code := MpKit.rooms.code_for_room(room_id)
+# show `code` in UI / copy to clipboard — the kit has no screen for this
+
+# when a client sends the code (your tunnel or submit_*):
+func _seat_with_code(peer_id: int, code: String) -> void:
+	if MpKit.rooms.join_room_by_code(peer_id, code) != OK:
+		return
+```
+
+The client gets `MpKit.rooms.room_assigned(room_id, seat)` (RPC). `create_room` seats **nobody**.
+
+Room full → `room_ready` on the server. `leave_room` frees the seat and does **not** close the room. `close_room` unseats everyone and deletes it (so it stops counting toward `max_rooms`).
+
+### Sync data only to that room
+
+`push_snapshot` / `broadcast_custom` reach the **whole hub**. With several matches that leaks data. Use:
+
+```gdscript
+MpKit.rooms.push_snapshot_to_room(room_id, {"elapsed": t})
+MpKit.rooms.push_custom_to_room(room_id, &"emote", data)
+```
+
+```mermaid
+flowchart LR
+  subgraph hub [Dedicated]
+    R1[room r_1]
+    R2[room r_2]
+  end
+  push_snapshot_to_room[push_snapshot_to_room r_1] --> R1
+  R1 --> A[peers in r_1]
+  R1 -.->|not| B[peers in r_2]
+```
+
+### Gameplay commands in a room
+
+`submit_*` for a single-match game still uses `accept_command(self, player_slot)` (**hub** slot).
+
+If the pawn is a room seat:
+
+```gdscript
+@rpc("any_peer", "call_remote", "reliable")
+func submit_move(dir: Vector2) -> void:
+	if not MpAuthority.accept_room_command(self, room_id, seat):
+		return
+	apply_move(dir)
+```
+
+`accept_command` is not replaced: they are two different checks.
+
+### Try it locally
+
+1. Dedicated: `godot --headless --path . -- --dedicated` (`max_players` ≥ connected people).
+2. Two (or `party_size`) clients Join `127.0.0.1`.
+3. In the server debugger: `MpKit.matchmaker.enqueue(MpKit.peer_id_for(1))` and the same for slot 2 → one `r_1`. Another pair → `r_2`.
+4. Code path: `create_room()` + `join_room_by_code` with a 4-char string.
+
+### What not to do
+
+- Use `local_slot()` as the match seat.
+- `push_snapshot` / `broadcast_custom` to the whole hub if there is more than one room.
+- Expect the kit to open a match scene per room.
+- Put Steam, WebRTC, or one Godot process per match in the addon. No score / title copy here.
