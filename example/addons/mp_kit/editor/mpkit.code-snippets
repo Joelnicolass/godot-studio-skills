@@ -68,6 +68,24 @@
       "MpLan.advertise(self, \"${1:room}\")"
     ]
   },
+  "MpKit session flow": {
+    "scope": "gdscript",
+    "prefix": "mpkit-flow",
+    "description": "Subclass MpFlow for boot/world and late-join snapshot.",
+    "body": [
+      "extends MpFlow",
+      "",
+      "",
+      "func _ready() -> void:",
+      "\tboot_path = \"res://${1:scenes/ui/boot.tscn}\"",
+      "\tadd_world(&\"${2:2d}\", \"res://${3:scenes/world/match_2d.tscn}\")",
+      "\t# add_world(&\"3d\", \"res://scenes/world/match_3d.tscn\")",
+      "\tmax_players = ${4:4}",
+      "\troom_name = \"${5:MpKit}\"",
+      "\tstart_when = StartWhen.DEDICATED_FIRST_CLIENT",
+      "\tsuper._ready()"
+    ]
+  },
   "MpKit LAN browse": {
     "scope": "gdscript",
     "prefix": "mpkit-lan-browse",

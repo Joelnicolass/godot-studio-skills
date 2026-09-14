@@ -15,6 +15,8 @@ Archivos (`res://addons/mp_kit/`):
 | `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que espera `world_ready` |
 | `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — un pawn packed por slot ocupado |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — lobby drop-in (`mp_boot_menu.tscn`) |
+| `mp_flow.gd` | `class_name MpFlow` — flow opcional (escenas, host/join/1P, catálogo de mundos) |
+| `mp_world_ref.gd` | `class_name MpWorldRef` — un mundo del catálogo (`id` + escena) |
 | `mp_world_ready.gd` | `class_name MpWorldReady` — legado; no hace falta si hay `MpSpawner` |
 | `plugin.cfg` | Editor: Tools, scaffold, snippets, autoload al Enable. |
 
@@ -116,7 +118,41 @@ Hijo del actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Sol
 
 ## MpBootMenu
 
-Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. `world_scene` asignado = loop sin glue (host hace `broadcast_load_world` + late join). Vacío = solo UI; tu glue escucha las signals.
+Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un autoload `MpFlow`, lo usa. Si no: `world_scene` asignado = loop sin glue (host hace `broadcast_load_world` + late join). Vacío = solo UI; tu glue escucha las signals.
+
+## MpFlow
+
+Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, late join, dedicated al primer cliente.
+
+Un mundo:
+
+```gdscript
+extends MpFlow
+
+func _ready() -> void:
+	boot_path = "res://scenes/ui/boot.tscn"
+	world_path = "res://scenes/world/match.tscn"
+	start_when = StartWhen.DEDICATED_FIRST_CLIENT
+	super._ready()
+```
+
+Varios mundos — catálogo `MpWorldRef` (inspector `worlds`, o `add_world`). El lobby llama `select_world(&"2d")`. El joiner recibe `world_id` en el snapshot. `--world=3d` (user arg) selecciona si el id existe.
+
+```gdscript
+func _ready() -> void:
+	boot_path = "res://scenes/ui/boot.tscn"
+	add_world(&"2d", "res://scenes/world/match_2d.tscn")
+	add_world(&"3d", "res://scenes/world/match_3d.tscn")
+	start_when = StartWhen.DEDICATED_FIRST_CLIENT
+	super._ready()
+
+# lobby
+MpFlow.select_world(&"3d")
+```
+
+`snapshot_for_joiner()` ya manda `world_id`. Override y `super.snapshot_for_joiner()` si necesitás más estado.
+
+`MpFlow.find_in_tree(self)` localiza el autoload aunque no se llame `MpFlow` (la demo se llama `NetGlue`).
 
 ## MpLan
 

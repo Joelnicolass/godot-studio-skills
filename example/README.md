@@ -42,7 +42,7 @@ Después, un cliente editor: Unirse `127.0.0.1`.
 | Pieza | Dónde | Rol |
 |-------|--------|-----|
 | Transporte | `addons/mp_kit/` | ENet, slots, túnel. Cero gameplay. |
-| Glue | `glue/net_glue.gd` | host/join/1P, `load_world`, advertise LAN, reflect emote |
+| Glue | `glue/net_glue.gd` | `extends MpFlow`: catálogo `2d`/`3d` + emote |
 | Copy UI | `glue/demo_copy.gd` | Idioma del producto |
 | Match | `scenes/world/demo_match.gd` | Snapshot `elapsed` (no spawn) |
 | Spawn | `MpSlotSpawner` en `match_2d` / `match_3d` | Un pawn por slot |

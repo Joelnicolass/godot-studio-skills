@@ -56,21 +56,23 @@ Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
+Guía humana (inspector, paso a paso, túnel custom con diagramas): `addons/mp_kit/README.md`.
+
 ## Arranque en 5 pasos
 
-1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit` **antes** del glue).
-2. `MpKit.configure(port, max_players)` y después `host()` (LAN), `host_dedicated()` (online) o `join(ip)`. 1P: no llames `host()`.
+1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit` **antes** del flow).
+2. Tools → **MpKit: New session flow...** (o `extends MpFlow`). Asigná boot/world. `play_solo()` / `host_lan()` / `join_lan()`. 1P: no llames `host()` a mano.
 3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). El cliente pide `world_ready` solo; no hace falta un nodo `MpWorldReady`.
 4. Pawns: hijo `MpReplicate` + `submit_*` con `MpAuthority.accept_command(self, player_slot)`.
-5. LAN: `MpLan.advertise` en el host, `MpLan.browse` en el lobby (o escena `MpBootMenu`). Online: dedicated + IP pública, no `host()` detrás de NAT.
+5. LAN: `MpFlow` ya hace `advertise` en el host; el lobby hace `browse` (o `MpBootMenu`). Online: dedicated + IP pública, no `host()` detrás de NAT.
 
 ## Qué es el kit / qué no
 
 Copiar `addons/mp_kit/` → autoload `MpKit`.
 
-**Hace:** ENet listen o dedicated, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco (snapshot **y** túnel `send_custom`), signals, nodos de replicación, `MpBoot`.
+**Hace:** ENet listen o dedicated, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco (snapshot **y** túnel `send_custom`), signals, nodos de replicación, `MpBoot`. Opcional: `MpFlow` (escenas host/join/1P, no reglas).
 
-**No hace:** score, `change_scene` de un título, copy, input de actor, predicción, Steam/WebRTC/matchmaking, “cuándo empieza la partida”. `MpReplicate.interpolate` es un lerp opcional de proxy, no rollback.
+**No hace:** score, copy de un título, input de actor, predicción, Steam/WebRTC/matchmaking, “cuándo gana alguien”. `MpReplicate.interpolate` es un lerp opcional de proxy, no rollback.
 
 Si metés puntaje en `mp_kit.gd`, el kit deja de ser portable.
 
@@ -163,7 +165,7 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 
 - [ ] Tipo de MP declarado (ninguno / local-WiFi / online). Sin MP: este checklist no aplica.
 - [ ] Autoload `MpKit` **antes** del glue. `configure(port, max_players)` antes de host/join.
-- [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado.
+- [ ] `MpFlow` autoload (Tools → New session flow) o `extends MpFlow`. Varios mapas: `add_world` + `select_world`. Glue extra solo si hay copy o túnel.
 - [ ] Online: `MpBoot` + `host_dedicated()`; clientes `join`; export dedicated; spawn solo `occupied_slots()`.
 - [ ] Slots en dominio; peers solo en RPC/authority.
 - [ ] `MpSpawner` o `MpSlotSpawner` con `hold_until_world_ready` (default). El cliente no necesita `MpWorldReady`. No restage de pawns en glue.

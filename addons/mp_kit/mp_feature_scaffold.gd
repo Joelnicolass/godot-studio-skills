@@ -132,3 +132,53 @@ static func _pack_scene(
 		return null
 	root.free()
 	return packed
+
+
+static func write_flow(
+	tscn_path: String,
+	boot_path: String,
+	world_path: String,
+	start_when: int = 1
+) -> Error:
+	var tscn := tscn_path
+	if not tscn.begins_with("res://"):
+		tscn = "res://".path_join(tscn)
+	var gd_path := tscn.get_basename() + ".gd"
+	var abs_dir := ProjectSettings.globalize_path(tscn.get_base_dir())
+	if not DirAccess.dir_exists_absolute(abs_dir):
+		var mk := DirAccess.make_dir_recursive_absolute(abs_dir)
+		if mk != OK:
+			return mk
+	var gd := FileAccess.open(gd_path, FileAccess.WRITE)
+	if gd == null:
+		return FileAccess.get_open_error()
+	gd.store_string("""extends MpFlow
+
+## Session flow autoload. Assign boot/world in the inspector.
+## Override snapshot_for_joiner() if late joiners need game state.
+
+
+func snapshot_for_joiner() -> Dictionary:
+	return {}
+""")
+	gd.close()
+	var boot := boot_path.strip_edges()
+	var world := world_path.strip_edges()
+	var scene := FileAccess.open(tscn, FileAccess.WRITE)
+	if scene == null:
+		return FileAccess.get_open_error()
+	scene.store_string(
+		"""[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="%s" id="1"]
+
+[node name="MpFlow" type="Node"]
+script = ExtResource("1")
+boot_path = "%s"
+world_path = "%s"
+start_when = %d
+"""
+		% [gd_path, boot, world, start_when]
+	)
+	scene.close()
+	return OK

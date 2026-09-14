@@ -6,7 +6,8 @@ El plugin, habilitado, registra el autoload y el menú **Project → Tools**.
 |--------|----------|
 | **Wire replication on selection** | Hijo `MpReplicate` + `MultiplayerSynchronizer` (undo). No clona el dock Replication de Godot. |
 | **New replicated feature...** | Crea `res://features/<id>/` (o la carpeta que indiques): `.gd` + `.tscn` con replicate, sync y opcional `MpCustomPipe`. |
-| **Install Cursor/VS Code snippets** | Copia `.vscode/mpkit.code-snippets`. Recargá la ventana de Cursor. Prefijos: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
+| **New session flow...** | Escribe `res://glue/session_flow.tscn` + `.gd` (`extends MpFlow`) y lo registra como autoload. |
+| **Install Cursor/VS Code snippets** | Copia `.vscode/mpkit.code-snippets`. Recargá la ventana de Cursor. Prefijos: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
 Al Enable también copia **script templates** a `res://script_templates/` (con `.gdignore`). Al adjuntar un script a `CharacterBody2D/3D` o `Node2D/3D`, plantilla **MpKit replicated**.
 
@@ -21,7 +22,8 @@ Cursor sin Godot abierto: command `/new-mp-feature` (mismo layout de archivos). 
 | `MpReplicate` | Hijo del actor. Authority peer 1, props de sync, freeze RigidBody proxy. `interpolate` opcional en proxies. |
 | `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = padre de actores. Hold + `request_world_ready` en el cliente. Un nodo basta. |
 | `MpSlotSpawner` | Igual + un `pawn_scene` por slot ocupado (`Pawn_<n>`). Dedicated no spawnea slot 0. |
-| `MpBootMenu` | Lobby drop-in. `world_scene` para zero-glue; copy por `@export`. |
+| `MpBootMenu` | Lobby drop-in. Usa `MpFlow` si está en el árbol; si no, `world_scene` para zero-glue. Copy por `@export`. |
+| `MpFlow` | Autoload de sesión: boot/world(s), host/join/1P, late join. Varios mapas: `add_world` / `select_world`. |
 | `MpWorldReady` | Legado. No hace falta si hay `MpSpawner`. |
 | `MpCustomPipe` | Un canal del túnel `Dictionary`. |
 
@@ -43,6 +45,8 @@ Allowlist opcional en `configure(..., custom_channels)`. Vacío = todos los nomb
 O un nodo `MpCustomPipe` por feature (`@export channel`, signal `packet`).
 
 No metas meshes, puntaje ni `kind` de bala acá: Resources + `submit_*` del actor. El túnel es el escape hatch (emote, debug, un handshake vuestro).
+
+Paso a paso humano (mandar / recibir / reenviar al servidor, con diagramas): `addons/mp_kit/README.md`.
 
 ## Estructura de una feature
 

@@ -1,44 +1,49 @@
 # Glue del juego (lo que vos escribís)
 
-El kit no es tu juego. Mínimo dos piezas (pueden ser autoloads o un solo `NetGlue.gd` en un título chico):
+Para un título de un mundo, **no hace falta un `NetGlue`**. Tools → **MpKit: New session flow...** crea un autoload `extends MpFlow`. El lobby es `MpBootMenu` o botones que llaman `play_solo` / `host_lan` / `join_lan`.
 
-1. **Flow** — escucha `load_world`, `snapshot_received`, `session_ended`, `server_lost`. Cambia escenas.
-2. **Lobby / policy** — `host()` / `host_dedicated()` / `join()`, cuándo arranca la ronda, handshake de spawn.
+Escribí glue propio solo si:
 
-Clean: `GameSession` + `SceneDirector`. Estándar: un nodo `Match` en el mundo (o glue único). El kit no cambia.
+1. Copy o un túnel (como la demo: emote) → `extends MpFlow` y override.
+2. Clean: `GameSession` + `SceneDirector` encima de `MpFlow`, o sin él si el director ya cambia escenas.
+3. La ronda espera N jugadores / un “listo” → `start_when` no alcanza; llamá `start_match()` vos.
 
-Orden de autoload sugerido: `MpKit` → (sesión si Clean) → flow → glue de red.
+Varios mapas no son glue: `add_world` / `worlds` + `select_world(&"id")`.
+
+Orden de autoload: `MpKit` → `MpFlow` (o tu subclase) → resto.
 
 Dedicated / VPS: [dedicated.md](dedicated.md).
 
-## Configurar
+## MpFlow (default)
 
 ```gdscript
-func _ready() -> void:
-	var port := int(MpBoot.user_value("mp-port", "7777"))
-	MpKit.configure(port, 4, 1)
-	MpKit.peer_joined.connect(_on_peer_joined)
-	MpKit.peer_left.connect(_on_peer_left)
-	MpKit.client_world_ready.connect(_on_client_world_ready)
-	MpKit.join_failed.connect(_on_join_failed)
+extends MpFlow
 
-	if MpBoot.is_dedicated_process():
-		var err := MpKit.host_dedicated()
-		if err != OK:
-			push_error("dedicated bind failed: %s" % err)
-			get_tree().quit(1)
-		return
+func _ready() -> void:
+	boot_path = "res://scenes/ui/boot.tscn"
+	world_path = "res://scenes/world/match.tscn"
+	room_name = "Mi sala"
+	start_when = StartWhen.DEDICATED_FIRST_CLIENT
+	super._ready()
 ```
 
-Jugar solo: `MpKit.leave()` (deja offline) y cargar el mundo **sin** `host()`.
+Varios mundos:
 
-Lobby LAN: `"%s:%d" % [MpLan.get_local_ipv4(), port]`. Tras un `host()` exitoso: `MpLan.advertise(self, "Mi sala")` en un autoload (el boot se destruye al cambiar de escena). En el menú: `MpLan.browse(self)`. Online: campo IP (dev: `127.0.0.1`). Validar IP antes de `join`.
+```gdscript
+add_world(&"2d", "res://scenes/world/match_2d.tscn")
+add_world(&"3d", "res://scenes/world/match_3d.tscn")
+select_world(&"2d")
+```
 
-Atajo: escena `MpBootMenu` (`drive_kit`, `world_scene` opcional). La demo usa glue propio + browse, no instancia el drop-in.
+Jugar solo / host / join / volver al boot: métodos de `MpFlow`. Advertise LAN va en el autoload (sobrevive el `change_scene`). Browse en el menú: `MpLan.browse(self)`.
 
-## Política de arranque (producto, no kit)
+Atajo UI: `MpBootMenu`. Si detecta un `MpFlow` en el árbol, lo usa.
 
-Listen: una política válida es arrancar al conectar el 2.º peer (el host ya está). Dedicated: el servidor empieza vacío; arrancá al N-ésimo cliente o con un “listo”.
+Online: campo IP (dev: `127.0.0.1`). `join_lan` ya valida IPv4.
+
+## Política custom (N clientes, no MpFlow solo)
+
+Listen: una política válida es arrancar al conectar el 2.º peer. Dedicated: el servidor empieza vacío; arrancá al N-ésimo cliente o con un “listo”. Entonces no uses `DEDICATED_FIRST_CLIENT`; llamá `MpFlow.start_match()` o cambiá escenas vos.
 
 ```gdscript
 func _on_peer_joined(peer_id: int, slot: int) -> void:

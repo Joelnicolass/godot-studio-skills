@@ -25,7 +25,7 @@ func _physics_process(delta: float) -> void:
 	if _snap_accum < 1.0 / snapshot_hz:
 		return
 	_snap_accum = 0.0
-	MpKit.push_snapshot({"elapsed": elapsed, "world_kind": NetGlue.world_kind})
+	MpKit.push_snapshot({"elapsed": elapsed, "world_id": String(NetGlue.world_id)})
 
 
 func _on_snapshot(data: Dictionary) -> void:
