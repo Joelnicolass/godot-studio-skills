@@ -2,6 +2,19 @@
 
 Nothing from a concrete title. The kit does not name these classes.
 
+## Session flow (`extends MpFlow`)
+
+```gdscript
+extends MpFlow
+
+func _ready() -> void:
+	boot_path = "res://scenes/ui/boot.tscn"
+	add_world(&"2d", "res://scenes/world/match_2d.tscn")
+	add_world(&"3d", "res://scenes/world/match_3d.tscn")
+	start_when = StartWhen.DEDICATED_FIRST_CLIENT
+	super._ready()
+```
+
 ## Intent RPC on the actor
 
 ```gdscript

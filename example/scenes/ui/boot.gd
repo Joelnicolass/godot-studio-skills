@@ -35,7 +35,7 @@ func _ready() -> void:
 	_rooms.item_selected.connect(_on_room_selected)
 	NetGlue.status_changed.connect(_on_status)
 	_on_status(DemoCopy.STATUS_IDLE)
-	_set_world(NetGlue.world_kind)
+	_set_world(String(NetGlue.world_id))
 	var beacon := MpLan.browse(self)
 	beacon.rooms_changed.connect(_on_rooms)
 	if MpBoot.is_dedicated_process():
@@ -43,7 +43,7 @@ func _ready() -> void:
 
 
 func _set_world(kind: String) -> void:
-	NetGlue.world_kind = kind
+	NetGlue.select_world(StringName(kind))
 	_btn_2d.disabled = kind == "2d"
 	_btn_3d.disabled = kind == "3d"
 

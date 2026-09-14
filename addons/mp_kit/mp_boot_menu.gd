@@ -1,8 +1,8 @@
 class_name MpBootMenu
 extends Control
 
-## Drop-in lobby. Assign `world_scene` for a zero-glue loop, or connect signals
-## and leave world_scene empty if the game changes scenes itself.
+## Drop-in lobby. Prefers an MpFlow autoload if present.
+## Otherwise assign `world_scene` and `drive_kit` for a zero-glue loop.
 ## Does not decide match rules. Copy is @export so each title localizes it.
 
 signal play_solo_pressed
@@ -11,6 +11,7 @@ signal joining(ip: String)
 signal status_changed(text: String)
 
 @export var world_scene: PackedScene
+@export var world_id: StringName = &""
 @export var drive_kit: bool = true
 @export var max_players: int = 4
 @export var room_name: String = "MpKit"
@@ -34,25 +35,46 @@ var _status: Label
 var _rooms: ItemList
 var _beacon: MpLanBeacon
 var _room_rows: Array[Dictionary] = []
+var _flow: MpFlow
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	_build()
+	_flow = MpFlow.find_in_tree(self)
+	if _flow:
+		_bind_flow()
+	else:
+		_bind_local()
+	_beacon = MpLan.browse(self)
+	_beacon.rooms_changed.connect(_on_rooms)
+	if MpBoot.is_dedicated_process():
+		visible = false
+
+
+func _bind_flow() -> void:
+	_flow.status_changed.connect(_set_status)
+	if world_scene != null:
+		_flow.world_scene = world_scene
+	if world_id != &"":
+		_flow.select_world(world_id)
+	if not room_name.is_empty():
+		_flow.room_name = room_name
+	_flow.advertise_lan = advertise_lan
+	_flow.max_players = max_players
+
+
+func _bind_local() -> void:
 	var port := int(MpBoot.user_value("mp-port", "7777"))
 	if drive_kit:
 		MpKit.configure(port, max_players, 1)
 	MpKit.join_failed.connect(_on_join_failed)
 	MpKit.load_world.connect(_go_world)
-	_beacon = MpLan.browse(self)
-	_beacon.rooms_changed.connect(_on_rooms)
-	if MpBoot.is_dedicated_process():
-		visible = false
-		if drive_kit:
-			var err := MpKit.host_dedicated()
-			if err != OK:
-				push_error("MpKit.host_dedicated failed: %s" % err)
-				get_tree().quit(1)
+	if MpBoot.is_dedicated_process() and drive_kit:
+		var err := MpKit.host_dedicated()
+		if err != OK:
+			push_error("MpKit.host_dedicated failed: %s" % err)
+			get_tree().quit(1)
 
 
 func _build() -> void:
@@ -114,13 +136,22 @@ func _add_button(box: VBoxContainer, text: String, cb: Callable) -> void:
 
 
 func _on_play_solo() -> void:
+	play_solo_pressed.emit()
+	if _flow:
+		_apply_world_to_flow()
+		_flow.play_solo()
+		return
 	if drive_kit:
 		MpKit.leave()
-	play_solo_pressed.emit()
 	_go_world()
 
 
 func _on_host() -> void:
+	hosted.emit()
+	if _flow:
+		_apply_world_to_flow()
+		_flow.host_lan()
+		return
 	if drive_kit:
 		var err := MpKit.host()
 		if err != OK:
@@ -131,7 +162,6 @@ func _on_host() -> void:
 		if world_scene != null:
 			MpKit.broadcast_load_world()
 			_ensure_late_join()
-	hosted.emit()
 	_go_world()
 
 
@@ -140,13 +170,16 @@ func _on_join() -> void:
 	if not MpLan.is_valid_ipv4(ip):
 		_set_status(bad_ip_status)
 		return
+	joining.emit(ip)
+	if _flow:
+		_flow.join_lan(ip)
+		return
 	if drive_kit:
 		var err := MpKit.join(ip)
 		if err != OK:
 			_set_status(join_fail_status)
 			return
 	_set_status(joining_status % ip)
-	joining.emit(ip)
 
 
 func _on_join_failed() -> void:
@@ -175,6 +208,15 @@ func _on_room_selected(index: int) -> void:
 		return
 	var row: Dictionary = _room_rows[index]
 	_ip.text = str(row.get("address", ""))
+
+
+func _apply_world_to_flow() -> void:
+	if _flow == null:
+		return
+	if world_scene != null:
+		_flow.world_scene = world_scene
+	if world_id != &"":
+		_flow.select_world(world_id)
 
 
 func _go_world() -> void:
