@@ -76,7 +76,7 @@ Editor: [editor.md](editor.md).
 ## MpBoot
 
 ```gdscript
-MpBoot.is_dedicated_process()   # dedicated_server feature or --dedicated (user args)
+MpBoot.is_dedicated_process()   # dedicated_server / dedicated feature, or --dedicated in cmdline or user args
 MpBoot.user_flag("dedicated")
 MpBoot.user_value("mp-port", "7777")
 ```

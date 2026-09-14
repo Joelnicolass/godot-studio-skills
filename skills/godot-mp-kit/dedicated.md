@@ -28,12 +28,15 @@ godot --headless --path . -- --dedicated
 # Clients: another instance, Join 127.0.0.1
 ```
 
-In the editor: Debug → multiple instances, or two runs. `MpBoot.is_dedicated_process()` is true with:
+In the editor: Debug → Customize Run Instances. `MpBoot.is_dedicated_process()` is true with:
 
+- feature tag **`dedicated_server`** (or `dedicated`) on **that** instance
+- `--dedicated` on the command line (user args `-- --dedicated` **or** a loose flag; the kit reads `get_cmdline_args` and `get_cmdline_user_args`)
 - **Dedicated Server** export → `OS.has_feature("dedicated_server")`
-- or `-- --dedicated` (user args)
 
-Do **not** treat `--headless` alone as dedicated: GUT/CI also run headless.
+If **Override Main Run Args** is unchecked, Godot **may ignore** that row’s Launch Arguments. Check override on the hub instance, or use the `dedicated_server` tag (tags still combine when override is off).
+
+Do **not** treat `--headless` alone as dedicated: GUT/CI also run headless, and a headless client does not open the port.
 
 Optional port in glue: `int(MpBoot.user_value("mp-port", "7777"))`.
 

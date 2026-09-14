@@ -35,7 +35,7 @@ godot --headless --path example -- --dedicated
 
 Then a client in the editor: Join `127.0.0.1`.
 
-`--headless` **alone** is not dedicated (GUT/CI are also headless). You need `-- --dedicated` or a Dedicated Server export.
+`--headless` **alone** is not dedicated (GUT/CI are also headless). You need `-- --dedicated`, the `dedicated_server` feature tag, or a Dedicated Server export. In Customize Run Instances, if **Override Main Run Args** is off, Godot may ignore that row’s Launch Arguments.
 
 ## What to look at
 
