@@ -34,8 +34,8 @@ Orden:
 1. Arquitectura Clean vs estándar — **preguntar** (skill layered). Sin respuesta: no scaffoldear.
 2. Multiplayer — **preguntar** (AskQuestion si está disponible), **antes** de copiar `addons/mp_kit` o de escribir RPCs:
    - **Sin multiplayer** — no instales MpKit. Sin RPCs, sin `MultiplayerSpawner`.
-   - **Local / WiFi** (mismo dispositivo o LAN) — MpKit **actual** (ENet listen-server).
-   - **Online** (internet, NAT, matchmaking) — el kit actual **no alcanza**. Hay que **expandir MpKit** (transporte: relay, WebRTC, Steam/EOS, dedicated server). Glue y `submit_*` se quedan; no fingir que LAN es online.
+   - **Local / WiFi** (mismo dispositivo o LAN) — `MpKit.host()` listen-server (el host es jugador).
+   - **Online** (internet / VPS) — **dedicated server** en el mismo proyecto: `MpKit.host_dedicated()`, clientes `join(ip)`. Desarrollá dedicated + clientes desde el día uno. Steam/WebRTC/matchmaking solo si el producto los pide después. No fingir que un listen detrás de NAT es online.
    Sin respuesta: no copies el addon.
 3. 2D / 3D — **preguntar** (o ambos).
    - **2D**: sprites vía Aseprite MCP **solo** si el usuario quiere (referencias). Skill [godot-animation](../godot-animation/SKILL.md).
@@ -44,7 +44,7 @@ Orden:
 5. `/verify-prd`
 6. `/extract-features` → `FEATURES.md`
 7. `/generate-rules` → `RULES.md` (debe citar estas skills; `godot-mp-kit` solo si hay MP)
-8. `/generate-rfcs` — primer RFC = vertical slice jugable, no infra eterna. Si eligieron **online**, un RFC de expansión de transporte en el addon (no mezclado con gameplay).
+8. `/generate-rfcs` — primer RFC = vertical slice jugable, no infra eterna. Si eligieron **online**, un RFC de glue dedicated + export VPS (no mezclado con el slice de gameplay; no inventar Steam).
 9. `/test-strategy` solo si el usuario quiere tests o el PRD los pide
 10. Implementar RFC a RFC con la tubería de abajo
 11. `/workflow-status` cuando pida “dónde estamos”
@@ -78,7 +78,7 @@ No lances developer y reviewer en paralelo sobre el mismo RFC. Tech-lead de RFCs
 - Un `studio-developer` “hacé el juego”.
 - Inventar capas Clean si eligieron estándar, o al revés.
 - Copiar `addons/mp_kit` si eligieron sin multiplayer.
-- Tratar ENet LAN como multiplayer por internet.
+- Tratar un listen-server detrás de NAT como multiplayer por internet.
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
 - Tests o pases visuales si el usuario no los pidió y RULES no los exige.
 - Instalar MCP (Aseprite o Blender) o crear arte sin preguntar, o modelar/dibujar sin referencias.

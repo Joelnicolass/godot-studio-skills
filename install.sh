@@ -176,8 +176,11 @@ install_addon() {
   rm -rf "$dest"
   cp -R "$ADDON_SRC" "$dest"
   echo "addon  ${dest}"
+  mkdir -p "${project}/.vscode"
+  cp "${ADDON_SRC}/editor/mpkit.code-snippets" "${project}/.vscode/mpkit.code-snippets"
+  echo "snippets  ${project}/.vscode/mpkit.code-snippets"
   echo
-  echo "En project.godot, autoload (antes del glue):"
+  echo "Habilitá el plugin MpKit (autoload). CI/headless, en project.godot:"
   echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
 }
 

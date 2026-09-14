@@ -6,9 +6,14 @@ Archivos (`res://addons/mp_kit/`):
 |---------|-----|
 | `mp_kit.gd` | Autoload. ENet + RPCs de sesión + signals. **Sin** `class_name` (el autoload ya se llama `MpKit`). |
 | `mp_ids.gd` | `class_name MpIds` — slot ↔ peer; rejoin reusa slot |
+| `mp_boot.gd` | `class_name MpBoot` — `dedicated_server` / `--dedicated` |
 | `mp_lan.gd` | `class_name MpLan` — IPv4 |
-| `mp_authority.gd` | `class_name MpAuthority` — authority, freeze, synchronizer |
-| `plugin.cfg` | Visibilidad en el editor. El autoload real vive en `project.godot`. |
+| `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer |
+| `mp_custom_pipe.gd` | `class_name MpCustomPipe` — un canal del túnel |
+| `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze |
+| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que espera `world_ready` |
+| `mp_world_ready.gd` | `class_name MpWorldReady` — handshake cliente |
+| `plugin.cfg` | Editor: Tools, scaffold, snippets, autoload al Enable. |
 
 Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` ni `submit_action`.
 
@@ -20,68 +25,103 @@ Copiá `addons/mp_kit/` a `res://addons/mp_kit/` del proyecto. Autoload, **antes
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
-`MpKit.configure(port, max_players, host_slot)` antes de `host()` / `join()`.
+`MpKit.configure(port, max_players, host_slot, custom_channels)` antes de `host()` / `host_dedicated()` / `join()`. `custom_channels` vacío = todos los canales del túnel.
 
 ## Signals (el juego escucha)
 
 - `peer_joined(peer_id, slot)` — aceptado y sloteado
 - `peer_left(peer_id, slot)` — mapping limpio; el slot queda reservado para rejoin
 - `join_failed` — el cliente no llegó
-- `server_lost` — listen-server caído; el kit ya hizo `leave()`
+- `server_lost` — servidor caído; el kit ya hizo `leave()`
 - `client_world_ready(peer_id)` — el cliente registró spawners
-- `load_world` — hay que abrir la escena de match
+- `load_world` — hay que abrir la escena de match (el proceso servidor no recibe este RPC)
 - `snapshot_received(data)` — `Dictionary` vuestro
 - `session_ended(data)` — `Dictionary` vuestro
 - `slot_assigned(slot)` — este cliente aprendió su slot
+- `custom_received(channel, data, from_peer)` — túnel opaco (from_peer `1` si lo empujó el servidor)
 
 ## RPCs del kit (lista cerrada)
 
-Cliente → servidor: `rpc_world_ready`  
-Servidor → clientes: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`
+Cliente → servidor: `rpc_world_ready`, `rpc_custom_to_server`  
+Servidor → clientes: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`
 
-Input de pawn **fuera** del kit.
+Input de pawn y semántica del dict custom **fuera** del kit.
 
 ## Métodos útiles
 
-- `host() -> Error` / `join(address) -> Error` / `leave()`
-- `is_networked()` / `is_server()`
-- `local_slot()` / `peer_id_for(slot)` / `slot_for_peer(peer_id)`
+- `host(dedicated=false) -> Error` / `host_dedicated() -> Error` / `join(address) -> Error` / `leave()`
+- `is_networked()` / `is_server()` / `is_dedicated()` / `is_listen_host()`
+- `local_slot()` — `0` en dedicated (no hay jugador local)
+- `occupied_slots()` / `peer_id_for(slot)` / `slot_for_peer(peer_id)`
 - `request_world_ready()`
 - `broadcast_load_world()` / `load_world_to(peer)`
 - `push_snapshot(data)` / `push_snapshot_to(peer, data)`
 - `broadcast_session_ended(data)`
 - `is_peer_world_ready(peer_id)`
+- `send_custom(channel, data)` / `broadcast_custom` / `push_custom_to` / `is_custom_channel_allowed`
 
-`rpc_load_world` es `call_remote`: el **host no lo recibe**. El host entra al mundo por glue.
+Editor: [editor.md](editor.md).
+
+`rpc_load_world` es `call_remote`: el **servidor no lo recibe**. Entra al mundo por glue (listen host y dedicated).
+
+## MpBoot
+
+```gdscript
+MpBoot.is_dedicated_process()   # feature dedicated_server o --dedicated (user args)
+MpBoot.user_flag("dedicated")
+MpBoot.user_value("mp-port", "7777")
+```
+
+No trates `--headless` solo como dedicated.
 
 ## MpAuthority
 
 ```gdscript
 MpAuthority.claim_server(node)           # authority = peer 1
 MpAuthority.ensure_sync(node, PackedStringArray([".:position", ".:rotation"]))
-MpAuthority.freeze_rigid_proxy(body)     # no-op si sos authority
+MpAuthority.freeze_rigid_proxy(body)     # RigidBody2D/3D; no-op si sos authority
 MpAuthority.should_send_command()        # networked y no server
 ```
 
+## MpSpawner
+
+Extiende `MultiplayerSpawner` nativo. Usa el mecanismo de **visibilidad por peer** del `MultiplayerSynchronizer`: Godot no manda el spawn a un peer hasta que el synchronizer del actor sea visible para él, y al revelarlo manda spawn + sync emparejados.
+
+Default `hold_until_world_ready = true` (solo actúa en el servidor):
+
+1. Cada actor que entra bajo `spawn_path` nace oculto (`public_visibility = false` en sus synchronizers).
+2. En `client_world_ready`, `set_visibility_for(peer, true)` → Godot entrega spawn + sync a ese peer.
+3. `peer_left` → visibilidad off para ese peer (limpio para rejoin).
+
+- Inspector: `spawn_path` = padre de los actores (queda intacto; el cliente lo necesita para instanciar). `extra_scenes` = packed scenes.
+- Glue: `add_child(node, true)` bajo ese padre, cuando quieras. Identidad (`player_slot`, etc.) va en el `MultiplayerSynchronizer` con `spawn = true`, no en un RPC.
+- `hold_until_world_ready = false` solo si todos los peers ya tienen esta escena.
+
+## MpWorldReady
+
+Cliente: `request_world_ready()` en deferred (un frame) para que hermanos como `DemoMatch` terminen de registrar spawnables. Servidor / offline: no-op.
+
 ## MpLan
 
-`MpLan.get_local_ipv4()` / `MpLan.is_valid_ipv4(ip)` para el lobby host.
+`MpLan.get_local_ipv4()` / `MpLan.is_valid_ipv4(ip)` para el lobby listen. Online: IP de la VPS (o `127.0.0.1` en dev), no la LAN del cliente.
 
 ## MpIds (contrato)
 
-- Slot 1 = listen-server = ENet peer 1.
-- Clientes: primer hueco en `2..max_players`.
+- Listen: slot `host_slot` (1) = jugador host = ENet peer 1. Clientes: `host_slot+1..max_players`.
+- Dedicated: peer 1 sin slot. Clientes: `host_slot..max_players`.
 - `unbind_peer` deja el slot en `0` (libre para rebind), no borra el cupo.
 - `assign_client` reusa slot si el peer ya estaba, o rebind de slot vacío.
+- `occupied_slots()` = slots con peer ≠ 0.
 
 ## Fallos que el kit ya cubre
 
 | Fallo típico | Mitigación |
 |--------------|------------|
 | 1P abre puerto | `is_networked()` false hasta `host()`/`join()` |
-| HUD usa unique_id | `local_slot()` |
-| Spawn antes de escena cliente | `request_world_ready` |
+| HUD usa unique_id | `local_slot()` (0 = dedicated) |
+| Spawn antes de escena cliente | `MpSpawner.hold_until_world_ready` + `request_world_ready` |
 | RigidBody cliente pelea con sync | `freeze_rigid_proxy` |
 | `leave()` con peer null | `OfflineMultiplayerPeer` |
 | Host se cae | `server_lost` |
 | IP basura | `join_failed` |
+| Cupo | `create_server` max_clients + `disconnect_peer` |

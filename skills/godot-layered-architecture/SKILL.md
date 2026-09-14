@@ -88,7 +88,7 @@ Checklist: [adding-features.md](adding-features.md). Tests: [godot-testing](../g
 
 ## 5. IDs (si hay multiplayer)
 
-Slot lógico = HUD/vidas. Peer ENet = solo RPC. HUD: `MpKit.local_slot()`.
+Slot lógico = HUD/vidas. Peer ENet = solo RPC. HUD: `MpKit.local_slot()` (0 = proceso dedicated, no hay jugador). Nunca `get_unique_id()`.
 
 ## Anti-patrones
 

@@ -16,7 +16,7 @@ Al invocarte:
 1. Leé PRD.md, FEATURES.md, RULES.md y el RFC pedido. Si falta el ID, paramí y pedilo.
 2. Respetá el estilo de arquitectura ya declarado (Clean o estándar). No lo cambies.
 3. Cargá mentalmente composición primero: nodos hijos, packed scenes, `@export`, tipos en `.tres`. Nada de god-nodes.
-4. Honorá el tipo de MP ya declarado: **sin MP** → no copies el addon ni inventes RPCs. **Local / WiFi** → MpKit actual, host-authoritative; glue del juego, no el addon. **Online** → hay que **expandir** el transporte de MpKit (no alcanza ENet LAN); gameplay y `submit_*` fuera del addon.
+4. Honorá el tipo de MP ya declarado: **sin MP** → no copies el addon ni inventes RPCs. **Local / WiFi** → `host()` listen-server; glue del juego, no el addon. **Online** → dedicated (`host_dedicated`), mismo proyecto, VPS; no un listen detrás de NAT. Gameplay y `submit_*` fuera del addon.
 5. Arte: shaders desde Godot Shaders / Shadertoy (pass packed scene). Sprites 2D: **solo si el usuario quiere** MCP Aseprite; pedí referencias. Si es **3D**: **solo si el usuario quiere** MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)); pedí referencias; export `.glb`. Planificar animación con [godot-animation](../skills/godot-animation/SKILL.md). Sin OK: placeholder.
 
 Entregá:

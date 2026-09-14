@@ -1,0 +1,76 @@
+{
+  "MpKit submit RPC": {
+    "scope": "gdscript",
+    "prefix": "mpkit-submit",
+    "description": "Host-authoritative submit_* / apply_* (LAN and dedicated).",
+    "body": [
+      "func try_${1:action}(payload: Dictionary) -> void:",
+      "\tif MpAuthority.should_send_command():",
+      "\t\tsubmit_${1:action}.rpc_id(1, payload)",
+      "\telse:",
+      "\t\tapply_${1:action}(payload)",
+      "",
+      "@rpc(\"any_peer\", \"call_remote\", \"reliable\")",
+      "func submit_${1:action}(payload: Dictionary) -> void:",
+      "\tif not multiplayer.is_server():",
+      "\t\treturn",
+      "\tif multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):",
+      "\t\treturn",
+      "\tapply_${1:action}(payload)",
+      "",
+      "func apply_${1:action}(payload: Dictionary) -> void:",
+      "\t$0"
+    ]
+  },
+  "MpKit custom tunnel send": {
+    "scope": "gdscript",
+    "prefix": "mpkit-custom",
+    "description": "Send an opaque Dictionary on a named channel (not auto-broadcast).",
+    "body": [
+      "MpKit.send_custom(&\"${1:channel}\", {",
+      "\t\"${2:key}\": ${3:value},",
+      "})"
+    ]
+  },
+  "MpKit custom tunnel listen": {
+    "scope": "gdscript",
+    "prefix": "mpkit-custom-on",
+    "description": "Listen to MpKit.custom_received for one channel.",
+    "body": [
+      "func _ready() -> void:",
+      "\tMpKit.custom_received.connect(_on_custom)",
+      "",
+      "func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:",
+      "\tif channel != &\"${1:channel}\":",
+      "\t\treturn",
+      "\t$0"
+    ]
+  },
+  "MpKit dedicated boot": {
+    "scope": "gdscript",
+    "prefix": "mpkit-boot",
+    "description": "Dedicated vs lobby boot (same project as clients).",
+    "body": [
+      "func _ready() -> void:",
+      "\tvar port := int(MpBoot.user_value(\"mp-port\", \"7777\"))",
+      "\tMpKit.configure(port, ${1:4}, 1)",
+      "\tif MpBoot.is_dedicated_process():",
+      "\t\tvar err := MpKit.host_dedicated()",
+      "\t\tif err != OK:",
+      "\t\t\tpush_error(\"dedicated bind failed\")",
+      "\t\t\tget_tree().quit(1)",
+      "\t\treturn"
+    ]
+  },
+  "MpKit occupied spawn": {
+    "scope": "gdscript",
+    "prefix": "mpkit-spawn-slots",
+    "description": "Spawn pawns for occupied slots (no pawn on dedicated server).",
+    "body": [
+      "for slot in MpKit.occupied_slots():",
+      "\t_ensure_pawn(slot)",
+      "if MpKit.is_listen_host():",
+      "\t_ensure_pawn(MpKit.local_slot())"
+    ]
+  }
+}

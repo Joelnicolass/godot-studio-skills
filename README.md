@@ -27,8 +27,8 @@ Con el kit:
 | Orquestador | `skills/godot-studio-workflow/` | El agente del chat: entrevista + PRD→RFC→implementar |
 | Cómo escribir Godot | `skills/` | Capas, composición, MpKit, tests (GUT/GdUnit4) |
 | Subagentes | `agents/` | Tech lead, developer, reviewer; tester y visual opcionales |
-| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, … |
-| MpKit | `addons/mp_kit/` | LAN / WiFi host-authoritative. **Cero** gameplay. No hace falta si no hay MP. Online = hay que expandirlo. |
+| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, `/new-mp-feature`, … |
+| MpKit | `addons/mp_kit/` | Listen o dedicated, nodos de replicación, túnel Dictionary. **Cero** gameplay. |
 
 Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
 
@@ -117,15 +117,15 @@ flowchart TB
   mp{¿Qué multiplayer?}
 
   mp -->|Sin MP| none[No MpKit, no RPCs]
-  mp -->|Local / WiFi| lan[MpKit actual — ENet LAN]
-  mp -->|Online| net[Expandir MpKit — relay / WebRTC / Steam / dedicated]
+  mp -->|Local / WiFi| lan[MpKit.host listen-server]
+  mp -->|Online| net[MpKit.host_dedicated + clientes / VPS]
 ```
 
 | Tipo | MpKit |
 |------|--------|
 | **Sin multiplayer** | No se instala |
-| **Local / WiFi** | El addon de este repo alcanza |
-| **Online** (internet) | Hay que **expandir** el transporte del addon. Glue y `submit_*` siguen en el juego |
+| **Local / WiFi** | `host()` — el proceso host es un jugador |
+| **Online** (internet / VPS) | `host_dedicated()` — mismo proyecto, peer 1 no es jugador. Desarrollá dedicated + clientes; la VPS es el mismo binario |
 
 Tests: skill `godot-testing` (GUT / GdUnit4) **solo** si los pedís.
 
@@ -212,15 +212,20 @@ No inventar FX ni arte de memoria.
 ./install.sh --addon /path/to/godot-project
 ```
 
-Autoload **antes** del glue:
+Habilitá el plugin **MpKit** (autoload + Tools). CI/headless:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 ```
 
+Hay una demo lista en [`example/`](example/README.md) (1P, LAN, dedicated, mundos 2D y 3D con placeholders, flujo PRD→RFC).
+
+Snippets Cursor/VS Code: `.vscode/mpkit.code-snippets` (el instalador los copia). Editor: `skills/godot-mp-kit/editor.md`. Online / VPS: `skills/godot-mp-kit/dedicated.md`.
+
 ## Layout
 
 ```
+example/                       # demo Godot 4.7 (1P + LAN + dedicated, 2D y 3D)
 addons/mp_kit/
 skills/
   godot-studio-workflow/

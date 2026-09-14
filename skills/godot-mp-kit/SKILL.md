@@ -3,17 +3,18 @@ name: godot-mp-kit
 description: >-
   Implementa multiplayer host-authoritative en Godot 4 con el addon informal
   MpKit (ENet, slots, handshake, snapshots) más glue del juego. Preguntá antes
-  el tipo: sin MP (no copies el addon), local/WiFi (kit actual), u online
-  (hay que expandir el transporte). Usar al copiar addons/mp_kit, host/join
-  LAN, RPCs submit_*, MultiplayerSpawner, 1P offline, rejoin, o al extraer
+  el tipo: sin MP (no copies el addon), local/WiFi (listen-server), u online
+  (dedicated server, mismo proyecto, VPS). Usar al copiar addons/mp_kit,
+  host/host_dedicated/join, RPCs submit_*, túnel Dictionary, MultiplayerSpawner,
+  1P offline, rejoin, export dedicated, scaffold de feature, o al extraer
   netcode a otro proyecto.
 ---
 
 # Godot — MpKit y multiplayer
 
-Patrón listen-server: **un simulador (host)**. El invitado manda intenciones y pinta copias. El addon es pequeño a propósito: tubería reusable, cero gameplay.
+Un simulador (servidor). Los clientes mandan intenciones y pintan copias. El addon es pequeño a propósito: tubería reusable, cero gameplay.
 
-Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** Clean vs estándar; no asumir capas). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md).
+Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** Clean vs estándar; no asumir capas). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md). Dedicated / VPS: [dedicated.md](dedicated.md).
 
 ## Alcance de red (obligatorio)
 
@@ -22,8 +23,8 @@ Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 | Elección | Qué hacer |
 |----------|-----------|
 | **Sin multiplayer** | No instales MpKit. Sin autoload, sin RPC, sin `MultiplayerSpawner`. |
-| **Local / WiFi** (mismo dispositivo o misma LAN) | Copiá el MpKit **actual**. ENet listen-server. Alcanza. |
-| **Online** (internet, NAT, matchmaking, Steam, etc.) | El kit actual **no alcanza**. **Expandí MpKit**: otro transporte (relay, WebRTC, Steam/EOS, dedicated server) **dentro** de `addons/mp_kit` (o reemplazando `host()`/`join()`). Glue, puntaje y `submit_*` de los actores se quedan en el juego. No fingir que un `join(ip)` de LAN es online. |
+| **Local / WiFi** (mismo dispositivo o misma LAN) | `MpKit.host()` listen-server. El proceso host **es** un jugador (slot 1 / peer 1). |
+| **Online** (internet, VPS) | **Dedicated server** en el **mismo proyecto**. `MpKit.host_dedicated()`; clientes `join(ip)`. Peer 1 **no** es jugador. Desarrollá así desde el día uno (headless + clientes a `127.0.0.1`); la VPS es el mismo binario con IP pública y UDP abierto. Steam / WebRTC / matchmaking: solo si el producto los pide, **después**, no en lugar de dedicated. |
 
 No preguntar de nuevo si el usuario ya eligió en este chat o el PRD/RULES lo declara.
 
@@ -42,10 +43,10 @@ En red eso se traduce a:
 
 | Prioridad | En MpKit / glue |
 |-----------|-----------------|
-| Capas | `addons/mp_kit` no nombra sesión, escenas, copy ni puntaje. Dedicated server futuro = reemplazar el addon. |
-| Composición | Transport (kit) + glue + (`GameSession` **o** nodo Match) + actores con `submit_*`. No un `NetworkManager.gd` de 2000 líneas. |
+| Capas | `addons/mp_kit` no nombra sesión, escenas, copy ni puntaje. Online = dedicated en el addon, no un `NetworkManager` del título. |
+| Composición | Transport (kit) + glue + (`GameSession` **o** nodo Match) + actores con `submit_*`. |
 | Editor | Spawners, replication config y escenas de pawn se arman como nodos. El kit no genera el mundo. |
-| Reuso | Copiar el addon canónico de este framework. El juego escribe glue + dominio; no forks del kit por título. |
+| Reuso | Copiar el addon canónico. El juego escribe glue + dominio; no forks del kit por título. |
 
 ## Fuente canónica
 
@@ -53,30 +54,31 @@ El plugin es `addons/mp_kit/` **dentro del proyecto Godot**. Copiá esa carpeta 
 
 Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/` de este proyecto.
 
-API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Código genérico: [examples.md](examples.md).
+API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
 ## Qué es el kit / qué no
 
 Copiar `addons/mp_kit/` → autoload `MpKit`.
 
-**Hace:** ENet host/join/leave, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco, signals de sesión.
+**Hace:** ENet listen o dedicated, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco (snapshot **y** túnel `send_custom`), signals, nodos de replicación, `MpBoot`.
 
-**No hace:** score, `change_scene`, copy, input de actor, interpolación avanzada, Steam/WebRTC, “cuándo empieza la partida”.
+**No hace:** score, `change_scene`, copy, input de actor, interpolación avanzada, Steam/WebRTC/matchmaking, “cuándo empieza la partida”.
 
 Si metés puntaje en `mp_kit.gd`, el kit deja de ser portable.
 
 ## Modelo obligatorio
 
 ```
-[Jugar solo]   no llames host(); OfflineMultiplayerPeer; local_slot() == host_slot
-[Host LAN]     MpKit.host()
-[Cliente]      MpKit.join(ip)
+[Jugar solo]     no llames host(); OfflineMultiplayerPeer; local_slot() == host_slot
+[Host LAN]       MpKit.host()
+[Dedicated]      MpKit.host_dedicated()     local_slot() == 0
+[Cliente]        MpKit.join(ip)
 ```
 
-- **Slot** estable: key de vidas/score/HUD. Slot 1 = listen-server.
-- **Peer id** volátil: validar RPCs con `MpKit.peer_id_for(slot)`. Nunca `get_unique_id()` como id de jugador.
+- **Slot** estable: key de vidas/score/HUD. Listen: slot 1 = jugador host. Dedicated: slots 1..N = solo clientes.
+- **Peer id** volátil: validar RPCs con `MpKit.peer_id_for(slot)`. Nunca `get_unique_id()` como id de jugador. Peer 1 en dedicated **no** es un slot.
 
-Cliente: `apply_snapshot` **apaga** el tick de simulación de la sesión. El guest no tiquea el reloj.
+Cliente: `apply_snapshot` **apaga** el tick de simulación de la sesión. El guest no tiquea el reloj. Dedicated sí simula (es el servidor).
 
 ## Input y autoridad
 
@@ -104,21 +106,27 @@ func submit_x(payload) -> void:
 - Allowlist de `submit_*`. No `rpc add_score`.
 - No `call_local` en comandos de cliente (duplica spawn/daño).
 - Áreas de daño: `monitoring = is_multiplayer_authority()`.
+- Dedicated nunca manda `submit_*` (no hay jugador local).
 
 ## Handshake de spawn (obligatorio)
 
-`MultiplayerSpawner` tira paquetes si el cliente aún no registró spawnable scenes.
+El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cliente **sigue en el lobby**; ese spawn se pierde. `MpSpawner` (default `hold_until_world_ready`) usa la visibilidad por peer del `MultiplayerSynchronizer`: los actores nacen ocultos y cada peer se revela en `client_world_ready`; recién ahí Godot manda spawn + sync emparejados.
 
 ```
-Host broadcast_load_world()
-  → cliente carga escena, registra spawners, MpKit.request_world_ready()
-  → host espera client_world_ready
-  → recién ahí add_child(pawn, true)
+Server broadcast_load_world() + glue carga el mundo en el proceso servidor
+  → listen host add_child(pawn local) en _ready; nace oculto para peers no listos
+  → cliente carga escena, MpWorldReady → request_world_ready()
+  → MpSpawner revela al peer (set_visibility_for) → Godot manda spawn + sync
+  → glue ensure_pawn del slot que acaba de entrar
 ```
+
+No desparentes actors en glue: el kit ya revela al `client_world_ready`.
+
+Identidad del actor (`player_slot`, etc.): propiedades del `MultiplayerSynchronizer` con `spawn = true`, o el nombre (`Pawn_2` / `Ship_2`).
 
 FX locales (post-process, atmósfera) se arman en `_ready` **también en el cliente**, antes del `return` del guest.
 
-Rejoin: no resetear score; snapshot + `load_world_to` + re-parent de hijos del spawner si hace falta reenviar.
+Rejoin: no resetear score; snapshot + `load_world_to`. `MpSpawner` revela de nuevo al nuevo peer id.
 
 ## Snapshots vs transforms
 
@@ -132,26 +140,28 @@ No metas 40 posiciones de props en el dict si ya van por synchronizer.
 
 Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar siempre jugar solo **sin** `create_server`.
 
-## Dedicated server / online
-
-El MpKit de hoy es **LAN**. Online o dedicated: **expandir este addon** (o el transport dentro de `host()`/`join()`). Dominio y RPCs `submit_*` de los pawns se quedan. No pongas matchmaking en un script del título si pertenece al transporte.
-
 ## Anti-patrones
 
 - Cliente spawnea / `queue_free` / suma puntos.
 - `PlayerId` o `GameSession` importados desde `mp_kit.gd`.
-- Arrancar spawn en el mismo frame que `change_scene` del invitado.
+- Arrancar spawn en el mismo frame que `change_scene` del invitado (el kit lo cubre; no lo “arregles” unparenteando en glue).
 - `leave()` dejando `multiplayer_peer = null` (el kit pone `OfflineMultiplayerPeer`).
 - Tercer peer aceptado en silencio (el kit debe `disconnect_peer` al exceder cupo; la política de “sala llena” es glue + kit).
 - HUD que muestra el score del host porque usó peer id 1.
+- Dedicated con pawn para sí, o desarrollar online como listen-server.
+- Fingir que `host()` LAN detrás de NAT es online.
+- Auto-broadcast del túnel custom (el servidor debe elegir).
+- Meter reglas de juego o `kind` de bala en el dict del túnel.
 
 ## Checklist
 
 - [ ] Tipo de MP declarado (ninguno / local-WiFi / online). Sin MP: este checklist no aplica.
 - [ ] Autoload `MpKit` **antes** del glue. `configure(port, max_players)` antes de host/join.
-- [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado (salvo expansión de transporte si es online).
+- [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado.
+- [ ] Online: `MpBoot` + `host_dedicated()`; clientes `join`; export dedicated; spawn solo `occupied_slots()`.
 - [ ] Slots en dominio; peers solo en RPC/authority.
-- [ ] Handshake `world_ready` antes del primer `add_child` replicado.
-- [ ] Guest no simula reglas; host valida sender.
+- [ ] `MpWorldReady` + `MpSpawner` con `hold_until_world_ready` (default). No restage de pawns en glue.
+- [ ] Guest no simula reglas; servidor valida sender.
 - [ ] 1P offline verificado.
 - [ ] Pawns son packed scenes componibles, no lógica de red incrustada en el kit.
+- [ ] Features nuevas: Tools scaffold o `/new-mp-feature`; túnel solo para lo que no es `submit_*` / Resource.

@@ -20,8 +20,8 @@ Al invocarte:
    - Señal hacia arriba, API hacia abajo; sin `get_node("../../")` entre sistemas.
    - Autoloads solo servicios globales.
    - Si no hay MP: no debe aparecer MpKit ni RPCs.
-   - Si hay MP local/WiFi: autoridad host, handshake, 1P offline mismo código; glue fuera del addon.
-   - Si es online: el transporte LAN actual no alcanza; debe haber expansión de MpKit, no un `join(ip)` de LAN fingido.
+   - Si hay MP local/WiFi: autoridad listen-server, handshake, 1P offline mismo código; glue fuera del addon.
+   - Si es online: dedicated (`host_dedicated`, `local_slot() == 0` en el server, spawn `occupied_slots()`); clientes `join` a IP pública o `127.0.0.1` en dev. No un listen detrás de NAT fingido como online.
 4. Extra no pedido en el RFC = señalarlo (alcance).
 
 Veredicto por dimensión: PASS / NEEDS WORK / FAIL.
