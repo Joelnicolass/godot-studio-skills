@@ -7,12 +7,15 @@ Files (`res://addons/mp_kit/`):
 | `mp_kit.gd` | Autoload. ENet + session RPCs + signals. **No** `class_name` (the autoload is already `MpKit`). |
 | `mp_ids.gd` | `class_name MpIds` — slot ↔ peer; rejoin reuses slot |
 | `mp_boot.gd` | `class_name MpBoot` — `dedicated_server` / `--dedicated` |
-| `mp_lan.gd` | `class_name MpLan` — IPv4 |
+| `mp_lan.gd` | `class_name MpLan` — IPv4 + `advertise` / `browse` |
+| `mp_lan_beacon.gd` | `class_name MpLanBeacon` — UDP `MPKIT1` |
 | `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer |
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — one tunnel channel |
-| `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze |
+| `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / optional lerp |
 | `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner that waits for `world_ready` |
-| `mp_world_ready.gd` | `class_name MpWorldReady` — client handshake |
+| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — one packed pawn per occupied slot |
+| `mp_boot_menu.gd` | `class_name MpBootMenu` — drop-in lobby (`mp_boot_menu.tscn`) |
+| `mp_world_ready.gd` | `class_name MpWorldReady` — leftover; unused if an `MpSpawner` is present |
 | `plugin.cfg` | Editor: Tools, scaffold, snippets, autoload on Enable. |
 
 These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or `submit_action`.
@@ -81,6 +84,7 @@ MpAuthority.claim_server(node)           # authority = peer 1
 MpAuthority.ensure_sync(node, PackedStringArray([".:position", ".:rotation"]))
 MpAuthority.freeze_rigid_proxy(body)     # RigidBody2D/3D; no-op if you are authority
 MpAuthority.should_send_command()        # networked and not server
+MpAuthority.accept_command(self, player_slot)  # in submit_*: server + sender == slot peer
 ```
 
 ## MpSpawner
@@ -96,14 +100,32 @@ Default `hold_until_world_ready = true` (server side only):
 - Inspector: `spawn_path` = parent of the actors (stays untouched; the client needs it to instantiate). `extra_scenes` = packed scenes.
 - Glue: `add_child(node, true)` under that parent, whenever. Identity (`player_slot`, etc.) goes on the `MultiplayerSynchronizer` with `spawn = true`, not an RPC.
 - `hold_until_world_ready = false` only if every peer already has this scene.
+- Client: this same node calls `request_world_ready()` deferred. One `MpSpawner` is enough.
+
+## MpSlotSpawner
+
+Extends `MpSpawner`. `@export pawn_scene`, `spawn_points`, `actor_name_prefix` (`Pawn_`). Listen host spawns the local slot in `_ready`. Joiners on `client_world_ready`. Dedicated does not spawn slot 0. Identity: name `Pawn_<n>` and `player_slot` if the actor exports it.
 
 ## MpWorldReady
 
-Client: `request_world_ready()` deferred one frame so siblings that register spawnables finish `_ready`. Server / offline: no-op.
+Optional leftover. If the scene already has an `MpSpawner`, this node is a no-op. Old scenes may keep it.
+
+## MpReplicate
+
+Child of the actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Proxies only; authority does not interpolate.
+
+## MpBootMenu
+
+Scene `res://addons/mp_kit/mp_boot_menu.tscn`. Copy via `@export`. Assigned `world_scene` = loop without glue (host `broadcast_load_world` + late join). Empty = UI only; your glue listens to the signals.
 
 ## MpLan
 
 `MpLan.get_local_ipv4()` / `MpLan.is_valid_ipv4(ip)` for the listen lobby. Online: VPS IP (or `127.0.0.1` in dev), not the client’s LAN address.
+
+```gdscript
+MpLan.advertise(parent, "Room")   # UDP; parent to a node that survives change_scene (autoload)
+MpLan.browse(parent)              # signal rooms_changed(rooms: Array)
+```
 
 ## MpIds (contract)
 

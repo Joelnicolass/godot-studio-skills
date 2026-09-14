@@ -6,7 +6,7 @@ With the plugin enabled, the autoload is registered and **Project → Tools** ga
 |--------|----------|
 | **Wire replication on selection** | Child `MpReplicate` + `MultiplayerSynchronizer` (undo). Does not clone Godot’s Replication dock. |
 | **New replicated feature...** | Writes `res://features/<id>/` (or the folder you pick): `.gd` + `.tscn` with replicate, sync, and optional `MpCustomPipe`. |
-| **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the Cursor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`. |
+| **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the Cursor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
 Enable also copies **script templates** to `res://script_templates/` (with `.gdignore`). When attaching a script to `CharacterBody2D/3D` or `Node2D/3D`, template **MpKit replicated**.
 
@@ -18,9 +18,11 @@ Cursor without Godot open: command `/new-mp-feature` (same file layout). `./inst
 
 | Node | Use |
 |------|-----|
-| `MpReplicate` | Child of the actor. Authority peer 1, sync props, freeze RigidBody proxy. |
-| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Hold: actors hidden per peer until `world_ready` (synchronizer visibility). |
-| `MpWorldReady` | In the match scene, **after** spawners. Client: `request_world_ready` (deferred one frame). |
+| `MpReplicate` | Child of the actor. Authority peer 1, sync props, freeze RigidBody proxy. Optional `interpolate` on proxies. |
+| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Hold + client `request_world_ready`. One node is enough. |
+| `MpSlotSpawner` | Same + one `pawn_scene` per occupied slot (`Pawn_<n>`). Dedicated does not spawn slot 0. |
+| `MpBootMenu` | Drop-in lobby. `world_scene` for zero-glue; copy via `@export`. |
+| `MpWorldReady` | Leftover. Not needed if an `MpSpawner` is present. |
 | `MpCustomPipe` | One Dictionary-tunnel channel. |
 
 LAN and dedicated: the same tree. Boot chooses `host()` / `host_dedicated()`.

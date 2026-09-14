@@ -12,6 +12,7 @@ signal status_changed(text: String)
 
 var world_kind: String = "2d"
 var match_running: bool = false
+var _lan_beacon: MpLanBeacon
 
 
 func _ready() -> void:
@@ -36,6 +37,7 @@ func _ready() -> void:
 
 
 func play_solo() -> void:
+	_stop_lan()
 	MpKit.leave()
 	match_running = true
 	goto_world()
@@ -48,6 +50,8 @@ func host_lan() -> void:
 		return
 	match_running = true
 	MpKit.broadcast_load_world()
+	_stop_lan()
+	_lan_beacon = MpLan.advertise(self, "MpKit demo")
 	goto_world()
 
 
@@ -70,6 +74,7 @@ func goto_world() -> void:
 
 func return_to_boot() -> void:
 	match_running = false
+	_stop_lan()
 	MpKit.leave()
 	get_tree().change_scene_to_file(BOOT_SCENE)
 
@@ -98,6 +103,7 @@ func _on_join_failed() -> void:
 
 func _on_server_lost() -> void:
 	match_running = false
+	_stop_lan()
 	status_changed.emit(DemoCopy.STATUS_SERVER_LOST)
 	get_tree().change_scene_to_file(BOOT_SCENE)
 
@@ -107,3 +113,12 @@ func _on_custom(channel: StringName, _data: Dictionary, from_peer: int) -> void:
 		return
 	if MpKit.is_server() and from_peer != 1:
 		MpKit.broadcast_custom(channel, _data)
+
+
+func _stop_lan() -> void:
+	if _lan_beacon == null:
+		return
+	if is_instance_valid(_lan_beacon):
+		_lan_beacon.stop()
+		_lan_beacon.queue_free()
+	_lan_beacon = null

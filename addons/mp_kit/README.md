@@ -4,6 +4,14 @@ Canonical copy: this repo (`addons/mp_kit`). Host-authoritative helpers. **No ga
 
 Do **not** install for a 1P-only game.
 
+## Quickstart (5 steps)
+
+1. Copy this folder to `res://addons/mp_kit/` and enable **MpKit** (`MpKit` autoload **before** game glue).
+2. `MpKit.configure(port, max_players)` then `host()` (LAN), `host_dedicated()` (online), or `join(ip)`. 1P: do not call `host()`.
+3. In the match scene: one `MpSpawner` or `MpSlotSpawner` (`spawn_path` = actor parent). The client requests `world_ready` itself; no extra `MpWorldReady` node.
+4. Pawns: child `MpReplicate` + `submit_*` with `MpAuthority.accept_command(self, player_slot)`.
+5. LAN: `MpLan.advertise` on the host (parent to an autoload), `MpLan.browse` on the lobby — or instance `MpBootMenu`. Online: dedicated + public IP, not `host()` behind NAT.
+
 Two server modes, **same ENet**, **same project** as the clients:
 
 | Mode | API | Who is a player |
@@ -18,7 +26,7 @@ Editor (enable the plugin):
 - **MpKit: Install Cursor/VS Code snippets** — copies `.vscode/mpkit.code-snippets`
 - Enable plugin registers autoload `MpKit`. Headless/CI: keep the autoload line in `project.godot` (do not also Enable if that would duplicate).
 
-Nodes: `MpReplicate`, `MpSpawner`, `MpWorldReady`, `MpCustomPipe` (opaque `Dictionary` tunnel).
+Nodes: `MpReplicate`, `MpSpawner`, `MpSlotSpawner`, `MpBootMenu`, `MpCustomPipe`. `MpWorldReady` is leftover (no-op if an `MpSpawner` is present).
 
 Online = dedicated server with a public IP + open UDP port. Develop locally (`--headless -- --dedicated` + clients on `127.0.0.1`).
 
@@ -47,11 +55,14 @@ MpKit="*res://addons/mp_kit/mp_kit.gd"
 | `mp_kit.gd` | ENet + slots + session RPCs + custom Dictionary tunnel |
 | `mp_ids.gd` | slot ↔ peer |
 | `mp_boot.gd` | dedicated process detection |
-| `mp_replicate.gd` | authority + sync + freeze |
-| `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready` |
-| `mp_world_ready.gd` | client handshake |
+| `mp_replicate.gd` | authority + sync + freeze + optional proxy lerp |
+| `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready` (client handshake too) |
+| `mp_slot_spawner.gd` | one packed pawn per occupied slot |
+| `mp_boot_menu.gd` / `.tscn` | drop-in lobby |
+| `mp_world_ready.gd` | leftover client handshake |
 | `mp_custom_pipe.gd` | one named tunnel channel |
-| `mp_lan.gd` / `mp_authority.gd` | IPv4 / authority helpers |
+| `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP room advertise/browse |
+| `mp_authority.gd` | authority helpers (`accept_command`) |
 
 ## Custom tunnel
 
@@ -62,8 +73,8 @@ Signal: `custom_received(channel, data, from_peer)`. **No auto-reflect.** Glue d
 ## Handshake
 
 1. Server `broadcast_load_world()` + glue loads the world on the server process.
-2. Match scene: `MpSpawner` (`hold_until_world_ready` default) then `MpWorldReady`.
-3. Listen host may `add_child` the local pawn in `_ready`; it spawns hidden to not-ready peers.
+2. Match scene: one `MpSpawner` / `MpSlotSpawner` (`hold_until_world_ready` default). The client node requests `world_ready`.
+3. Listen host may `add_child` the local pawn in `_ready`; it spawns hidden to not-ready peers. `MpSlotSpawner` does this for you.
 4. On `client_world_ready` the kit reveals synchronizers (`set_visibility_for`) → engine sends spawn + sync.
 5. Spawn `occupied_slots()` only. Dedicated: no pawn for peer 1.
 6. Do not unparent actors in glue.

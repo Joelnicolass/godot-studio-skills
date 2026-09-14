@@ -50,9 +50,7 @@ func try_action(payload: Dictionary) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func submit_action(payload: Dictionary) -> void:
-	if not multiplayer.is_server():
-		return
-	if multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):
+	if not MpAuthority.accept_command(self, player_slot):
 		return
 	apply_action(payload)
 

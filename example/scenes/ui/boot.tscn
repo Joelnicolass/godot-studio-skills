@@ -79,6 +79,17 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Join"
 
+[node name="RoomsHeader" type="Label" parent="Center/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = "LAN rooms"
+
+[node name="Rooms" type="ItemList" parent="Center/Panel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 88)
+layout_mode = 2
+
 [node name="LanIp" type="Label" parent="Center/Panel"]
 unique_name_in_owner = true
 layout_mode = 2

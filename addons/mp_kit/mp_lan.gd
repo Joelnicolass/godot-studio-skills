@@ -34,6 +34,21 @@ static func get_local_ipv4() -> String:
 	return fallback
 
 
+## Parent the returned beacon (or it is already added to `parent`).
+static func advertise(parent: Node, room_name: String = "MpKit", game_port: int = -1) -> MpLanBeacon:
+	var beacon := MpLanBeacon.new()
+	parent.add_child(beacon)
+	beacon.start_advertise(room_name, game_port)
+	return beacon
+
+
+static func browse(parent: Node) -> MpLanBeacon:
+	var beacon := MpLanBeacon.new()
+	parent.add_child(beacon)
+	beacon.start_browse()
+	return beacon
+
+
 static func _is_private_lan(address: String) -> bool:
 	if address.begins_with("10."):
 		return true
