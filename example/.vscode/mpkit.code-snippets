@@ -12,9 +12,7 @@
       "",
       "@rpc(\"any_peer\", \"call_remote\", \"reliable\")",
       "func submit_${1:action}(payload: Dictionary) -> void:",
-      "\tif not multiplayer.is_server():",
-      "\t\treturn",
-      "\tif multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):",
+      "\tif not MpAuthority.accept_command(self, player_slot):",
       "\t\treturn",
       "\tapply_${1:action}(payload)",
       "",
@@ -62,15 +60,23 @@
       "\t\treturn"
     ]
   },
-  "MpKit occupied spawn": {
+  "MpKit LAN advertise": {
     "scope": "gdscript",
-    "prefix": "mpkit-spawn-slots",
-    "description": "Spawn pawns for occupied slots (no pawn on dedicated server).",
+    "prefix": "mpkit-lan-adv",
+    "description": "Advertise this listen-host on the LAN.",
     "body": [
-      "for slot in MpKit.occupied_slots():",
-      "\t_ensure_pawn(slot)",
-      "if MpKit.is_listen_host():",
-      "\t_ensure_pawn(MpKit.local_slot())"
+      "MpLan.advertise(self, \"${1:room}\")"
+    ]
+  },
+  "MpKit LAN browse": {
+    "scope": "gdscript",
+    "prefix": "mpkit-lan-browse",
+    "description": "Browse LAN rooms (UDP).",
+    "body": [
+      "var _beacon := MpLan.browse(self)",
+      "_beacon.rooms_changed.connect(func(rooms: Array) -> void:",
+      "\t$0",
+      ")"
     ]
   }
 }

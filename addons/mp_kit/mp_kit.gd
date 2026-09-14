@@ -134,6 +134,9 @@ func join(address: String) -> Error:
 func leave() -> void:
 	_world_ready.clear()
 	ids.reset_offline()
+	for child in get_children():
+		if child is MpLanBeacon or child.name == "MpBootLateJoin":
+			child.queue_free()
 	if _peer == null:
 		multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 		return
@@ -294,6 +297,8 @@ func rpc_world_ready() -> void:
 		return
 	var sender := multiplayer.get_remote_sender_id()
 	ids.assign_client(sender)
+	if bool(_world_ready.get(sender, false)):
+		return
 	_world_ready[sender] = true
 	client_world_ready.emit(sender)
 

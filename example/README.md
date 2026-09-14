@@ -21,7 +21,7 @@ El plugin **MpKit** ya está enabled y el autoload `MpKit` va **antes** de `NetG
 | Modo | Cómo |
 |------|------|
 | **1P** | F5 → Jugar solo. Toggle 2D/3D. WASD/flechas, **E** emote. |
-| **LAN** | Instancia A: Host LAN. Instancia B: Unirse `127.0.0.1`. Debug → Run Multiple Instances. |
+| **LAN** | Instancia A: Host LAN (aparece en **Salas LAN**). Instancia B: click en la sala o Unirse `127.0.0.1`. Debug → Run Multiple Instances. |
 | **Dedicated** | Ver abajo. El servidor **no** es un jugador. |
 
 F6: `scenes/actors/pawn_2d.tscn`, `pawn_3d.tscn`, `scenes/world/match_2d.tscn`, `match_3d.tscn`.
@@ -42,9 +42,10 @@ Después, un cliente editor: Unirse `127.0.0.1`.
 | Pieza | Dónde | Rol |
 |-------|--------|-----|
 | Transporte | `addons/mp_kit/` | ENet, slots, túnel. Cero gameplay. |
-| Glue | `glue/net_glue.gd` | host/join/1P, `load_world`, reflect emote |
+| Glue | `glue/net_glue.gd` | host/join/1P, `load_world`, advertise LAN, reflect emote |
 | Copy UI | `glue/demo_copy.gd` | Idioma del producto |
-| Match | `scenes/world/demo_match.gd` | Spawn, handshake, snapshot |
+| Match | `scenes/world/demo_match.gd` | Snapshot `elapsed` (no spawn) |
+| Spawn | `MpSlotSpawner` en `match_2d` / `match_3d` | Un pawn por slot |
 | Pawns | `scenes/actors/` | `submit_move` / `apply_move`, `MpReplicate`, pipe |
 | Looks | `resources/looks/*.tres` | Tint/badge/speed — no `if kind` |
 | Producto | `PRD.md`, `FEATURES.md`, `RULES.md`, `RFCs/` | Flujo del estudio |

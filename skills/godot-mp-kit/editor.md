@@ -6,7 +6,7 @@ El plugin, habilitado, registra el autoload y el menú **Project → Tools**.
 |--------|----------|
 | **Wire replication on selection** | Hijo `MpReplicate` + `MultiplayerSynchronizer` (undo). No clona el dock Replication de Godot. |
 | **New replicated feature...** | Crea `res://features/<id>/` (o la carpeta que indiques): `.gd` + `.tscn` con replicate, sync y opcional `MpCustomPipe`. |
-| **Install Cursor/VS Code snippets** | Copia `.vscode/mpkit.code-snippets`. Recargá la ventana de Cursor. Prefijos: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`. |
+| **Install Cursor/VS Code snippets** | Copia `.vscode/mpkit.code-snippets`. Recargá la ventana de Cursor. Prefijos: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
 Al Enable también copia **script templates** a `res://script_templates/` (con `.gdignore`). Al adjuntar un script a `CharacterBody2D/3D` o `Node2D/3D`, plantilla **MpKit replicated**.
 
@@ -18,9 +18,11 @@ Cursor sin Godot abierto: command `/new-mp-feature` (mismo layout de archivos). 
 
 | Nodo | Uso |
 |------|-----|
-| `MpReplicate` | Hijo del actor. Authority peer 1, props de sync, freeze RigidBody proxy. |
-| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = padre de actores. Hold: actores ocultos por peer hasta `world_ready` (visibilidad del synchronizer). |
-| `MpWorldReady` | En la escena de match, **después** de spawners. Cliente: `request_world_ready` (deferred un frame). |
+| `MpReplicate` | Hijo del actor. Authority peer 1, props de sync, freeze RigidBody proxy. `interpolate` opcional en proxies. |
+| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = padre de actores. Hold + `request_world_ready` en el cliente. Un nodo basta. |
+| `MpSlotSpawner` | Igual + un `pawn_scene` por slot ocupado (`Pawn_<n>`). Dedicated no spawnea slot 0. |
+| `MpBootMenu` | Lobby drop-in. `world_scene` para zero-glue; copy por `@export`. |
+| `MpWorldReady` | Legado. No hace falta si hay `MpSpawner`. |
 | `MpCustomPipe` | Un canal del túnel `Dictionary`. |
 
 LAN y dedicated: el mismo árbol. El boot elige `host()` / `host_dedicated()`.

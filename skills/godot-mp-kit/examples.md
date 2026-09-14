@@ -7,9 +7,7 @@ Nada de un título concreto. El kit no nombra estas clases.
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")
 func submit_action(dir: Vector2, strength: float) -> void:
-	if not multiplayer.is_server():
-		return
-	if multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):
+	if not MpAuthority.accept_command(self, player_slot):
 		return
 	apply_action(dir, strength)
 
@@ -96,4 +94,4 @@ MpAuthority.ensure_sync(self, PackedStringArray([
 ]))
 ```
 
-`add_child` bajo el `spawn_path`. `MpSpawner` revela el actor al peer en `world_ready` (Godot manda spawn + sync).
+`add_child` bajo el `spawn_path`. `MpSpawner` revela el actor al peer en `world_ready` (Godot manda spawn + sync). Un `MpSlotSpawner` hace el pawn por slot; no hace falta `ensure_pawn` en glue.

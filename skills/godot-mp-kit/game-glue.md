@@ -32,7 +32,9 @@ func _ready() -> void:
 
 Jugar solo: `MpKit.leave()` (deja offline) y cargar el mundo **sin** `host()`.
 
-Lobby LAN: `"%s:%d" % [MpLan.get_local_ipv4(), port]`. Online: campo IP (dev: `127.0.0.1`). Validar IP antes de `join`.
+Lobby LAN: `"%s:%d" % [MpLan.get_local_ipv4(), port]`. Tras un `host()` exitoso: `MpLan.advertise(self, "Mi sala")` en un autoload (el boot se destruye al cambiar de escena). En el menú: `MpLan.browse(self)`. Online: campo IP (dev: `127.0.0.1`). Validar IP antes de `join`.
+
+Atajo: escena `MpBootMenu` (`drive_kit`, `world_scene` opcional). La demo usa glue propio + browse, no instancia el drop-in.
 
 ## Política de arranque (producto, no kit)
 
@@ -69,9 +71,12 @@ Al terminar en servidor: `broadcast_session_ended` + ir a resultados.
 
 ## Mundo (`_ready`)
 
+Preferí un `MpSlotSpawner` en la escena (`pawn_scene`, `spawn_path`, markers). Entonces el glue **no** llama `ensure_pawn` ni `request_world_ready`.
+
+Spawn a mano (proyectiles, enemigos, o un pawn custom):
+
 ```gdscript
 func _ready() -> void:
-	$PawnSpawner.add_spawnable_scene("res://pawns/pawn.tscn")
 	# FX locales acá (también el cliente)
 
 	if not MpKit.is_networked():
@@ -80,7 +85,8 @@ func _ready() -> void:
 		return
 
 	if not MpKit.is_server():
-		MpKit.request_world_ready()
+		# Solo si no hay MpSpawner en esta escena:
+		# MpKit.request_world_ready()
 		return
 
 	# Listen host: pawn local en _ready. MpSpawner no lo manda hasta world_ready.

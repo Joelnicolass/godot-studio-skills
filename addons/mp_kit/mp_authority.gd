@@ -25,6 +25,15 @@ static func should_send_command() -> bool:
 	return MpKit.is_networked() and not MpKit.is_server()
 
 
+## Call from submit_* RPCs: `if not MpAuthority.accept_command(self, player_slot): return`
+static func accept_command(node: Node, player_slot: int) -> bool:
+	if node == null or not MpKit.is_networked():
+		return false
+	if not node.multiplayer.is_server():
+		return false
+	return node.multiplayer.get_remote_sender_id() == MpKit.peer_id_for(player_slot)
+
+
 static func ensure_sync(node: Node, properties: PackedStringArray) -> MultiplayerSynchronizer:
 	if node.has_node("MultiplayerSynchronizer"):
 		return node.get_node("MultiplayerSynchronizer") as MultiplayerSynchronizer

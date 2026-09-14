@@ -8,10 +8,9 @@ extends MultiplayerSpawner
 ## Engine mechanism: a MultiplayerSpawner only sends spawn (and starts sync)
 ## to a peer once that node's MultiplayerSynchronizer is visible to it.
 ##
-## So, on the server, every actor added under spawn_path starts hidden
-## (public_visibility = false) and each peer is revealed on
-## MpKit.client_world_ready. Godot then delivers spawn + sync, paired.
-## Clients need no special handling: spawn_path stays untouched.
+## Server: actors under spawn_path start hidden; each peer is revealed on
+## MpKit.client_world_ready. Client: this node requests world_ready (deferred).
+## No extra MpWorldReady node is required.
 
 @export var extra_scenes: Array[PackedScene] = []
 ## Hold spawn/sync per peer until MpKit.client_world_ready (server only).
@@ -40,9 +39,14 @@ func _ready() -> void:
 		push_warning("MpSpawner '%s': spawn_path does not resolve" % name)
 		return
 
-	if not hold_until_world_ready:
+	if not MpKit.is_networked():
 		return
-	if not MpKit.is_networked() or not MpKit.is_server():
+
+	if not MpKit.is_server():
+		call_deferred("_request_world_ready")
+		return
+
+	if not hold_until_world_ready:
 		return
 
 	for child in _root.get_children():
@@ -57,6 +61,14 @@ func _exit_tree() -> void:
 		MpKit.client_world_ready.disconnect(_on_client_world_ready)
 	if MpKit.peer_left.is_connected(_on_peer_left):
 		MpKit.peer_left.disconnect(_on_peer_left)
+
+
+func _request_world_ready() -> void:
+	if not is_inside_tree():
+		return
+	if not MpKit.is_networked() or MpKit.is_server():
+		return
+	MpKit.request_world_ready()
 
 
 func _on_child_entered(node: Node) -> void:

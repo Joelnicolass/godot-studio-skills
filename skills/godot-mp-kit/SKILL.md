@@ -56,13 +56,21 @@ Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
+## Arranque en 5 pasos
+
+1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit` **antes** del glue).
+2. `MpKit.configure(port, max_players)` y después `host()` (LAN), `host_dedicated()` (online) o `join(ip)`. 1P: no llames `host()`.
+3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). El cliente pide `world_ready` solo; no hace falta un nodo `MpWorldReady`.
+4. Pawns: hijo `MpReplicate` + `submit_*` con `MpAuthority.accept_command(self, player_slot)`.
+5. LAN: `MpLan.advertise` en el host, `MpLan.browse` en el lobby (o escena `MpBootMenu`). Online: dedicated + IP pública, no `host()` detrás de NAT.
+
 ## Qué es el kit / qué no
 
 Copiar `addons/mp_kit/` → autoload `MpKit`.
 
 **Hace:** ENet listen o dedicated, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco (snapshot **y** túnel `send_custom`), signals, nodos de replicación, `MpBoot`.
 
-**No hace:** score, `change_scene`, copy, input de actor, interpolación avanzada, Steam/WebRTC/matchmaking, “cuándo empieza la partida”.
+**No hace:** score, `change_scene` de un título, copy, input de actor, predicción, Steam/WebRTC/matchmaking, “cuándo empieza la partida”. `MpReplicate.interpolate` es un lerp opcional de proxy, no rollback.
 
 Si metés puntaje en `mp_kit.gd`, el kit deja de ser portable.
 
@@ -96,9 +104,7 @@ RPC en **tu** pawn, no en el kit:
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")
 func submit_x(payload) -> void:
-	if not multiplayer.is_server():
-		return
-	if multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):
+	if not MpAuthority.accept_command(self, player_slot):
 		return
 	apply_x(payload)
 ```
@@ -115,9 +121,9 @@ El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cl
 ```
 Server broadcast_load_world() + glue carga el mundo en el proceso servidor
   → listen host add_child(pawn local) en _ready; nace oculto para peers no listos
-  → cliente carga escena, MpWorldReady → request_world_ready()
+  → cliente carga escena; MpSpawner pide request_world_ready() (deferred)
   → MpSpawner revela al peer (set_visibility_for) → Godot manda spawn + sync
-  → glue ensure_pawn del slot que acaba de entrar
+  → MpSlotSpawner (o glue) spawnea el slot que acaba de entrar
 ```
 
 No desparentes actors en glue: el kit ya revela al `client_world_ready`.
@@ -160,7 +166,7 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 - [ ] Glue propio: cuándo `start_match`, copy, escenas. Kit intocado.
 - [ ] Online: `MpBoot` + `host_dedicated()`; clientes `join`; export dedicated; spawn solo `occupied_slots()`.
 - [ ] Slots en dominio; peers solo en RPC/authority.
-- [ ] `MpWorldReady` + `MpSpawner` con `hold_until_world_ready` (default). No restage de pawns en glue.
+- [ ] `MpSpawner` o `MpSlotSpawner` con `hold_until_world_ready` (default). El cliente no necesita `MpWorldReady`. No restage de pawns en glue.
 - [ ] Guest no simula reglas; servidor valida sender.
 - [ ] 1P offline verificado.
 - [ ] Pawns son packed scenes componibles, no lógica de red incrustada en el kit.

@@ -56,9 +56,7 @@ func try_move(dir: Vector2) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func submit_move(dir: Vector2) -> void:
-	if not multiplayer.is_server():
-		return
-	if multiplayer.get_remote_sender_id() != MpKit.peer_id_for(player_slot):
+	if not MpAuthority.accept_command(self, player_slot):
 		return
 	apply_move(dir)
 
