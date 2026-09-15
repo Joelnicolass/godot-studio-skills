@@ -14,13 +14,15 @@ Review the implementation of the specified RFC and provide a thorough, actionabl
 
 ## WHEN ARTIFACTS CONFLICT
 
-Order of authority: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
+Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
 
 ## STEP 0: RUN IT
 
 Before assessing anything, run the project's build, typecheck, and test suite. Paste the actual output. Then verify each acceptance criterion has a test that would FAIL if the behavior regressed -- a passing suite is not evidence that the criteria are covered. Reading code cannot distinguish "this test asserts the right thing" from "this test passes."
 
 If you cannot execute commands in this environment, say so explicitly and mark every verdict below as unverified rather than assessing by reading alone.
+
+For a **Godot game**: parsing/importing the project counts as build; the test suite only if a runner exists. Window playtest and fidelity vs `VISUAL.md` are not this review (`studio-playtester` / `studio-visual`). One pass: blockers vs nits; do not ask to iterate until green.
 
 ## SCOPE THE CHECKLIST TO THE PRODUCT TYPE
 

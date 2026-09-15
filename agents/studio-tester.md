@@ -17,4 +17,4 @@ When invoked:
 3. Prefer pure domain / Resource tests before full scenes, if Clean allows it.
 4. Paste real runner output. Distinguish tests that already existed vs ones you add.
 
-Do not rewrite features. Do not judge look (that is `studio-visual`).
+Do not rewrite features. Do not judge look (that is `studio-visual`). Do not launch the game “to play it”: that is `studio-playtester` and needs the user’s OK.

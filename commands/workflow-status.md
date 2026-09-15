@@ -1,25 +1,26 @@
 You are guiding a project through an RFC-driven development workflow with these stages.
 
-The orchestrator (`godot-studio-workflow`) runs these steps; the user does not have to type every slash if they asked to make the game. Stage 6 is optional if there are no tests.
+The orchestrator (`godot-studio-workflow`) runs these steps; the user does not have to type every slash if they asked to make the game. `/test-strategy` is optional if there are no tests.
 
 | # | Stage | Artifact | Command / Prompt |
 |---|-------|----------|------------------|
-| 1 | Create PRD | PRD.md | `/create-prd` (interactive-prd-creation-prompt.md) |
-| 2 | Verify PRD | PRD.md (improved) + PRD-REVIEW.md | `/verify-prd` (prd-comprehensive-verification-prompt.md) |
-| 3 | Extract features | FEATURES.md | `/extract-features` (prd-to-features-prompt.md) |
-| 4 | Generate rules | RULES.md | `/generate-rules` (prd-to-rules-prompt.md) |
-| 5 | Generate RFCs | RFCs/ folder + RFCS.md | `/generate-rfcs` (prd-to-rfcs-prompt.md) |
-| 6 | Testing strategy | TEST-STRATEGY.md | `/test-strategy` (testing-strategy-prompt.md) |
-| 7 | Implement RFCs (one by one, in order) | Code | `/implement-rfc <id>` (implementation-prompt-template.md) |
-| 8 | Review each implementation | `reviews/REVIEW-RFC-<id>.md` | `/review-rfc <id>` (code-review-prompt.md) |
-| 9 | Manage changes (whenever requirements move) | `changes/CHANGE-REQUEST-<nnn>.md` | `/manage-changes` (prd-change-management-prompt.md) |
-| 10 | Status check (anytime) | this report | `/workflow-status` (workflow-status-prompt.md) |
+| 1 | Create PRD | PRD.md | `/create-prd` |
+| 2 | Verify PRD | PRD.md (improved) + PRD-REVIEW.md | `/verify-prd` |
+| 3 | Extract features | FEATURES.md | `/extract-features` |
+| 4 | Generate rules | RULES.md | `/generate-rules` |
+| 5 | Visual guide (if there is a look) | VISUAL.md | `/create-visual-guide` |
+| 6 | Generate RFCs | RFCs/ folder + RFCS.md | `/generate-rfcs` |
+| 7 | Testing strategy | TEST-STRATEGY.md | `/test-strategy` (optional) |
+| 8 | Implement RFCs (one by one, in order) | Code | `/implement-rfc <id>` |
+| 9 | Review each implementation | `reviews/REVIEW-RFC-<id>.md` | `/review-rfc <id>` |
+| 10 | Manage changes (whenever requirements move) | `changes/CHANGE-REQUEST-<nnn>.md` | `/manage-changes` |
+| 11 | Status check (anytime) | this report | `/workflow-status` |
 
-Stage 6 comes before stage 7 deliberately: a test plan written after the code is a coverage audit, not a plan.
+`/test-strategy` comes **before** implementation on purpose: a test plan written after the code is a coverage audit, not a plan. `VISUAL.md` may be missing if there is no look yet; then the visual pass does not run.
 
 Inspect the current project to determine workflow progress:
 
-1. Which artifacts exist: PRD.md, PRD-REVIEW.md, FEATURES.md, RULES.md, RFCS.md, RFCs/ folder, reviews/, changes/?
+1. Which artifacts exist: PRD.md, PRD-REVIEW.md, FEATURES.md, RULES.md, VISUAL.md, RFCS.md, RFCs/ folder, reviews/, changes/, `.studio/MEMORY.md`?
 2. Which RFCs appear implemented in the codebase versus not yet started? Compare each RFC's acceptance criteria against the actual code — do not assume an RFC is done just because code exists.
 3. Which RFCs have been reviewed? Check `reviews/` for a report per implemented RFC — an implemented RFC with no review is the most common real-world gap, and reviews are exactly what gets skipped under deadline.
 4. Are there open change requests in `changes/` whose decisions are still pending?

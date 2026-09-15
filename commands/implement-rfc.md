@@ -1,8 +1,8 @@
 Target RFC: the ID provided after this command in my message — substitute it for [ID] everywhere below. If no ID was given, ask which RFC to work on before doing anything else.
 
-If skill `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone: `studio-tech-lead` (plan) → approval → `studio-developer` → `studio-reviewer`. Tester and visual only if the user or RULES.md ask. One RFC at a time.
+If skill `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone: `studio-tech-lead` (plan **with a file tree**) → the user approves the piece cut → `studio-developer` → `studio-reviewer` (one pass). Then **ask** for a playtest (`studio-playtester`, not GUT) and, if UI changed, a visual pass (`studio-visual`; without `VISUAL.md`/refs, ask for them first). GUT tester only if the user or RULES.md asks. One RFC at a time. A typo or 1–3 file bug: this chat, no new RFC.
 
-Load `godot-layered-architecture` and `godot-composition-first` (shaders/sprites: `assets.md`; animation: `godot-animation`; 3D: Blender MCP only with OK). If local/Wi-Fi MP: `godot-mp-kit`. If online: `godot-mp-kit` and a plan to **expand the addon**. If no MP: do not load the kit. If tests: `godot-testing`.
+Load `godot-layered-architecture` and `godot-composition-first` (shaders/sprites: `assets.md`; animation: `godot-animation`; 3D: Blender MCP only with OK). If there is MP: `godot-mp-kit` (local = listen; online = dedicated, see `dedicated.md`). If no MP: do not load the kit. If tests: `godot-testing`.
 
 # Implementation Prompt for RFC-[ID]: [Title]
 
@@ -23,19 +23,20 @@ This implementation covers RFC-[ID]: [brief description]. Refer to:
 
 ## When Artifacts Conflict
 
-Order of authority: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
+Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generated plans. Where this prompt's generic guidance conflicts with RULES.md, RULES.md wins -- it was written for this project and this prompt was not. Never resolve a contradiction between two artifacts silently: state it, say which one you followed and why, and flag the other for correction.
 
 ## Two-Phase Approach
 
 ### Phase 1: Planning (No Code)
 1. Analyze the requirements and existing codebase
 2. Present a comprehensive implementation plan covering:
+   - File tree + responsibility map (one job per piece; why it is not merged)
    - Files to create or modify
-   - Key components, data structures, and APIs
+   - What is a Resource `.tres`, what is a node, what is `@export`
    - Proposed implementation sequence
    - Technical decisions and trade-offs
    - Potential impacts on existing functionality
-3. Wait for explicit user approval before proceeding
+3. Show the tree and wait for explicit user approval (more/fewer pieces?) before proceeding
 4. Address any feedback or modifications from the user
 
 ### Phase 2: Implementation (After Approval Only)

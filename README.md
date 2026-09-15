@@ -19,15 +19,16 @@ With the kit:
 - **you** choose Clean or standard Godot **before** any scaffold
 - **you** choose whether there is multiplayer and which type (none · local/Wi-Fi · online)
 - each feature is a scene + `@export` + Resource `.tres`, not a `match kind`
-- one RFC at a time, with an approved plan, review, and MpKit kept off gameplay
+- one RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
+- MpKit kept off gameplay; notes across chats in Engram or `.studio/MEMORY.md` if needed
 - the game lives in **another** repo; this one only has skills, commands, agents, and the transport addon
 
 | Piece | Where | What it is |
 |-------|--------|--------|
 | Orchestrator | `skills/godot-studio-workflow/` | The chat agent: interview + PRD→RFC→implement |
-| How to write Godot | `skills/` | Layers, composition, MpKit, tests (GUT/GdUnit4) |
-| Subagents | `agents/` | Tech lead, developer, reviewer; optional tester and visual |
-| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, `/new-mp-feature`, … |
+| How to write Godot | `skills/` | Layers, composition, MpKit, playtest, visual, memory, tests |
+| Subagents | `agents/` | Tech lead, developer, reviewer; optional tester, playtester, and visual |
+| Commands | `commands/` | `/create-prd`, `/create-visual-guide`, `/generate-rfcs`, `/implement-rfc`, … |
 | MpKit | `addons/mp_kit/` | Listen or dedicated, replication nodes, Dictionary tunnel. **Zero** gameplay. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
@@ -51,7 +52,7 @@ flowchart TB
   end
 
   subgraph game [Your Godot project]
-    arts[PRD FEATURES RULES RFCs]
+    arts[PRD FEATURES RULES VISUAL RFCs]
     code[Scenes Resources glue]
   end
 
@@ -67,11 +68,12 @@ Roles (`Task` → `subagent_type`):
 
 | Role | Subagent | When |
 |------|----------|------|
-| Tech lead | `studio-tech-lead` | Plan for **one** RFC, no code |
+| Tech lead | `studio-tech-lead` | Plan for **one** RFC **with a tree**, no code |
 | Developer | `studio-developer` | Implements that plan |
-| Reviewer | `studio-reviewer` | After the code |
+| Reviewer | `studio-reviewer` | After the code (one pass) |
 | Tester | `studio-tester` | Only if you ask for tests or RULES requires them |
-| Visual | `studio-visual` | Only if HUD/menu/layout changed |
+| Playtester | `studio-playtester` | Only if you agree to play the build (not GUT) |
+| Visual | `studio-visual` | Only if you ask for a UI pass; needs `VISUAL.md` or refs |
 
 Subagents **do not** see this chat. The prompt passes repo, RFC, architecture style, and tells them to read the artifacts.
 
@@ -117,15 +119,15 @@ flowchart TB
   mp{What multiplayer?}
 
   mp -->|None| none[No MpKit, no RPCs]
-  mp -->|Local / Wi-Fi| lan[Current MpKit — ENet LAN]
-  mp -->|Online| net[Expand MpKit — relay / WebRTC / Steam / dedicated]
+  mp -->|Local / Wi-Fi| lan[MpKit.host listen-server]
+  mp -->|Online| net[MpKit.host_dedicated + clients / VPS]
 ```
 
 | Type | MpKit |
 |------|--------|
 | **No multiplayer** | Do not install |
-| **Local / Wi-Fi** | This repo’s addon is enough |
-| **Online** (internet) | **Expand** the addon transport. Glue and `submit_*` stay in the game |
+| **Local / Wi-Fi** | `host()` — the host process is a player |
+| **Online** (internet / VPS) | `host_dedicated()` — same project, peer 1 is not a player. Develop dedicated + clients; the VPS is the same binary |
 
 Tests: skill `godot-testing` (GUT / GdUnit4) **only** if you ask.
 
@@ -145,17 +147,20 @@ flowchart TD
   rules --> rfcs["/generate-rfcs"]
   rfcs --> slice[RFC-001 vertical slice]
 
-  slice --> plan[studio-tech-lead: plan]
+  slice --> plan[studio-tech-lead: plan + tree]
   plan --> ok{Your OK?}
   ok -->|no| plan
   ok -->|yes| dev[studio-developer]
   dev --> rev[studio-reviewer]
-  rev --> more{Another RFC?}
+  rev --> play{Playtest?}
+  play -->|yes| pt[studio-playtester]
+  play -->|no| more
+  pt --> more{Another RFC?}
   more -->|yes| plan
   more -->|no| done[Small, playable, scalable base]
 ```
 
-In a new chat, with the kit installed, ask for the game. The orchestrator runs those commands **without** you typing every slash. Tester and visual only if you ask. Scope mid-build: `/manage-changes`. Where we are: `/workflow-status`.
+In a new chat, with the kit installed, ask for the game. The orchestrator runs those commands **without** you typing every slash. Playtest and visual: the orchestrator **asks**. GUT tester only if you ask. Scope mid-build: `/manage-changes`. Where we are: `/workflow-status`.
 
 Done when: the slice plays; each feature is a scene / component / `.tres`; a human opens the inspector and follows.
 
@@ -191,12 +196,13 @@ Open a **new chat** in Cursor after installing.
 2. `/verify-prd` → `PRD-REVIEW.md`
 3. `/extract-features` → `FEATURES.md`
 4. `/generate-rules` → `RULES.md`
-5. `/generate-rfcs` → `RFCs/` + `RFCS.md` (the first is the vertical slice)
-6. `/test-strategy` → optional
-7. `/implement-rfc <id>` (subagent pipeline)
-8. `/review-rfc <id>`
-9. `/manage-changes` when scope moves
-10. `/workflow-status`
+5. `/create-visual-guide` → `VISUAL.md` (if there is a look / refs)
+6. `/generate-rfcs` → `RFCs/` + `RFCS.md` (the first is the vertical slice)
+7. `/test-strategy` → optional
+8. `/implement-rfc <id>` (subagent pipeline; tree before OK)
+9. `/review-rfc <id>`
+10. `/manage-changes` when scope moves
+11. `/workflow-status`
 
 ## Shaders, 2D sprites, and 3D
 
@@ -229,12 +235,15 @@ example/                       # Godot 4.7 demo (1P + LAN + dedicated, 2D and 3D
 addons/mp_kit/
 skills/
   godot-studio-workflow/
+  godot-studio-memory/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
+  godot-playtest/
+  godot-visual-qa/
   godot-testing/
   godot-animation/
-agents/                        # studio-tech-lead, studio-developer, …
+agents/                        # studio-tech-lead, studio-developer, studio-playtester, …
 commands/
 install.sh
 ```

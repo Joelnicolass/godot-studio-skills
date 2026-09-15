@@ -17,6 +17,9 @@ SKILL_NAMES=(
   godot-studio-workflow
   godot-testing
   godot-animation
+  godot-playtest
+  godot-visual-qa
+  godot-studio-memory
 )
 AGENT_FILES=(
   studio-tech-lead.md
@@ -24,6 +27,7 @@ AGENT_FILES=(
   studio-reviewer.md
   studio-tester.md
   studio-visual.md
+  studio-playtester.md
 )
 
 MODE="global"
@@ -247,6 +251,9 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  composition:  godot-composition-first"
   echo "  multiplayer:  godot-mp-kit"
   echo "  orchestrator: godot-studio-workflow"
+  echo "  memory:       godot-studio-memory"
+  echo "  playtest:     godot-playtest"
+  echo "  visual qa:    godot-visual-qa"
   echo "  tests:        godot-testing"
   echo "  animation:    godot-animation"
 fi
