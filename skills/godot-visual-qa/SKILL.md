@@ -23,7 +23,7 @@ Without that, “it looks good” is vibes, not spec.
 
 ## 1. Capture
 
-Same recipe as [godot-playtest/capture.md](../godot-playtest/capture.md): `project.godot` viewport, feature scene, PNG. A static shot is **not** enough if the change is interaction: exercise the flow (a click, empty state, an error).
+Same recipe as [godot-playtest](../godot-playtest/SKILL.md): `project.godot` viewport, feature scene, PNG. If `addons/agent_kit/` is present, use `cli.sh capture` / `flow` (skill `godot-agent-kit`). A static shot is **not** enough if the change is interaction: exercise the flow (a click, empty state, an error).
 
 ## 2. Compare
 

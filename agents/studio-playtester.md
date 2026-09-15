@@ -14,10 +14,10 @@ Only act if the prompt says the user **agreed** to this playtest. If that senten
 
 When invoked:
 
-1. Load [godot-playtest](../skills/godot-playtest/SKILL.md) and [capture.md](../skills/godot-playtest/capture.md).
+1. Load [godot-playtest](../skills/godot-playtest/SKILL.md). If `addons/agent_kit/` exists, load [godot-agent-kit](../skills/godot-agent-kit/SKILL.md) and capture/flow with `cli.sh` (not `/tmp` SceneTree).
 2. List 3–7 actions from the RFC / request that would **fail in plain sight** if the bug remains.
 3. Launch Godot 4 (`--path` = folder with `project.godot`). Prefer a window at the project viewport. Headless only for parse/load.
-4. Exercise the flow. Capture if it helps (temporary `SceneTree` script; `create_timer`; delete it when done).
+4. Exercise the flow. Capture if it helps.
 5. Expected dedicated/headless errors without flags: do not treat them as a feature failure unless the RFC is about that.
 
 Report to the orchestrator:

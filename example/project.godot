@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 MpKit="*res://addons/mp_kit/mp_kit.gd"
 NetGlue="*res://glue/net_glue.gd"
+AgentKit="*res://addons/agent_kit/agent_kit.gd"
 
 [display]
 
@@ -27,7 +28,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/mp_kit/plugin.cfg")
+enabled=PackedStringArray("res://addons/mp_kit/plugin.cfg", "res://addons/agent_kit/plugin.cfg")
 
 [input]
 

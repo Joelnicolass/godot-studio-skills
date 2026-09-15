@@ -25,19 +25,18 @@ Short list from the RFC / request: 3–7 actions (open scene, use HUD, trigger t
 
 `HubGlue` / dedicated errors without `--dedicated` can be expected; do not treat them as a feature failure unless the RFC is about the hub.
 
-## 3. Capture (optional but useful)
+## 3. Capture (prefer AgentKit)
 
-Temporary `SceneTree` script (`/tmp` or `user://`), do not leave it in the repo:
+If the project has `addons/agent_kit/`:
 
-1. `DisplayServer.window_set_size` to the game viewport.
-2. `load("res://…").instantiate()` on `root`.
-3. Wait for layout (`create_timer` ~0.8–1.2 s).
-4. `root.get_viewport().get_texture().get_image().save_png(...)`.
-5. `quit`. Delete the temporary `.gd`.
+```bash
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1.1
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest
+```
 
-If the flow needs clicks, use the real window, or browser tools **only** if the target is web. Native Godot: window + capture.
+Skill: `godot-agent-kit`. Grep `AGENT_OK` / `AGENT_FAIL`. Do **not** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
 
-Recipe detail: [capture.md](capture.md).
+If the addon is missing, minimal recipe (temporary script, delete it): [capture.md](capture.md). Headless has no pixels.
 
 ## 4. Report (to the orchestrator)
 

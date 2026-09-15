@@ -14,7 +14,7 @@ If the addon is missing or stale, from the studio kit root:
 ./install.sh --addon-only example
 ```
 
-The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetGlue`.
+The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetGlue`. **AgentKit** is enabled for the agent CLI (`addons/agent_kit/cli.sh`).
 
 ## Play
 

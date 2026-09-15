@@ -1,6 +1,12 @@
 # Godot capture (playtest / visual)
 
-Minimal script (`extends SceneTree`). Keep it outside the project or in `user://` and **delete** the `.gd` when done.
+**Prefer AgentKit** (`godot-agent-kit`): autoload, survives `change_scene`, does not break `DraftCopy` / `PortraitCache`.
+
+```bash
+addons/agent_kit/cli.sh /abs/game capture --scene=res://src/features/draft_table/draft_table.tscn --out=/tmp/table.png
+```
+
+Fallback **only** if the addon is missing. Temporary `SceneTree` script (`/tmp`), **delete** it when done. Do not reference the game’s `class_name` types in that script.
 
 ```gdscript
 extends SceneTree
