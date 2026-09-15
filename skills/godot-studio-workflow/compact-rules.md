@@ -10,7 +10,7 @@ Los subagentes **no** ven el chat. El orquestador pega este bloque en cada `Task
 - Composición: contenedor flaco, hijos / packed, `@export` / `%UniqueName`, tipos en Resource `.tres`. Un nodo no pinta + spawnea + puntúa + cambia de escena.
 - Copy de UI en el idioma del producto; IDs en inglés. Puntaje/copy/fútbol **fuera** de `addons/mp_kit`.
 - Arte: no inventar sprites ni modelos. MCP Aseprite/Blender solo con OK + referencias. Shaders: Godot Shaders / Shadertoy; un pass = packed scene.
-- Quien escribe no se auto-valida. Playtest ≠ GUT. Visual exige `VISUAL.md` o refs; si faltan, parar y pedirlas.
+- Playtest ≠ GUT. Si hay `addons/agent_kit/`, capturá con ese CLI (no `godot -s /tmp`). Visual exige `VISUAL.md` o refs; si faltan, parar y pedirlas.
 - Un RFC o un cambio acotado. Extra no pedido = alcance, no “mejora”.
 ```
 

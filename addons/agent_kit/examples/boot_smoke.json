@@ -1,0 +1,11 @@
+{
+	"wait_first": 0.9,
+	"steps": [
+		{ "shot": "01_boot.png" },
+		{ "print": { "node": "%Title", "prop": "text" } },
+		{ "assert": { "node": "%PlaySolo", "disabled": false } },
+		{ "click": "%PlaySolo" },
+		{ "wait": 1.4 },
+		{ "shot": "02_after_solo.png" }
+	]
+}

@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
-# Instala skills Cursor, commands, subagentes y/o el addon Godot MpKit.
+# Instala skills Cursor, commands, subagentes y/o addons Godot (MpKit, AgentKit).
 #   ./install.sh                      # ~/.cursor/skills, commands, agents
 #   ./install.sh --project            # ./.cursor/skills, commands, agents
 #   ./install.sh --addon GODOT_ROOT   # addons/mp_kit → GODOT_ROOT/addons/mp_kit
+#   ./install.sh --addon GODOT_ROOT agent_kit
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="${ROOT}/skills"
 CMD_SRC="${ROOT}/commands"
 AGENT_SRC="${ROOT}/agents"
-ADDON_SRC="${ROOT}/addons/mp_kit"
+ADDONS_ROOT="${ROOT}/addons"
 SKILL_NAMES=(
   godot-layered-architecture
   godot-composition-first
   godot-mp-kit
+  godot-agent-kit
   godot-studio-workflow
   godot-testing
   godot-animation
@@ -34,20 +36,24 @@ MODE="global"
 DEST=""
 CMD_DEST=""
 GODOT_ROOT=""
+ADDON_WHICH="mp_kit"
 DO_SKILLS=1
 DO_COMMANDS=1
 DO_AGENTS=1
 
 usage() {
   cat <<'EOF'
-Instalador del kit Godot studio (skills + commands + subagentes + addon MpKit).
+Instalador del kit Godot studio (skills + commands + subagentes + addons).
 
   ./install.sh                      ~/.cursor/skills, commands y agents
   ./install.sh --project            ./.cursor/skills, commands y agents del cwd
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT   Copia addons/mp_kit al proyecto Godot
-  ./install.sh --addon-only GODOT_ROOT
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|all]
+                                    Copia el addon al proyecto Godot (default: mp_kit)
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|all]
                                     Solo el addon
+  ./install.sh --agent-addon GODOT_ROOT
+                                    Alias de --addon GODOT_ROOT agent_kit
   ./install.sh --list               Qué se instalaría
   ./install.sh --pack               Genera dist/godot-studio-skills.zip
 
@@ -78,12 +84,25 @@ while [[ $# -gt 0 ]]; do
     --addon)
       GODOT_ROOT="${2:?--addon requiere la raíz del proyecto Godot}"
       shift 2
+      if [[ $# -gt 0 && "$1" != -* ]]; then
+        ADDON_WHICH="$1"
+        shift
+      fi
       ;;
     --addon-only)
       GODOT_ROOT="${2:?--addon-only requiere la raíz del proyecto Godot}"
       DO_SKILLS=0
       DO_COMMANDS=0
       DO_AGENTS=0
+      shift 2
+      if [[ $# -gt 0 && "$1" != -* ]]; then
+        ADDON_WHICH="$1"
+        shift
+      fi
+      ;;
+    --agent-addon)
+      GODOT_ROOT="${2:?--agent-addon requiere la raíz del proyecto Godot}"
+      ADDON_WHICH="agent_kit"
       shift 2
       ;;
     --list)
@@ -116,8 +135,8 @@ if [[ "$DO_AGENTS" -eq 1 && ! -d "$AGENT_SRC" ]]; then
   exit 1
 fi
 
-if [[ -n "$GODOT_ROOT" && ! -d "$ADDON_SRC" ]]; then
-  echo "No encuentro ${ADDON_SRC}" >&2
+if [[ -n "$GODOT_ROOT" && ! -d "$ADDONS_ROOT" ]]; then
+  echo "No encuentro ${ADDONS_ROOT}" >&2
   exit 1
 fi
 
@@ -165,8 +184,27 @@ resolve_agent_dest() {
   esac
 }
 
+copy_one_addon() {
+  local project="$1"
+  local name="$2"
+  local src="${ADDONS_ROOT}/${name}"
+  if [[ ! -d "$src" ]]; then
+    echo "No encuentro ${src}" >&2
+    exit 1
+  fi
+  local dest="${project}/addons/${name}"
+  mkdir -p "${project}/addons"
+  rm -rf "$dest"
+  cp -R "$src" "$dest"
+  if [[ -f "${dest}/cli.sh" ]]; then
+    chmod +x "${dest}/cli.sh"
+  fi
+  echo "addon  ${dest}"
+}
+
 install_addon() {
   local project="$1"
+  local which="$2"
   if [[ ! -d "$project" ]]; then
     echo "No existe el proyecto Godot: ${project}" >&2
     exit 1
@@ -175,17 +213,33 @@ install_addon() {
     echo "No hay project.godot en ${project} — pasá la raíz del proyecto Godot." >&2
     exit 1
   fi
-  local dest="${project}/addons/mp_kit"
-  mkdir -p "${project}/addons"
-  rm -rf "$dest"
-  cp -R "$ADDON_SRC" "$dest"
-  echo "addon  ${dest}"
-  mkdir -p "${project}/.vscode"
-  cp "${ADDON_SRC}/editor/mpkit.code-snippets" "${project}/.vscode/mpkit.code-snippets"
-  echo "snippets  ${project}/.vscode/mpkit.code-snippets"
-  echo
-  echo "Habilitá el plugin MpKit (autoload). CI/headless, en project.godot:"
-  echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
+  case "$which" in
+    mp_kit)
+      copy_one_addon "$project" "mp_kit"
+      mkdir -p "${project}/.vscode"
+      cp "${ADDONS_ROOT}/mp_kit/editor/mpkit.code-snippets" "${project}/.vscode/mpkit.code-snippets"
+      echo "snippets  ${project}/.vscode/mpkit.code-snippets"
+      echo
+      echo "Habilitá el plugin MpKit (autoload). CI/headless, en project.godot:"
+      echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
+      ;;
+    agent_kit)
+      copy_one_addon "$project" "agent_kit"
+      echo
+      echo "Habilitá el plugin AgentKit (autoload). CI/headless, en project.godot:"
+      echo '  AgentKit="*res://addons/agent_kit/agent_kit.gd"'
+      echo "CLI: ${project}/addons/agent_kit/cli.sh ${project} capture --out=/tmp/a.png"
+      ;;
+    all)
+      install_addon "$project" "mp_kit"
+      echo
+      install_addon "$project" "agent_kit"
+      ;;
+    *)
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | all)" >&2
+      exit 1
+      ;;
+  esac
 }
 
 install_commands() {
@@ -226,8 +280,9 @@ if [[ "$MODE" == "list" ]]; then
     echo "  - ${name%.md}"
   done
   echo
-  echo "Addon:"
-  echo "  - addons/mp_kit  (./install.sh --addon /path/to/godot-project)"
+  echo "Addons:"
+  echo "  - addons/mp_kit     (./install.sh --addon /path/to/godot-project)"
+  echo "  - addons/agent_kit  (./install.sh --addon /path/to/godot-project agent_kit)"
   echo
   echo "Destino skills (global): ${HOME}/.cursor/skills"
   echo "Destino commands (global): ${HOME}/.cursor/commands"
@@ -253,6 +308,7 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  orquestador:  godot-studio-workflow"
   echo "  memoria:      godot-studio-memory"
   echo "  playtest:     godot-playtest"
+  echo "  agent kit:    godot-agent-kit"
   echo "  visual qa:    godot-visual-qa"
   echo "  tests:        godot-testing"
   echo "  animación:    godot-animation"
@@ -275,7 +331,7 @@ fi
 
 if [[ -n "$GODOT_ROOT" ]]; then
   echo
-  install_addon "$GODOT_ROOT"
+  install_addon "$GODOT_ROOT" "$ADDON_WHICH"
 fi
 
 if [[ "$DO_SKILLS" -eq 0 && "$DO_COMMANDS" -eq 0 && "$DO_AGENTS" -eq 0 && -z "$GODOT_ROOT" ]]; then

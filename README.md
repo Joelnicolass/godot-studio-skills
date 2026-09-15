@@ -21,15 +21,16 @@ Con el kit:
 - cada feature es escena + `@export` + Resource `.tres`, no un `match kind`
 - un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
 - MpKit aparte del gameplay; notas entre chats en Engram o `.studio/MEMORY.md` si hace falta
-- el juego vive en **otro** repo; acá solo hay skills, commands, agentes y el addon de transporte
+- el juego vive en **otro** repo; acá solo hay skills, commands, agentes y addons (MpKit, AgentKit)
 
 | Pieza | Dónde | Qué es |
 |-------|--------|--------|
 | Orquestador | `skills/godot-studio-workflow/` | El agente del chat: entrevista + PRD→RFC→implementar |
-| Cómo escribir Godot | `skills/` | Capas, composición, MpKit, playtest, visual, memoria, tests |
+| Cómo escribir Godot | `skills/` | Capas, composición, MpKit, AgentKit, playtest, visual, memoria, tests |
 | Subagentes | `agents/` | Tech lead, developer, reviewer; tester, playtester y visual opcionales |
 | Commands | `commands/` | `/create-prd`, `/create-visual-guide`, `/generate-rfcs`, `/implement-rfc`, … |
 | MpKit | `addons/mp_kit/` | Listen o dedicated, nodos de replicación, túnel Dictionary. **Cero** gameplay. |
+| AgentKit | `addons/agent_kit/` | CLI para agentes: captura, flow, HTTP, inspect, diff. **Cero** gameplay. |
 
 Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
 
@@ -49,6 +50,7 @@ flowchart TB
     cmds[Commands PRD / RFC]
     agents[Subagentes]
     mpkit[MpKit addon]
+    agentkit[AgentKit addon]
   end
 
   subgraph game [Tu proyecto Godot]
@@ -62,6 +64,7 @@ flowchart TB
   orch --> agents
   agents --> code
   mpkit -.-> code
+  agentkit -.-> code
 ```
 
 Roles (`Task` → `subagent_type`):
@@ -186,7 +189,7 @@ Desde GitHub:
 npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
 ```
 
-`npx skills` solo copia `skills/`. Commands, subagentes y el addon van con `./install.sh`.
+`npx skills` solo copia `skills/`. Commands, subagentes y los addons van con `./install.sh`.
 
 Abrí un **chat nuevo** en Cursor después de instalar.
 
@@ -203,6 +206,7 @@ Abrí un **chat nuevo** en Cursor después de instalar.
 9. `/review-rfc <id>`
 10. `/manage-changes` cuando se mueve el alcance
 11. `/workflow-status`
+12. `/agent-kit` — capturas, flows, fetch, inspect (addon AgentKit)
 
 ## Shaders, sprites 2D y 3D
 
@@ -228,17 +232,27 @@ Hay una demo lista en [`example/`](example/README.md) (1P, LAN, dedicated, mundo
 
 Snippets Cursor/VS Code: `.vscode/mpkit.code-snippets` (el instalador los copia). Editor: `skills/godot-mp-kit/editor.md`. Online / VPS: `skills/godot-mp-kit/dedicated.md`.
 
+## Instalar AgentKit en un proyecto Godot
+
+```bash
+./install.sh --addon /path/to/godot-project agent_kit
+```
+
+Habilitá el plugin **AgentKit**. CLI: `addons/agent_kit/cli.sh PROJECT capture --out=/tmp/a.png`. Skill `godot-agent-kit`. README del addon: `addons/agent_kit/README.md`. No uses `godot -s /tmp` para capturas.
+
 ## Layout
 
 ```
 example/                       # demo Godot 4.7 (1P + LAN + dedicated, 2D y 3D)
 addons/mp_kit/
+addons/agent_kit/
 skills/
   godot-studio-workflow/
   godot-studio-memory/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
+  godot-agent-kit/
   godot-playtest/
   godot-visual-qa/
   godot-testing/

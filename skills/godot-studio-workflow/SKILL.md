@@ -14,7 +14,7 @@ description: >-
 
 El **agente principal de este chat** es el orquestador. Habla con el usuario. No descarga el producto entero en un solo subagente.
 
-Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige.
+Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows de agente: [godot-agent-kit](../godot-agent-kit/SKILL.md) si el addon está. Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige.
 
 Objetivo: un juego Godot 4 con **base chica y clara**. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables.
 

@@ -15,7 +15,7 @@ Al invocarte:
 
 1. Cargá [godot-visual-qa](../skills/godot-visual-qa/SKILL.md) y [checklist.md](../skills/godot-visual-qa/checklist.md).
 2. Si **no** hay `VISUAL.md` ni referencias de estilo en el prompt: **pará**. Pedí al orquestador estilo (pixel, FUT, flat, …), 2–5 refs (imagen/URL) y no-goals de look. No inventes una estética.
-3. Capturá la feature de verdad (misma receta que playtest: viewport del `project.godot`, PNG). Una captura estática no basta si el cambio es interacción: ejercé el flujo (vacío, error, CTA).
+3. Capturá la feature de verdad (AgentKit `capture`/`flow` si el addon está; si no, misma receta que playtest). Una captura estática no basta si el cambio es interacción: ejercé el flujo (vacío, error, CTA).
 4. Confrontá jerarquía, contraste, consistencia, hit targets, `mouse_filter`, fidelidad a refs. Bloqueante = no se entiende, no se puede usar, o viola `VISUAL.md`.
 5. Motion: si el usuario pidió sutil / respiración, un balanceo fuerte es FAIL.
 

@@ -12,6 +12,7 @@ SKILL_NAMES=(
   godot-playtest
   godot-visual-qa
   godot-studio-memory
+  godot-agent-kit
 )
 COMMAND_FILES=(
   create-prd.md
@@ -26,6 +27,7 @@ COMMAND_FILES=(
   test-strategy.md
   verify-prd.md
   workflow-status.md
+  agent-kit.md
 )
 AGENT_FILES=(
   studio-tech-lead.md

@@ -23,7 +23,7 @@ Sin eso, un “se ve bien” es vibes, no spec.
 
 ## 1. Capturá
 
-Misma receta que [godot-playtest/capture.md](../godot-playtest/capture.md): viewport del `project.godot`, escena de la feature, PNG. Una captura estática **no** basta si el cambio es interacción: ejercé el flujo (un clic, un estado vacío, un error).
+Misma receta que [godot-playtest](../godot-playtest/SKILL.md): viewport del `project.godot`, escena de la feature, PNG. Si hay `addons/agent_kit/`, usá `cli.sh capture` / `flow` (skill `godot-agent-kit`). Una captura estática **no** basta si el cambio es interacción: ejercé el flujo (un clic, un estado vacío, un error).
 
 ## 2. Confrontá
 
