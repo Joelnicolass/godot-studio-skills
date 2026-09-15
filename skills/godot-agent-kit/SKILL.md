@@ -46,9 +46,9 @@ addons/agent_kit/cli.sh /ABS/PROJECT VERB [--flag=value ...]
 | `fetch` | `--url=` `--out=` `--ua=` (Wikimedia exige User-Agent) |
 | `info` | viewport, main scene, versión |
 
-Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_DIFF`, `AGENT_JSON`.
+Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
 
-API humana: `addons/agent_kit/README.md`. Flows: [flows.md](flows.md).
+Flows largos (botón que no está en tu turno): `try_click` + `repeat` hasta `%ResultsView` visible. API: `addons/agent_kit/README.md`. Detalle JSON: [flows.md](flows.md).
 
 ## Cuándo
 

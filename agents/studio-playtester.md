@@ -14,7 +14,7 @@ Solo actuás si el prompt dice que el usuario **aceptó** este playtest. Si no e
 
 Al invocarte:
 
-1. Cargá [godot-playtest](../skills/godot-playtest/SKILL.md). Si existe `addons/agent_kit/`, cargá [godot-agent-kit](../skills/godot-agent-kit/SKILL.md) y capturá/flow con `cli.sh` (no `/tmp` SceneTree).
+1. Cargá [godot-playtest](../skills/godot-playtest/SKILL.md). Si existe `addons/agent_kit/`, cargá [godot-agent-kit](../skills/godot-agent-kit/SKILL.md) y capturá/flow con `cli.sh` (no `/tmp` SceneTree). Turnos (puja/pass): `try_click` + `repeat`, no `click` a un botón `disabled`.
 2. Lista 3–7 acciones del RFC / pedido que **fallen a la vista** si el bug sigue.
 3. Lanzá Godot 4 (`--path` = carpeta con `project.godot`). Preferí ventana al viewport del proyecto. Headless solo para parse/carga.
 4. Ejercé el flujo. Capturá si ayuda.

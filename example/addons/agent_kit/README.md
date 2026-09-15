@@ -48,6 +48,9 @@ AGENT_OK capture /abs/path.png
 AGENT_FAIL flow missing --flow=
 AGENT_SHOT=...
 AGENT_PRINT node=%Title prop=text value=...
+AGENT_CLICK %BidButton
+AGENT_SKIP try_click %PassButton
+AGENT_REPEAT done iter=13
 AGENT_DIFF changed=12 total=1000 percent=1.200
 AGENT_JSON {...}
 ```
@@ -70,7 +73,27 @@ AGENT_JSON {...}
 }
 ```
 
-`click` emite `pressed` en el `BaseButton` (no apunta al píxel). Sirve para flujos de agente; no sustituye un test de hit-target.
+`click` emite `pressed` en el `BaseButton` (no apunta al píxel). `%Nombre` se busca en la escena y, si falta, en hijos (packed scenes).
+
+Para un match o un HUD que aparece y desaparece:
+
+```json
+{
+  "try_click": "%PassButton",
+  "repeat": {
+    "times": 80,
+    "until": { "node": "%ResultsView", "visible": true },
+    "steps": [
+      { "try_click": "%PassButton" },
+      { "wait": 0.2 },
+      { "try_click": "%BidButton" },
+      { "wait": 0.3 }
+    ]
+  }
+}
+```
+
+`try_click` no falla si el nodo falta, está `disabled` o no está visible en el árbol (`AGENT_SKIP`). `repeat` corre `steps` hasta `times` o hasta que `until` (mismo shape que `assert`) pase. `assert` / `wait_until` también aceptan `visible_in_tree`.
 
 Ejemplo del demo: `examples/boot_smoke.json`.
 
@@ -83,4 +106,4 @@ Ejemplo del demo: `examples/boot_smoke.json`.
 
 ## Versión
 
-0.1.0
+0.1.1

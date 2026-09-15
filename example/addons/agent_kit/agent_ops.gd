@@ -40,10 +40,25 @@ static func resolve(from: Node, spec: String) -> Node:
 	for part in trimmed.split("/"):
 		if part.is_empty():
 			continue
-		node = node.get_node_or_null(NodePath(part))
-		if node == null:
+		var next := node.get_node_or_null(NodePath(part))
+		if next == null and part.begins_with("%"):
+			next = find_unique(node, part.substr(1))
+		if next == null:
 			return null
+		node = next
 	return node
+
+
+static func find_unique(from: Node, unique: String) -> Node:
+	if from == null or unique.strip_edges().is_empty():
+		return null
+	if from.is_unique_name_in_owner() and from.name == unique:
+		return from
+	for child in from.get_children():
+		var found := find_unique(child, unique)
+		if found != null:
+			return found
+	return null
 
 
 static func read_prop(object: Object, dotted: String) -> Variant:
@@ -83,6 +98,22 @@ static func click(scene: Node, spec: String) -> String:
 		(node as BaseButton).pressed.emit()
 		return ""
 	return "%s is %s, not a BaseButton" % [spec, node.get_class()]
+
+
+static func try_click(scene: Node, spec: String) -> String:
+	var node := resolve(scene, spec)
+	if node == null:
+		print("AGENT_SKIP try_click missing ", spec)
+		return ""
+	if not (node is BaseButton):
+		return "%s is %s, not a BaseButton" % [spec, node.get_class()]
+	var btn := node as BaseButton
+	if btn.disabled or not btn.is_visible_in_tree():
+		print("AGENT_SKIP try_click ", spec)
+		return ""
+	btn.pressed.emit()
+	print("AGENT_CLICK ", spec)
+	return ""
 
 
 static func type_in(scene: Node, spec: String, text: String) -> String:

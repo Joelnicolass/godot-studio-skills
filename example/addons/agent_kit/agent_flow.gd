@@ -54,6 +54,10 @@ func _step(tree: SceneTree, step: Dictionary, dest: String, index: int) -> Strin
 		return ""
 	if step.has("click"):
 		return Ops.click(scene, str(step["click"]))
+	if step.has("try_click"):
+		return Ops.try_click(scene, str(step["try_click"]))
+	if step.has("repeat"):
+		return await _repeat(tree, step["repeat"], dest, index)
 	if step.has("type"):
 		var spec: Variant = step["type"]
 		if typeof(spec) != TYPE_DICTIONARY:
@@ -79,6 +83,39 @@ func _step(tree: SceneTree, step: Dictionary, dest: String, index: int) -> Strin
 	return "unknown step keys in %d: %s" % [index, str(step.keys())]
 
 
+func _repeat(tree: SceneTree, spec: Variant, dest: String, index: int) -> String:
+	if typeof(spec) != TYPE_DICTIONARY:
+		return "repeat %d must be an object" % index
+	var times := maxi(1, int(spec.get("times", 1)))
+	var until: Variant = spec.get("until", {})
+	var inner: Variant = spec.get("steps", [])
+	if typeof(inner) != TYPE_ARRAY:
+		return "repeat.steps must be an array"
+	var last := ""
+	var scene: Node = null
+	for i in times:
+		scene = Ops.current_scene(tree)
+		if typeof(until) == TYPE_DICTIONARY and not (until as Dictionary).is_empty():
+			last = _assert(scene, until, index)
+			if last.is_empty():
+				print("AGENT_REPEAT done iter=%d" % i)
+				return ""
+		for raw in inner:
+			if typeof(raw) != TYPE_DICTIONARY:
+				return "repeat step is not an object"
+			var fail := await _step(tree, raw, dest, index)
+			if not fail.is_empty():
+				return fail
+	scene = Ops.current_scene(tree)
+	if typeof(until) == TYPE_DICTIONARY and not (until as Dictionary).is_empty():
+		last = _assert(scene, until, index)
+		if last.is_empty():
+			print("AGENT_REPEAT done iter=%d" % times)
+			return ""
+		return "repeat exhausted: %s" % last
+	return ""
+
+
 func _assert(scene: Node, spec: Variant, index: int) -> String:
 	if typeof(spec) != TYPE_DICTIONARY:
 		return "assert %d must be an object" % index
@@ -96,6 +133,17 @@ func _assert(scene: Node, spec: Variant, index: int) -> String:
 			var want_vis := bool(spec["visible"])
 			if (node as CanvasItem).visible != want_vis:
 				return "assert visible want=%s got=%s" % [want_vis, (node as CanvasItem).visible]
+	if spec.has("visible_in_tree"):
+		if not (node is Node):
+			return "assert visible_in_tree: missing node"
+		var want_tree := bool(spec["visible_in_tree"])
+		var in_tree := false
+		if node is CanvasItem:
+			in_tree = (node as CanvasItem).is_visible_in_tree()
+		else:
+			in_tree = node.is_inside_tree()
+		if in_tree != want_tree:
+			return "assert visible_in_tree want=%s got=%s" % [want_tree, in_tree]
 	if spec.has("text_contains"):
 		var text := _node_text(node)
 		var needle := str(spec["text_contains"])
