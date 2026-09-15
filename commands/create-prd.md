@@ -18,7 +18,7 @@ Preguntá y documentá: fantasía y pilares, no-goals, loop central, feel (cáma
 
 Omití salvo que el usuario lo pida: modelo de negocio, SQL/inyección, auth de usuarios, diseño responsive web, APIs REST, personas de marketing. En su lugar: loop, feel, contenido (tipos como datos), y qué queda fuera del primer slice.
 
-Preguntá Clean vs estándar si aún no está en RULES.md / el chat (ver skill `godot-layered-architecture`). Preguntá el tipo de MP si aún no está (ver `godot-mp-kit`): sin MP no copies el addon; local/WiFi = listen-server; online = dedicated (mismo proyecto, VPS). Preguntá 2D/3D: Aseprite MCP solo con OK; si es 3D, preguntá e instalá el MCP de Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) solo con OK + referencias.
+Preguntá Clean vs estándar si aún no está en RULES.md / el chat (ver skill `godot-layered-architecture`). Preguntá el tipo de MP si aún no está (ver `godot-mp-kit`): sin MP no copies el addon; local/WiFi = listen-server; online = dedicated (mismo proyecto, VPS). Preguntá 2D/3D: Aseprite MCP solo con OK; si es 3D, preguntá e instalá el MCP de Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) solo con OK + referencias. Si hay estilo o referencias visuales, anotalas; después `/create-visual-guide` → `VISUAL.md` (no las dejes solo en el chat).
 
 Cuando consideres que reuniste suficiente detalle, creá un PRD estructurado que incluya (sin limitarse a):
 

@@ -19,15 +19,16 @@ Con el kit:
 - **vos** elegís Clean o estándar Godot **antes** de scaffoldear
 - **vos** elegís si hay multiplayer y de qué tipo (sin MP · local/WiFi · online)
 - cada feature es escena + `@export` + Resource `.tres`, no un `match kind`
-- un RFC a la vez, con plan aprobado, review, y MpKit aparte del gameplay
+- un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
+- MpKit aparte del gameplay; notas entre chats en Engram o `.studio/MEMORY.md` si hace falta
 - el juego vive en **otro** repo; acá solo hay skills, commands, agentes y el addon de transporte
 
 | Pieza | Dónde | Qué es |
 |-------|--------|--------|
 | Orquestador | `skills/godot-studio-workflow/` | El agente del chat: entrevista + PRD→RFC→implementar |
-| Cómo escribir Godot | `skills/` | Capas, composición, MpKit, tests (GUT/GdUnit4) |
-| Subagentes | `agents/` | Tech lead, developer, reviewer; tester y visual opcionales |
-| Commands | `commands/` | `/create-prd`, `/generate-rfcs`, `/implement-rfc`, `/new-mp-feature`, … |
+| Cómo escribir Godot | `skills/` | Capas, composición, MpKit, playtest, visual, memoria, tests |
+| Subagentes | `agents/` | Tech lead, developer, reviewer; tester, playtester y visual opcionales |
+| Commands | `commands/` | `/create-prd`, `/create-visual-guide`, `/generate-rfcs`, `/implement-rfc`, … |
 | MpKit | `addons/mp_kit/` | Listen o dedicated, nodos de replicación, túnel Dictionary. **Cero** gameplay. |
 
 Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
@@ -51,7 +52,7 @@ flowchart TB
   end
 
   subgraph game [Tu proyecto Godot]
-    arts[PRD FEATURES RULES RFCs]
+    arts[PRD FEATURES RULES VISUAL RFCs]
     code[Escenas Resources glue]
   end
 
@@ -67,11 +68,12 @@ Roles (`Task` → `subagent_type`):
 
 | Rol | Subagente | Cuándo |
 |-----|-----------|--------|
-| Tech lead | `studio-tech-lead` | Plan de **un** RFC, sin código |
+| Tech lead | `studio-tech-lead` | Plan de **un** RFC **con árbol**, sin código |
 | Developer | `studio-developer` | Implementa ese plan |
-| Reviewer | `studio-reviewer` | Después del código |
+| Reviewer | `studio-reviewer` | Después del código (un pase) |
 | Tester | `studio-tester` | Solo si pedís tests o RULES los exige |
-| Visual | `studio-visual` | Solo si cambió HUD/menú/layout |
+| Playtester | `studio-playtester` | Solo si aceptás jugar el build (no es GUT) |
+| Visual | `studio-visual` | Solo si pedís pase UI; hace falta `VISUAL.md` o refs |
 
 Los subagentes **no** ven este chat. El prompt les pasa repo, RFC, estilo de arquitectura, y que lean los artefactos.
 
@@ -145,17 +147,20 @@ flowchart TD
   rules --> rfcs["/generate-rfcs"]
   rfcs --> slice[RFC-001 slice vertical]
 
-  slice --> plan[studio-tech-lead: plan]
+  slice --> plan[studio-tech-lead: plan + árbol]
   plan --> ok{¿OK tuyo?}
   ok -->|no| plan
   ok -->|sí| dev[studio-developer]
   dev --> rev[studio-reviewer]
-  rev --> more{¿Otro RFC?}
+  rev --> play{¿Playtest?}
+  play -->|sí| pt[studio-playtester]
+  play -->|no| more
+  pt --> more{¿Otro RFC?}
   more -->|sí| plan
   more -->|no| done[Base chica, jugable, escalable]
 ```
 
-En un chat nuevo, con el kit instalado, pedí el juego. El orquestador corre esos commands **sin** que tipees cada slash. Tester y visual solo si los pedís. Alcance a mitad de obra: `/manage-changes`. Dónde estamos: `/workflow-status`.
+En un chat nuevo, con el kit instalado, pedí el juego. El orquestador corre esos commands **sin** que tipees cada slash. Playtest y visual: el orquestador **pregunta**. Tester GUT solo si los pedís. Alcance a mitad de obra: `/manage-changes`. Dónde estamos: `/workflow-status`.
 
 Listo cuando: el slice se juega; cada feature es escena / componente / `.tres`; un humano abre el inspector y entiende.
 
@@ -191,12 +196,13 @@ Abrí un **chat nuevo** en Cursor después de instalar.
 2. `/verify-prd` → `PRD-REVIEW.md`
 3. `/extract-features` → `FEATURES.md`
 4. `/generate-rules` → `RULES.md`
-5. `/generate-rfcs` → `RFCs/` + `RFCS.md` (el primero es el slice vertical)
-6. `/test-strategy` → opcional
-7. `/implement-rfc <id>` (tubería de subagentes)
-8. `/review-rfc <id>`
-9. `/manage-changes` cuando se mueve el alcance
-10. `/workflow-status`
+5. `/create-visual-guide` → `VISUAL.md` (si hay look / refs)
+6. `/generate-rfcs` → `RFCs/` + `RFCS.md` (el primero es el slice vertical)
+7. `/test-strategy` → opcional
+8. `/implement-rfc <id>` (tubería de subagentes; árbol antes del OK)
+9. `/review-rfc <id>`
+10. `/manage-changes` cuando se mueve el alcance
+11. `/workflow-status`
 
 ## Shaders, sprites 2D y 3D
 
@@ -229,12 +235,15 @@ example/                       # demo Godot 4.7 (1P + LAN + dedicated, 2D y 3D)
 addons/mp_kit/
 skills/
   godot-studio-workflow/
+  godot-studio-memory/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
+  godot-playtest/
+  godot-visual-qa/
   godot-testing/
   godot-animation/
-agents/                        # studio-tech-lead, studio-developer, …
+agents/                        # studio-tech-lead, studio-developer, studio-playtester, …
 commands/
 install.sh
 ```

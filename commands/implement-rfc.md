@@ -1,6 +1,6 @@
 RFC objetivo: el ID provisto después de este comando en mi mensaje — sustituilo por [ID] en todos lados abajo. Si no se dio ningún ID, preguntá en qué RFC trabajar antes de hacer cualquier otra cosa.
 
-Si está cargada la skill `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo: `studio-tech-lead` (plan) → aprobación → `studio-developer` → `studio-reviewer`. Tester y visual solo si el usuario o RULES.md lo piden. Un RFC por vez.
+Si está cargada la skill `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo: `studio-tech-lead` (plan **con árbol de archivos**) → el usuario aprueba el corte de piezas → `studio-developer` → `studio-reviewer` (un pase). Después **preguntá** playtest (`studio-playtester`, no GUT) y, si tocó UI, pase visual (`studio-visual`; sin `VISUAL.md`/refs, pedilos antes). Tester GUT solo si el usuario o RULES.md lo piden. Un RFC por vez. Un typo o bug de 1–3 archivos: este chat, sin RFC nuevo.
 
 Cargar `godot-layered-architecture` y `godot-composition-first` (shaders/sprites: `assets.md`; animación: `godot-animation`; 3D: MCP Blender solo con OK). Si hay MP: `godot-mp-kit` (local = listen; online = dedicated, ver `dedicated.md`). Si no hay MP: no cargues el kit. Si hay tests: `godot-testing`.
 
@@ -23,19 +23,20 @@ Esta implementación cubre RFC-[ID]: [descripción breve]. Consultá:
 
 ## Cuando los artefactos entran en conflicto
 
-Orden de autoridad: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
+Orden de autoridad: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
 
 ## Enfoque en dos fases
 
 ### Fase 1: Planificación (sin código)
 1. Analizar los requisitos y el codebase existente
 2. Presentar un plan de implementación completo que cubra:
+   - Árbol de archivos + mapa de responsabilidades (qué pieza hace una sola cosa; por qué no se fusiona)
    - Archivos a crear o modificar
-   - Componentes clave, estructuras de datos y APIs
+   - Qué es Resource `.tres`, qué es nodo, qué es `@export`
    - Secuencia de implementación propuesta
    - Decisiones técnicas y trade-offs
    - Impactos potenciales sobre la funcionalidad existente
-3. Esperar la aprobación explícita del usuario antes de continuar
+3. Mostrar el árbol y esperar la aprobación explícita del usuario (¿más/menos piezas?) antes de continuar
 4. Atender cualquier feedback o modificación del usuario
 
 ### Fase 2: Implementación (solo después de la aprobación)

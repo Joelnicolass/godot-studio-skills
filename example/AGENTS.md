@@ -1,6 +1,6 @@
 # Agente — MpKit Example
 
-Leé `RULES.md` antes de tocar código. Autoridad: `PRD.md` > `FEATURES.md` > `RULES.md` > `RFCs/`.
+Leé `RULES.md` antes de tocar código. Autoridad: `PRD.md` > `FEATURES.md` > `RULES.md` > `VISUAL.md` > `RFCs/`.
 
 Arquitectura: **estándar Godot**. Multiplayer: 1P + listen + dedicated (MpKit). Arte: placeholders. UI en el idioma del producto (`glue/demo_copy.gd`); IDs en inglés.
 

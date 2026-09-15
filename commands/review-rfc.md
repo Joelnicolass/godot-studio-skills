@@ -14,13 +14,15 @@ Revisá la implementación del RFC indicado y brindá una evaluación exhaustiva
 
 ## CUANDO LOS ARTEFACTOS ENTRAN EN CONFLICTO
 
-Orden de autoridad: PRD.md > FEATURES.md > RULES.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
+Orden de autoridad: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generated plans. Donde la guía genérica de este prompt entre en conflicto con RULES.md, gana RULES.md — se escribió para este proyecto y este prompt no. Nunca resuelvas una contradicción entre dos artefactos en silencio: indicala, decí cuál seguiste y por qué, y marcá el otro para corrección.
 
 ## PASO 0: EJECUTARLO
 
 Antes de evaluar cualquier cosa, ejecutá el build, typecheck y la suite de tests del proyecto. Pegá la salida real. Luego verificá que cada criterio de aceptación tenga un test que FALLARÍA si el comportamiento regresara -- una suite que pasa no es evidencia de que los criterios están cubiertos. Leer código no distingue "este test afirma lo correcto" de "este test pasa".
 
 Si no podés ejecutar comandos en este entorno, decilo de forma explícita y marcá cada veredicto de abajo como unverified en lugar de evaluar solo leyendo.
+
+En un **juego Godot**: parse/import del proyecto cuenta como build; la suite de tests solo si existe runner. Playtest en ventana y fidelidad vs `VISUAL.md` no son esta review (`studio-playtester` / `studio-visual`). Un pase: bloqueantes vs nits; no pidas iterar hasta verde.
 
 ## AJUSTAR EL CHECKLIST AL TIPO DE PRODUCTO
 

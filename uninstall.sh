@@ -9,14 +9,19 @@ SKILL_NAMES=(
   godot-studio-workflow
   godot-testing
   godot-animation
+  godot-playtest
+  godot-visual-qa
+  godot-studio-memory
 )
 COMMAND_FILES=(
   create-prd.md
+  create-visual-guide.md
   extract-features.md
   generate-rfcs.md
   generate-rules.md
   implement-rfc.md
   manage-changes.md
+  new-mp-feature.md
   review-rfc.md
   test-strategy.md
   verify-prd.md
@@ -28,6 +33,7 @@ AGENT_FILES=(
   studio-reviewer.md
   studio-tester.md
   studio-visual.md
+  studio-playtester.md
 )
 
 MODE="global"
