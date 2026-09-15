@@ -30,7 +30,7 @@ With the kit:
 | Subagents | `agents/` | Tech lead, developer, reviewer; optional tester, playtester, and visual |
 | Commands | `commands/` | `/create-prd`, `/create-visual-guide`, `/generate-rfcs`, `/implement-rfc`, … |
 | MpKit | `addons/mp_kit/` | Listen or dedicated, replication nodes, Dictionary tunnel. **Zero** gameplay. |
-| AgentKit | `addons/agent_kit/` | CLI for agents: capture, flow, HTTP, inspect, diff. **Zero** gameplay. |
+| AgentKit | `addons/agent_kit/` | CLI for agents: capture, flow (`try_click` / `repeat`), HTTP, inspect, diff. **Zero** gameplay. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -238,7 +238,7 @@ Cursor/VS Code snippets: `.vscode/mpkit.code-snippets` (the installer copies the
 ./install.sh --addon /path/to/godot-project agent_kit
 ```
 
-Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT capture --out=/tmp/a.png`. Skill `godot-agent-kit`. Addon README: `addons/agent_kit/README.md`. Do not use `godot -s /tmp` for captures.
+Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT capture --out=/tmp/a.png`. A long flow (auction, turns) uses `try_click` and `repeat` — see `addons/agent_kit/README.md` and skill `godot-agent-kit`. Do not use `godot -s /tmp` for captures.
 
 ## Layout
 

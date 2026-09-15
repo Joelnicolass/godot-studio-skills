@@ -15,6 +15,6 @@ addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/a.png --wait=1.1
 addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://addons/agent_kit/examples/boot_smoke.json --out=/tmp/flow
 ```
 
-Set `GODOT=` if the binary is not found. Capture/flow **without** `--headless`. Report: `AGENT_OK` / `AGENT_FAIL` lines + PNG paths.
+Set `GODOT=` if the binary is not found. Capture/flow **without** `--headless`. Report: `AGENT_OK` / `AGENT_FAIL` lines + PNG paths. A multi-turn flow: `try_click` + `repeat` (not a hard `click` on a `disabled` button).
 
 This does not replace GUT or a playtest without the user’s OK. It is not an MCP.

@@ -10,7 +10,7 @@ Subagents **do not** see the chat. The orchestrator pastes this block into every
 - Composition: thin container, children / packed, `@export` / `%UniqueName`, types in Resource `.tres`. One node does not paint + spawn + score + change scene.
 - UI copy in the product language; IDs in English. Score/copy/title gameplay **out** of `addons/mp_kit`.
 - Art: do not invent sprites or models. Aseprite/Blender MCP only with OK + references. Shaders: Godot Shaders / Shadertoy; one pass = packed scene.
-- Whoever writes does not self-validate. Playtest ≠ GUT. If `addons/agent_kit/` is present, capture with that CLI (not `godot -s /tmp`). Visual requires `VISUAL.md` or refs; if missing, stop and ask.
+- Whoever writes does not self-validate. Playtest ≠ GUT. If `addons/agent_kit/` is present, capture with that CLI (not `godot -s /tmp`). Turns: `try_click` + `repeat`. Visual requires `VISUAL.md` or refs; if missing, stop and ask.
 - One RFC or a bounded change. Extra not asked for = scope, not a “improvement”.
 ```
 

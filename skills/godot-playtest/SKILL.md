@@ -34,7 +34,7 @@ addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1
 addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest
 ```
 
-Skill: `godot-agent-kit`. Grep `AGENT_OK` / `AGENT_FAIL`. Do **not** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
+Skill: `godot-agent-kit`. Grep `AGENT_OK` / `AGENT_FAIL`. A full match: `try_click` + `repeat` until results, not a `click` on a button off-turn. Do **not** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
 
 If the addon is missing, minimal recipe (temporary script, delete it): [capture.md](capture.md). Headless has no pixels.
 

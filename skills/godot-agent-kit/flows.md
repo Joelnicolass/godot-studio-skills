@@ -18,9 +18,26 @@
 }
 ```
 
-Empty `scene` = the project’s main scene. `click` fires `BaseButton.pressed` (not a pixel hit-test).
+Match / turns (the bid panel hides off-turn):
 
-`assert` / `wait_until` keys: `disabled`, `visible`, `text_contains`, `text_equals`, `texture_path_contains`. `wait_until` also accepts `contains` as an alias of `text_contains`.
+```json
+{
+  "repeat": {
+    "times": 180,
+    "until": { "node": "%ResultsView", "visible": true },
+    "steps": [
+      { "try_click": "%PassButton" },
+      { "wait": 0.2 },
+      { "try_click": "%BidButton" },
+      { "wait": 0.3 }
+    ]
+  }
+}
+```
+
+Empty `scene` = the project’s main scene. `click` fires `BaseButton.pressed` (not a pixel hit-test). `%Name` resolves on the scene and, if missing, in children. `try_click` does not fail if the node is missing, `disabled`, or not visible in the tree (`AGENT_SKIP`). `repeat` runs `steps` until `times` or until `until` (same shape as `assert`) passes. Leave a `wait` between `try_click`s if the network snapshot is slow; do not fire Pass and Bid in the same frame.
+
+`assert` / `wait_until` keys: `disabled`, `visible`, `visible_in_tree`, `text_contains`, `text_equals`, `texture_path_contains`. `wait_until` also accepts `contains` as an alias of `text_contains`.
 
 `print.prop` allows dots: `texture.resource_path`.
 
