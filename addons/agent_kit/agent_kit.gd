@@ -73,6 +73,7 @@ func _info() -> int:
 		"headless": Ops.is_headless(),
 		"scene": get_tree().current_scene.name if get_tree().current_scene else "",
 		"os": OS.get_name(),
+		"actions": Ops.input_action_names(),
 	}
 	print("AGENT_JSON ", JSON.stringify(payload))
 	return _ok("info")
@@ -174,6 +175,7 @@ func _inspect(cmd: Dictionary) -> int:
 	if cmd.get("unique", false):
 		for line in Ops.dump_unique(focus):
 			print("AGENT_UNIQUE ", line)
+		print("AGENT_JSON ", JSON.stringify({"unique": Ops.unique_records(focus)}))
 	else:
 		for line in Ops.dump_tree(focus):
 			print("AGENT_TREE ", line)

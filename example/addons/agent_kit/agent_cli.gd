@@ -3,11 +3,11 @@ extends RefCounted
 
 ## Parse `--agent=verb` and `--key=value` from user args (after `--`) and cmdline.
 
-const DEFAULT_UA := "AgentKit/0.1.1 (Godot studio kit; agent tools)"
+const DEFAULT_UA := "AgentKit/0.1.2 (Godot studio kit; agent tools)"
 
 
 static func help_text() -> String:
-	return """AgentKit 0.1.1 — tools for AI agents (no gameplay).
+	return """AgentKit 0.1.2 — tools for AI agents (no gameplay).
 
 godot --path PROJECT [--resolution WxH] -- --agent=VERB [flags]
 
@@ -15,7 +15,7 @@ Verbs:
   help      Print this text
   info      Project / engine JSON
   capture   Screenshot current or --scene=  → --out=file.png
-  flow      Run JSON steps (click, try_click, repeat, wait_until) → --flow= --out=dir
+  flow      Run JSON steps (click, try_click, press, repeat, wait_until) → --flow= --out=dir
   fetch     HTTP GET/POST → --url= --out=file [--method=GET] [--ua=]
   inspect   Node tree / unique names → --scene= [--node=%X] [--unique]
   diff      Compare two PNGs → --a= --b= [--out=diff.png] [--threshold=0.02]
@@ -24,7 +24,7 @@ Flags (after --):
   --scene=res://...     Change to this scene first
   --out=                PNG file (capture) or directory (flow) or dest file
   --wait=1.1            Seconds after scene load before capture/flow
-  --flow=res://...json  Flow spec
+  --flow=               Flow spec (res:// or absolute .json)
   --url= --method= --ua=
   --a= --b=             Diff inputs
   --node=               Inspect this node (%UniqueName or path)

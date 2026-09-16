@@ -54,6 +54,13 @@ func _step(tree: SceneTree, step: Dictionary, dest: String, index: int) -> Strin
 		return ""
 	if step.has("click"):
 		return Ops.click(scene, str(step["click"]))
+	if step.has("press"):
+		var spec: Variant = step["press"]
+		if typeof(spec) == TYPE_STRING:
+			return Ops.press_action(str(spec))
+		if typeof(spec) != TYPE_DICTIONARY:
+			return "press step must be a StringName or {name, pressed}"
+		return Ops.press_action(str(spec.get("name", "")), bool(spec.get("pressed", true)))
 	if step.has("try_click"):
 		return Ops.try_click(scene, str(step["try_click"]))
 	if step.has("repeat"):

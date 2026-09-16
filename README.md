@@ -267,7 +267,7 @@ Enable **FsmKit** / **PlatKit**. Commands: `/add-state-machine`, `/add-platforme
 
 ## Flow editor (experimental)
 
-Vite + React on localhost to build the JSON the playtester runs (`--agent=flow`). **Not** part of `./install.sh`. Install with **pnpm** (`node_modules/` is gitignored).
+Vite + React on localhost to build the JSON the playtester runs (`--agent=flow`), bind `%UniqueName` / InputMap, and **Run flow** against Godot. **Not** part of `./install.sh`. Install with **pnpm** (`node_modules/` is gitignored).
 
 ```bash
 cd experimental/agent-flow-editor

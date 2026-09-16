@@ -1,8 +1,46 @@
+export function portPos(node, which) {
+  const w = 168;
+  if (which === "in") return { x: node.x, y: node.y + 28 };
+  if (which === "loop") return { x: node.x + w, y: node.y + 54 };
+  return { x: node.x + w, y: node.y + 28 };
+}
+
+export function bezier(a, b) {
+  const dx = Math.max(40, Math.abs(b.x - a.x) * 0.45);
+  return `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`;
+}
+
+export function caption(node) {
+  const d = node.data || {};
+  switch (node.kind) {
+    case "flow":
+      return d.scene || "(main scene)";
+    case "shot":
+      return d.name;
+    case "click":
+    case "try_click":
+      return d.node;
+    case "press":
+      return d.name;
+    case "wait":
+      return `${d.seconds}s`;
+    case "type":
+      return `${d.node} ← ${d.text}`;
+    case "print":
+      return `${d.node}.${d.prop}`;
+    case "repeat":
+      return `×${d.times}`;
+    default:
+      return d.node || "";
+  }
+}
+
 export const KINDS = [
   { id: "flow", label: "Flow", color: "#6ee7b7" },
   { id: "shot", label: "Shot", color: "#93c5fd" },
   { id: "click", label: "Click", color: "#fbbf24" },
   { id: "try_click", label: "Try click", color: "#fdba74" },
+  { id: "press", label: "Press action", color: "#86efac" },
   { id: "wait", label: "Wait", color: "#c4b5fd" },
   { id: "type", label: "Type", color: "#67e8f9" },
   { id: "wait_until", label: "Wait until", color: "#f9a8d4" },
@@ -13,6 +51,14 @@ export const KINDS = [
 
 export function kindMeta(id) {
   return KINDS.find((k) => k.id === id) || KINDS[1];
+}
+
+export function kindUsesNode(kind) {
+  return ["click", "try_click", "type", "print", "wait_until", "assert"].includes(kind);
+}
+
+export function kindUsesAction(kind) {
+  return kind === "press";
 }
 
 export function uid(prefix) {
@@ -28,6 +74,8 @@ export function emptyData(kind) {
     case "click":
     case "try_click":
       return { node: "%PlaySolo" };
+    case "press":
+      return { name: "ui_accept" };
     case "wait":
       return { seconds: 0.4 };
     case "type":
@@ -68,6 +116,8 @@ function stepFromNode(node, innerSteps) {
       return { click: d.node || "" };
     case "try_click":
       return { try_click: d.node || "" };
+    case "press":
+      return { press: d.name || "" };
     case "wait":
       return { wait: Number(d.seconds) || 0 };
     case "type":
@@ -152,6 +202,10 @@ function placeStep(raw, x, y) {
   }
   if (raw.click) return { node: nodeAt("click", x, y, { node: raw.click }) };
   if (raw.try_click) return { node: nodeAt("try_click", x, y, { node: raw.try_click }) };
+  if (raw.press) {
+    const name = typeof raw.press === "string" ? raw.press : raw.press.name;
+    return { node: nodeAt("press", x, y, { name }) };
+  }
   if (raw.wait != null) return { node: nodeAt("wait", x, y, { seconds: raw.wait }) };
   if (raw.type) {
     return { node: nodeAt("type", x, y, { node: raw.type.node, text: raw.type.text }) };

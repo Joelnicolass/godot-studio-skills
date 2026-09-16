@@ -9,6 +9,7 @@
   "steps": [
     { "shot": "01.png" },
     { "click": "%PlaySolo" },
+    { "press": "ui_accept" },
     { "type": { "node": "%Ip", "text": "127.0.0.1" } },
     { "wait": 1.0 },
     { "wait_until": { "node": "%Status", "text_contains": "ok", "timeout": 6 } },
@@ -35,7 +36,7 @@ Match / turns (the bid panel hides off-turn):
 }
 ```
 
-Empty `scene` = the project’s main scene. `click` fires `BaseButton.pressed` (not a pixel hit-test). `%Name` resolves on the scene and, if missing, in children. `try_click` does not fail if the node is missing, `disabled`, or not visible in the tree (`AGENT_SKIP`). `repeat` runs `steps` until `times` or until `until` (same shape as `assert`) passes. Leave a `wait` between `try_click`s if the network snapshot is slow; do not fire Pass and Bid in the same frame.
+Empty `scene` = the project’s main scene. `click` fires `BaseButton.pressed` (not a pixel hit-test). `press` is an InputMap action (`"ui_accept"` or `{ "name": "jump", "pressed": true }`). `%Name` resolves on the scene and, if missing, in children. `try_click` does not fail if the node is missing, `disabled`, or not visible in the tree (`AGENT_SKIP`). `repeat` runs `steps` until `times` or until `until` (same shape as `assert`) passes. Leave a `wait` between `try_click`s if the network snapshot is slow; do not fire Pass and Bid in the same frame.
 
 `assert` / `wait_until` keys: `disabled`, `visible`, `visible_in_tree`, `text_contains`, `text_equals`, `texture_path_contains`. `wait_until` also accepts `contains` as an alias of `text_contains`.
 
@@ -43,4 +44,4 @@ Empty `scene` = the project’s main scene. `click` fires `BaseButton.pressed` (
 
 The autoload **survives** `change_scene` (vs AI, Play solo, fade). A `-s` script does not.
 
-Experimental visual editor: `experimental/agent-flow-editor/` (cables → this JSON).
+Experimental visual editor: `experimental/agent-flow-editor/` (cables → this JSON). Bind the Godot project, paste `%` / actions, **Run flow** executes AgentKit.
