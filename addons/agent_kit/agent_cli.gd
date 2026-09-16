@@ -3,11 +3,11 @@ extends RefCounted
 
 ## Parse `--agent=verb` and `--key=value` from user args (after `--`) and cmdline.
 
-const DEFAULT_UA := "AgentKit/0.1.2 (Godot studio kit; agent tools)"
+const DEFAULT_UA := "AgentKit/0.1.3 (Godot studio kit; agent tools)"
 
 
 static func help_text() -> String:
-	return """AgentKit 0.1.2 — tools for AI agents (no gameplay).
+	return """AgentKit 0.1.3 — tools for AI agents (no gameplay).
 
 godot --path PROJECT [--resolution WxH] -- --agent=VERB [flags]
 
@@ -15,7 +15,7 @@ Verbs:
   help      Print this text
   info      Project / engine JSON
   capture   Screenshot current or --scene=  → --out=file.png
-  flow      Run JSON steps (click, try_click, press, repeat, wait_until) → --flow= --out=dir
+  flow      Run JSON steps (click, press/hold, select, call, repeat, wait_until/signal, diff) → --flow= --out=dir
   fetch     HTTP GET/POST → --url= --out=file [--method=GET] [--ua=]
   inspect   Node tree / unique names → --scene= [--node=%X] [--unique]
   diff      Compare two PNGs → --a= --b= [--out=diff.png] [--threshold=0.02]
@@ -30,6 +30,7 @@ Flags (after --):
   --node=               Inspect this node (%UniqueName or path)
   --unique              Inspect: only unique names
   --threshold=0.02      Diff: per-channel delta 0..1
+  --fail-on-error       Fail the verb if Godot logged ERROR / SCRIPT ERROR
 
 Do not use `godot -s /tmp/foo.gd extends SceneTree` for captures: class_name
 scripts compile before autoloads (PortraitCache / DraftCopy missing).
@@ -53,6 +54,7 @@ static func parse() -> Dictionary:
 		"node": first(["node", "agent-node"]),
 		"unique": flag("unique") or flag("agent-unique"),
 		"threshold": first(["threshold", "agent-threshold"], "0.02"),
+		"fail_on_error": flag("fail-on-error") or flag("agent-fail-on-error"),
 	}
 	return cmd
 

@@ -14,7 +14,7 @@ Subagents **do not** see the chat. The orchestrator pastes this block into every
 - Juicy: shake, VFX, post, impact = local presentation, packed + `@export`. Skill `godot-juicy` / `/add-juicy`. Not score.
 - FSM: `FsmState` children under `FsmMachine` (addon `fsm_kit` / `/add-state-machine`). Not a 200-line `enum`.
 - 2D platformer: coyote / buffer / apex = `PlatMotor` (addon `plat_kit` / `/add-platformer-2d`). Dash/stamina only if the product asks.
-- Whoever writes does not self-validate. Playtest ≠ GUT. If `addons/agent_kit/` is present, capture with that CLI (not `godot -s /tmp`). Turns: `try_click` + `repeat`. Visual requires `VISUAL.md` or refs; if missing, stop and ask.
+- Whoever writes does not self-validate. Playtest ≠ GUT. If `addons/agent_kit/` is present, `inspect --unique` and `cli.sh flow --fail-on-error` (not `godot -s /tmp`). Cover **all** criteria of **this** slice, not a sample. Console `ERROR`/`SCRIPT ERROR`/`AGENT_STEP_ERROR` = FAIL (paste `AGENT_ERRORS`). Turns: `try_click` + `repeat`. Visual requires `VISUAL.md` or refs; if missing, stop and ask.
 - One RFC or a bounded change. Extra not asked for = scope, not a “improvement”.
 ```
 

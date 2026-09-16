@@ -12,7 +12,7 @@ export default function App() {
 
   function pickUnique(item) {
     if (!graph.current || !kindUsesNode(graph.current.kind)) {
-      graph.setErr("Select a click/type/print/assert node to paste " + item.unique);
+      graph.setErr("Select a node that accepts %UniqueName to paste " + item.unique);
       return;
     }
     graph.setErr("");

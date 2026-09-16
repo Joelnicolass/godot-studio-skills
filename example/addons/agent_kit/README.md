@@ -50,6 +50,9 @@ AGENT_SHOT=...
 AGENT_PRINT node=%Title prop=text value=...
 AGENT_CLICK %BidButton
 AGENT_PRESS ui_accept pressed=true
+AGENT_STEP 4 click
+AGENT_STEP_ERROR 4 res://foo.gd:12 …
+AGENT_ERRORS [{"kind":"script","text":"…"}]
 AGENT_SKIP try_click %PassButton
 AGENT_REPEAT done iter=13
 AGENT_DIFF changed=12 total=1000 percent=1.200
@@ -75,7 +78,7 @@ AGENT_JSON {...}
 }
 ```
 
-`click` emits `pressed` on the `BaseButton` (it does not aim at a pixel). `%Name` is resolved on the scene and, if missing, in children (packed scenes). `press` fires an InputMap `InputEventAction` (`"ui_accept"` or `{ "name": "jump", "pressed": true }`). `inspect --unique` also prints `AGENT_JSON` with those `%` names (click/type). `info` includes `actions`.
+`click` emits `pressed` on the `BaseButton` (it does not aim at a pixel). `%Name` is resolved on the scene and, if missing, in children (packed scenes). `press` fires an InputMap `InputEventAction` (`"ui_accept"` or `{ "name": "move_left", "hold": 0.4 }`). `--fail-on-error` fails capture/flow if the engine logged ERROR or SCRIPT ERROR. `inspect --unique` also prints `AGENT_JSON` with those `%` names (click/type/select/range/scroll). `info` includes `actions`.
 
 For a match or HUD that appears and disappears:
 
@@ -110,4 +113,4 @@ Experimental cable editor: `experimental/agent-flow-editor/` in the studio kit (
 
 ## Version
 
-0.1.2
+0.1.3

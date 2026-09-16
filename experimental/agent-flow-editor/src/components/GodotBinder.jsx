@@ -16,8 +16,8 @@ export default function GodotBinder({
     <section className="binder">
       <h1>Godot</h1>
       <p className="hint">
-        Scan reads <code>.tscn</code> and <code>[input]</code>. Live inspect runs
-        AgentKit against the current scene.
+        Scan reads <code>.tscn</code> and <code>[input]</code>. Live inspect
+        runs AgentKit against the current scene.
       </p>
       <label>
         project.godot dir
@@ -60,6 +60,9 @@ export default function GodotBinder({
                 {item.class}
                 {item.click ? " · click" : ""}
                 {item.type ? " · type" : ""}
+                {item.select ? " · select" : ""}
+                {item.range ? " · range" : ""}
+                {item.scroll ? " · scroll" : ""}
               </em>
             </button>
           </li>

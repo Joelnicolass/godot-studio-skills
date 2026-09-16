@@ -14,7 +14,9 @@ Read this when the user **agreed** to a post-iteration playtest. The orchestrato
 
 ## 1. What to exercise
 
-Short list from the RFC / request: 3–7 actions (open scene, use HUD, trigger the feature…). Each must **fail in plain sight** if the bug remains.
+**All** acceptance criteria of **this** slice (`FEATURES.md` `F<n>`, RFC, or the request). Not a 3–7 sample. If it will not fit in ~15 steps, the cut was large: cover the slice and list what was left out. Each action must **fail in plain sight** if the bug remains.
+
+If `addons/agent_kit/` is present: `inspect --unique` and write the flow with those `%` names.
 
 ## 2. How to launch Godot 4
 
@@ -30,17 +32,21 @@ Short list from the RFC / request: 3–7 actions (open scene, use HUD, trigger t
 If the project has `addons/agent_kit/`:
 
 ```bash
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1.1
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT inspect --unique
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1.1 --fail-on-error
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest --fail-on-error
 ```
 
-Skill: `godot-agent-kit`. Grep `AGENT_OK` / `AGENT_FAIL`. A full match: `try_click` + `repeat` until results, not a `click` on a button off-turn. Do **not** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
+Skill: `godot-agent-kit`. Grep `AGENT_OK`, `AGENT_FAIL`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `ERROR:`, `SCRIPT ERROR:`, `WARNING:`. A full match: `try_click` + `repeat` until results, not a `click` on a button off-turn. Do **not** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
+
+`--fail-on-error` fails the flow if Godot logged ERROR / SCRIPT ERROR even when clicks “worked”. Include that log in the report anyway.
 
 If the addon is missing, minimal recipe (temporary script, delete it): [capture.md](capture.md). Headless has no pixels.
 
 ## 4. Report (to the orchestrator)
 
-- What you ran (command, scene).
-- Each action: PASS / FAIL + evidence (screenshot or log).
+- What you ran (command, scene, JSON).
+- Each criterion / step: PASS / FAIL + evidence (screenshot, `AGENT_PRINT`, console).
+- Console: `AGENT_ERRORS` and `ERROR:` / `SCRIPT ERROR:` / `WARNING:` lines. A script error is FAIL.
 - What you could not exercise (no display, missing save, etc.).
 - Do not rewrite systems. Do not judge look (that is `studio-visual`).

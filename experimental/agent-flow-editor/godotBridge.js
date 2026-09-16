@@ -20,6 +20,9 @@ const CLICK_TYPES = new Set([
   "TextureButton",
 ]);
 const TYPE_TYPES = new Set(["LineEdit", "TextEdit", "SpinBox"]);
+const SELECT_TYPES = new Set(["ItemList", "OptionButton"]);
+const RANGE_TYPES = new Set(["Range", "HSlider", "VSlider", "ProgressBar", "SpinBox", "ScrollBar", "HScrollBar", "VScrollBar"]);
+const SCROLL_TYPES = new Set(["ScrollContainer"]);
 
 function defaultProject(editorRoot) {
   return path.resolve(editorRoot, "../../example");
@@ -42,6 +45,9 @@ function parseUniqueFromTscn(filePath, resPath) {
       scene: resPath,
       click: CLICK_TYPES.has(klass),
       type: TYPE_TYPES.has(klass),
+      select: SELECT_TYPES.has(klass),
+      range: RANGE_TYPES.has(klass),
+      scroll: SCROLL_TYPES.has(klass),
     });
   }
   return records;
@@ -231,7 +237,7 @@ export function godotBridge(editorRoot) {
             const result = await runCli(
               snap.cli,
               project,
-              ["flow", `--flow=${flowFile}`, `--out=${outDir}`],
+              ["flow", `--flow=${flowFile}`, `--out=${outDir}`, "--fail-on-error"],
               120000
             );
             const shots = existsSync(outDir)

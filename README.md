@@ -254,7 +254,7 @@ Cursor/VS Code snippets: `.vscode/mpkit.code-snippets` (the installer copies the
 ./install.sh --addon /path/to/godot-project agent_kit
 ```
 
-Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT capture --out=/tmp/a.png`. A long flow (auction, turns) uses `try_click` and `repeat` — see `addons/agent_kit/README.md` and skill `godot-agent-kit`. Do not use `godot -s /tmp` for captures.
+Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT inspect --unique` and `flow --fail-on-error`. A long flow (auction, turns) uses `try_click` and `repeat` — see `addons/agent_kit/README.md` and skill `godot-agent-kit`. Do not use `godot -s /tmp` for captures.
 
 ## FsmKit / PlatKit
 

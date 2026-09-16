@@ -19,12 +19,12 @@ Open http://localhost:5173. It binds to the kit `example/` by default.
 1. **Scan scenes** — reads `.tscn` (`unique_name_in_owner`) and `[input]` from `project.godot`.
 2. **Live inspect** — runs `cli.sh inspect --unique` + `info` (live nodes + built-in actions).
 3. Select a Click/Type/Press node and paste a `%` or an action from the catalog.
-4. **Run flow** — writes a temp JSON and runs `addons/agent_kit/cli.sh PROJECT flow --flow=/abs.json --out=…`.
+4. **Run flow** — writes a temp JSON and runs `cli.sh … flow --fail-on-error`. The log colors `AGENT_STEP`, `ERROR`, and `AGENT_ERRORS`.
 
 You can still export JSON and run it by hand:
 
 ```bash
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/flow
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/flow --fail-on-error
 ```
 
 ## What each box is
@@ -32,7 +32,7 @@ addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/f
 | Node | JSON |
 |------|------|
 | Flow | `scene`, `wait_first` (root) |
-| Shot / Click / Try click / Press / Wait / Type / Wait until / Assert / Print | one step |
+| Shot / Click / Try click / Press (hold) / Wait / Type / Select / Range / Scroll / Drag / Call / Scene / Seed / Time scale / Diff / Wait until (property or signal) / Assert / Print | one step |
 | Repeat | `{ "repeat": { times, until, steps } }` — the **loop** cable (purple) is the body |
 
 The **out** cable is order. A single path from Flow. Repeat nests the `loop` path.
