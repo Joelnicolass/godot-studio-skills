@@ -4,7 +4,7 @@ Un estudio chico para **Cursor + Godot 4**: el chat no “hace el juego”, **or
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
-`main` está en inglés. Esta rama (`release/spanish`) está en español.
+Dos ramas principales: `main` (inglés) y `release/spanish` (español). **Nunca** se les pushea trabajo directo. Orden: un par RC — `rc/vX.Y.Z` desde `main` y `rc/vX.Y.Z-spanish` desde `release/spanish` — y recién merge a las principales cuando la RC esté aceptada. Un segundo candidato: `rc/vX.Y.Z-rc.2`.
 
 ## Por qué existe
 
