@@ -4,7 +4,7 @@ A small studio for **Cursor + Godot 4**: the chat does not “make the game”, 
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills
 
-`main` is English. `release/spanish` is Spanish.
+Two principal branches: `main` (English) and `release/spanish` (Spanish). **Never** push work straight to them. Order: an RC pair — `rc/vX.Y.Z` from `main` and `rc/vX.Y.Z-spanish` from `release/spanish` — and merge to the principals only after the RC is accepted. A second candidate: `rc/vX.Y.Z-rc.2`.
 
 ## Why this exists
 
