@@ -1,17 +1,18 @@
 Estás guiando un proyecto a través de un flujo de desarrollo basado en RFCs con estas etapas.
 
-El orquestador (`godot-studio-workflow`) ejecuta estos pasos; el usuario no tiene que tipear cada slash si pidió hacer el juego. `/test-strategy` es opcional si no hay tests.
+El orquestador (`godot-studio-workflow`) ejecuta estos pasos; el usuario no tiene que tipear cada slash si pidió hacer el juego. **Camino corto:** `/implement-feature` (no exige PRD). `/test-strategy` es opcional si no hay tests.
 
 | # | Etapa | Artefacto | Comando / Prompt |
 |---|-------|----------|------------------|
-| 1 | Crear PRD | PRD.md | `/create-prd` |
+| — | Implementar una feature (default) | Código + `FEATURES.md` | `/implement-feature` |
+| 1 | Crear PRD (opcional) | PRD.md | `/create-prd` |
 | 2 | Verificar PRD | PRD.md (mejorado) + PRD-REVIEW.md | `/verify-prd` |
 | 3 | Extraer features | FEATURES.md | `/extract-features` |
 | 4 | Generar rules | RULES.md | `/generate-rules` |
 | 5 | Guía visual (si hay look) | VISUAL.md | `/create-visual-guide` |
 | 6 | Generar RFCs | carpeta RFCs/ + RFCS.md | `/generate-rfcs` |
 | 7 | Estrategia de testing | TEST-STRATEGY.md | `/test-strategy` (opcional) |
-| 8 | Implementar RFCs (uno por uno, en orden) | Código | `/implement-rfc <id>` |
+| 8 | Implementar RFCs (uno por uno) | Código | `/implement-rfc <id>` |
 | 9 | Revisar cada implementación | `reviews/REVIEW-RFC-<id>.md` | `/review-rfc <id>` |
 | 10 | Gestionar cambios (cuando se mueven los requisitos) | `changes/CHANGE-REQUEST-<nnn>.md` | `/manage-changes` |
 | 11 | Chequeo de estado (en cualquier momento) | este reporte | `/workflow-status` |

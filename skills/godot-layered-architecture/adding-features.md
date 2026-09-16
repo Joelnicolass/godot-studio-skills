@@ -1,5 +1,7 @@
 # Cómo agregar una feature
 
+En el juego: command `/implement-feature` (orquestador). No regeneres el PRD.
+
 Leer primero `SKILL.md` (Clean vs estándar y tipo de MP ya elegidos). Tipos: [resources.md](../godot-composition-first/resources.md). Tests: [godot-testing](../godot-testing/SKILL.md). Red: `godot-mp-kit` **solo** si hay MP (local = listen; online = dedicated). Si no hay MP, el bloque de red es N/A.
 
 Si un ítem no aplica, escribir “N/A”. No saltearlo en silencio.
@@ -10,7 +12,7 @@ Si un ítem no aplica, escribir “N/A”. No saltearlo en silencio.
 2. [ ] ¿Es un **tipo** (otro proyectil, enemigo, item)? → Resource `.tres` + la misma escena. No un script por skin de stats.
 3. [ ] Reglas de **ronda** (vidas, duración, layers): `MatchRules.tres`. Look de instancia: `@export`.
 4. [ ] InputMap: acciones semánticas (`move_left`, `attack`), no `KEY_*`. Hold en `_physics_process`; one-shot de gameplay en `_unhandled_input`.
-5. [ ] Sockets `@export` / `%UniqueName` para nodos propios. Escena jugable con F6.
+5. [ ] Sockets `@export` / `%UniqueName` para nodos propios. Escena jugable con F6. FSM: addon `fsm_kit` si hay estados. Platformer 2D: `plat_kit` (coyote/buffer), no `is_on_floor()` pelado.
 6. [ ] Clean: ¿regla testeable sin escena? → `src/domain/` + test. Estándar: ¿el World se hincha? → componente, no domain inventado.
 7. [ ] FX locales; shaders de [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) / [Shadertoy](https://www.shadertoy.com). Sprites 2D: ¿el usuario quiere MCP/arte? Si sí, referencias + [godot-animation](../godot-animation/SKILL.md). Si el feature es **3D**: ¿quiere MCP Blender? Si sí, referencias + [assets.md](../godot-composition-first/assets.md). Si no, placeholder. Copy de UI en el idioma del producto; código en inglés. HUD: no inventar look; `VISUAL.md` o refs.
 

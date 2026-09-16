@@ -19,7 +19,7 @@ Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 | Domain Clean (`RefCounted`) | `MyRule.new()` en GUT/GdUnit. Sin escena, sin autoloads. |
 | Resource de tipo | Cargar `.tres` o construir el Resource; no mutar el asset compartido. |
 | Nodo / componente | Añadir como hijo del test; **autofree** (`add_child_autofree` en GUT). Probar señales. |
-| Feel / cámara / juice | Playtest anotado. Un unit test verde no prueba que se sienta bien. |
+| Feel / cámara / juicy | Playtest anotado. Un unit test verde no prueba que se sienta bien. |
 
 No tests de relleno. Cada test debe **fallar** si un criterio de aceptación se rompe.
 

@@ -2,11 +2,14 @@
 
 ## StateMachine
 
-Padre con `@export var initial_state: State`. Hijos = estados. `transition(&"Hurt")` busca por nombre de nodo.
+Addon `fsm_kit`: padre `FsmMachine` con `@export var initial_state: FsmState`. Hijos = estados. `transition(&"Hurt")` busca por nombre de nodo.
 
-- `State.enter` / `exit` / `update`.
-- El actor se **inyecta**: `@export var actor: Node` (el padre lo asigna). No `machine.get_parent()` como API.
+- `FsmState.enter` / `exit` / `update` / `physics_update`.
+- El actor se **inyecta**: `@export var actor: Node`. No `machine.get_parent()` como API.
 - No guardar score en un estado.
+- Command: `/add-state-machine`.
+
+Plataformas 2D (coyote, buffer): addon `plat_kit` / `/add-platformer-2d`. El motor es **otro** hijo.
 
 ## Health / Hitbox / Hurtbox
 

@@ -20,7 +20,7 @@ Al invocarte:
 5. No copies `addons/mp_kit` si no hay MP. No forks del addon. No puntaje ni copy dentro del kit. Si el MP es **online**, usá dedicated (`host_dedicated` + clientes); no trates un listen LAN como internet.
 6. No workarounds sin dejar `WORKAROUND:` y haberlo dicho en el resultado.
 7. No agregues tests salvo que el prompt o RULES.md lo pidan.
-8. Shaders: buscá en Godot Shaders / Shadertoy; un pass = una packed scene. Sprites 2D: **preguntá** si quiere crearlos (MCP Aseprite) y pedí **referencias**. Si el RFC es **3D**: **preguntá** si quiere MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)), instalalo solo con OK, pedí referencias, exportá `.glb`. Animación: [godot-animation](../skills/godot-animation/SKILL.md). Sin OK: placeholder, no instales MCP ni dibujes/modeles.
+8. Shaders: buscá en Godot Shaders / Shadertoy; un pass = una packed scene. Sprites 2D: **preguntá** si quiere crearlos (MCP Aseprite) y pedí **referencias**. Si el RFC es **3D**: **preguntá** si quiere MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)), instalalo solo con OK, pedí referencias, exportá `.glb`. Animación: [godot-animation](../skills/godot-animation/SKILL.md) — Tween **o** `AnimationPlayer` según el clip. Feel jugoso: [godot-juicy](../skills/godot-juicy/SKILL.md). FSM: [godot-fsm](../skills/godot-fsm/SKILL.md). Plataformas 2D: [godot-platformer-2d](../skills/godot-platformer-2d/SKILL.md). Sin OK: placeholder, no instales MCP ni dibujes/modeles.
 
 Al terminar, devolvé al orquestador:
 

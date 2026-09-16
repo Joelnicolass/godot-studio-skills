@@ -1,12 +1,14 @@
 ---
 name: godot-animation
 description: >-
-  Anima sprites y motion 2D en Godot 4 con los 12 principios básicos
+  Anima sprites y motion en Godot 4 con los 12 principios básicos
   (squash and stretch, anticipation, staging, pose to pose, follow through,
   slow in/out, arcs, secondary action, timing, exaggeration, solid drawing,
-  appeal). Usar al crear o editar pixel art, Aseprite MCP, SpriteFrames,
-  AnimatedSprite2D, AnimationPlayer, cycles idle/walk/attack, o timing de
-  animación. Preguntá antes de usar MCP o crear sprites; pedí referencias.
+  appeal). Elegí Tween o AnimationPlayer según el clip; knobs @export en el
+  inspector. Usar al crear o editar pixel art, juicy, hit-stop, cámara, Aseprite MCP,
+  SpriteFrames, AnimatedSprite2D, Tween, create_tween, AnimationPlayer,
+  cycles idle/walk/attack, o timing. Preguntá antes de usar MCP o crear
+  sprites; pedí referencias.
 ---
 
 # Godot — animación 2D
@@ -41,6 +43,53 @@ Composición: [godot-composition-first](../godot-composition-first/SKILL.md). As
 
 En Aseprite (MCP): paleta y silueta primero (12, 11). Poses clave (4), squash en el impacto (1), frame de anticipación (2), ease en los extremos (6), trayectoria curva (7), pelo/ropa un frame tarde (5), un detalle extra que no compita (8), duración de frame = peso (9), pose más fuerte que la real (10). El clip se lee solo (3). `export_frame` a 8×; onion skin entre poses.
 
-En Godot: spritesheet / `SpriteFrames` → `AnimatedSprite2D`. Motion de nodos (cámara, squash de escala, arcos) → `AnimationPlayer` con interpolación. 3D: mesh/animación desde Blender MCP (solo con OK) exportado a `.glb`; mismos principios (1–12) en poses y curvas. No animes gameplay en un shader de otro pass.
+Un ciclo dibujado = un tag / un `SpriteFrames` animation. Idle no es un solo frame estático si el personaje debe vivir (8, 9).
 
-Un ciclo = un tag / un `SpriteFrames` animation. Idle no es un solo frame estático si el personaje debe vivir (8, 9).
+## Motion en Godot (elegí por clip)
+
+Los 12 principios aplican igual. **Evaluá qué conviene en este caso**; no hay herramienta default.
+
+| Usá | Cuando |
+|-----|--------|
+| `create_tween()` / `Tween` + `@export` | One-shot paramétrico: hit squash, knockback, punch de cámara, fade, overshoot. El feel se tunnea en el inspector del actor. |
+| `AnimationPlayer` | Varios nodos a la vez, curvas pose-a-pose, loop authorado, blend/seek, cinemática, esqueleto importado (`.glb`). El humano edita la **timeline**. |
+| `SpriteFrames` / `AnimatedSprite2D` | Ciclos **dibujados** (idle/walk/attack). |
+
+Combinar está bien: clip de esqueleto o walk en `AnimationPlayer` / `SpriteFrames`, squash de impacto en Tween encima (skill [godot-juicy](../godot-juicy/SKILL.md) para shake / VFX / post).
+
+Knobs siempre editables. Tween: `@export` de duración, escala, ease. AnimationPlayer: clips con nombre, `@export` de `speed_scale` / clip a reproducir; no escondas el feel en números mágicos del `.gd`.
+
+No elijas AnimationPlayer “porque es el nodo de animar”, ni Tween “porque el skill lo prioriza”. Si un tween de 4 líneas cubre el clip, usalo. Si hay 6 tracks y easings distintos, usá `AnimationPlayer`.
+
+Mapeo rápido principios → feel (Tween **o** curvas del player):
+
+| Principio | Qué tunear |
+|-----------|------------|
+| 1 Squash | escala en el impacto / recover |
+| 2 Anticipation | pose o escala previa, corta |
+| 5 Follow through | track o tween paralelo con delay |
+| 6 Slow in/out | ease in/out o más keys en los extremos |
+| 7 Arcs | trayectoria curva, no lerp lineal de posición |
+| 8 Secondary | hijo (capa, badge, pelo) desfasado |
+| 9 Timing | duración / `speed_scale` |
+| 10 Exaggeration | más grande que el movimiento “real” |
+
+```gdscript
+@export_group("Hit juicy")
+@export var squash_scale: Vector2 = Vector2(1.28, 0.72)
+@export var squash_duration: float = 0.07
+@export var recover_duration: float = 0.14
+@export var anticipation_scale: Vector2 = Vector2(0.88, 1.12)
+@export var anticipation_duration: float = 0.05
+
+@onready var _visual: Node2D = %Visual
+
+
+func play_hit() -> void:
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_visual, "scale", anticipation_scale, anticipation_duration)
+	tw.tween_property(_visual, "scale", squash_scale, squash_duration)
+	tw.tween_property(_visual, "scale", Vector2.ONE, recover_duration)
+```
+
+3D: Tween sobre `Node3D` cuando el punch es paramétrico; clips de esqueleto (Blender MCP, solo con OK) en el `AnimationPlayer` del `.glb`. No animes gameplay en un shader de otro pass.

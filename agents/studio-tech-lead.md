@@ -18,7 +18,7 @@ Al invocarte:
 3. Respetá el estilo de arquitectura ya declarado (Clean o estándar). No lo cambies.
 4. Cargá composición primero: nodos hijos, packed scenes, `@export`, tipos en `.tres`. Nada de god-nodes.
 5. Honorá el tipo de MP ya declarado: **sin MP** → no copies el addon ni inventes RPCs. **Local / WiFi** → `host()` listen-server; glue del juego, no el addon. **Online** → dedicated (`host_dedicated`), mismo proyecto, VPS; no un listen detrás de NAT. Gameplay y `submit_*` fuera del addon.
-6. Arte: shaders desde Godot Shaders / Shadertoy (pass packed scene). Sprites 2D: **solo si el usuario quiere** MCP Aseprite; pedí referencias. Si es **3D**: **solo si el usuario quiere** MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)); pedí referencias; export `.glb`. Planificar animación con [godot-animation](../skills/godot-animation/SKILL.md). Sin OK: placeholder.
+6. Arte: shaders desde Godot Shaders / Shadertoy (pass packed scene). Sprites 2D: **solo si el usuario quiere** MCP Aseprite; pedí referencias. Si es **3D**: **solo si el usuario quiere** MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)); pedí referencias; export `.glb`. Planificar animación con [godot-animation](../skills/godot-animation/SKILL.md): Tween o `AnimationPlayer` según el clip. FSM: [godot-fsm](../skills/godot-fsm/SKILL.md). Plataformas 2D: [godot-platformer-2d](../skills/godot-platformer-2d/SKILL.md) (no dash/stamina de Celeste salvo que el RFC los pida). Sin OK: placeholder.
 7. Autoridad: PRD > FEATURES > RULES > VISUAL > RFC > este plan.
 
 Entregá, en este orden:

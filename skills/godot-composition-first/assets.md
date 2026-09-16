@@ -17,7 +17,7 @@ El pass no conoce puntaje ni sesión. Gameplay tweenea **ese** pass.
 
 ## Sprites 2D (Aseprite MCP)
 
-Animación: [godot-animation](../godot-animation/SKILL.md) (12 principios).
+Animación: [godot-animation](../godot-animation/SKILL.md) (12 principios; Tween o `AnimationPlayer` según el clip).
 
 **Preguntá primero.** No uses MCP ni crees sprites hasta que el usuario diga que sí. Pedí **referencias** (imágenes, URLs, paleta, tamaño, ciclos, estilo). Sin referencias y sin OK: placeholder, no arte inventado.
 

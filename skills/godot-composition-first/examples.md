@@ -8,36 +8,23 @@ Nada de un título concreto. Copiá y adaptá.
 Actor (CharacterBody2D)
 ├── Visual         Sprite2D
 ├── Health         packed scene
-├── States         StateMachine
+├── States         FsmMachine
 │   ├── Idle
 │   ├── Move
 │   └── Hurt
 └── MultiplayerSynchronizer
 ```
 
+Preferí el addon `fsm_kit` (`./install.sh --addon … fsm_kit`) a copiar una clase. `/add-state-machine`.
+
 ```gdscript
-class_name StateMachine
-extends Node
-
-@export var initial_state: State
-@export var actor: Node
-
-var _current: State
+class_name IdleState
+extends FsmState
 
 
-func _ready() -> void:
-	_current = initial_state
-	if _current != null:
-		_current.enter()
-
-
-func transition(state_name: StringName) -> void:
-	var next := get_node_or_null(NodePath(state_name)) as State
-	if next == null or next == _current:
-		return
-	_current.exit()
-	_current = next
-	_current.enter()
+func physics_update(_delta: float) -> void:
+	if absf(actor.velocity.x) > 8.0:
+		transition(&"Move")
 ```
 
 ## Socket `@export` + UniqueName
@@ -65,3 +52,19 @@ extends Resource
 ```
 
 Un `projectile_fast.tres` y un `projectile_slow.tres` apuntan a la misma `projectile.tscn`.
+
+## Juicy con Tween + inspector
+
+```gdscript
+@export_group("Land squash")
+@export var squash_scale: Vector2 = Vector2(1.2, 0.8)
+@export var squash_duration: float = 0.08
+@export var recover_duration: float = 0.12
+
+func play_land() -> void:
+	var tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(%Visual, "scale", squash_scale, squash_duration)
+	tw.tween_property(%Visual, "scale", Vector2.ONE, recover_duration)
+```
+
+Doce principios: [godot-animation](../godot-animation/SKILL.md). Este clip es one-shot paramétrico → Tween. Varios tracks / loop authorado → `AnimationPlayer`. No hardcodees esos floats.

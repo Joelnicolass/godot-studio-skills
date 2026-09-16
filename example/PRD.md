@@ -93,7 +93,7 @@ Prioridad MoSCoW detallada en `FEATURES.md`. Resumen:
 
 ## Feel
 
-- Cámara 2D fija / 3D orbital simple sobre el origen. Sin juice de título.
+- Cámara 2D fija / 3D orbital simple sobre el origen. Sin juicy de título.
 - How-to-fail: IP inválida, puerto ocupado, servidor caído → mensaje en lobby, no crash.
 - Sesión: minutos; no hay ronda con timer de victoria (elapsed es solo demo de snapshot).
 

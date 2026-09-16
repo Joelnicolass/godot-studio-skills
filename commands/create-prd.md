@@ -12,9 +12,9 @@ Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir deb
 
 ## Si el producto es un juego (Godot)
 
-El archivo sigue llamándose `PRD.md` (el resto de commands lo busca), pero el contenido es un **GDD corto y vivo**, no un PRD de SaaS.
+El archivo sigue llamándose `PRD.md` (el resto de commands lo busca), pero el contenido es un **GDD corto y vivo**, no un PRD de SaaS. **No definas el juego entero.** El slice y las features siguientes se implementan con `/implement-feature`. Este command solo ancla pilares, no-goals y el primer loop.
 
-Preguntá y documentá: fantasía y pilares, no-goals, loop central, feel (cámara, juice, how-to-fail), duración de sesión, plataformas, dispositivos de input, **2D / 3D / ambos**, **tipo de multiplayer** (sin MP · local/WiFi · online), slice vertical jugable.
+Preguntá y documentá: fantasía y pilares, no-goals, loop central, feel (cámara, juicy, how-to-fail), duración de sesión, plataformas, dispositivos de input, **2D / 3D / ambos**, **tipo de multiplayer** (sin MP · local/WiFi · online), slice vertical jugable.
 
 Omití salvo que el usuario lo pida: modelo de negocio, SQL/inyección, auth de usuarios, diseño responsive web, APIs REST, personas de marketing. En su lugar: loop, feel, contenido (tipos como datos), y qué queda fuera del primer slice.
 

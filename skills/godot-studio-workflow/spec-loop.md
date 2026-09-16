@@ -8,8 +8,8 @@ La **verdad de producto** está en artefactos versionados. El **cómo** escribir
 |-----------|--------|
 | `RULES.md` | Constitución técnica (stack, capas, MP, no-goals de código) |
 | `VISUAL.md` | Constitución de look (estilo, refs, jerarquía, no inventar) |
-| `PRD.md` / `FEATURES.md` | Intent y alcance |
-| `RFCs/` | Contrato de un slice: criterios de aceptación |
+| `PRD.md` / `FEATURES.md` | Intent y alcance. FEATURES crece con `/implement-feature`; el PRD es opcional y corto. |
+| `RFCs/` | Contrato de un slice grande (opcional). `/implement-feature` no exige RFC. |
 | Plan del tech-lead | Árbol de archivos + responsabilidades (derivado; se reescribe si cambia el RFC) |
 
 Código, review, playtest y pase visual se miden **contra** esos archivos, no de oído.

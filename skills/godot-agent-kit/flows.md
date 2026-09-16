@@ -42,3 +42,5 @@ Match / turnos (el panel de puja se oculta fuera de turno):
 `print.prop` admite puntos: `texture.resource_path`.
 
 El autoload **sobrevive** `change_scene` (Vs IA, Play solo, fade). Un script `-s` no.
+
+Editor visual experimental: `experimental/agent-flow-editor/` (cables → este JSON).

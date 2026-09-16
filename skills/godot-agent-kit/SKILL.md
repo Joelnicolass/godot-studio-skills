@@ -50,6 +50,8 @@ Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AG
 
 Flows largos (botón que no está en tu turno): `try_click` + `repeat` hasta `%ResultsView` visible. API: `addons/agent_kit/README.md`. Detalle JSON: [flows.md](flows.md).
 
+Editor de cables **experimental** (localhost, no va en `./install.sh`): `experimental/agent-flow-editor/` (`pnpm install` && `pnpm dev`) — arma el mismo JSON para ver qué va a pulsar el playtester.
+
 ## Cuándo
 
 - Playtest / visual: captura o flow, no un PNG de memoria.

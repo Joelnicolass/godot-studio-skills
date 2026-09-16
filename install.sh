@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Instala skills Cursor, commands, subagentes y/o addons Godot (MpKit, AgentKit).
+# Instala skills Cursor, commands, subagentes y/o addons Godot.
 #   ./install.sh                      # ~/.cursor/skills, commands, agents
 #   ./install.sh --project            # ./.cursor/skills, commands, agents
 #   ./install.sh --addon GODOT_ROOT   # addons/mp_kit → GODOT_ROOT/addons/mp_kit
-#   ./install.sh --addon GODOT_ROOT agent_kit
+#   ./install.sh --addon GODOT_ROOT agent_kit|fsm_kit|plat_kit
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,6 +19,9 @@ SKILL_NAMES=(
   godot-studio-workflow
   godot-testing
   godot-animation
+  godot-juicy
+  godot-fsm
+  godot-platformer-2d
   godot-playtest
   godot-visual-qa
   godot-studio-memory
@@ -48,9 +51,9 @@ Instalador del kit Godot studio (skills + commands + subagentes + addons).
   ./install.sh                      ~/.cursor/skills, commands y agents
   ./install.sh --project            ./.cursor/skills, commands y agents del cwd
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|all]
                                     Copia el addon al proyecto Godot (default: mp_kit)
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|all]
                                     Solo el addon
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias de --addon GODOT_ROOT agent_kit
@@ -230,13 +233,28 @@ install_addon() {
       echo '  AgentKit="*res://addons/agent_kit/agent_kit.gd"'
       echo "CLI: ${project}/addons/agent_kit/cli.sh ${project} capture --out=/tmp/a.png"
       ;;
+    fsm_kit)
+      copy_one_addon "$project" "fsm_kit"
+      echo
+      echo "Habilitá el plugin FsmKit (tipos FsmMachine / FsmState, sin autoload)."
+      ;;
+    plat_kit)
+      copy_one_addon "$project" "plat_kit"
+      echo
+      echo "Habilitá el plugin PlatKit (tipo PlatMotor, sin autoload)."
+      echo "InputMap: move_left, move_right, jump."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
       install_addon "$project" "agent_kit"
+      echo
+      install_addon "$project" "fsm_kit"
+      echo
+      install_addon "$project" "plat_kit"
       ;;
     *)
-      echo "Addon desconocido: ${which} (mp_kit | agent_kit | all)" >&2
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -283,6 +301,8 @@ if [[ "$MODE" == "list" ]]; then
   echo "Addons:"
   echo "  - addons/mp_kit     (./install.sh --addon /path/to/godot-project)"
   echo "  - addons/agent_kit  (./install.sh --addon /path/to/godot-project agent_kit)"
+  echo "  - addons/fsm_kit    (./install.sh --addon /path/to/godot-project fsm_kit)"
+  echo "  - addons/plat_kit   (./install.sh --addon /path/to/godot-project plat_kit)"
   echo
   echo "Destino skills (global): ${HOME}/.cursor/skills"
   echo "Destino commands (global): ${HOME}/.cursor/commands"
@@ -312,6 +332,9 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
   echo "  visual qa:    godot-visual-qa"
   echo "  tests:        godot-testing"
   echo "  animación:    godot-animation"
+  echo "  juicy:        godot-juicy"
+  echo "  fsm:          godot-fsm"
+  echo "  plataformas:  godot-platformer-2d"
 fi
 
 if [[ "$DO_COMMANDS" -eq 1 ]]; then
@@ -319,7 +342,7 @@ if [[ "$DO_COMMANDS" -eq 1 ]]; then
   echo
   install_commands "$CMD_DEST"
   echo
-  echo "Listo (commands). En Cursor: /create-prd, /generate-rfcs, /implement-rfc, …"
+  echo "Listo (commands). En Cursor: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /create-prd, …"
 fi
 
 if [[ "$DO_AGENTS" -eq 1 ]]; then
