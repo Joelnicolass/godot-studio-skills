@@ -49,6 +49,7 @@ AGENT_FAIL flow missing --flow=
 AGENT_SHOT=...
 AGENT_PRINT node=%Title prop=text value=...
 AGENT_CLICK %BidButton
+AGENT_PRESS ui_accept pressed=true
 AGENT_SKIP try_click %PassButton
 AGENT_REPEAT done iter=13
 AGENT_DIFF changed=12 total=1000 percent=1.200
@@ -64,6 +65,7 @@ AGENT_JSON {...}
   "steps": [
     { "shot": "01.png" },
     { "click": "%PlaySolo" },
+    { "press": "ui_accept" },
     { "type": { "node": "%Ip", "text": "127.0.0.1" } },
     { "wait": 1.2 },
     { "wait_until": { "node": "%Status", "text_contains": "listo", "timeout": 5 } },
@@ -73,7 +75,7 @@ AGENT_JSON {...}
 }
 ```
 
-`click` emite `pressed` en el `BaseButton` (no apunta al píxel). `%Nombre` se busca en la escena y, si falta, en hijos (packed scenes).
+`click` emite `pressed` en el `BaseButton` (no apunta al píxel). `%Nombre` se busca en la escena y, si falta, en hijos (packed scenes). `press` dispara un `InputEventAction` del InputMap (`"ui_accept"` o `{ "name": "jump", "pressed": true }`). `inspect --unique` también imprime `AGENT_JSON` con esos `%` (click/type). `info` incluye `actions`.
 
 Para un match o un HUD que aparece y desaparece:
 
@@ -97,7 +99,7 @@ Para un match o un HUD que aparece y desaparece:
 
 Ejemplo del demo: `examples/boot_smoke.json`.
 
-Editor de cables experimental: `experimental/agent-flow-editor/` en el studio kit (Vite, **pnpm**, localhost). No forma parte de `./install.sh`.
+Editor de cables experimental: `experimental/agent-flow-editor/` en el studio kit (Vite, **pnpm**, localhost). Bind al `project.godot`, Scan / Live inspect para pegar `%UniqueName` e InputMap, **Run flow** llama `cli.sh`. No forma parte de `./install.sh`.
 
 ## Qué no es
 
@@ -108,4 +110,4 @@ Editor de cables experimental: `experimental/agent-flow-editor/` en el studio ki
 
 ## Versión
 
-0.1.1
+0.1.2

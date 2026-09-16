@@ -149,6 +149,35 @@ static func dump_unique(node: Node) -> PackedStringArray:
 	return lines
 
 
+static func unique_records(node: Node) -> Array:
+	var out: Array = []
+	_collect_unique_records(node, out)
+	return out
+
+
+static func input_action_names() -> Array:
+	var names: Array = []
+	for action in InputMap.get_actions():
+		names.append(String(action))
+	names.sort()
+	return names
+
+
+static func press_action(action: String, pressed: bool = true) -> String:
+	var name := action.strip_edges()
+	if name.is_empty():
+		return "missing InputMap action"
+	if not InputMap.has_action(name):
+		return "missing InputMap action %s" % name
+	var ev := InputEventAction.new()
+	ev.action = name
+	ev.pressed = pressed
+	ev.strength = 1.0 if pressed else 0.0
+	Input.parse_input_event(ev)
+	print("AGENT_PRESS ", name, " pressed=", pressed)
+	return ""
+
+
 static func _collect_unique(node: Node, lines: PackedStringArray) -> void:
 	if node == null:
 		return
@@ -156,6 +185,21 @@ static func _collect_unique(node: Node, lines: PackedStringArray) -> void:
 		lines.append("%%%s\t%s\t%s" % [node.name, node.get_class(), str(node.get_path())])
 	for child in node.get_children():
 		_collect_unique(child, lines)
+
+
+static func _collect_unique_records(node: Node, out: Array) -> void:
+	if node == null:
+		return
+	if node.is_unique_name_in_owner():
+		out.append({
+			"unique": "%" + node.name,
+			"class": node.get_class(),
+			"path": str(node.get_path()),
+			"click": node is BaseButton,
+			"type": node is LineEdit or node is TextEdit,
+		})
+	for child in node.get_children():
+		_collect_unique_records(child, out)
 
 
 static func stringify_variant(value: Variant) -> String:

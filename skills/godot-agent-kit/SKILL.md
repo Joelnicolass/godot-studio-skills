@@ -44,13 +44,13 @@ addons/agent_kit/cli.sh /ABS/PROJECT VERB [--flag=value ...]
 | `diff` | `--a=` `--b=` `--out=/tmp/diff.png` `--threshold=0.02` |
 | `inspect` | `--unique` `--node=%CardView` `--scene=` |
 | `fetch` | `--url=` `--out=` `--ua=` (Wikimedia exige User-Agent) |
-| `info` | viewport, main scene, versión |
+| `info` | viewport, main scene, versión, InputMap `actions` |
 
-Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
+Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
 
 Flows largos (botón que no está en tu turno): `try_click` + `repeat` hasta `%ResultsView` visible. API: `addons/agent_kit/README.md`. Detalle JSON: [flows.md](flows.md).
 
-Editor de cables **experimental** (localhost, no va en `./install.sh`): `experimental/agent-flow-editor/` (`pnpm install` && `pnpm dev`) — arma el mismo JSON para ver qué va a pulsar el playtester.
+Editor de cables **experimental** (localhost, no va en `./install.sh`): `experimental/agent-flow-editor/` (`pnpm install` && `pnpm dev`) — bind al proyecto Godot, pegá `%UniqueName` / InputMap, **Run flow** corre el mismo JSON.
 
 ## Cuándo
 

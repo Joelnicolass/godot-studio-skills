@@ -17,6 +17,6 @@ addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://addons/agent_kit/examp
 
 `GODOT=` si el binario no se encuentra. Capture/flow **sin** `--headless`. Informe: líneas `AGENT_OK` / `AGENT_FAIL` + paths de PNG. Un flow de varios turnos: `try_click` + `repeat` (no un `click` duro a un botón `disabled`).
 
-Editor de cables experimental: `experimental/agent-flow-editor/` (`pnpm install` && `pnpm dev`). El JSON es el mismo que `--agent=flow`.
+Editor de cables experimental: `experimental/agent-flow-editor/` (`pnpm install` && `pnpm dev`). Bind al proyecto Godot y **Run flow** llama `cli.sh`. El JSON es el mismo que `--agent=flow` (incluye `press`).
 
 Esto no reemplaza GUT ni un playtest sin OK del usuario. No es un MCP.
