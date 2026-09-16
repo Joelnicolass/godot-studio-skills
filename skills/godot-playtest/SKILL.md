@@ -14,7 +14,9 @@ Leé esto cuando el usuario **aceptó** un playtest post-iteración. El orquesta
 
 ## 1. Qué ejercer
 
-Lista corta del RFC / pedido: 3–7 acciones (abrir escena, pujar, pasar, ver HUD…). Cada una debe **fallar a la vista** si el bug sigue.
+**Todos** los criterios de aceptación de **este** slice (`FEATURES.md` `F<n>`, RFC, o el pedido). No un muestreo de 3–7. Si no entran en ~15 pasos, el corte era grande: cubrí el slice y listá lo que quedó fuera. Cada acción debe **fallar a la vista** si el bug sigue.
+
+Si hay `addons/agent_kit/`: `inspect --unique` y escribí el flow con esos `%`.
 
 ## 2. Cómo lanzar Godot 4
 
@@ -30,17 +32,21 @@ Errores `HubGlue` / dedicated sin `--dedicated` pueden ser esperados; no los tra
 Si el proyecto tiene `addons/agent_kit/`:
 
 ```bash
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1.1
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT inspect --unique
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1.1 --fail-on-error
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest --fail-on-error
 ```
 
-Skill: `godot-agent-kit`. Grep `AGENT_OK` / `AGENT_FAIL`. Un match completo: `try_click` + `repeat` hasta resultados, no `click` a un botón fuera de turno. **No** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
+Skill: `godot-agent-kit`. Grep `AGENT_OK`, `AGENT_FAIL`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `ERROR:`, `SCRIPT ERROR:`, `WARNING:`. Un match completo: `try_click` + `repeat` hasta resultados, no `click` a un botón fuera de turno. **No** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).
+
+`--fail-on-error` tumba el flow si Godot logueó ERROR / SCRIPT ERROR aunque los clicks hayan “pasado”. Incluí ese log en el informe igual.
 
 Si el addon no está, receta mínima (script **temporal**, borralo): [capture.md](capture.md). Headless no da píxeles.
 
 ## 4. Informe (al orquestador)
 
-- Qué corriste (comando, escena).
-- Cada acción: PASS / FAIL + evidencia (captura o log).
+- Qué corriste (comando, escena, JSON).
+- Cada criterio / step: PASS / FAIL + evidencia (captura, `AGENT_PRINT`, consola).
+- Consola: `AGENT_ERRORS` y líneas `ERROR:` / `SCRIPT ERROR:` / `WARNING:`. Un error de script es FAIL.
 - Qué no pudiste ejercer (sin display, falta save, etc.).
 - No reescribas sistemas. No evalúes look (eso es `studio-visual`).

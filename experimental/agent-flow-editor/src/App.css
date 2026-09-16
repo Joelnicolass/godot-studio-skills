@@ -45,6 +45,9 @@ h2 { font-size: 11px; margin: 12px 0 6px; text-transform: uppercase; letter-spac
   max-height: 160px; overflow: auto; background: #09090b; border: 1px solid #27272a;
   border-radius: 6px; padding: 8px; font-size: 10px; white-space: pre-wrap; color: #d4d4d8;
 }
+.run-log .log-err { color: #fca5a5; }
+.run-log .log-warn { color: #fcd34d; }
+.run-log .log-step { color: #93c5fd; }
 .shots { display: grid; gap: 8px; margin-top: 8px; }
 .shots figure { margin: 0; }
 .shots img { width: 100%; border-radius: 6px; border: 1px solid #27272a; }

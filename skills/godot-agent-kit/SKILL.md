@@ -39,14 +39,14 @@ addons/agent_kit/cli.sh /ABS/PROJECT VERB [--flag=value ...]
 
 | Verb | Uso |
 |------|-----|
-| `capture` | `--out=/tmp/a.png` `--scene=res://...` `--wait=1.1` |
-| `flow` | `--flow=res://...json` `--out=/tmp/dir` |
+| `flow` | `--flow=res://...json` `--out=/tmp/dir` `--fail-on-error` |
+| `capture` | `--out=/tmp/a.png` `--scene=res://...` `--wait=1.1` `--fail-on-error` |
 | `diff` | `--a=` `--b=` `--out=/tmp/diff.png` `--threshold=0.02` |
 | `inspect` | `--unique` `--node=%CardView` `--scene=` |
 | `fetch` | `--url=` `--out=` `--ua=` (Wikimedia exige User-Agent) |
 | `info` | viewport, main scene, versión, InputMap `actions` |
 
-Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
+Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_SELECT`, `AGENT_RANGE`, `AGENT_SCROLL`, `AGENT_DRAG`, `AGENT_CALL`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
 
 Flows largos (botón que no está en tu turno): `try_click` + `repeat` hasta `%ResultsView` visible. API: `addons/agent_kit/README.md`. Detalle JSON: [flows.md](flows.md).
 

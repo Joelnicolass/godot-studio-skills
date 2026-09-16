@@ -1,6 +1,8 @@
 class_name AgentOps
 extends RefCounted
 
+const _BLOCKED_METHODS := ["free", "queue_free", "replace_by", "set_script"]
+
 
 static func is_headless() -> bool:
 	return DisplayServer.get_name() == "headless"
@@ -75,7 +77,7 @@ static func read_prop(object: Object, dotted: String) -> Variant:
 	return current
 
 
-static func screenshot(tree: SceneTree, path: String) -> String:
+static func screenshot(tree: SceneTree, path: String, focus: Node = null) -> String:
 	if is_headless():
 		return "headless (need a window for pixels)"
 	if path.strip_edges().is_empty():
@@ -84,6 +86,10 @@ static func screenshot(tree: SceneTree, path: String) -> String:
 	var img := tree.root.get_viewport().get_texture().get_image()
 	if img == null:
 		return "viewport image is null"
+	if focus is Control:
+		var cropped := _crop_control(img, focus as Control)
+		if cropped != null:
+			img = cropped
 	var err := img.save_png(fs_path(path))
 	if err != OK:
 		return "save_png failed (%d)" % err
@@ -96,6 +102,7 @@ static func click(scene: Node, spec: String) -> String:
 		return "missing node %s" % spec
 	if node is BaseButton:
 		(node as BaseButton).pressed.emit()
+		print("AGENT_CLICK ", spec)
 		return ""
 	return "%s is %s, not a BaseButton" % [spec, node.get_class()]
 
@@ -197,6 +204,9 @@ static func _collect_unique_records(node: Node, out: Array) -> void:
 			"path": str(node.get_path()),
 			"click": node is BaseButton,
 			"type": node is LineEdit or node is TextEdit,
+			"select": node is ItemList or node is OptionButton,
+			"range": node is Range,
+			"scroll": node is ScrollContainer,
 		})
 	for child in node.get_children():
 		_collect_unique_records(child, out)
@@ -210,3 +220,163 @@ static func stringify_variant(value: Variant) -> String:
 		if not path.is_empty():
 			return path
 	return str(value)
+
+
+static func _crop_control(img: Image, control: Control) -> Image:
+	var rect := control.get_global_rect()
+	var crop := Rect2i(
+		int(rect.position.x),
+		int(rect.position.y),
+		maxi(1, int(rect.size.x)),
+		maxi(1, int(rect.size.y))
+	)
+	var bounds := Rect2i(0, 0, img.get_width(), img.get_height())
+	crop = crop.intersection(bounds)
+	if crop.size.x <= 0 or crop.size.y <= 0:
+		return img
+	return img.get_region(crop)
+
+
+static func select_item(scene: Node, spec: Dictionary) -> String:
+	var node := resolve(scene, str(spec.get("node", "")))
+	if node == null:
+		return "missing node %s" % str(spec.get("node", ""))
+	if node is ItemList:
+		var list := node as ItemList
+		var idx := _list_index(list, spec)
+		if idx < 0:
+			return "select: no matching item on %s" % spec.get("node", "")
+		list.select(idx)
+		list.item_selected.emit(idx)
+		print("AGENT_SELECT ", spec.get("node", ""), " index=", idx)
+		return ""
+	if node is OptionButton:
+		var opt := node as OptionButton
+		var idx := _option_index(opt, spec)
+		if idx < 0:
+			return "select: no matching item on %s" % spec.get("node", "")
+		opt.select(idx)
+		opt.item_selected.emit(idx)
+		print("AGENT_SELECT ", spec.get("node", ""), " index=", idx)
+		return ""
+	return "%s is %s, not ItemList/OptionButton" % [spec.get("node", ""), node.get_class()]
+
+
+static func _list_index(list: ItemList, spec: Dictionary) -> int:
+	if spec.has("index"):
+		var idx := int(spec["index"])
+		if idx >= 0 and idx < list.item_count:
+			return idx
+		return -1
+	var needle := str(spec.get("text", "")).strip_edges()
+	if needle.is_empty():
+		return -1
+	for i in list.item_count:
+		if list.get_item_text(i) == needle:
+			return i
+	return -1
+
+
+static func _option_index(opt: OptionButton, spec: Dictionary) -> int:
+	if spec.has("index"):
+		var idx := int(spec["index"])
+		if idx >= 0 and idx < opt.item_count:
+			return idx
+		return -1
+	var needle := str(spec.get("text", "")).strip_edges()
+	if needle.is_empty():
+		return -1
+	for i in opt.item_count:
+		if opt.get_item_text(i) == needle:
+			return i
+	return -1
+
+
+static func set_range_value(scene: Node, spec: Dictionary) -> String:
+	var node := resolve(scene, str(spec.get("node", "")))
+	if node == null:
+		return "missing node %s" % str(spec.get("node", ""))
+	if not (node is Range):
+		return "%s is %s, not Range" % [spec.get("node", ""), node.get_class()]
+	var slider := node as Range
+	var value := float(spec.get("value", 0.0))
+	slider.value = value
+	slider.value_changed.emit(value)
+	print("AGENT_RANGE ", spec.get("node", ""), " value=", value)
+	return ""
+
+
+static func scroll_to(scene: Node, spec: Dictionary) -> String:
+	var node := resolve(scene, str(spec.get("node", "")))
+	if node == null:
+		return "missing node %s" % str(spec.get("node", ""))
+	if not (node is ScrollContainer):
+		return "%s is %s, not ScrollContainer" % [spec.get("node", ""), node.get_class()]
+	var sc := node as ScrollContainer
+	if spec.has("vertical"):
+		sc.scroll_vertical = int(spec["vertical"])
+	if spec.has("horizontal"):
+		sc.scroll_horizontal = int(spec["horizontal"])
+	print("AGENT_SCROLL ", spec.get("node", ""))
+	return ""
+
+
+static func drag_control(scene: Node, spec: Dictionary) -> String:
+	var node := resolve(scene, str(spec.get("node", "")))
+	if node == null:
+		return "missing node %s" % str(spec.get("node", ""))
+	if not (node is Control):
+		return "%s is %s, not Control" % [spec.get("node", ""), node.get_class()]
+	var control := node as Control
+	var from := Vector2(float(spec.get("from_x", 8.0)), float(spec.get("from_y", 8.0)))
+	var to := Vector2(
+		float(spec.get("to_x", from.x + 40.0)),
+		float(spec.get("to_y", from.y))
+	)
+	var g0 := control.get_global_transform_with_canvas() * from
+	var g1 := control.get_global_transform_with_canvas() * to
+	_mouse_button(g0, true)
+	_mouse_motion(g0, g1)
+	_mouse_button(g1, false)
+	print("AGENT_DRAG ", spec.get("node", ""))
+	return ""
+
+
+static func _mouse_button(pos: Vector2, pressed: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = pressed
+	ev.position = pos
+	ev.global_position = pos
+	Input.parse_input_event(ev)
+
+
+static func _mouse_motion(from: Vector2, to: Vector2) -> void:
+	var steps := 6
+	for i in range(1, steps + 1):
+		var t := float(i) / float(steps)
+		var pos := from.lerp(to, t)
+		var ev := InputEventMouseMotion.new()
+		ev.position = pos
+		ev.global_position = pos
+		ev.relative = (to - from) / float(steps)
+		Input.parse_input_event(ev)
+
+
+static func call_method(scene: Node, spec: Dictionary) -> String:
+	var node := resolve(scene, str(spec.get("node", "")))
+	if node == null:
+		return "missing node %s" % str(spec.get("node", ""))
+	var method := str(spec.get("method", "")).strip_edges()
+	if method.is_empty():
+		return "call missing method"
+	if method in _BLOCKED_METHODS:
+		return "call blocked method %s" % method
+	if not node.has_method(method):
+		return "%s has no method %s" % [spec.get("node", ""), method]
+	var args: Array = spec.get("args", [])
+	if typeof(args) != TYPE_ARRAY:
+		return "call.args must be an array"
+	node.callv(method, args)
+	print("AGENT_CALL ", spec.get("node", ""), ".", method)
+	return ""

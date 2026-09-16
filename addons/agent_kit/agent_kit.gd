@@ -7,8 +7,19 @@ const Ops := preload("res://addons/agent_kit/agent_ops.gd")
 const Flow := preload("res://addons/agent_kit/agent_flow.gd")
 const Fetch := preload("res://addons/agent_kit/agent_fetch.gd")
 const Diff := preload("res://addons/agent_kit/agent_diff.gd")
+const LogSink := preload("res://addons/agent_kit/agent_log.gd")
 
 var _exit_code: int = 0
+var _sink
+
+
+func _init() -> void:
+	var verb := str(Cli.value("agent")).strip_edges()
+	if verb.is_empty():
+		return
+	_sink = LogSink.new()
+	LogSink.active = _sink
+	OS.add_logger(_sink)
 
 
 func _ready() -> void:
@@ -49,7 +60,17 @@ func _run(cmd: Dictionary) -> void:
 func _finish() -> void:
 	if Engine.is_editor_hint():
 		return
+	_dump_errors()
+	if _sink != null:
+		OS.remove_logger(_sink)
+		LogSink.active = null
 	get_tree().quit(_exit_code)
+
+
+func _dump_errors() -> void:
+	if _sink == null:
+		return
+	print("AGENT_ERRORS ", JSON.stringify(_sink.snapshot()))
 
 
 func _ok(verb: String, detail: String = "") -> int:
@@ -114,6 +135,8 @@ func _capture(cmd: Dictionary) -> int:
 	var shot_err: String = Ops.screenshot(get_tree(), out)
 	if not shot_err.is_empty():
 		return _fail("capture", shot_err)
+	if bool(cmd.get("fail_on_error", false)) and _sink != null and _sink.has_failures():
+		return _fail("capture", "engine errors during capture")
 	return _ok("capture", Ops.fs_path(out))
 
 
@@ -136,9 +159,13 @@ func _flow(cmd: Dictionary) -> int:
 	if out.is_empty():
 		out = "user://agent_kit"
 	var runner: RefCounted = Flow.new()
-	var fail: String = await runner.run(get_tree(), parsed, out)
+	var fail: String = await runner.run(
+		get_tree(), parsed, out, bool(cmd.get("fail_on_error", false))
+	)
 	if not fail.is_empty():
 		return _fail("flow", fail)
+	if bool(cmd.get("fail_on_error", false)) and _sink != null and _sink.has_failures():
+		return _fail("flow", "engine errors during flow")
 	var shown := out
 	if out.begins_with("res://") or out.begins_with("user://"):
 		shown = ProjectSettings.globalize_path(out)

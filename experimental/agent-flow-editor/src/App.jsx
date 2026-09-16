@@ -12,7 +12,7 @@ export default function App() {
 
   function pickUnique(item) {
     if (!graph.current || !kindUsesNode(graph.current.kind)) {
-      graph.setErr("Seleccioná un nodo click/type/print/assert para pegar " + item.unique);
+      graph.setErr("Seleccioná un nodo que acepte %UniqueName para pegar " + item.unique);
       return;
     }
     graph.setErr("");

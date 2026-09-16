@@ -19,12 +19,12 @@ Abrí http://localhost:5173. Por defecto se bindea a `example/` del kit.
 1. **Scan scenes** — lee `.tscn` (`unique_name_in_owner`) y `[input]` de `project.godot`.
 2. **Live inspect** — corre `cli.sh inspect --unique` + `info` (nodos vivos + acciones built-in).
 3. Seleccioná un nodo Click/Type/Press y pegá un `%` o una acción del catálogo.
-4. **Run flow** — escribe un JSON temporal y corre `addons/agent_kit/cli.sh PROJECT flow --flow=/abs.json --out=…`.
+4. **Run flow** — escribe un JSON temporal y corre `cli.sh … flow --fail-on-error`. El log colorea `AGENT_STEP`, `ERROR` y `AGENT_ERRORS`.
 
 También podés exportar JSON y correr a mano:
 
 ```bash
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/flow
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/flow --fail-on-error
 ```
 
 ## Qué representa cada caja
@@ -32,7 +32,7 @@ addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/f
 | Nodo | JSON |
 |------|------|
 | Flow | `scene`, `wait_first` (raíz) |
-| Shot / Click / Try click / Press / Wait / Type / Wait until / Assert / Print | un step |
+| Shot / Click / Try click / Press (hold) / Wait / Type / Select / Range / Scroll / Drag / Call / Scene / Seed / Time scale / Diff / Wait until (propiedad o señal) / Assert / Print | un step |
 | Repeat | `{ "repeat": { times, until, steps } }` — el cable **loop** (púrpura) es el cuerpo |
 
 El cable **out** (claro) es el orden. Un solo camino desde Flow. Repeat anida el camino `loop`.

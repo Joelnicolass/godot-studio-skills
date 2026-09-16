@@ -11,8 +11,8 @@ desde el repo `godot-studio-skills`, y pedí enable del plugin **AgentKit**.
 No uses `godot -s /tmp/*.gd`. Usá:
 
 ```bash
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/a.png --wait=1.1
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://addons/agent_kit/examples/boot_smoke.json --out=/tmp/flow
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/a.png --wait=1.1 --fail-on-error
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://addons/agent_kit/examples/boot_smoke.json --out=/tmp/flow --fail-on-error
 ```
 
 `GODOT=` si el binario no se encuentra. Capture/flow **sin** `--headless`. Informe: líneas `AGENT_OK` / `AGENT_FAIL` + paths de PNG. Un flow de varios turnos: `try_click` + `repeat` (no un `click` duro a un botón `disabled`).

@@ -4,7 +4,13 @@ extends RefCounted
 const Ops := preload("res://addons/agent_kit/agent_ops.gd")
 
 
-static func compare(path_a: String, path_b: String, out_path: String, threshold: float) -> String:
+static func compare(
+	path_a: String,
+	path_b: String,
+	out_path: String,
+	threshold: float,
+	stats: Dictionary = {}
+) -> String:
 	if path_a.strip_edges().is_empty() or path_b.strip_edges().is_empty():
 		return "missing --a= or --b="
 	var image_a := _load_png(path_a)
@@ -40,6 +46,9 @@ static func compare(path_a: String, path_b: String, out_path: String, threshold:
 	if total > 0:
 		percent = 100.0 * float(changed) / float(total)
 	print("AGENT_DIFF changed=%d total=%d percent=%.3f" % [changed, total, percent])
+	stats["changed"] = changed
+	stats["total"] = total
+	stats["percent"] = percent
 	if not out_path.strip_edges().is_empty():
 		Ops.ensure_parent_dir(out_path)
 		var err := overlay.save_png(Ops.fs_path(out_path))

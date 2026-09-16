@@ -14,7 +14,7 @@ Los subagentes **no** ven el chat. El orquestador pega este bloque en cada `Task
 - Juicy (jugoso): shake, VFX, post, impacto = presentación local, packed + `@export`. Skill `godot-juicy` / `/add-juicy`. No es puntaje.
 - FSM: hijos `FsmState` bajo `FsmMachine` (addon `fsm_kit` / `/add-state-machine`). No un `enum` de 200 líneas.
 - Plataformas 2D: coyote / buffer / apex = `PlatMotor` (addon `plat_kit` / `/add-platformer-2d`). Dash/stamina solo si el producto los pide.
-- Playtest ≠ GUT. Si hay `addons/agent_kit/`, capturá con ese CLI (no `godot -s /tmp`). Turnos: `try_click` + `repeat`. Visual exige `VISUAL.md` o refs; si faltan, parar y pedirlas.
+- Playtest ≠ GUT. Si hay `addons/agent_kit/`, `inspect --unique` y `cli.sh flow --fail-on-error` (no `godot -s /tmp`). Cubrir **todos** los criterios de **este** slice, no un muestreo. Consola `ERROR`/`SCRIPT ERROR`/`AGENT_STEP_ERROR` = FAIL (pegá `AGENT_ERRORS`). Turnos: `try_click` + `repeat`. Visual exige `VISUAL.md` o refs; si faltan, parar y pedirlas.
 - Un RFC, una feature (`/implement-feature`) o un cambio acotado. Extra no pedido = alcance, no “mejora”.
 ```
 

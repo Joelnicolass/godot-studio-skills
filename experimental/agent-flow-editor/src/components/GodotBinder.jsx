@@ -60,6 +60,9 @@ export default function GodotBinder({
                 {item.class}
                 {item.click ? " · click" : ""}
                 {item.type ? " · type" : ""}
+                {item.select ? " · select" : ""}
+                {item.range ? " · range" : ""}
+                {item.scroll ? " · scroll" : ""}
               </em>
             </button>
           </li>
