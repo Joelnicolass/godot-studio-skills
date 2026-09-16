@@ -10,7 +10,7 @@ If an item does not apply, write “N/A”. Do not skip it silently.
 2. [ ] Is it a **type** (another projectile, enemy, item)? → Resource `.tres` + the same scene. Not a script per stats skin.
 3. [ ] **Round** rules (lives, duration, layers): `MatchRules.tres`. Instance look: `@export`.
 4. [ ] InputMap: semantic actions (`move_left`, `attack`), not `KEY_*`. Hold in `_physics_process`; gameplay one-shot in `_unhandled_input`.
-5. [ ] `@export` / `%UniqueName` sockets for own nodes. Scene playable with F6.
+5. [ ] `@export` / `%UniqueName` sockets for own nodes. Scene playable with F6. FSM: addon `fsm_kit` if there are states. 2D platformer: `plat_kit` (coyote/buffer), not a bare `is_on_floor()`.
 6. [ ] Clean: testable rule with no scene? → `src/domain/` + test. Standard: is World bloating? → component, not invented domain.
 7. [ ] Local FX; shaders from [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) / [Shadertoy](https://www.shadertoy.com). 2D sprites: does the user want MCP/art? If yes, references + [godot-animation](../godot-animation/SKILL.md). If the feature is **3D**: do they want Blender MCP? If yes, references + [assets.md](../godot-composition-first/assets.md). If no, placeholder. UI copy in the product language; code in English. HUD: do not invent look; `VISUAL.md` or refs.
 

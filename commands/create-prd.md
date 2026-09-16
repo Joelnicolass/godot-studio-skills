@@ -14,7 +14,7 @@ State which product type you classified and which checks you skipped. Skipping m
 
 The file is still named `PRD.md` (the other commands look for it), but the content is a **short living GDD**, not a SaaS PRD.
 
-Ask and document: fantasy and pillars, non-goals, core loop, feel (camera, juice, how-to-fail), session length, platforms, input devices, **2D / 3D / both**, **multiplayer type** (none · local/Wi-Fi · online), playable vertical slice.
+Ask and document: fantasy and pillars, non-goals, core loop, feel (camera, juicy, how-to-fail), session length, platforms, input devices, **2D / 3D / both**, **multiplayer type** (none · local/Wi-Fi · online), playable vertical slice.
 
 Skip unless the user asks: business model, SQL/injection, user auth, responsive web, REST APIs, marketing personas. Instead: loop, feel, content (types as data), and what is out of the first slice.
 

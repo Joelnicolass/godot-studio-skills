@@ -9,6 +9,9 @@ SKILL_NAMES=(
   godot-studio-workflow
   godot-testing
   godot-animation
+  godot-juicy
+  godot-fsm
+  godot-platformer-2d
   godot-playtest
   godot-visual-qa
   godot-studio-memory
@@ -21,6 +24,10 @@ COMMAND_FILES=(
   generate-rfcs.md
   generate-rules.md
   implement-rfc.md
+  implement-feature.md
+  add-juicy.md
+  add-state-machine.md
+  add-platformer-2d.md
   manage-changes.md
   new-mp-feature.md
   review-rfc.md

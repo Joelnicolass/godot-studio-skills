@@ -3,3 +3,6 @@ dist/
 *.zip
 .publish.env
 .cursor/
+node_modules/
+pnpm-debug.log*
+.pnpm-store/

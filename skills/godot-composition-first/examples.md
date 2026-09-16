@@ -8,36 +8,23 @@ Nothing from a concrete title. Copy and adapt.
 Actor (CharacterBody2D)
 ├── Visual         Sprite2D
 ├── Health         packed scene
-├── States         StateMachine
+├── States         FsmMachine
 │   ├── Idle
 │   ├── Move
 │   └── Hurt
 └── MultiplayerSynchronizer
 ```
 
+Prefer the `fsm_kit` addon (`./install.sh --addon … fsm_kit`) over copying a class. `/add-state-machine`.
+
 ```gdscript
-class_name StateMachine
-extends Node
-
-@export var initial_state: State
-@export var actor: Node
-
-var _current: State
+class_name IdleState
+extends FsmState
 
 
-func _ready() -> void:
-	_current = initial_state
-	if _current != null:
-		_current.enter()
-
-
-func transition(state_name: StringName) -> void:
-	var next := get_node_or_null(NodePath(state_name)) as State
-	if next == null or next == _current:
-		return
-	_current.exit()
-	_current = next
-	_current.enter()
+func physics_update(_delta: float) -> void:
+	if absf(actor.velocity.x) > 8.0:
+		transition(&"Move")
 ```
 
 ## `@export` socket + UniqueName

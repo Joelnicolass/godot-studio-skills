@@ -2,7 +2,7 @@
 name: godot-composition-first
 description: >-
   Design Godot 4 scenes by composition: child nodes, packed scenes,
-  StateMachine, FX passes, Resources (.tres) as type templates, typed @export
+  FsmMachine, FX passes, Resources (.tres) as type templates, typed @export
   sockets, %UniqueName, InputMap, and editor values over hardcoding. Prefer
   reusing components in shared/addons. Use when creating or editing .tscn,
   GDScript, shaders (Godot Shaders / Shadertoy), 2D sprites (Aseprite MCP),
@@ -25,18 +25,18 @@ Actor (CharacterBody2D or RigidBody2D)
 ├── Visual          Sprite2D / MeshInstance
 ├── Health          reusable component
 ├── Hitbox/Hurtbox  Area2D packed scenes
-├── States          StateMachine
+├── States          FsmMachine
 │   ├── Idle
 │   ├── Move
 │   └── Hurt
 └── MultiplayerSynchronizer   # if networked
 ```
 
-- States = `State` nodes under a `StateMachine`, not a 200-line `enum` + `match`.
+- States = `FsmState` nodes under an `FsmMachine` (addon `fsm_kit`), not a 200-line `enum` + `match`.
 - Input is **another node** (InputMap), not mixed with physics.
 - A new FX is a child or packed scene, not another parameter on the superclass.
 
-Inheritance only for the minimum contract (`State extends Node`, `FxPass extends Control`). If you are about to write `class EliteEnemy extends Enemy` with more systems, stop: compose.
+Inheritance only for the minimum contract (`FsmState extends Node`, `FxPass extends Control`). If you are about to write `class EliteEnemy extends Enemy` with more systems, stop: compose.
 
 ## 2. `@export` sockets and `%UniqueName`
 
@@ -61,6 +61,8 @@ Do: `@export` / `@export_group` / `@export_range`; default on the scene; the scr
 Do not: `_ready` that copies round rules onto a look `@export`; an autoload dump of 80 shader floats.
 
 `MatchRules.tres` = **round rules**. If you tweak look in play and lose it on reload, the knob was in the wrong place.
+
+Motion / juicy: [godot-animation](../godot-animation/SKILL.md) and [godot-juicy](../godot-juicy/SKILL.md). Tween **or** `AnimationPlayer` per clip; knobs in the inspector. The 12 principles apply either way. FSM: [godot-fsm](../godot-fsm/SKILL.md). 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md).
 
 ## 3.1 Resources = type templates
 
@@ -88,7 +90,8 @@ Before writing a script in `features/` or `scenes/`:
 
 | Piece | Reusable shape |
 |-------|----------------|
-| FSM | `StateMachine` + `State`; the actor is injected (`@export var actor: Node`) |
+| FSM | addon `fsm_kit`: `FsmMachine` + `FsmState`; the actor is injected (`@export var actor`) |
+| 2D platformer | addon `plat_kit`: `PlatMotor` (coyote, buffer, apex). Dash/stamina = glue |
 | Health / hit | `Health` + Hitbox/Hurtbox packed scenes |
 | Post-process | CanvasLayer stack; **one pass = one packed scene** |
 | Authority / sync | `MpAuthority` (addon) |

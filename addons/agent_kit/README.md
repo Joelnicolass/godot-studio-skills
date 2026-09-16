@@ -97,6 +97,8 @@ For a match or HUD that appears and disappears:
 
 Demo example: `examples/boot_smoke.json`.
 
+Experimental cable editor: `experimental/agent-flow-editor/` in the studio kit (Vite, **pnpm**, localhost). Not part of `./install.sh`.
+
 ## What it is not
 
 - GUT / GdUnit4 (skill `godot-testing`)

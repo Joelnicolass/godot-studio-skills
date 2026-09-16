@@ -42,3 +42,5 @@ Empty `scene` = the project’s main scene. `click` fires `BaseButton.pressed` (
 `print.prop` allows dots: `texture.resource_path`.
 
 The autoload **survives** `change_scene` (vs AI, Play solo, fade). A `-s` script does not.
+
+Experimental visual editor: `experimental/agent-flow-editor/` (cables → this JSON).

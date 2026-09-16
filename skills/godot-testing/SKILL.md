@@ -19,7 +19,7 @@ Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 | Clean domain (`RefCounted`) | `MyRule.new()` in GUT/GdUnit. No scene, no autoloads. |
 | Type Resource | Load `.tres` or construct the Resource; do not mutate the shared asset. |
 | Node / component | Add as a child of the test; **autofree** (`add_child_autofree` in GUT). Test signals. |
-| Feel / camera / juice | Annotated playtest. A green unit test does not prove it feels right. |
+| Feel / camera / juicy | Annotated playtest. A green unit test does not prove it feels right. |
 
 No filler tests. Each test must **fail** if an acceptance criterion breaks.
 

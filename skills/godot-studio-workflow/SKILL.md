@@ -14,7 +14,7 @@ description: >-
 
 The **main agent in this chat** is the orchestrator. It talks to the user. It does not dump the whole product into one subagent.
 
-Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Agent captures / flows: [godot-agent-kit](../godot-agent-kit/SKILL.md) if the addon is present. Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them.
+Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Agent captures / flows: [godot-agent-kit](../godot-agent-kit/SKILL.md) if the addon is present. Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`.
 
 Goal: a Godot 4 game with a **small, clear base**. Priorities: clean layers, composition, editor/`@export`, reusable components.
 
@@ -96,6 +96,9 @@ Without the [file tree](file-tree.md) there is no “OK, implement”.
 - Tests, playtest, or visual passes without asking (unless RULES requires tests).
 - A visual pass without style/references: do not invent a look.
 - Install MCP (Aseprite, Blender, Engram) or create art without asking.
+- Hardcoded feel. Choose Tween or `AnimationPlayer` per clip, not by habit. Juicy feel: `/add-juicy`, not a `World.gd` of particles.
+- `enum` + `match` for actor states: `/add-state-machine`.
+- Platformer without coyote/buffer: `/add-platformer-2d`, not a bare `is_on_floor()`.
 
 ## 4. Done when
 

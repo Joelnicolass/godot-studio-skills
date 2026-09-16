@@ -18,7 +18,7 @@ When invoked:
 3. Honor the architecture style already declared (Clean or standard). Do not change it.
 4. Composition first: child nodes, packed scenes, `@export`, types in `.tres`. No god-nodes.
 5. Honor the MP type already declared: **no MP** → do not copy the addon or invent RPCs. **Local / Wi-Fi** → `host()` listen-server; game glue, not the addon. **Online** → dedicated (`host_dedicated`), same project, VPS; not a listen behind NAT. Gameplay and `submit_*` stay out of the addon.
-6. Art: shaders from Godot Shaders / Shadertoy (pass packed scene). 2D sprites: **only if the user wants** Aseprite MCP; ask for references. If **3D**: **only if the user wants** Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)); ask for references; export `.glb`. Plan animation with [godot-animation](../skills/godot-animation/SKILL.md). Without OK: placeholder.
+6. Art: shaders from Godot Shaders / Shadertoy (pass packed scene). 2D sprites: **only if the user wants** Aseprite MCP; ask for references. If **3D**: **only if the user wants** Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)); ask for references; export `.glb`. Plan animation with [godot-animation](../skills/godot-animation/SKILL.md): Tween or `AnimationPlayer` per clip. FSM: [godot-fsm](../skills/godot-fsm/SKILL.md). 2D platformer: [godot-platformer-2d](../skills/godot-platformer-2d/SKILL.md) (no Celeste dash/stamina unless the RFC asks). Without OK: placeholder.
 7. Authority: PRD > FEATURES > RULES > VISUAL > RFC > this plan.
 
 Deliver, in this order:

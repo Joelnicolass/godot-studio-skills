@@ -93,7 +93,7 @@ MoSCoW detail is in `FEATURES.md`.
 
 ## Feel
 
-- Fixed 2D camera / simple 3D view on the origin. No title juice.
+- Fixed 2D camera / simple 3D view on the origin. No title juicy.
 - How-to-fail: bad IP, busy port, lost server → lobby message, no crash.
 - Session: minutes. `elapsed` is not a win timer.
 

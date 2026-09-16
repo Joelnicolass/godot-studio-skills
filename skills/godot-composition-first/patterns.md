@@ -2,11 +2,14 @@
 
 ## StateMachine
 
-Parent with `@export var initial_state: State`. Children = states. `transition(&"Hurt")` looks up by node name.
+Addon `fsm_kit`: parent `FsmMachine` with `@export var initial_state: FsmState`. Children = states. `transition(&"Hurt")` looks up by node name.
 
-- `State.enter` / `exit` / `update`.
-- The actor is **injected**: `@export var actor: Node` (the parent assigns it). Not `machine.get_parent()` as API.
+- `FsmState.enter` / `exit` / `update` / `physics_update`.
+- The actor is **injected**: `@export var actor: Node`. Not `machine.get_parent()` as API.
 - Do not store score in a state.
+- Command: `/add-state-machine`.
+
+2D platformer (coyote, buffer): addon `plat_kit` / `/add-platformer-2d`. The motor is **another** child.
 
 ## Health / Hitbox / Hurtbox
 

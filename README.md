@@ -21,16 +21,18 @@ With the kit:
 - each feature is a scene + `@export` + Resource `.tres`, not a `match kind`
 - one RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across chats in Engram or `.studio/MEMORY.md` if needed
-- the game lives in **another** repo; this one only has skills, commands, agents, and addons (MpKit, AgentKit)
+- the game lives in **another** repo; this one only has skills, commands, agents, and addons (MpKit, AgentKit, FsmKit, PlatKit)
 
 | Piece | Where | What it is |
 |-------|--------|--------|
-| Orchestrator | `skills/godot-studio-workflow/` | The chat agent: interview + PRD→RFC→implement |
-| How to write Godot | `skills/` | Layers, composition, MpKit, AgentKit, playtest, visual, memory, tests |
+| Orchestrator | `skills/godot-studio-workflow/` | The chat agent: interview + `/implement-feature` (PRD/RFC optional) |
+| How to write Godot | `skills/` | Layers, composition, MpKit, AgentKit, FSM, 2D platformer, juicy, playtest, visual, memory, tests |
 | Subagents | `agents/` | Tech lead, developer, reviewer; optional tester, playtester, and visual |
-| Commands | `commands/` | `/create-prd`, `/create-visual-guide`, `/generate-rfcs`, `/implement-rfc`, … |
+| Commands | `commands/` | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
 | MpKit | `addons/mp_kit/` | Listen or dedicated, replication nodes, Dictionary tunnel. **Zero** gameplay. |
 | AgentKit | `addons/agent_kit/` | CLI for agents: capture, flow (`try_click` / `repeat`), HTTP, inspect, diff. **Zero** gameplay. |
+| FsmKit | `addons/fsm_kit/` | `FsmMachine` + `FsmState`. No autoload. |
+| PlatKit | `addons/plat_kit/` | 2D motor: coyote, buffer, apex, corner, lift. No levels or score. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -51,6 +53,8 @@ flowchart TB
     agents[Subagents]
     mpkit[MpKit addon]
     agentkit[AgentKit addon]
+    fsmkit[FsmKit addon]
+    platkit[PlatKit addon]
   end
 
   subgraph game [Your Godot project]
@@ -65,6 +69,8 @@ flowchart TB
   agents --> code
   mpkit -.-> code
   agentkit -.-> code
+  fsmkit -.-> code
+  platkit -.-> code
 ```
 
 Roles (`Task` → `subagent_type`):
@@ -195,25 +201,35 @@ Open a **new chat** in Cursor after installing.
 
 ## Product commands
 
-1. `/create-prd` → `PRD.md` (for games: a short GDD)
-2. `/verify-prd` → `PRD-REVIEW.md`
-3. `/extract-features` → `FEATURES.md`
-4. `/generate-rules` → `RULES.md`
-5. `/create-visual-guide` → `VISUAL.md` (if there is a look / refs)
-6. `/generate-rfcs` → `RFCs/` + `RFCS.md` (the first is the vertical slice)
-7. `/test-strategy` → optional
-8. `/implement-rfc <id>` (subagent pipeline; tree before OK)
-9. `/review-rfc <id>`
-10. `/manage-changes` when scope moves
-11. `/workflow-status`
-12. `/agent-kit` — screenshots, flows, fetch, inspect (AgentKit addon)
+Short path (default):
+
+1. `/implement-feature` — one feature or the vertical slice (tree → OK → code → review). Grows `FEATURES.md`.
+2. `/add-juicy` — juicy feel (shake, VFX, post, impact) on an event that already exists
+3. `/add-state-machine` — `FsmMachine` + child states (FsmKit addon)
+4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (PlatKit addon)
+5. `/new-mp-feature` — MpKit actor scaffold only
+6. `/workflow-status`
+7. `/agent-kit` — screenshots, flows, fetch, inspect (AgentKit addon)
+
+Written contract, if you ask:
+
+8. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
+9. `/verify-prd` → `PRD-REVIEW.md`
+10. `/extract-features` → `FEATURES.md`
+11. `/generate-rules` → `RULES.md`
+12. `/create-visual-guide` → `VISUAL.md`
+13. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+14. `/implement-rfc <id>`
+15. `/review-rfc <id>`
+16. `/manage-changes`
+17. `/test-strategy` — optional
 
 ## Shaders, 2D sprites, and 3D
 
 Do not invent FX or art from memory.
 
 - Shaders: [Godot Shaders](https://godotshaders.com/shader/?orderby=date&order=DESC) first; [Shadertoy](https://www.shadertoy.com) if you need to port. One pass = one packed scene.
-- 2D sprites: **ask** if you want Aseprite MCP / sprite creation, and ask for **references**. Animation: skill `godot-animation`. Without OK: placeholder.
+- 2D sprites: **ask** if you want Aseprite MCP / sprite creation, and ask for **references**. Animation: skill `godot-animation`. Juicy feel: `/add-juicy` + skill `godot-juicy`. Without OK: placeholder.
 - **3D**: **ask** if you want the [Blender](https://www.blender.org/lab/mcp-server/) MCP. If yes: install it (Blender 5.1 + Lab add-on + server in Cursor), ask for references, export `.glb` into the game. Without OK: placeholder. Details: `skills/godot-composition-first/assets.md`.
 
 ## Install MpKit in a Godot project
@@ -240,12 +256,35 @@ Cursor/VS Code snippets: `.vscode/mpkit.code-snippets` (the installer copies the
 
 Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT capture --out=/tmp/a.png`. A long flow (auction, turns) uses `try_click` and `repeat` — see `addons/agent_kit/README.md` and skill `godot-agent-kit`. Do not use `godot -s /tmp` for captures.
 
+## FsmKit / PlatKit
+
+```bash
+./install.sh --addon /path/to/godot-project fsm_kit
+./install.sh --addon /path/to/godot-project plat_kit
+```
+
+Enable **FsmKit** / **PlatKit**. Commands: `/add-state-machine`, `/add-platformer-2d`. PlatKit is not a Celeste clone: dash/stamina stay in the game.
+
+## Flow editor (experimental)
+
+Vite + React on localhost to build the JSON the playtester runs (`--agent=flow`). **Not** part of `./install.sh`. Install with **pnpm** (`node_modules/` is gitignored).
+
+```bash
+cd experimental/agent-flow-editor
+pnpm install
+pnpm dev
+```
+
+http://localhost:5173 — details: [`experimental/agent-flow-editor/README.md`](experimental/agent-flow-editor/README.md).
+
 ## Layout
 
 ```
 example/                       # Godot 4.7 demo (1P + LAN + dedicated, 2D and 3D)
 addons/mp_kit/
 addons/agent_kit/
+addons/fsm_kit/
+addons/plat_kit/
 skills/
   godot-studio-workflow/
   godot-studio-memory/
@@ -257,6 +296,10 @@ skills/
   godot-visual-qa/
   godot-testing/
   godot-animation/
+  godot-juicy/
+  godot-fsm/
+  godot-platformer-2d/
+experimental/agent-flow-editor/  # Vite + pnpm; not in ./install.sh; ignore node_modules
 agents/                        # studio-tech-lead, studio-developer, studio-playtester, …
 commands/
 install.sh

@@ -10,6 +10,10 @@ Subagents **do not** see the chat. The orchestrator pastes this block into every
 - Composition: thin container, children / packed, `@export` / `%UniqueName`, types in Resource `.tres`. One node does not paint + spawn + score + change scene.
 - UI copy in the product language; IDs in English. Score/copy/title gameplay **out** of `addons/mp_kit`.
 - Art: do not invent sprites or models. Aseprite/Blender MCP only with OK + references. Shaders: Godot Shaders / Shadertoy; one pass = packed scene.
+- Motion: 12 principles. Tween **or** `AnimationPlayer` per clip; `@export` / timeline knobs, no magic numbers. Skill `godot-animation`.
+- Juicy: shake, VFX, post, impact = local presentation, packed + `@export`. Skill `godot-juicy` / `/add-juicy`. Not score.
+- FSM: `FsmState` children under `FsmMachine` (addon `fsm_kit` / `/add-state-machine`). Not a 200-line `enum`.
+- 2D platformer: coyote / buffer / apex = `PlatMotor` (addon `plat_kit` / `/add-platformer-2d`). Dash/stamina only if the product asks.
 - Whoever writes does not self-validate. Playtest ≠ GUT. If `addons/agent_kit/` is present, capture with that CLI (not `godot -s /tmp`). Turns: `try_click` + `repeat`. Visual requires `VISUAL.md` or refs; if missing, stop and ask.
 - One RFC or a bounded change. Extra not asked for = scope, not a “improvement”.
 ```
