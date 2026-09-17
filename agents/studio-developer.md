@@ -21,6 +21,7 @@ Al invocarte:
 6. No workarounds sin dejar `WORKAROUND:` y haberlo dicho en el resultado.
 7. No agregues tests salvo que el prompt o RULES.md lo pidan.
 8. Shaders: buscá en Godot Shaders / Shadertoy; un pass = una packed scene. Sprites 2D: **preguntá** si quiere crearlos (MCP Aseprite) y pedí **referencias**. Si el RFC es **3D**: **preguntá** si quiere MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)), instalalo solo con OK, pedí referencias, exportá `.glb`. Animación: [godot-animation](../skills/godot-animation/SKILL.md) — Tween **o** `AnimationPlayer` según el clip. Feel jugoso: [godot-juicy](../skills/godot-juicy/SKILL.md). FSM: [godot-fsm](../skills/godot-fsm/SKILL.md). Plataformas 2D: [godot-platformer-2d](../skills/godot-platformer-2d/SKILL.md). Sin OK: placeholder, no instales MCP ni dibujes/modeles.
+9. Playtest no es tuyo. No agregues a `src/` métodos de spawn / forzar estado / contar / pausar “para el agente” (`agent_*` ni el mismo rol con otro nombre). Eso va en `res://agent/harness/` ([harness.md](../skills/godot-agent-kit/harness.md)).
 
 Al terminar, devolvé al orquestador:
 

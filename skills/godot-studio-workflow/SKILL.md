@@ -31,6 +31,8 @@ Roles (`Task` con `subagent_type` = su `name`):
 
 Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
 
+Al lanzar `studio-playtester` con AgentKit: el prompt debe ordenar leer [harness.md](../godot-agent-kit/harness.md) **antes** de escribir un `.gd`. Al volver: si el diff del playtest tocó `src/` / glue (salvo API de producto con caller de juego, no el flow), **FAIL de proceso** — pedí revert, no lo presentes como playtest OK.
+
 Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
 
 ## 1. Arranque (vos preguntás y ejecutás)

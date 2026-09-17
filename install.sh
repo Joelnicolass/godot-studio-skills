@@ -187,6 +187,18 @@ resolve_agent_dest() {
   esac
 }
 
+install_agent_kit_cursor_rule() {
+  local project="$1"
+  local src="${SRC}/godot-agent-kit/agent-kit-workspace.mdc"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  local dest_dir="${project}/.cursor/rules"
+  mkdir -p "$dest_dir"
+  cp "$src" "${dest_dir}/agent-kit-workspace.mdc"
+  echo "rule     ${dest_dir}/agent-kit-workspace.mdc"
+}
+
 copy_one_addon() {
   local project="$1"
   local name="$2"
@@ -222,20 +234,20 @@ scaffold_agent_workspace() {
 No es el addon. El plugin vive en `addons/agent_kit/` y no tiene gameplay.
 
 - `flows/` — JSON de `--agent=flow`. Nombre corto: `cli.sh . flow --flow=boot_smoke.json`
-- `harness/` — scripts GDScript que AgentKit monta **solo** si hay `--agent=`. El nodo se llama como el archivo (`wild_hooks.gd` → `wild_hooks`).
+- `harness/` — scripts GDScript que AgentKit monta **solo** si hay `--agent=`. El nodo se llama como el archivo (`hooks.gd` → `hooks`).
 - `out/` — PNG / dumps del run (Godot ignora esta carpeta).
 
-Nunca `func agent_*` en `src/` ni en escenas de producto. Si el playtest necesita un setup que no existe en la UI, escribí el helper acá y llamalo:
+Nunca helpers de playtest en `src/` (spawn / forzar estado / contar / pausar para el flow; `agent_*` ni el mismo rol con otro nombre). `call()` a privados o `extends` la clase de producto desde acá no limpia `src/`. Si el playtest necesita un setup que no existe en la UI, escribí el helper acá y llamalo:
 
 ```json
-{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }
+{ "call": { "harness": "hooks", "method": "setup_slice" } }
 ```
 
 ```gdscript
-# harness/wild_hooks.gd — extends Node, sin class_name
+# harness/hooks.gd — extends Node, sin class_name
 extends Node
 
-func place_wild_beside_player() -> String:
+func setup_slice() -> String:
 	var scene := get_tree().current_scene
 	if scene == null:
 		return "no_scene"
@@ -271,6 +283,7 @@ install_addon() {
     agent_kit)
       copy_one_addon "$project" "agent_kit"
       scaffold_agent_workspace "$project"
+      install_agent_kit_cursor_rule "$project"
       echo
       echo "Habilitá el plugin AgentKit (autoload). CI/headless, en project.godot:"
       echo '  AgentKit="*res://addons/agent_kit/agent_kit.gd"'

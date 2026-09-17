@@ -24,7 +24,7 @@ AgentKit="*res://addons/agent_kit/agent_kit.gd"
 
 Si no hay `--agent=`, F5 del juego no cambia.
 
-El **workspace del juego** es `res://agent/` (lo crea `install.sh`). Ahí van JSON, harnesses y PNG. **No** en `addons/agent_kit/examples` ni `func agent_*` en `src/`.
+El **workspace del juego** es `res://agent/` (lo crea `install.sh`). Ahí van JSON, harnesses y PNG. **No** en el addon ni en `src/` — ni un método de spawn / forzar estado / contar / pausar solo para el flow (`agent_*` ni el mismo rol con otro nombre). Contrato: `skills/godot-agent-kit/harness.md`. El instalador copia `.cursor/rules/agent-kit-workspace.mdc` al proyecto Godot.
 
 ## CLI
 
@@ -84,10 +84,10 @@ AGENT_JSON {...}
 
 `--flow=` acepta un path `res://`, uno absoluto, o un nombre en `res://agent/flows/` (`--flow=boot_smoke.json`). El `--out=` por defecto es `res://agent/out`.
 
-Un setup que no existe en la UI **no** se pega al glue del juego. Va en `res://agent/harness/wild_hooks.gd` (`extends Node`, sin `class_name`) y el flow llama:
+Un setup que no existe en la UI **no** se pega al glue del juego. Va en `res://agent/harness/hooks.gd` (`extends Node`, sin `class_name`) y el flow llama:
 
 ```json
-{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }
+{ "call": { "harness": "hooks", "method": "setup_slice" } }
 ```
 
 AgentKit monta esos scripts **solo** cuando corre `--agent=`. F5 de un jugador no los carga.
