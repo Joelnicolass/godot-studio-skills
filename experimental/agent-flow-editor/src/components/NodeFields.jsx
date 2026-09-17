@@ -133,7 +133,13 @@ export default function NodeFields({ node, unique = [], actions = [], onChange }
     case "call":
       return (
         <>
-          <Field data={d} fieldKey="node" label="node" list="godot-nodes" onChange={onChange} />
+          <Field
+            data={d}
+            fieldKey="harness"
+            label="harness (res://agent/harness/*.gd, wins over node)"
+            onChange={onChange}
+          />
+          <Field data={d} fieldKey="node" label="node (game, optional)" list="godot-nodes" onChange={onChange} />
           <Field data={d} fieldKey="method" label="method" onChange={onChange} />
           <label>
             args (JSON array)

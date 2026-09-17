@@ -16,7 +16,7 @@ Read this when the user **agreed** to a post-iteration playtest. The orchestrato
 
 **All** acceptance criteria of **this** slice (`FEATURES.md` `F<n>`, RFC, or the request). Not a 3–7 sample. If it will not fit in ~15 steps, the cut was large: cover the slice and list what was left out. Each action must **fail in plain sight** if the bug remains.
 
-If `addons/agent_kit/` is present: `inspect --unique` and write the flow with those `%` names.
+If `addons/agent_kit/` is present: `inspect --unique` and write the flow in `res://agent/flows/` with those `%` names. Helpers in `res://agent/harness/`, never `func agent_*` in `src/`.
 
 ## 2. How to launch Godot 4
 
@@ -33,8 +33,8 @@ If the project has `addons/agent_kit/`:
 
 ```bash
 addons/agent_kit/cli.sh /ABS/GODOT_ROOT inspect --unique
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=/tmp/playtest.png --wait=1.1 --fail-on-error
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://…json --out=/tmp/playtest --fail-on-error
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=res://agent/out/playtest.png --wait=1.1 --fail-on-error
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=boot_smoke.json --out=res://agent/out --fail-on-error
 ```
 
 Skill: `godot-agent-kit`. Grep `AGENT_OK`, `AGENT_FAIL`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `ERROR:`, `SCRIPT ERROR:`, `WARNING:`. A full match: `try_click` + `repeat` until results, not a `click` on a button off-turn. Do **not** `godot -s /tmp/capture.gd` (`class_name` vs autoloads).

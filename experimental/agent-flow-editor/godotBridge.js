@@ -7,7 +7,6 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 
 const CLICK_TYPES = new Set([
@@ -62,7 +61,7 @@ function walkTscn(dir, root, out) {
   }
   for (const ent of entries) {
     if (ent.name.startsWith(".")) continue;
-    if (ent.name === "addons" || ent.name === "node_modules") continue;
+    if (ent.name === "addons" || ent.name === "node_modules" || ent.name === ".godot") continue;
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) {
       walkTscn(full, root, out);
@@ -149,6 +148,39 @@ function runCli(cli, project, args, timeoutMs) {
   });
 }
 
+function agentWorkspace(project) {
+  const root = path.join(project, "agent");
+  const flows = path.join(root, "flows");
+  const outDir = path.join(root, "out");
+  mkdirSync(flows, { recursive: true });
+  mkdirSync(path.join(root, "harness"), { recursive: true });
+  mkdirSync(outDir, { recursive: true });
+  const gdignore = path.join(outDir, ".gdignore");
+  if (!existsSync(gdignore)) writeFileSync(gdignore, "");
+  return { root, flows, outDir };
+}
+
+function listFlows(project) {
+  const dir = path.join(project, "agent", "flows");
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => name.endsWith(".json") && name !== "_editor_last.json")
+    .sort()
+    .map((name) => ({ name, file: `res://agent/flows/${name}` }));
+}
+
+function readFlowFile(project, name) {
+  const base = path.basename(String(name || ""));
+  if (!base.endsWith(".json")) return { error: "not json" };
+  const file = path.join(project, "agent", "flows", base);
+  if (!existsSync(file)) return { error: "missing flow" };
+  try {
+    return { name: base, spec: JSON.parse(readFileSync(file, "utf8")) };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+}
+
 export function godotBridge(editorRoot) {
   let project = defaultProject(editorRoot);
   let lastOutDir = "";
@@ -193,7 +225,13 @@ export function godotBridge(editorRoot) {
             walkTscn(project, project, unique);
             unique.sort((a, b) => a.unique.localeCompare(b.unique));
             const actions = parseInputActions(path.join(project, "project.godot"));
-            return send(res, 200, { source: "scan", unique, actions, ...snap });
+            return send(res, 200, {
+              source: "scan",
+              unique,
+              actions,
+              flows: listFlows(project),
+              ...snap,
+            });
           }
           if (
             (req.method === "GET" || req.method === "POST") &&
@@ -212,11 +250,17 @@ export function godotBridge(editorRoot) {
               source: "live",
               unique: parsed?.unique || [],
               actions: parsed?.actions || [],
+              flows: listFlows(project),
               payload: parsed,
               log: `${result.stdout}\n${result.stderr}`.trim(),
               code: result.code,
               ...snap,
             });
+          }
+          if (req.method === "GET" && url.pathname === "/api/flow") {
+            const loaded = readFlowFile(project, url.searchParams.get("name"));
+            if (loaded.error) return send(res, 404, loaded);
+            return send(res, 200, loaded);
           }
           if (req.method === "POST" && url.pathname === "/api/run") {
             const snap = snapshot();
@@ -226,12 +270,9 @@ export function godotBridge(editorRoot) {
             if (!spec || typeof spec !== "object") {
               return send(res, 400, { error: "missing spec" });
             }
-            const stamp = Date.now().toString(36);
-            const work = path.join(tmpdir(), "agent-flow-editor", stamp);
-            mkdirSync(work, { recursive: true });
-            const flowFile = path.join(work, "flow.json");
-            const outDir = path.join(work, "out");
-            mkdirSync(outDir, { recursive: true });
+            const ws = agentWorkspace(project);
+            const flowFile = path.join(ws.flows, "_editor_last.json");
+            const outDir = ws.outDir;
             writeFileSync(flowFile, JSON.stringify(spec, null, 2));
             lastOutDir = outDir;
             const result = await runCli(
@@ -250,6 +291,7 @@ export function godotBridge(editorRoot) {
               shots,
               flow: flowFile,
               out: outDir,
+              flows: listFlows(project),
               ...snap,
             });
           }

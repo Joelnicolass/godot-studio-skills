@@ -37,7 +37,7 @@ export function caption(node) {
     case "drag":
       return d.node;
     case "call":
-      return `${d.node}.${d.method}`;
+      return d.harness ? `${d.harness}.${d.method}` : `${d.node}.${d.method}`;
     case "scene":
       return d.path;
     case "seed":
@@ -129,7 +129,7 @@ export function emptyData(kind) {
     case "drag":
       return { node: "%Pad", from_x: 8, from_y: 8, to_x: 80, to_y: 8 };
     case "call":
-      return { node: "%Title", method: "set", args: '["text","ok"]' };
+      return { node: "%Title", method: "set", harness: "", args: '["text","ok"]' };
     case "scene":
       return { path: "res://scenes/ui/boot.tscn" };
     case "seed":
@@ -217,7 +217,10 @@ function stepFromNode(node, innerSteps) {
       } catch {
         args = [];
       }
-      return { call: { node: d.node || "", method: d.method || "", args } };
+      const spec = { method: d.method || "", args };
+      if (d.harness) spec.harness = d.harness;
+      else spec.node = d.node || "";
+      return { call: spec };
     }
     case "scene":
       return { scene: d.path || "" };
@@ -357,7 +360,8 @@ function placeStep(raw, x, y) {
   if (raw.call) {
     return {
       node: nodeAt("call", x, y, {
-        node: raw.call.node,
+        node: raw.call.node || "",
+        harness: raw.call.harness || "",
         method: raw.call.method,
         args: JSON.stringify(raw.call.args || []),
       }),

@@ -18,13 +18,13 @@ Open http://localhost:5173. It binds to the kit `example/` by default.
 
 1. **Scan scenes** — reads `.tscn` (`unique_name_in_owner`) and `[input]` from `project.godot`.
 2. **Live inspect** — runs `cli.sh inspect --unique` + `info` (live nodes + built-in actions).
-3. Select a Click/Type/Press node and paste a `%` or an action from the catalog.
-4. **Run flow** — writes a temp JSON and runs `cli.sh … flow --fail-on-error`. The log colors `AGENT_STEP`, `ERROR`, and `AGENT_ERRORS`.
+3. Select a Click/Type/Press node and paste a `%` or an action from the catalog. JSON files in `res://agent/flows/` show up in the binder.
+4. **Run flow** — writes `agent/flows/_editor_last.json` and runs `cli.sh … flow --fail-on-error` with `--out=agent/out`. The log colors `AGENT_STEP`, `ERROR`, and `AGENT_ERRORS`.
 
 You can still export JSON and run it by hand:
 
 ```bash
-addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=res://path.json --out=/tmp/flow --fail-on-error
+addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=boot_smoke.json --fail-on-error
 ```
 
 ## What each box is

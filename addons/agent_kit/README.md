@@ -24,6 +24,8 @@ AgentKit="*res://addons/agent_kit/agent_kit.gd"
 
 With no `--agent=`, F5 of the game is unchanged.
 
+The **game workspace** is `res://agent/` (created by `install.sh`). JSON, harnesses, and PNGs go there. **Not** in `addons/agent_kit/examples` and **not** `func agent_*` in `src/`.
+
 ## CLI
 
 ```bash
@@ -78,7 +80,17 @@ AGENT_JSON {...}
 }
 ```
 
-`click` emits `pressed` on the `BaseButton` (it does not aim at a pixel). `%Name` is resolved on the scene and, if missing, in children (packed scenes). `press` fires an InputMap `InputEventAction` (`"ui_accept"` or `{ "name": "move_left", "hold": 0.4 }`). `--fail-on-error` fails capture/flow if the engine logged ERROR or SCRIPT ERROR. `inspect --unique` also prints `AGENT_JSON` with those `%` names (click/type/select/range/scroll). `info` includes `actions`.
+`click` emits `pressed` on the `BaseButton` (it does not aim at a pixel). `%Name` is resolved on the scene and, if missing, in children (packed scenes). `press` fires an InputMap `InputEventAction` (`"ui_accept"` or `{ "name": "move_left", "hold": 0.4 }`). `--fail-on-error` fails capture/flow if the engine logged ERROR or SCRIPT ERROR. `inspect --unique` also prints `AGENT_JSON` with those `%` names (click/type/select/range/scroll). `info` includes `actions`, `workspace`, and `harness`.
+
+`--flow=` accepts a `res://` path, an absolute path, or a name under `res://agent/flows/` (`--flow=boot_smoke.json`). Default `--out=` is `res://agent/out`.
+
+Setup that is not in the UI does **not** belong on game glue. Put it in `res://agent/harness/wild_hooks.gd` (`extends Node`, no `class_name`) and call:
+
+```json
+{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }
+```
+
+AgentKit mounts those scripts **only** when `--agent=` runs. A player F5 does not load them.
 
 For a match or HUD that appears and disappears:
 
@@ -100,7 +112,7 @@ For a match or HUD that appears and disappears:
 
 `try_click` does not fail if the node is missing, `disabled`, or not visible in the tree (`AGENT_SKIP`). `repeat` runs `steps` until `times` or until `until` (same shape as `assert`) passes. `assert` / `wait_until` also accept `visible_in_tree`.
 
-Demo example: `examples/boot_smoke.json`.
+Demo example: `example/agent/flows/boot_smoke.json` (project workspace, not the addon).
 
 Experimental cable editor: `experimental/agent-flow-editor/` in the studio kit (Vite, **pnpm**, localhost). Bind the `project.godot` dir, Scan / Live inspect to paste `%UniqueName` and InputMap actions, **Run flow** calls `cli.sh`. Not part of `./install.sh`.
 
@@ -113,4 +125,4 @@ Experimental cable editor: `experimental/agent-flow-editor/` in the studio kit (
 
 ## Version
 
-0.1.3
+0.1.4

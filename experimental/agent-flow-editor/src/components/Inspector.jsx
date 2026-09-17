@@ -14,6 +14,7 @@ export default function Inspector({
   godot,
   onPickUnique,
   onPickAction,
+  onPickFlow,
 }) {
   return (
     <aside className="inspector">
@@ -43,6 +44,7 @@ export default function Inspector({
         status={godot.status}
         unique={unique}
         actions={actions}
+        flows={godot.flows}
         source={godot.source}
         busy={godot.busy}
         onBind={godot.bind}
@@ -50,6 +52,7 @@ export default function Inspector({
         onInspect={godot.inspect}
         onPickUnique={onPickUnique}
         onPickAction={onPickAction}
+        onPickFlow={onPickFlow}
       />
       <RunPanel busy={godot.busy} log={godot.log} shots={godot.shots} runOk={godot.runOk} />
     </aside>

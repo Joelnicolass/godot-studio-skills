@@ -28,6 +28,16 @@ export default function App() {
     graph.updateData({ name });
   }
 
+  async function pickFlow(item) {
+    try {
+      const spec = await godot.loadWorkspaceFlow(item.name);
+      graph.loadSpec(spec);
+      graph.setErr("");
+    } catch (err) {
+      graph.setErr(String(err.message || err));
+    }
+  }
+
   return (
     <div className="app">
       <Palette
@@ -67,6 +77,7 @@ export default function App() {
         godot={godot}
         onPickUnique={pickUnique}
         onPickAction={pickAction}
+        onPickFlow={pickFlow}
       />
     </div>
   );

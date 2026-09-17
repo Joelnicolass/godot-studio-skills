@@ -4,6 +4,7 @@ export default function GodotBinder({
   status,
   unique,
   actions,
+  flows = [],
   source,
   busy,
   onBind,
@@ -11,6 +12,7 @@ export default function GodotBinder({
   onInspect,
   onPickUnique,
   onPickAction,
+  onPickFlow,
 }) {
   return (
     <section className="binder">
@@ -44,6 +46,24 @@ export default function GodotBinder({
         {unique.length} % · {actions.length} actions
         {busy ? ` · ${busy}…` : ""}
       </p>
+      <h2>agent/flows</h2>
+      <ul className="catalog">
+        {flows.length === 0 && (
+          <li className="hint">Playtest JSON in res://agent/flows (not in the addon)</li>
+        )}
+        {flows.map((item) => (
+          <li key={item.file || item.name}>
+            <button
+              type="button"
+              className="catalog-item"
+              onClick={() => onPickFlow(item)}
+              title={item.file}
+            >
+              <span>{item.name}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
       <h2>Unique names</h2>
       <ul className="catalog">
         {unique.length === 0 && <li className="hint">Scan or inspect to list %nodes</li>}

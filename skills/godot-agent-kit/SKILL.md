@@ -9,7 +9,7 @@ description: >-
 
 # AgentKit — tools for the agent (no MCP)
 
-Addon `addons/agent_kit/` in the **game** project. Zero gameplay. The agent talks to Godot over CLI; `AGENT_OK` / `AGENT_FAIL` lines are the contract.
+Addon `addons/agent_kit/` in the **game** project. Zero gameplay. The agent talks to Godot over CLI; `AGENT_OK` / `AGENT_FAIL` lines are the contract. JSON, harnesses, and dumps live in the game’s **`res://agent/`**, not inside the addon and not in `src/`.
 
 If the addon is missing:
 
@@ -39,14 +39,16 @@ addons/agent_kit/cli.sh /ABS/PROJECT VERB [--flag=value ...]
 
 | Verb | Flags |
 |------|--------|
-| `capture` | `--out=/tmp/a.png` `--scene=res://...` `--wait=1.1` `--fail-on-error` |
-| `flow` | `--flow=res://...json` `--out=/tmp/dir` `--fail-on-error` |
+| `capture` | `--out=res://agent/out/a.png` `--scene=res://...` `--wait=1.1` `--fail-on-error` |
+| `flow` | `--flow=boot_smoke.json` (or `res://agent/flows/…`) `--out=res://agent/out` `--fail-on-error` |
 | `diff` | `--a=` `--b=` `--out=/tmp/diff.png` `--threshold=0.02` |
 | `inspect` | `--unique` `--node=%CardView` `--scene=` |
 | `fetch` | `--url=` `--out=` `--ua=` (Wikimedia requires User-Agent) |
 | `info` | viewport, main scene, version, InputMap `actions` |
 
-Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_SELECT`, `AGENT_RANGE`, `AGENT_SCROLL`, `AGENT_DRAG`, `AGENT_CALL`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
+Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_SELECT`, `AGENT_RANGE`, `AGENT_SCROLL`, `AGENT_DRAG`, `AGENT_CALL`, `AGENT_HARNESS`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
+
+JSON in `res://agent/flows/`. Helpers in `res://agent/harness/*.gd`, mounted only with `--agent=` (`call.harness`). **Do not** add `func agent_*` to product scripts.
 
 Long flows (a button that is not on your turn): `try_click` + `repeat` until `%ResultsView` is visible. API: `addons/agent_kit/README.md`. JSON detail: [flows.md](flows.md).
 

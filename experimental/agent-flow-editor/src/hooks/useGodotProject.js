@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { getProject, liveInfo, liveInspect, runFlow, scanProject, setProject } from "../api.js";
+import { getProject, liveInfo, liveInspect, loadFlow, runFlow, scanProject, setProject } from "../api.js";
 
 export function useGodotProject() {
   const [project, setProjectPath] = useState("");
   const [status, setStatus] = useState({ exists: false, agentKit: false });
   const [unique, setUnique] = useState([]);
   const [actions, setActions] = useState([]);
+  const [flows, setFlows] = useState([]);
   const [source, setSource] = useState("");
   const [busy, setBusy] = useState("");
   const [log, setLog] = useState("");
@@ -15,6 +16,7 @@ export function useGodotProject() {
   const applyCatalog = useCallback((data) => {
     if (data.unique) setUnique(data.unique);
     if (data.actions) setActions(data.actions);
+    if (data.flows) setFlows(data.flows);
     if (data.source) setSource(data.source);
     if (data.project) setProjectPath(data.project);
     setStatus({ exists: Boolean(data.exists), agentKit: Boolean(data.agentKit) });
@@ -80,6 +82,11 @@ export function useGodotProject() {
     [applyCatalog]
   );
 
+  const loadWorkspaceFlow = useCallback(async (name) => {
+    const data = await loadFlow(name);
+    return data.spec;
+  }, []);
+
   const run = useCallback(async (spec) => {
     setBusy("run");
     setRunOk(null);
@@ -107,6 +114,7 @@ export function useGodotProject() {
     status,
     unique,
     actions,
+    flows,
     source,
     busy,
     log,
@@ -115,6 +123,7 @@ export function useGodotProject() {
     bind,
     scan,
     inspect,
+    loadWorkspaceFlow,
     run,
   };
 }

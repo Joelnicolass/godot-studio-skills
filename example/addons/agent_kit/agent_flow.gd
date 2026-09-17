@@ -30,7 +30,7 @@ func _run_body(tree: SceneTree, spec: Dictionary, out_dir: String) -> String:
 		await tree.create_timer(wait_first).timeout
 	var dest := out_dir.strip_edges()
 	if dest.is_empty():
-		dest = "user://agent_kit"
+		dest = "res://agent/out"
 	Ops.ensure_parent_dir(dest.path_join("dummy.png"))
 	var steps: Variant = spec.get("steps", [])
 	if typeof(steps) != TYPE_ARRAY:

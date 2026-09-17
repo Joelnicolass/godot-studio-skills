@@ -3,19 +3,19 @@ extends RefCounted
 
 ## Parse `--agent=verb` and `--key=value` from user args (after `--`) and cmdline.
 
-const DEFAULT_UA := "AgentKit/0.1.3 (Godot studio kit; agent tools)"
+const DEFAULT_UA := "AgentKit/0.1.4 (Godot studio kit; agent tools)"
 
 
 static func help_text() -> String:
-	return """AgentKit 0.1.3 — tools for AI agents (no gameplay).
+	return """AgentKit 0.1.4 — tools for AI agents (no gameplay).
 
 godot --path PROJECT [--resolution WxH] -- --agent=VERB [flags]
 
 Verbs:
   help      Print this text
-  info      Project / engine JSON
+  info      Project / engine JSON (includes res://agent workspace)
   capture   Screenshot current or --scene=  → --out=file.png
-  flow      Run JSON steps (click, press/hold, select, call, repeat, wait_until/signal, diff) → --flow= --out=dir
+  flow      Run JSON steps (click, press/hold, select, call/harness, repeat, wait_until/signal, diff) → --flow= --out=dir
   fetch     HTTP GET/POST → --url= --out=file [--method=GET] [--ua=]
   inspect   Node tree / unique names → --scene= [--node=%X] [--unique]
   diff      Compare two PNGs → --a= --b= [--out=diff.png] [--threshold=0.02]
@@ -24,7 +24,7 @@ Flags (after --):
   --scene=res://...     Change to this scene first
   --out=                PNG file (capture) or directory (flow) or dest file
   --wait=1.1            Seconds after scene load before capture/flow
-  --flow=               Flow spec (res:// or absolute .json)
+  --flow=               Flow spec: res://, absolute, or name under res://agent/flows/
   --url= --method= --ua=
   --a= --b=             Diff inputs
   --node=               Inspect this node (%UniqueName or path)
@@ -32,10 +32,13 @@ Flags (after --):
   --threshold=0.02      Diff: per-channel delta 0..1
   --fail-on-error       Fail the verb if Godot logged ERROR / SCRIPT ERROR
 
+Host workspace (not the addon): res://agent/flows JSON, res://agent/harness scripts
+(mounted only when --agent= is set). Do not add agent_* methods to src/.
+
 Do not use `godot -s /tmp/foo.gd extends SceneTree` for captures: class_name
 scripts compile before autoloads (PortraitCache / DraftCopy missing).
 
-Wrapper: addons/agent_kit/cli.sh PROJECT capture --scene=res://x.tscn --out=/tmp/a.png
+Wrapper: addons/agent_kit/cli.sh PROJECT capture --scene=res://x.tscn --out=res://agent/out/a.png
 """
 
 
