@@ -3,8 +3,9 @@ name: godot-agent-kit
 description: >-
   Drive a Godot 4 project with AgentKit (addon like MpKit): screenshots,
   click/type flows, HTTP fetch, node inspect, PNG diff. Use when capturing
-  the game, comparing frames, probing UI, downloading a URL into res://,
-  or when tempted to write a /tmp SceneTree -s script. Not GUT. Not an MCP.
+  the game, writing res://agent/ flows or harnesses, or when tempted to add
+  playtest helpers (spawn / force-state / count / pause for the flow) to src/.
+  Not GUT. Not an MCP.
 ---
 
 # AgentKit — tools for the agent (no MCP)
@@ -48,7 +49,7 @@ addons/agent_kit/cli.sh /ABS/PROJECT VERB [--flag=value ...]
 
 Grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_SELECT`, `AGENT_RANGE`, `AGENT_SCROLL`, `AGENT_DRAG`, `AGENT_CALL`, `AGENT_HARNESS`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`.
 
-JSON in `res://agent/flows/`. Helpers in `res://agent/harness/*.gd`, mounted only with `--agent=` (`call.harness`). **Do not** add `func agent_*` to product scripts.
+JSON in `res://agent/flows/`. Helpers **only** in `res://agent/harness/*.gd`. Contract: [harness.md](harness.md) — read it **before** touching a product `.gd`. Spawn / force-state / count / pause for the flow do **not** belong in `src/` (`agent_*` or the same role under another name).
 
 Long flows (a button that is not on your turn): `try_click` + `repeat` until `%ResultsView` is visible. API: `addons/agent_kit/README.md`. JSON detail: [flows.md](flows.md).
 

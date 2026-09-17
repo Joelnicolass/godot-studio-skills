@@ -15,7 +15,7 @@ addons/agent_kit/cli.sh /ABS/GODOT_ROOT capture --out=res://agent/out/a.png --wa
 addons/agent_kit/cli.sh /ABS/GODOT_ROOT flow --flow=boot_smoke.json --fail-on-error
 ```
 
-Set `GODOT=` if the binary is not found. Capture/flow **without** `--headless`. JSON and harnesses live in the game’s `res://agent/` (not in the addon, no `agent_*` in `src/`). Report: `AGENT_OK` / `AGENT_FAIL` lines + PNG paths. A multi-turn flow: `try_click` + `repeat` (not a hard `click` on a `disabled` button).
+Set `GODOT=` if the binary is not found. Capture/flow **without** `--headless`. JSON and harnesses live in the game’s `res://agent/` (not in the addon, no playtest helpers in `src/`). Report: `AGENT_OK` / `AGENT_FAIL` lines + PNG paths. A multi-turn flow: `try_click` + `repeat` (not a hard `click` on a `disabled` button).
 
 Experimental cable editor: `experimental/agent-flow-editor/` (`pnpm install` && `pnpm dev`). Bind the Godot project and **Run flow** calls `cli.sh`. Same JSON as `--agent=flow` (includes `press`).
 

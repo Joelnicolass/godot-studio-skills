@@ -2,8 +2,9 @@
 name: godot-playtest
 description: >-
   Launch the Godot 4 project and exercise a feature like a player (run scene,
-  click/play, screenshot). Not GUT/unit tests. Use when the user agrees to a
-  playtest after an iteration, or when studio-playtester is invoked.
+  click/play, screenshot). Not GUT. Use when the user agrees to a playtest,
+  studio-playtester is invoked, or when writing AgentKit flows/harnesses
+  (never playtest helpers — spawn/force/count/pause for the flow — in src/).
 ---
 
 # Playtest in the binary
@@ -16,7 +17,7 @@ Read this when the user **agreed** to a post-iteration playtest. The orchestrato
 
 **All** acceptance criteria of **this** slice (`FEATURES.md` `F<n>`, RFC, or the request). Not a 3–7 sample. If it will not fit in ~15 steps, the cut was large: cover the slice and list what was left out. Each action must **fail in plain sight** if the bug remains.
 
-If `addons/agent_kit/` is present: `inspect --unique` and write the flow in `res://agent/flows/` with those `%` names. Helpers in `res://agent/harness/`, never `func agent_*` in `src/`.
+If `addons/agent_kit/` is present: `inspect --unique` and write the flow in `res://agent/flows/`. Helpers **only** in `res://agent/harness/` ([harness.md](../godot-agent-kit/harness.md)). Spawn / force-state / count / pause for the flow do **not** belong in `src/`.
 
 ## 2. How to launch Godot 4
 

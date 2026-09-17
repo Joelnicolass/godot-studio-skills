@@ -1,0 +1,15 @@
+---
+description: AgentKit playtest only under res://agent/; never helpers in src/
+globs: "**/*.gd"
+alwaysApply: false
+---
+
+# AgentKit workspace — do not contaminate product code
+
+Playtest JSON and helpers live in `res://agent/` (`flows/`, `harness/`, `fixtures/`, `out/`). **Not** in `src/`, `scenes/`, or product glue.
+
+Product code does **not** get a method whose job, for the flow, is to spawn, force a state, count nodes, pause systems, or rebuild the world. `func agent_*` is banned; **the same role under another name is still playtest**.
+
+This does not keep the product clean: `call()` on `_privates`, `extends` the product class from `agent/`, `set("_…")` on internal refs, or a public API whose only caller is the flow.
+
+A product API (load, apply layout, match seed) only if the **game** also calls it (generator, save/load, editor). Slice setup: `res://agent/harness/*.gd` (`extends Node`, no `class_name`).

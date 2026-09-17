@@ -31,6 +31,8 @@ Roles (`Task` `subagent_type` = their `name`):
 
 Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.
 
+When launching `studio-playtester` with AgentKit: the prompt must order reading [harness.md](../godot-agent-kit/harness.md) **before** writing a `.gd`. On return: if the playtest diff touched `src/` / glue (unless a product API with a game caller, not the flow), that is a **process FAIL** — ask for a revert; do not present it as playtest OK.
+
 A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 
 ## 1. Startup (you ask and you run commands)

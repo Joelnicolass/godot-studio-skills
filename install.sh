@@ -187,6 +187,18 @@ resolve_agent_dest() {
   esac
 }
 
+install_agent_kit_cursor_rule() {
+  local project="$1"
+  local src="${SRC}/godot-agent-kit/agent-kit-workspace.mdc"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  local dest_dir="${project}/.cursor/rules"
+  mkdir -p "$dest_dir"
+  cp "$src" "${dest_dir}/agent-kit-workspace.mdc"
+  echo "rule     ${dest_dir}/agent-kit-workspace.mdc"
+}
+
 copy_one_addon() {
   local project="$1"
   local name="$2"
@@ -222,20 +234,20 @@ scaffold_agent_workspace() {
 This is not the addon. The plugin lives in `addons/agent_kit/` and has no gameplay.
 
 - `flows/` — `--agent=flow` JSON. Short name: `cli.sh . flow --flow=boot_smoke.json`
-- `harness/` — GDScript AgentKit mounts **only** when `--agent=` is set. Node name = file basename (`wild_hooks.gd` → `wild_hooks`).
+- `harness/` — GDScript AgentKit mounts **only** when `--agent=` is set. Node name = file basename (`hooks.gd` → `hooks`).
 - `out/` — run PNG / dumps (Godot ignores this folder).
 
-Never `func agent_*` in `src/` or product scenes. If playtest needs setup that is not in the UI, write the helper here:
+Never playtest helpers in `src/` (spawn / force-state / count / pause for the flow; `agent_*` or the same role under another name). `call()` on privates or `extends` the product class from here does not keep `src/` clean. If playtest needs setup that is not in the UI, write the helper here:
 
 ```json
-{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }
+{ "call": { "harness": "hooks", "method": "setup_slice" } }
 ```
 
 ```gdscript
-# harness/wild_hooks.gd — extends Node, no class_name
+# harness/hooks.gd — extends Node, no class_name
 extends Node
 
-func place_wild_beside_player() -> String:
+func setup_slice() -> String:
 	var scene := get_tree().current_scene
 	if scene == null:
 		return "no_scene"
@@ -271,6 +283,7 @@ install_addon() {
     agent_kit)
       copy_one_addon "$project" "agent_kit"
       scaffold_agent_workspace "$project"
+      install_agent_kit_cursor_rule "$project"
       echo
       echo "Enable the AgentKit plugin (autoload). CI/headless, in project.godot:"
       echo '  AgentKit="*res://addons/agent_kit/agent_kit.gd"'
