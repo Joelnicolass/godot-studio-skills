@@ -3,7 +3,7 @@
 **Preferí AgentKit** (`godot-agent-kit`): autoload, sobrevive `change_scene`, no rompe `DraftCopy` / `PortraitCache`.
 
 ```bash
-addons/agent_kit/cli.sh /abs/game capture --scene=res://src/features/draft_table/draft_table.tscn --out=/tmp/table.png
+addons/agent_kit/cli.sh /abs/game capture --scene=res://src/features/draft_table/draft_table.tscn --out=res://agent/out/table.png
 ```
 
 Fallback **solo** si el addon no está. Script `SceneTree` temporal (`/tmp`), **borra** al terminar. No referencies `class_name` del juego en ese script.

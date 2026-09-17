@@ -202,7 +202,49 @@ copy_one_addon() {
   if [[ -f "${dest}/cli.sh" ]]; then
     chmod +x "${dest}/cli.sh"
   fi
+  if [[ "$name" == "agent_kit" ]]; then
+    rm -rf "${dest}/examples"
+  fi
   echo "addon  ${dest}"
+}
+
+scaffold_agent_workspace() {
+  local project="$1"
+  local dest="${project}/agent"
+  mkdir -p "${dest}/flows" "${dest}/harness" "${dest}/out"
+  if [[ ! -f "${dest}/out/.gdignore" ]]; then
+    : > "${dest}/out/.gdignore"
+  fi
+  if [[ ! -f "${dest}/README.md" ]]; then
+    cat > "${dest}/README.md" <<'EOF'
+# Workspace AgentKit (este proyecto)
+
+No es el addon. El plugin vive en `addons/agent_kit/` y no tiene gameplay.
+
+- `flows/` — JSON de `--agent=flow`. Nombre corto: `cli.sh . flow --flow=boot_smoke.json`
+- `harness/` — scripts GDScript que AgentKit monta **solo** si hay `--agent=`. El nodo se llama como el archivo (`wild_hooks.gd` → `wild_hooks`).
+- `out/` — PNG / dumps del run (Godot ignora esta carpeta).
+
+Nunca `func agent_*` en `src/` ni en escenas de producto. Si el playtest necesita un setup que no existe en la UI, escribí el helper acá y llamalo:
+
+```json
+{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }
+```
+
+```gdscript
+# harness/wild_hooks.gd — extends Node, sin class_name
+extends Node
+
+func place_wild_beside_player() -> String:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return "no_scene"
+	# Usá %UniqueName o APIs públicas del juego. No edites glue de producción.
+	return "ok"
+```
+EOF
+  fi
+  echo "workspace  ${dest}"
 }
 
 install_addon() {
@@ -228,10 +270,12 @@ install_addon() {
       ;;
     agent_kit)
       copy_one_addon "$project" "agent_kit"
+      scaffold_agent_workspace "$project"
       echo
       echo "Habilitá el plugin AgentKit (autoload). CI/headless, en project.godot:"
       echo '  AgentKit="*res://addons/agent_kit/agent_kit.gd"'
-      echo "CLI: ${project}/addons/agent_kit/cli.sh ${project} capture --out=/tmp/a.png"
+      echo "Flows/harness: ${project}/agent/  (no en addons/ ni en src/)"
+      echo "CLI: ${project}/addons/agent_kit/cli.sh ${project} flow --flow=boot_smoke.json --fail-on-error"
       ;;
     fsm_kit)
       copy_one_addon "$project" "fsm_kit"

@@ -54,6 +54,10 @@ export function runFlow(spec) {
   });
 }
 
+export function loadFlow(name) {
+  return request(`/api/flow?name=${encodeURIComponent(name)}`);
+}
+
 export function shotUrl(name) {
   return `/api/shots/${encodeURIComponent(name)}?t=${Date.now()}`;
 }

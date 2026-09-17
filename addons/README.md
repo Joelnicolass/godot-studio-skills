@@ -5,7 +5,7 @@ Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **ca
 | Addon | Rol |
 |-------|-----|
 | `mp_kit` | Listen-server / dedicated: ENet, slots, handshake, snapshots opacos |
-| `agent_kit` | CLI para agentes: captura, flow JSON (`try_click` / `repeat`), HTTP, inspect, diff de PNG |
+| `agent_kit` | CLI para agentes: captura, flow JSON, HTTP, inspect, diff. Workspace del juego: `res://agent/` |
 | `fsm_kit` | `FsmMachine` + `FsmState` (sin autoload) |
 | `plat_kit` | Motor 2D: coyote, jump buffer, apex, corner, lift (sin niveles) |
 

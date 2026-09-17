@@ -24,6 +24,8 @@ AgentKit="*res://addons/agent_kit/agent_kit.gd"
 
 Si no hay `--agent=`, F5 del juego no cambia.
 
+El **workspace del juego** es `res://agent/` (lo crea `install.sh`). Ahí van JSON, harnesses y PNG. **No** en `addons/agent_kit/examples` ni `func agent_*` en `src/`.
+
 ## CLI
 
 ```bash
@@ -78,7 +80,17 @@ AGENT_JSON {...}
 }
 ```
 
-`click` emite `pressed` en el `BaseButton` (no apunta al píxel). `%Nombre` se busca en la escena y, si falta, en hijos (packed scenes). `press` dispara un `InputEventAction` (`"ui_accept"` o `{ "name": "move_left", "hold": 0.4 }`). `--fail-on-error` hace fallar capture/flow si el engine logueó ERROR o SCRIPT ERROR. `inspect --unique` también imprime `AGENT_JSON` con esos `%` (click/type/select/range/scroll). `info` incluye `actions`.
+`click` emite `pressed` en el `BaseButton` (no apunta al píxel). `%Nombre` se busca en la escena y, si falta, en hijos (packed scenes). `press` dispara un `InputEventAction` (`"ui_accept"` o `{ "name": "move_left", "hold": 0.4 }`). `--fail-on-error` hace fallar capture/flow si el engine logueó ERROR o SCRIPT ERROR. `inspect --unique` también imprime `AGENT_JSON` con esos `%` (click/type/select/range/scroll). `info` incluye `actions`, `workspace` y `harness`.
+
+`--flow=` acepta un path `res://`, uno absoluto, o un nombre en `res://agent/flows/` (`--flow=boot_smoke.json`). El `--out=` por defecto es `res://agent/out`.
+
+Un setup que no existe en la UI **no** se pega al glue del juego. Va en `res://agent/harness/wild_hooks.gd` (`extends Node`, sin `class_name`) y el flow llama:
+
+```json
+{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }
+```
+
+AgentKit monta esos scripts **solo** cuando corre `--agent=`. F5 de un jugador no los carga.
 
 Para un match o un HUD que aparece y desaparece:
 
@@ -100,7 +112,7 @@ Para un match o un HUD que aparece y desaparece:
 
 `try_click` no falla si el nodo falta, está `disabled` o no está visible en el árbol (`AGENT_SKIP`). `repeat` corre `steps` hasta `times` o hasta que `until` (mismo shape que `assert`) pase. `assert` / `wait_until` también aceptan `visible_in_tree`.
 
-Ejemplo del demo: `examples/boot_smoke.json`.
+Ejemplo del demo: `example/agent/flows/boot_smoke.json` (workspace del proyecto, no del addon).
 
 Editor de cables experimental: `experimental/agent-flow-editor/` en el studio kit (Vite, **pnpm**, localhost). Bind al `project.godot`, Scan / Live inspect para pegar `%UniqueName` e InputMap, **Run flow** llama `cli.sh`. No forma parte de `./install.sh`.
 
@@ -113,4 +125,4 @@ Editor de cables experimental: `experimental/agent-flow-editor/` en el studio ki
 
 ## Versión
 
-0.1.3
+0.1.4

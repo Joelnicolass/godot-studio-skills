@@ -2,7 +2,7 @@
 # AgentKit host wrapper. Finds Godot, reads viewport, runs --agent=VERB.
 #   cli.sh /path/to/godot-project capture --scene=res://x.tscn --out=/tmp/a.png
 #   cli.sh /path/to/godot-project info
-#   GODOT=/path/to/Godot cli.sh . flow --flow=res://addons/agent_kit/examples/boot_smoke.json --out=/tmp/flow
+#   GODOT=/path/to/Godot cli.sh . flow --flow=boot_smoke.json --out=res://agent/out
 set -euo pipefail
 
 usage() {
@@ -15,11 +15,11 @@ AgentKit — CLI for AI agents (Godot window or headless).
   flags    forwarded after -- as --key=value (see addons/agent_kit/README.md)
 
 Examples:
-  cli.sh ./example capture --out=/tmp/boot.png --wait=1.0
-  cli.sh ./example flow --flow=res://addons/agent_kit/examples/boot_smoke.json --out=/tmp/flow
+  cli.sh ./example capture --out=res://agent/out/boot.png --wait=1.0
+  cli.sh ./example flow --flow=boot_smoke.json
   cli.sh ./example inspect --unique
-  cli.sh ./example fetch --url=https://example.com --out=/tmp/body.html
-  cli.sh ./example diff --a=/tmp/a.png --b=/tmp/b.png --out=/tmp/diff.png
+  cli.sh ./example fetch --url=https://example.com --out=res://agent/out/body.html
+  cli.sh ./example diff --a=res://agent/out/a.png --b=res://agent/out/b.png --out=res://agent/out/diff.png
 
 Env: GODOT  path to the Godot 4 binary.
 EOF

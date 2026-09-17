@@ -8,6 +8,7 @@ const Flow := preload("res://addons/agent_kit/agent_flow.gd")
 const Fetch := preload("res://addons/agent_kit/agent_fetch.gd")
 const Diff := preload("res://addons/agent_kit/agent_diff.gd")
 const LogSink := preload("res://addons/agent_kit/agent_log.gd")
+const Workspace := preload("res://addons/agent_kit/agent_workspace.gd")
 
 var _exit_code: int = 0
 var _sink
@@ -33,6 +34,8 @@ func _ready() -> void:
 
 
 func _run(cmd: Dictionary) -> void:
+	Workspace.ensure_dirs()
+	Workspace.mount(self)
 	var verb := str(cmd.get("verb", "")).strip_edges().to_lower()
 	match verb:
 		"help", "h":
@@ -95,6 +98,9 @@ func _info() -> int:
 		"scene": get_tree().current_scene.name if get_tree().current_scene else "",
 		"os": OS.get_name(),
 		"actions": Ops.input_action_names(),
+		"workspace": Workspace.ROOT,
+		"flows": Workspace.FLOWS,
+		"harness": Workspace.list_harness_names(),
 	}
 	print("AGENT_JSON ", JSON.stringify(payload))
 	return _ok("info")
@@ -131,7 +137,7 @@ func _capture(cmd: Dictionary) -> int:
 	await _settle(Cli.wait_seconds(cmd))
 	var out := str(cmd.get("out", "")).strip_edges()
 	if out.is_empty():
-		out = "user://agent_kit/capture.png"
+		out = Workspace.OUT.path_join("capture.png")
 	var shot_err: String = Ops.screenshot(get_tree(), out)
 	if not shot_err.is_empty():
 		return _fail("capture", shot_err)
@@ -146,18 +152,16 @@ func _flow(cmd: Dictionary) -> int:
 	var flow_path := str(cmd.get("flow", "")).strip_edges()
 	if flow_path.is_empty():
 		return _fail("flow", "missing --flow=")
-	var fs: String = Ops.fs_path(flow_path)
-	if flow_path.begins_with("res://"):
-		fs = ProjectSettings.globalize_path(flow_path)
-	if not FileAccess.file_exists(fs) and not FileAccess.file_exists(flow_path):
-		return _fail("flow", "missing file %s" % flow_path)
-	var raw := FileAccess.get_file_as_string(fs if FileAccess.file_exists(fs) else flow_path)
+	var fs: String = Workspace.resolve_flow_path(flow_path)
+	if fs.is_empty() or not FileAccess.file_exists(fs):
+		return _fail("flow", "missing file %s (expected res://agent/flows/)" % flow_path)
+	var raw := FileAccess.get_file_as_string(fs)
 	var parsed: Variant = JSON.parse_string(raw)
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return _fail("flow", "JSON root must be an object")
 	var out := str(cmd.get("out", "")).strip_edges()
 	if out.is_empty():
-		out = "user://agent_kit"
+		out = Workspace.OUT
 	var runner: RefCounted = Flow.new()
 	var fail: String = await runner.run(
 		get_tree(), parsed, out, bool(cmd.get("fail_on_error", false))

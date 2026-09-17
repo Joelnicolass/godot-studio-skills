@@ -14,7 +14,7 @@ Si el addon falta o se desactualizó, desde la raíz del studio kit:
 ./install.sh --addon-only example
 ```
 
-El plugin **MpKit** ya está enabled y el autoload `MpKit` va **antes** de `NetGlue`. **AgentKit** está enabled para CLI de agentes (`addons/agent_kit/cli.sh`).
+El plugin **MpKit** ya está enabled y el autoload `MpKit` va **antes** de `NetGlue`. **AgentKit** está enabled para CLI de agentes (`addons/agent_kit/cli.sh`). Los flows viven en `agent/flows/` (no dentro del addon).
 
 ## Jugar
 

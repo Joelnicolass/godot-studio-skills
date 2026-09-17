@@ -1,6 +1,7 @@
 class_name AgentOps
 extends RefCounted
 
+const Workspace := preload("res://addons/agent_kit/agent_workspace.gd")
 const _BLOCKED_METHODS := ["free", "queue_free", "replace_by", "set_script"]
 
 
@@ -36,8 +37,18 @@ static func resolve(from: Node, spec: String) -> Node:
 	if from == null:
 		return null
 	var trimmed := spec.strip_edges()
-	if trimmed.is_empty():
+	if trimmed.is_empty() or trimmed == ".":
 		return from
+	if trimmed.begins_with("/"):
+		var tree := from.get_tree()
+		if tree == null:
+			return null
+		return tree.root.get_node_or_null(NodePath(trimmed))
+	if trimmed == "AgentKit" or trimmed.begins_with("AgentKit/"):
+		var tree := from.get_tree()
+		if tree == null:
+			return null
+		return tree.root.get_node_or_null(NodePath("/root/%s" % trimmed))
 	var node := from
 	for part in trimmed.split("/"):
 		if part.is_empty():
@@ -364,19 +375,29 @@ static func _mouse_motion(from: Vector2, to: Vector2) -> void:
 
 
 static func call_method(scene: Node, spec: Dictionary) -> String:
-	var node := resolve(scene, str(spec.get("node", "")))
-	if node == null:
-		return "missing node %s" % str(spec.get("node", ""))
+	var label := ""
+	var node: Node = null
+	if spec.has("harness"):
+		label = str(spec.get("harness", "")).strip_edges()
+		var tree: SceneTree = scene.get_tree() if scene else null
+		node = Workspace.harness_node(tree, label)
+		if node == null:
+			return "missing harness %s" % label
+	else:
+		label = str(spec.get("node", ""))
+		node = resolve(scene, label)
+		if node == null:
+			return "missing node %s" % label
 	var method := str(spec.get("method", "")).strip_edges()
 	if method.is_empty():
 		return "call missing method"
 	if method in _BLOCKED_METHODS:
 		return "call blocked method %s" % method
 	if not node.has_method(method):
-		return "%s has no method %s" % [spec.get("node", ""), method]
+		return "%s has no method %s" % [label, method]
 	var args: Array = spec.get("args", [])
 	if typeof(args) != TYPE_ARRAY:
 		return "call.args must be an array"
-	node.callv(method, args)
-	print("AGENT_CALL ", spec.get("node", ""), ".", method)
+	var result: Variant = node.callv(method, args)
+	print("AGENT_CALL ", label, ".", method, " result=", stringify_variant(result))
 	return ""

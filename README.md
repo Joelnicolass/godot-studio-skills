@@ -249,7 +249,7 @@ Snippets Cursor/VS Code: `.vscode/mpkit.code-snippets` (el instalador los copia)
 ./install.sh --addon /path/to/godot-project agent_kit
 ```
 
-Habilitá el plugin **AgentKit**. CLI: `addons/agent_kit/cli.sh PROJECT inspect --unique` y `flow --fail-on-error`. Un flow largo (subasta, turnos) usa `try_click` y `repeat` — ver `addons/agent_kit/README.md` y skill `godot-agent-kit`. No uses `godot -s /tmp` para capturas.
+Habilitá el plugin **AgentKit**. CLI: `addons/agent_kit/cli.sh PROJECT inspect --unique` y `flow --flow=boot_smoke.json --fail-on-error`. JSON/harness en `res://agent/` del juego, no en el addon ni en `src/`. Un flow largo (subasta, turnos) usa `try_click` y `repeat` — ver `addons/agent_kit/README.md` y skill `godot-agent-kit`. No uses `godot -s /tmp` para capturas.
 
 ## FsmKit / PlatKit
 

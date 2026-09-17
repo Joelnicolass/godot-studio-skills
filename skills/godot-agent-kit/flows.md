@@ -1,6 +1,8 @@
 # Flows JSON
 
-`--agent=flow --flow=res://path.json --out=/abs/dir`
+`--agent=flow --flow=res://agent/flows/boot_smoke.json --out=res://agent/out`
+
+Nombre corto: `--flow=boot_smoke.json` (busca en `res://agent/flows/`).
 
 ```json
 {
@@ -38,7 +40,7 @@ Match / turnos (el panel de puja se oculta fuera de turno):
 
 `scene` vacío en la raíz = main scene. Un step `{ "scene": "res://…" }` cambia a mitad del flow. `click` dispara `BaseButton.pressed` (no hit-test de píxel). `press` es InputMap: `"ui_accept"` o `{ "name": "move_left", "hold": 0.4 }` (hold = down, espera, up). `%Nombre` se resuelve en la escena y, si falta, en hijos. `try_click` no falla si el nodo falta, está `disabled` o no está visible (`AGENT_SKIP`). `repeat` corre `steps` hasta `times` o hasta que `until` (mismo shape que `assert`) pase.
 
-Otros steps: `{ "select": { "node": "%Rooms", "index": 0 } }` o `"text"` (ItemList / OptionButton); `{ "range": { "node": "%Vol", "value": 0.5 } }`; `{ "scroll": { "node": "%List", "vertical": 80 } }`; `{ "drag": { "node": "%Pad", "from_x": 8, "from_y": 8, "to_x": 80, "to_y": 8 } }`; `{ "call": { "node": "%Title", "method": "set", "args": ["text", "ok"] } }` (no `free` / `queue_free`); `{ "shot": { "name": "hud.png", "node": "%Status" } }` recorta un Control; `{ "diff": { "a": "01.png", "b": "02.png", "max_percent": 0 } }` compara PNGs del `--out=`; `{ "seed": 1 }`; `{ "time_scale": 0.5 }` (se restaura al terminar).
+Otros steps: `{ "select": { "node": "%Rooms", "index": 0 } }` o `"text"` (ItemList / OptionButton); `{ "range": { "node": "%Vol", "value": 0.5 } }`; `{ "scroll": { "node": "%List", "vertical": 80 } }`; `{ "drag": { "node": "%Pad", "from_x": 8, "from_y": 8, "to_x": 80, "to_y": 8 } }`; `{ "call": { "harness": "wild_hooks", "method": "place_wild_beside_player" } }` (script en `res://agent/harness/`, **no** `func agent_*` en `src/`); `{ "call": { "node": "%Title", "method": "set", "args": ["text", "ok"] } }` (no `free` / `queue_free`); `{ "shot": { "name": "hud.png", "node": "%Status" } }` recorta un Control; `{ "diff": { "a": "01.png", "b": "02.png", "max_percent": 0 } }` compara PNGs del `--out=`; `{ "seed": 1 }`; `{ "time_scale": 0.5 }` (se restaura al terminar).
 
 `assert` / `wait_until` keys: `disabled`, `visible`, `visible_in_tree`, `text_contains`, `text_equals`, `texture_path_contains`. `wait_until` también acepta `contains` como alias de `text_contains`, o `{ "node": "%PlaySolo", "signal": "pressed", "timeout": 5 }`.
 
