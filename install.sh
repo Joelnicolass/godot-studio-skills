@@ -3,7 +3,7 @@
 #   ./install.sh                      # ~/.cursor/skills, commands, agents
 #   ./install.sh --project            # ./.cursor/skills, commands, agents
 #   ./install.sh --addon GODOT_ROOT   # addons/mp_kit → GODOT_ROOT/addons/mp_kit
-#   ./install.sh --addon GODOT_ROOT agent_kit|fsm_kit|plat_kit
+# AgentKit lives in github.com/Joelnicolass/godot-studio-playtest (this script fetches it).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,18 +11,18 @@ SRC="${ROOT}/skills"
 CMD_SRC="${ROOT}/commands"
 AGENT_SRC="${ROOT}/agents"
 ADDONS_ROOT="${ROOT}/addons"
+PLAYTEST_REPO="${GODOT_STUDIO_PLAYTEST_REPO:-https://github.com/Joelnicolass/godot-studio-playtest.git}"
+PLAYTEST_REF="${GODOT_STUDIO_PLAYTEST_REF:-main}"
 SKILL_NAMES=(
   godot-layered-architecture
   godot-composition-first
   godot-mp-kit
-  godot-agent-kit
   godot-studio-workflow
   godot-testing
   godot-animation
   godot-juicy
   godot-fsm
   godot-platformer-2d
-  godot-playtest
   godot-visual-qa
   godot-studio-memory
 )
@@ -32,7 +32,6 @@ AGENT_FILES=(
   studio-reviewer.md
   studio-tester.md
   studio-visual.md
-  studio-playtester.md
 )
 
 MODE="global"
@@ -43,6 +42,7 @@ ADDON_WHICH="mp_kit"
 DO_SKILLS=1
 DO_COMMANDS=1
 DO_AGENTS=1
+DO_PLAYTEST=1
 
 usage() {
   cat <<'EOF'
@@ -53,14 +53,21 @@ Godot studio kit installer (skills + commands + subagents + addons).
   ./install.sh --dest DIR           Skills in DIR (commands and agents alongside)
   ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|all]
                                     Copy the addon into the Godot project (default: mp_kit)
+                                    agent_kit is installed from godot-studio-playtest
   ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|all]
                                     Addon only
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias of --addon GODOT_ROOT agent_kit
+  ./install.sh --no-playtest        Skip playtest skills/command/agent
   ./install.sh --list               What would be installed
   ./install.sh --pack               Build dist/godot-studio-skills.zip
 
   npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
+  npx skills add Joelnicolass/godot-studio-playtest -g -a cursor -y
+
+AgentKit / playtester: https://github.com/Joelnicolass/godot-studio-playtest
+Local checkout (preferred): ../godot-studio-playtest
+Override: GODOT_STUDIO_PLAYTEST=/path  GODOT_STUDIO_PLAYTEST_REF=main
 
 EOF
 }
@@ -108,6 +115,10 @@ while [[ $# -gt 0 ]]; do
       ADDON_WHICH="agent_kit"
       shift 2
       ;;
+    --no-playtest)
+      DO_PLAYTEST=0
+      shift
+      ;;
     --list)
       MODE="list"
       shift
@@ -124,7 +135,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$DO_SKILLS" -eq 1 && ! -d "$SRC" ]]; then
-  echo "Cannot find ${SRC}. Run this script from the unzipped zip/repo?" >&2
+  echo "Cannot find ${SRC}. Run the script from the unpacked zip/repo?" >&2
   exit 1
 fi
 
@@ -138,7 +149,14 @@ if [[ "$DO_AGENTS" -eq 1 && ! -d "$AGENT_SRC" ]]; then
   exit 1
 fi
 
-if [[ -n "$GODOT_ROOT" && ! -d "$ADDONS_ROOT" ]]; then
+needs_local_addons() {
+  case "$ADDON_WHICH" in
+    agent_kit) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+if [[ -n "$GODOT_ROOT" ]] && needs_local_addons && [[ ! -d "$ADDONS_ROOT" ]]; then
   echo "Cannot find ${ADDONS_ROOT}" >&2
   exit 1
 fi
@@ -187,16 +205,74 @@ resolve_agent_dest() {
   esac
 }
 
-install_agent_kit_cursor_rule() {
-  local project="$1"
-  local src="${SRC}/godot-agent-kit/agent-kit-workspace.mdc"
-  if [[ ! -f "$src" ]]; then
+ensure_playtest() {
+  local explicit="${GODOT_STUDIO_PLAYTEST:-}"
+  if [[ -n "$explicit" ]]; then
+    if [[ -x "${explicit}/install.sh" ]]; then
+      echo "$explicit"
+      return 0
+    fi
+    echo "GODOT_STUDIO_PLAYTEST=${explicit} has no install.sh" >&2
+    return 1
+  fi
+  local sibling
+  sibling="$(cd "${ROOT}/.." && pwd)/godot-studio-playtest"
+  if [[ -x "${sibling}/install.sh" ]]; then
+    echo "playtest  ${sibling} (local checkout)" >&2
+    echo "$sibling"
     return 0
   fi
-  local dest_dir="${project}/.cursor/rules"
-  mkdir -p "$dest_dir"
-  cp "$src" "${dest_dir}/agent-kit-workspace.mdc"
-  echo "rule     ${dest_dir}/agent-kit-workspace.mdc"
+  if ! command -v git >/dev/null 2>&1; then
+    echo "git is required to clone ${PLAYTEST_REPO}" >&2
+    return 1
+  fi
+  local cache="${XDG_CACHE_HOME:-${HOME}/.cache}/godot-studio-playtest"
+  if [[ -d "${cache}/.git" ]]; then
+    echo "playtest  fetch ${PLAYTEST_REF} → ${cache}" >&2
+    git -C "$cache" fetch --depth 1 origin "$PLAYTEST_REF" >&2
+    git -C "$cache" checkout -q --detach FETCH_HEAD
+  else
+    mkdir -p "$(dirname "$cache")"
+    rm -rf "$cache"
+    echo "playtest  clone ${PLAYTEST_REPO} (${PLAYTEST_REF})" >&2
+    git clone --depth 1 --branch "$PLAYTEST_REF" "$PLAYTEST_REPO" "$cache" >&2
+  fi
+  if [[ ! -x "${cache}/install.sh" ]]; then
+    echo "Playtest clone has no install.sh" >&2
+    return 1
+  fi
+  echo "$cache"
+}
+
+install_playtest_cursor() {
+  [[ "$DO_PLAYTEST" -eq 1 ]] || return 0
+  [[ "$DO_SKILLS" -eq 1 || "$DO_COMMANDS" -eq 1 || "$DO_AGENTS" -eq 1 ]] || return 0
+  local root
+  if ! root="$(ensure_playtest)"; then
+    echo "Warning: AgentKit/playtester was not installed. Clone https://github.com/Joelnicolass/godot-studio-playtest and run its ./install.sh" >&2
+    return 0
+  fi
+  echo
+  echo "Playtest module (Cursor) → ${root}"
+  case "$MODE" in
+    global) "${root}/install.sh" --global ;;
+    project) "${root}/install.sh" --project ;;
+    custom) "${root}/install.sh" --dest "$DEST" ;;
+    *) return 0 ;;
+  esac
+}
+
+install_playtest_addon() {
+  local project="$1"
+  local root
+  if ! root="$(ensure_playtest)"; then
+    echo "Could not obtain godot-studio-playtest to install AgentKit." >&2
+    echo "  git clone ${PLAYTEST_REPO}" >&2
+    echo "  ./install.sh --addon ${project}" >&2
+    exit 1
+  fi
+  echo "Playtest module (addon) → ${root}"
+  "${root}/install.sh" --addon-only "$project"
 }
 
 copy_one_addon() {
@@ -214,49 +290,7 @@ copy_one_addon() {
   if [[ -f "${dest}/cli.sh" ]]; then
     chmod +x "${dest}/cli.sh"
   fi
-  if [[ "$name" == "agent_kit" ]]; then
-    rm -rf "${dest}/examples"
-  fi
   echo "addon  ${dest}"
-}
-
-scaffold_agent_workspace() {
-  local project="$1"
-  local dest="${project}/agent"
-  mkdir -p "${dest}/flows" "${dest}/harness" "${dest}/out"
-  if [[ ! -f "${dest}/out/.gdignore" ]]; then
-    : > "${dest}/out/.gdignore"
-  fi
-  if [[ ! -f "${dest}/README.md" ]]; then
-    cat > "${dest}/README.md" <<'EOF'
-# AgentKit workspace (this project)
-
-This is not the addon. The plugin lives in `addons/agent_kit/` and has no gameplay.
-
-- `flows/` — `--agent=flow` JSON. Short name: `cli.sh . flow --flow=boot_smoke.json`
-- `harness/` — GDScript AgentKit mounts **only** when `--agent=` is set. Node name = file basename (`hooks.gd` → `hooks`).
-- `out/` — run PNG / dumps (Godot ignores this folder).
-
-Never playtest helpers in `src/` (spawn / force-state / count / pause for the flow; `agent_*` or the same role under another name). `call()` on privates or `extends` the product class from here does not keep `src/` clean. If playtest needs setup that is not in the UI, write the helper here:
-
-```json
-{ "call": { "harness": "hooks", "method": "setup_slice" } }
-```
-
-```gdscript
-# harness/hooks.gd — extends Node, no class_name
-extends Node
-
-func setup_slice() -> String:
-	var scene := get_tree().current_scene
-	if scene == null:
-		return "no_scene"
-	# Use %UniqueName or public game APIs. Do not edit production glue.
-	return "ok"
-```
-EOF
-  fi
-  echo "workspace  ${dest}"
 }
 
 install_addon() {
@@ -281,14 +315,7 @@ install_addon() {
       echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
       ;;
     agent_kit)
-      copy_one_addon "$project" "agent_kit"
-      scaffold_agent_workspace "$project"
-      install_agent_kit_cursor_rule "$project"
-      echo
-      echo "Enable the AgentKit plugin (autoload). CI/headless, in project.godot:"
-      echo '  AgentKit="*res://addons/agent_kit/agent_kit.gd"'
-      echo "Flows/harness: ${project}/agent/  (not in addons/ or src/)"
-      echo "CLI: ${project}/addons/agent_kit/cli.sh ${project} flow --flow=boot_smoke.json --fail-on-error"
+      install_playtest_addon "$project"
       ;;
     fsm_kit)
       copy_one_addon "$project" "fsm_kit"
@@ -355,11 +382,14 @@ if [[ "$MODE" == "list" ]]; then
     echo "  - ${name%.md}"
   done
   echo
-  echo "Addons:"
+  echo "Addons (this repo):"
   echo "  - addons/mp_kit     (./install.sh --addon /path/to/godot-project)"
-  echo "  - addons/agent_kit  (./install.sh --addon /path/to/godot-project agent_kit)"
   echo "  - addons/fsm_kit    (./install.sh --addon /path/to/godot-project fsm_kit)"
   echo "  - addons/plat_kit   (./install.sh --addon /path/to/godot-project plat_kit)"
+  echo
+  echo "AgentKit / playtester (separate repo, this installer fetches it):"
+  echo "  https://github.com/Joelnicolass/godot-studio-playtest"
+  echo "  ./install.sh --addon /path/to/godot-project agent_kit"
   echo
   echo "Skills dest (global): ${HOME}/.cursor/skills"
   echo "Commands dest (global): ${HOME}/.cursor/commands"
@@ -378,14 +408,12 @@ if [[ "$DO_SKILLS" -eq 1 ]]; then
     echo "  ok  ${name}"
   done
   echo
-  echo "Done (skills). Open a new Cursor chat to reload."
+  echo "Done (skills). New Cursor chat to reload."
   echo "  layers:       godot-layered-architecture"
   echo "  composition:  godot-composition-first"
   echo "  multiplayer:  godot-mp-kit"
   echo "  orchestrator: godot-studio-workflow"
   echo "  memory:       godot-studio-memory"
-  echo "  playtest:     godot-playtest"
-  echo "  agent kit:    godot-agent-kit"
   echo "  visual qa:    godot-visual-qa"
   echo "  tests:        godot-testing"
   echo "  animation:    godot-animation"
@@ -408,6 +436,8 @@ if [[ "$DO_AGENTS" -eq 1 ]]; then
   echo
   echo "Done (subagents). New chat to reload. The main agent orchestrates; it does not implement the whole game alone."
 fi
+
+install_playtest_cursor
 
 if [[ -n "$GODOT_ROOT" ]]; then
   echo

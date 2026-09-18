@@ -14,7 +14,7 @@ description: >-
 
 The **main agent in this chat** is the orchestrator. It talks to the user. It does not dump the whole product into one subagent.
 
-Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Agent captures / flows: [godot-agent-kit](../godot-agent-kit/SKILL.md) if the addon is present. Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`.
+Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`.
 
 Goal: a Godot 4 game with a **small, clear base**. Priorities: clean layers, composition, editor/`@export`, reusable components.
 
@@ -31,7 +31,7 @@ Roles (`Task` `subagent_type` = their `name`):
 
 Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.
 
-When launching `studio-playtester` with AgentKit: the prompt must order reading [harness.md](../godot-agent-kit/harness.md) **before** writing a `.gd`. On return: if the playtest diff touched `src/` / glue (unless a product API with a game caller, not the flow), that is a **process FAIL** — ask for a revert; do not present it as playtest OK.
+When launching `studio-playtester` with AgentKit: the prompt must order reading `harness.md` from skill `godot-agent-kit` (playtest module) **before** writing a `.gd`. On return: if the playtest diff touched `src/` / glue (unless a product API with a game caller, not the flow), that is a **process FAIL** — ask for a revert; do not present it as playtest OK.
 
 A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 

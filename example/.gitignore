@@ -2,6 +2,3 @@
 .godot/
 /android/
 script_templates/
-/agent/out/*.png
-/agent/out/*.html
-/agent/flows/_editor_last.json

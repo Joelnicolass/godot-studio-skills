@@ -14,7 +14,7 @@ If the addon is missing or stale, from the studio kit root:
 ./install.sh --addon-only example
 ```
 
-The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetGlue`. **AgentKit** is enabled for the agent CLI (`addons/agent_kit/cli.sh`). Flows live in `agent/flows/` (not inside the addon).
+The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetGlue`. For the agent CLI, install AgentKit from [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh --addon-only example agent_kit` from this kit).
 
 ## Play
 

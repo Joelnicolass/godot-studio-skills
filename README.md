@@ -21,16 +21,16 @@ With the kit:
 - each feature is a scene + `@export` + Resource `.tres`, not a `match kind`
 - one RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across chats in Engram or `.studio/MEMORY.md` if needed
-- the game lives in **another** repo; this one only has skills, commands, agents, and addons (MpKit, AgentKit, FsmKit, PlatKit)
+- the game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Piece | Where | What it is |
 |-------|--------|--------|
 | Orchestrator | `skills/godot-studio-workflow/` | The chat agent: interview + `/implement-feature` (PRD/RFC optional) |
-| How to write Godot | `skills/` | Layers, composition, MpKit, AgentKit, FSM, 2D platformer, juicy, playtest, visual, memory, tests |
-| Subagents | `agents/` | Tech lead, developer, reviewer; optional tester, playtester, and visual |
+| How to write Godot | `skills/` | Layers, composition, MpKit, FSM, 2D platformer, juicy, visual, memory, tests |
+| Subagents | `agents/` | Tech lead, developer, reviewer; optional tester and visual. Playtester: playtest module |
 | Commands | `commands/` | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
 | MpKit | `addons/mp_kit/` | Listen or dedicated, replication nodes, Dictionary tunnel. **Zero** gameplay. |
-| AgentKit | `addons/agent_kit/` | CLI for agents: capture, flow (`try_click` / `repeat`), HTTP, inspect, diff. **Zero** gameplay. |
+| AgentKit | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | Agent CLI + harness. This kit installs it; it is not maintained here. |
 | FsmKit | `addons/fsm_kit/` | `FsmMachine` + `FsmState`. No autoload. |
 | PlatKit | `addons/plat_kit/` | 2D motor: coyote, buffer, apex, corner, lift. No levels or score. |
 
@@ -52,9 +52,12 @@ flowchart TB
     cmds[PRD / RFC commands]
     agents[Subagents]
     mpkit[MpKit addon]
-    agentkit[AgentKit addon]
     fsmkit[FsmKit addon]
     platkit[PlatKit addon]
+  end
+
+  subgraph playtest [godot-studio-playtest]
+    agentkit[AgentKit addon]
   end
 
   subgraph game [Your Godot project]
@@ -81,7 +84,7 @@ Roles (`Task` → `subagent_type`):
 | Developer | `studio-developer` | Implements that plan |
 | Reviewer | `studio-reviewer` | After the code (one pass) |
 | Tester | `studio-tester` | Only if you ask for tests or RULES requires them |
-| Playtester | `studio-playtester` | Only if you agree to play the build (not GUT) |
+| Playtester | `studio-playtester` | Only if you agree to play the build ([playtest module](https://github.com/Joelnicolass/godot-studio-playtest)) |
 | Visual | `studio-visual` | Only if you ask for a UI pass; needs `VISUAL.md` or refs |
 
 Subagents **do not** see this chat. The prompt passes repo, RFC, architecture style, and tells them to read the artifacts.
@@ -193,9 +196,10 @@ From GitHub:
 
 ```bash
 npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
+npx skills add Joelnicolass/godot-studio-playtest -g -a cursor -y
 ```
 
-`npx skills` only copies `skills/`. Commands, subagents, and the addons go through `./install.sh`.
+`npx skills` only copies `skills/`. Commands, subagents, and the addons go through `./install.sh` (this installer also pulls the playtest module).
 
 Open a **new chat** in Cursor after installing.
 
@@ -209,20 +213,19 @@ Short path (default):
 4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (PlatKit addon)
 5. `/new-mp-feature` — MpKit actor scaffold only
 6. `/workflow-status`
-7. `/agent-kit` — screenshots, flows, fetch, inspect (AgentKit addon)
 
 Written contract, if you ask:
 
-8. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
-9. `/verify-prd` → `PRD-REVIEW.md`
-10. `/extract-features` → `FEATURES.md`
-11. `/generate-rules` → `RULES.md`
-12. `/create-visual-guide` → `VISUAL.md`
-13. `/generate-rfcs` → `RFCs/` + `RFCS.md`
-14. `/implement-rfc <id>`
-15. `/review-rfc <id>`
-16. `/manage-changes`
-17. `/test-strategy` — optional
+7. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
+8. `/verify-prd` → `PRD-REVIEW.md`
+9. `/extract-features` → `FEATURES.md`
+10. `/generate-rules` → `RULES.md`
+11. `/create-visual-guide` → `VISUAL.md`
+12. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+13. `/implement-rfc <id>`
+14. `/review-rfc <id>`
+15. `/manage-changes`
+16. `/test-strategy` — optional
 
 ## Shaders, 2D sprites, and 3D
 
@@ -248,13 +251,18 @@ A ready demo lives in [`example/`](example/README.md) (1P, LAN, dedicated, 2D an
 
 Cursor/VS Code snippets: `.vscode/mpkit.code-snippets` (the installer copies them). Editor: `skills/godot-mp-kit/editor.md`. Online / VPS: `skills/godot-mp-kit/dedicated.md`.
 
-## Install AgentKit in a Godot project
+## Install AgentKit (separate module)
+
+AgentKit and the playtester live in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest). This kit **does not** vendor the addon; `./install.sh` clones or uses a `../godot-studio-playtest` checkout and runs that installer.
 
 ```bash
 ./install.sh --addon /path/to/godot-project agent_kit
+# equivalent:
+git clone https://github.com/Joelnicolass/godot-studio-playtest.git
+cd godot-studio-playtest && ./install.sh --addon /path/to/godot-project
 ```
 
-Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT inspect --unique` and `flow --flow=boot_smoke.json --fail-on-error`. JSON/harness live in the game’s `res://agent/`, not in the addon or `src/` (spawn / force-state / count / pause for the flow belong in the harness). Contract: skill `godot-agent-kit` → `harness.md`. A long flow (auction, turns) uses `try_click` and `repeat`. Do not use `godot -s /tmp` for captures.
+Enable the **AgentKit** plugin. JSON/harness live in the game’s `res://agent/`. Details: that repo’s README. Cable editor: `experimental/agent-flow-editor/` **there**, not here.
 
 ## FsmKit / PlatKit
 
@@ -265,24 +273,11 @@ Enable the **AgentKit** plugin. CLI: `addons/agent_kit/cli.sh PROJECT inspect --
 
 Enable **FsmKit** / **PlatKit**. Commands: `/add-state-machine`, `/add-platformer-2d`. PlatKit is not a Celeste clone: dash/stamina stay in the game.
 
-## Flow editor (experimental)
-
-Vite + React on localhost to build the JSON the playtester runs (`--agent=flow`), bind `%UniqueName` / InputMap, and **Run flow** against Godot. **Not** part of `./install.sh`. Install with **pnpm** (`node_modules/` is gitignored).
-
-```bash
-cd experimental/agent-flow-editor
-pnpm install
-pnpm dev
-```
-
-http://localhost:5173 — details: [`experimental/agent-flow-editor/README.md`](experimental/agent-flow-editor/README.md).
-
 ## Layout
 
 ```
 example/                       # Godot 4.7 demo (1P + LAN + dedicated, 2D and 3D)
 addons/mp_kit/
-addons/agent_kit/
 addons/fsm_kit/
 addons/plat_kit/
 skills/
@@ -291,18 +286,17 @@ skills/
   godot-layered-architecture/
   godot-composition-first/
   godot-mp-kit/
-  godot-agent-kit/
-  godot-playtest/
   godot-visual-qa/
   godot-testing/
   godot-animation/
   godot-juicy/
   godot-fsm/
   godot-platformer-2d/
-experimental/agent-flow-editor/  # Vite + pnpm; not in ./install.sh; ignore node_modules
-agents/                        # studio-tech-lead, studio-developer, studio-playtester, …
+agents/                        # studio-tech-lead, studio-developer, …
 commands/
 install.sh
 ```
+
+AgentKit, `/agent-kit`, `studio-playtester`, and the flow editor: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest).
 
 How the framework grows: extract into `addons/` or `skills/` when something is reused. Do not copy an FX or a score tracker “just in case”.

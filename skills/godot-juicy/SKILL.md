@@ -71,4 +71,4 @@ If the user does not say how much: ask **subtle / medium / a lot**. Default **me
 - FX that spawns gameplay or adds score.
 - An autoload `JuicyManager` for *this* actor’s hit.
 
-Playtest: juicy is **played** ([godot-playtest](../godot-playtest/SKILL.md)), not unit-tested.
+Playtest: juicy is **played** (skill `godot-playtest`, [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module), not unit-tested.

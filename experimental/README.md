@@ -1,7 +1,5 @@
 # Experimental
 
-Pieces that are **not** installed by `./install.sh`.
+There are no experimental pieces in this repo anymore.
 
-| Folder | What |
-|--------|------|
-| [agent-flow-editor](agent-flow-editor/README.md) | Vite + React (**pnpm**): cables → AgentKit JSON, Godot bind, **Run flow** |
+The AgentKit flow editor (Vite + cables) lives in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) → `experimental/agent-flow-editor/`.

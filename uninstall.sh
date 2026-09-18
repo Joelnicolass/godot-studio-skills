@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Remove this kit's skills, commands, and subagents. Leaves other ~/.cursor files alone.
+# Also removes godot-playtest / godot-agent-kit / /agent-kit / studio-playtester
+# if this installer copied them from godot-studio-playtest.
 set -euo pipefail
 
 SKILL_NAMES=(
@@ -12,9 +14,9 @@ SKILL_NAMES=(
   godot-juicy
   godot-fsm
   godot-platformer-2d
-  godot-playtest
   godot-visual-qa
   godot-studio-memory
+  godot-playtest
   godot-agent-kit
 )
 COMMAND_FILES=(
