@@ -1,7 +1,5 @@
 # Experimental
 
-Piezas que **no** se instalan con `./install.sh`.
+Ya no hay piezas experimentales en este repo.
 
-| Carpeta | Qué |
-|---------|-----|
-| [agent-flow-editor](agent-flow-editor/README.md) | Vite + React (**pnpm**): cables → JSON de AgentKit, bind Godot, **Run flow** |
+El editor de flow AgentKit (Vite + cables) vive en [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) → `experimental/agent-flow-editor/`.

@@ -71,4 +71,4 @@ Si el usuario no dice cuánto: preguntá **sutil / medio / mucho**. Default **me
 - FX que spawnea gameplay o suma puntos.
 - Un autoload `JuicyManager` para el hit de *este* actor.
 
-Playtest: lo jugoso se **juega** ([godot-playtest](../godot-playtest/SKILL.md)), no se unit-testea.
+Playtest: lo jugoso se **juega** (skill `godot-playtest`, módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)), no se unit-testea.
