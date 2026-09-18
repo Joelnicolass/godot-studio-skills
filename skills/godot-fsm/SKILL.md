@@ -1,10 +1,10 @@
 ---
 name: godot-fsm
 description: >-
-  Adds a Godot 4 composition StateMachine (FsmKit addon: FsmMachine +
-  FsmState children, actor socket, transition by node name). Use when the
-  user wants a state machine, FSM, Idle/Move/Hurt states, or /add-state-machine.
-  Not a platformer motor. Not gameplay rules.
+  Agrega una máquina de estados por composición en Godot 4 (addon FsmKit:
+  FsmMachine + hijos FsmState, socket actor, transición por nombre de nodo).
+  Usar cuando el usuario quiere una state machine, FSM, estados Idle/Move/Hurt
+  o /add-state-machine. No es un motor de plataformas. No son reglas de juego.
 ---
 
 # Godot — máquina de estados (FsmKit)

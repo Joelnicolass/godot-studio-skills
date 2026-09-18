@@ -30,5 +30,3 @@ Actor (CharacterBody2D / …)
 - Un `enum` + `match` de 200 líneas en el actor.
 - Guardar HP / puntaje / spawn en un estado.
 - Fork del addon por título.
-
-Skill: `godot-fsm`. Command: `/add-state-machine`.

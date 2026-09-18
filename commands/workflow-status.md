@@ -19,6 +19,8 @@ El orquestador (`godot-studio-workflow`) ejecuta estos pasos; el usuario no tien
 
 `/test-strategy` va **antes** de implementar a propósito: un plan de tests escrito después del código es una auditoría de cobertura, no un plan. `VISUAL.md` puede faltar si todavía no hay look; entonces el pase visual no corre.
 
+**Camino corto (sin PRD ni RFCs):** es un estado válido, no un hueco. La verdad vive en `FEATURES.md` (IDs `F<n>` + criterios) y `.studio/MEMORY.md` / Engram (decisiones, próximo paso). Reportá por feature en vez de por RFC y no recomiendes generar PRD/RFCs solo para llenar la tabla.
+
 Inspeccioná el proyecto actual para determinar el progreso del flujo:
 
 1. Qué artefactos existen: PRD.md, PRD-REVIEW.md, FEATURES.md, RULES.md, VISUAL.md, RFCS.md, carpeta RFCs/, reviews/, changes/, `.studio/MEMORY.md`?
@@ -32,7 +34,7 @@ Si no podés inspeccionar archivos de forma directa, pedime que describa o pegue
 Luego reportá:
 
 1. **Tabla de estado** — cada etapa del flujo con su artefacto y estado (Done / In progress / Missing / Stale)
-2. **Progreso por RFC** — estado de implementación y review lado a lado, una fila por RFC:
+2. **Progreso por RFC o por feature** — estado de implementación y review lado a lado, una fila por RFC (o por `F<n>` de `FEATURES.md` si no hay RFCs):
 
    ```
    RFC-001  implemented ✅   reviewed ❌

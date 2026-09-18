@@ -38,8 +38,6 @@ El autoload `MpKit` va **antes** de `MpFlow` (o tu subclase). En CI/headless dej
 
 Online = dedicated con IP pública y UDP abierto. En local: `godot --headless --path . -- --dedicated` y clientes a `127.0.0.1`.
 
-Skill Cursor: `skills/godot-mp-kit/`.
-
 ## Dos modos de servidor
 
 Mismo ENet, **mismo proyecto** que los clientes:

@@ -1,13 +1,13 @@
 ---
 name: godot-studio-workflow
 description: >-
-  Orchestrates a Godot 4 game from idea to a simple scalable base: interviews
-  the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP),
-  runs product commands (optional short GDD, features, rules, RFCs), iterates
-  with /implement-feature, then delegates tech-lead / developer / reviewer
-  (optional tester, playtester and visual). Use when starting a game, a Godot
-  project, implementing a feature, PRD, RFC, or when the user wants the studio
-  workflow / orchestration.
+  Orquesta un juego Godot 4 de la idea a una base simple y escalable:
+  entrevista al usuario (Clean vs estándar, tipo de multiplayer, 2D/3D, MCP
+  Aseprite/Blender), corre commands de producto (GDD corto opcional, features,
+  rules, RFCs), itera con /implement-feature y delega en tech-lead /
+  developer / reviewer (tester, playtester y visual opcionales). Usar al
+  arrancar un juego, un proyecto Godot, implementar una feature, PRD, RFC, o
+  cuando el usuario quiere el workflow / la orquestación del estudio.
 ---
 
 # Godot studio — orquestador
@@ -26,12 +26,14 @@ Roles (`Task` con `subagent_type` = su `name`):
 | Desarrollador | `studio-developer` | Implementar **un** RFC o un cambio acotado |
 | Reviewer | `studio-reviewer` | Después de implementar (un pase) |
 | Tester | `studio-tester` | **Solo** si el usuario pide tests o RULES.md los exige |
-| Playtester | `studio-playtester` | **Solo** si el usuario acepta jugar el build post-iteración |
+| Playtester | `studio-playtester` (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | **Solo** si el usuario acepta jugar el build post-iteración |
 | Visual | `studio-visual` | **Solo** si el usuario quiere pase UI; exige `VISUAL.md` / refs |
 
 Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
 
-Al lanzar `studio-playtester` con AgentKit: el prompt debe ordenar leer `harness.md` de la skill `godot-agent-kit` (módulo playtest) **antes** de escribir un `.gd`. Al volver: si el diff del playtest tocó `src/` / glue (salvo API de producto con caller de juego, no el flow), **FAIL de proceso** — pedí revert, no lo presentes como playtest OK.
+Si el subagente `studio-playtester` **no existe** (el módulo playtest no está instalado), no lo inventes ni lo simules con otro rol: ofrecé playtest manual (el usuario corre F5 y vos pasás los criterios del slice como checklist) o saltear el paso.
+
+Al lanzar `studio-playtester` con AgentKit: el prompt debe ordenar leer `harness.md` de la skill `godot-agent-kit` (módulo playtest) **antes** de escribir un `.gd` — ese archivo es la fuente única de la regla anti-contaminación; acá no se repite. Al volver, exigí evidencia mecánica, no prosa: `git diff --stat -- src scenes glue` vacío y `rg -n "func agent_" src scenes glue` vacío. Si el diff del playtest tocó `src/` / glue (salvo API de producto con caller de juego, no el flow), **FAIL de proceso** — pedí revert, no lo presentes como playtest OK.
 
 Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
 
@@ -78,8 +80,10 @@ orquestador (chat)
   → studio-reviewer      un pase; una corrección si hay bloqueantes
   → ¿playtest?           preguntar → studio-playtester (Godot, no GUT)
   → ¿pase visual?        preguntar; sin VISUAL.md/refs, pedirlos primero
-  → orquestador          sintetiza; anotá gotchas en memoria si hace falta
+  → orquestador          sintetiza y CIERRA: FEATURES.md al día + rastro en memoria
 ```
+
+Cerrar la iteración **deja rastro** siempre (no es opcional): el `F<n>` en `FEATURES.md` con sus criterios, y — si está la skill `godot-studio-memory` — decisión tomada + próximo paso. En un chat nuevo, `/workflow-status` reconstruye desde esos archivos; sin rastro, no reconstruye nada.
 
 El prompt al subagente incluye: ruta del repo, id de feature o RFC, estilo de arquitectura, **tipo de MP**, compact rules, y que lea RULES / VISUAL / FEATURES / el RFC si existe.
 
@@ -103,6 +107,13 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”.
 - `enum` + `match` de estados en el actor: `/add-state-machine`.
 - Platformer sin coyote/buffer: `/add-platformer-2d`, no un `is_on_floor()` pelado.
 
-## 4. Listo cuando
+## 4. Listo cuando (checklist de salida por iteración)
 
-El vertical slice se juega; cada feature es escena/componente/`Resource` chico; un humano puede abrir el inspector y seguir. Eso es la base escalable.
+No cierres una iteración “de sensación”. Verificá:
+
+- [ ] El proyecto parsea headless: `godot --headless --path . --quit` sin `SCRIPT ERROR` / `ERROR`.
+- [ ] La escena de la feature corre con F5/F6 y la acción del slice se ejerce.
+- [ ] Cada criterio del `F<n>` (o del RFC) tiene evidencia en el review — un criterio sin evidencia = no hecho.
+- [ ] `FEATURES.md` actualizado; memoria con decisión + próximo paso si está la skill.
+
+El norte sigue siendo el mismo: el slice se juega, cada feature es escena/componente/`Resource` chico, y un humano puede abrir el inspector y seguir.

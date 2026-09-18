@@ -1,10 +1,10 @@
 ---
 name: godot-platformer-2d
 description: >-
-  Adds Godot 4 2D platformer forgiveness (PlatKit): coyote time, jump
-  buffer, halved gravity at jump apex, corner correction, lift momentum.
-  Use when the user wants a platformer player, coyote, jump buffer,
-  Celeste-like feel, or /add-platformer-2d. Not dash/stamina. Not 3D.
+  Agrega perdón de plataformas 2D en Godot 4 (PlatKit): coyote time, jump
+  buffer, gravedad reducida en el apex, corrección de esquina, memoria de
+  lift. Usar cuando el usuario quiere un player de plataformas, coyote, jump
+  buffer, feel tipo Celeste o /add-platformer-2d. No dash/stamina. No 3D.
 ---
 
 # Godot — plataformas 2D (perdón)
