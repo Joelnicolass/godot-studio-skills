@@ -35,7 +35,7 @@ When launching a `Task`, paste [compact-rules.md](compact-rules.md) (subagents d
 ## Three ways to validate
 
 - `studio-tester` + `godot-testing` = the repo’s automated runner.
-- `studio-playtester` + `godot-playtest` = **play** the build. Ask for OK **after each iteration**.
+- `studio-playtester` + `godot-playtest` = **play** the build (playtest module; if not installed, manual playtest or skip). Ask for OK **after each iteration**.
 - `studio-visual` + `godot-visual-qa` = UI/UX. Without style/refs/`VISUAL.md`, **stop** and ask for them.
 
 A review = one pass. If there are blockers, one correction; not a loop until green.

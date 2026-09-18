@@ -18,6 +18,8 @@ The orchestrator (`godot-studio-workflow`) runs these steps; the user does not h
 
 `/test-strategy` comes **before** implementation on purpose: a test plan written after the code is a coverage audit, not a plan. `VISUAL.md` may be missing if there is no look yet; then the visual pass does not run.
 
+**Short path (no PRD or RFCs):** a valid state, not a gap. The truth lives in `FEATURES.md` (`F<n>` IDs + criteria) and `.studio/MEMORY.md` / Engram (decisions, next step). Report per feature instead of per RFC and do not recommend generating PRD/RFCs just to fill the table.
+
 Inspect the current project to determine workflow progress:
 
 1. Which artifacts exist: PRD.md, PRD-REVIEW.md, FEATURES.md, RULES.md, VISUAL.md, RFCS.md, RFCs/ folder, reviews/, changes/, `.studio/MEMORY.md`?
@@ -31,7 +33,7 @@ If you cannot inspect files directly, ask me to describe or paste the artifacts 
 Then report:
 
 1. **Status table** — each workflow stage with its artifact and status (Done / In progress / Missing / Stale)
-2. **Per-RFC progress** — implementation and review status side by side, one row per RFC:
+2. **Per-RFC or per-feature progress** — implementation and review status side by side, one row per RFC (or per `F<n>` from `FEATURES.md` if there are no RFCs):
 
    ```
    RFC-001  implemented ✅   reviewed ❌

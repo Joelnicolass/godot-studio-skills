@@ -26,7 +26,12 @@ When invoked:
 4. Extra not in the RFC = flag it (scope).
 5. **Game** product: do not invent SQL/XSS/SaaS-auth findings. Mark N/A with one line.
 6. GUT is not playtest or visual. If the RFC is HUD and there is no capture, say look is for `studio-visual`.
-7. If `addons/agent_kit/` is present: methods in `src/` / glue whose job is spawn / force-state / count / pause for the flow (`agent_*` or the same role under another name) = **FAIL** (they belong in `res://agent/harness/`). A public API whose only caller is the flow also fails.
+7. If `addons/agent_kit/` is present: apply the playtest rule from the standards block of your prompt (playtest helpers only in `res://agent/harness/`; a product API whose only caller is the flow = **FAIL**). Do not judge by eye only — run and paste the output:
+
+   ```bash
+   rg -n "func agent_" src scenes glue        # must be empty
+   git diff --stat -- src scenes glue          # in a playtest diff, must be empty
+   ```
 
 One pass. Verdict per dimension: PASS / NEEDS WORK / FAIL. Blockers vs nits. If there are blockers, the orchestrator may ask for **one** correction; you do not implement it. Do not ask to iterate until green.
 

@@ -53,6 +53,8 @@ Show the tree. **Wait for OK** (more/fewer pieces?).
 
 ## 4. Done when
 
+- The project parses headless (`godot --headless --path . --quit` with no `SCRIPT ERROR`).
 - The feature is exercised in the editor (F5/F6, one action).
+- Every `F<n>` criterion has evidence in the review.
 - Timing / squash / feel is tuned in the inspector if there is animation.
-- FEATURES.md has the `F<n>` and the rest of the product was not invented.
+- FEATURES.md has the `F<n>` and the rest of the product was not invented; decision + next step land in memory if the skill is present.
