@@ -1,11 +1,11 @@
 ---
 name: godot-juicy
 description: >-
-  Makes a Godot 4 game juicy (jugoso): camera shake, hit-stop, impact squash,
-  particles, post-process, screen flash, knockback visuals, SFX hooks.
-  Packed scenes, @export knobs, presentation only. Use when the user wants
-  juicy, jugoso, feel, camera shake, VFX, GPUParticles, hit feedback,
-  post-process, or /add-juicy. Not score, not UI visual QA.
+  Hace jugoso (juicy) un juego Godot 4: camera shake, hit-stop, squash de
+  impacto, partículas, post-process, screen flash, knockback visual, hooks de
+  SFX. Packed scenes, knobs @export, solo presentación. Usar cuando el usuario
+  quiere juicy, jugoso, feel, camera shake, VFX, GPUParticles, feedback de
+  golpe, post-process o /add-juicy. No es puntaje ni QA visual de UI.
 ---
 
 # Godot — juicy (jugoso)

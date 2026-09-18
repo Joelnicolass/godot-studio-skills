@@ -2,9 +2,7 @@
 
 Un estudio chico para **Cursor + Godot 4**: el chat no “hace el juego”, **orquesta**. Pregunta, escribe PRD/RFC, y reparte plan / código / review a subagentes. El resultado no es un `World.gd` de mil líneas: es una **base chica, jugable y clara**, que un humano (o otra IA) puede seguir desde el inspector.
 
-Repo: https://github.com/Joelnicolass/godot-studio-skills
-
-Dos ramas principales: `main` (inglés) y `release/spanish` (español). **Nunca** se les pushea trabajo directo. Orden: un par RC — `rc/vX.Y.Z` desde `main` y `rc/vX.Y.Z-spanish` desde `release/spanish` — y recién merge a las principales cuando la RC esté aceptada. Un segundo candidato: `rc/vX.Y.Z-rc.2`.
+Repo: https://github.com/Joelnicolass/godot-studio-skills — en inglés en `main`, en español en `release/spanish`.
 
 ## Por qué existe
 

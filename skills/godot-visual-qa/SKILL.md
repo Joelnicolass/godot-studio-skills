@@ -1,10 +1,10 @@
 ---
 name: godot-visual-qa
 description: >-
-  UI/UX review of a Godot 4 feature via screenshot: hierarchy, contrast,
-  consistency vs VISUAL.md and user references. Use when the user wants a
-  visual pass, or when studio-visual is invoked. Ask for style and references
-  first; do not invent a look.
+  Review UI/UX de una feature Godot 4 vía captura: jerarquía, contraste,
+  consistencia vs VISUAL.md y referencias del usuario. Usar cuando el usuario
+  quiere un pase visual o cuando se invoca studio-visual. Pedí estilo y
+  referencias primero; no inventes un look.
 ---
 
 # Visual QA (fidelidad y consistencia)

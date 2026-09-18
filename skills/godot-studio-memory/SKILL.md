@@ -1,11 +1,11 @@
 ---
 name: godot-studio-memory
 description: >-
-  Notes that survive between Cursor chats for a Godot studio project:
-  decisions, bugfixes, gotchas, user prefs, next step. Uses Engram MCP if
-  those tools exist; otherwise .studio/MEMORY.md next to project.godot.
-  Use at session start, when recalling past work, after a meaningful
-  decision, or before ending a session.
+  Notas que sobreviven entre chats de Cursor para un proyecto Godot de
+  estudio: decisiones, bugfixes, gotchas, preferencias del usuario, próximo
+  paso. Usa Engram MCP si esas tools existen; si no, .studio/MEMORY.md junto
+  a project.godot. Usar al iniciar sesión, al recordar trabajo previo, tras
+  una decisión importante o antes de cerrar una sesión.
 ---
 
 # Memoria entre chats

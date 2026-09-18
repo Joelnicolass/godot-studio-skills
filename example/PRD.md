@@ -81,7 +81,7 @@ Prioridad MoSCoW detallada en `FEATURES.md`. Resumen:
 - Puerto default **7777**; override `MpBoot.user_value("mp-port", "7777")`.
 - Máximo **4** jugadores.
 - El kit se **copia** con `./install.sh --addon-only example` desde la raíz del studio kit; no se forkear.
-- UI en español en esta rama (`release/spanish`); la rama `main` lleva el mismo example en inglés.
+- UI en español en esta edición del kit; la edición en inglés lleva el mismo example traducido.
 - Sin secretos, sin red fuera de ENet UDP.
 
 ## Jornadas de usuario

@@ -1,13 +1,13 @@
 ---
 name: godot-studio-workflow
 description: >-
-  Orchestrates a Godot 4 game from idea to a simple scalable base: interviews
-  the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP),
-  runs product commands (optional short GDD, features, rules, RFCs), iterates
-  with /implement-feature, then delegates tech-lead / developer / reviewer
-  (optional tester, playtester and visual). Use when starting a game, a Godot
-  project, implementing a feature, PRD, RFC, or when the user wants the studio
-  workflow / orchestration.
+  Orquesta un juego Godot 4 de la idea a una base simple y escalable:
+  entrevista al usuario (Clean vs estándar, tipo de multiplayer, 2D/3D, MCP
+  Aseprite/Blender), corre commands de producto (GDD corto opcional, features,
+  rules, RFCs), itera con /implement-feature y delega en tech-lead /
+  developer / reviewer (tester, playtester y visual opcionales). Usar al
+  arrancar un juego, un proyecto Godot, implementar una feature, PRD, RFC, o
+  cuando el usuario quiere el workflow / la orquestación del estudio.
 ---
 
 # Godot studio — orquestador
@@ -26,7 +26,7 @@ Roles (`Task` con `subagent_type` = su `name`):
 | Desarrollador | `studio-developer` | Implementar **un** RFC o un cambio acotado |
 | Reviewer | `studio-reviewer` | Después de implementar (un pase) |
 | Tester | `studio-tester` | **Solo** si el usuario pide tests o RULES.md los exige |
-| Playtester | `studio-playtester` | **Solo** si el usuario acepta jugar el build post-iteración |
+| Playtester | `studio-playtester` (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | **Solo** si el usuario acepta jugar el build post-iteración |
 | Visual | `studio-visual` | **Solo** si el usuario quiere pase UI; exige `VISUAL.md` / refs |
 
 Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
