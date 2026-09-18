@@ -1,6 +1,6 @@
 # Arquitectura del kit
 
-Cómo orquesta el chat, qué arquitecturas Godot soporta y cómo es el flujo de una iteración. El [README](../README.md) tiene el qué y el cómo instalar.
+Cómo orquesta el chat, qué arquitecturas Godot soporta y cómo es el flujo de una iteración. El [README](../README.md) tiene el qué y el cómo instalar. Diagrama interactivo: [docs/diagram/](diagram/README.md).
 
 ## Arquitectura del orquestador
 

@@ -1,0 +1,262 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Godot Studio Kit — flujo de una iteración",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "camino-corto",
+        "label": "Camino corto",
+        "focus": [
+          "idea",
+          "interview",
+          "feature",
+          "lead",
+          "ok",
+          "dev",
+          "review",
+          "close"
+        ],
+        "note": "De la idea al cierre: entrevista, /implement-feature, plan con árbol, tu OK, código, review."
+      },
+      {
+        "id": "gates-usuario",
+        "label": "Puertas del usuario",
+        "focus": [
+          "ok",
+          "lead",
+          "passes"
+        ],
+        "note": "Dónde decide el usuario: aprobar el árbol, aceptar playtest, pedir pase visual."
+      },
+      {
+        "id": "validacion-opcional",
+        "label": "Validación opcional",
+        "focus": [
+          "review",
+          "passes",
+          "close"
+        ],
+        "note": "Playtest y pase visual solo si los pedís; el cierre siempre deja rastro."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "you",
+      "label": "Vos"
+    },
+    {
+      "id": "orch",
+      "label": "Orquestador (chat principal)"
+    },
+    {
+      "id": "agents",
+      "label": "Subagentes"
+    },
+    {
+      "id": "optional",
+      "label": "Validación opcional",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "setup",
+      "label": "Entrevista",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "plan",
+      "label": "Plan + OK",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "build",
+      "label": "Código + validación",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "groups": [
+    {
+      "id": "gate",
+      "label": "Puerta humana",
+      "lane": "you",
+      "fromCol": 3,
+      "toCol": 3,
+      "variant": "security"
+    },
+    {
+      "id": "opt",
+      "label": "Solo si lo pedís",
+      "lane": "optional",
+      "fromCol": 5,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "idea",
+    "interview",
+    "feature",
+    "lead",
+    "ok",
+    "dev",
+    "review",
+    "close"
+  ],
+  "nodes": [
+    {
+      "id": "idea",
+      "lane": "you",
+      "col": 0,
+      "type": "external",
+      "label": "Idea",
+      "sublabel": "juego o feature",
+      "width": 136
+    },
+    {
+      "id": "ok",
+      "lane": "you",
+      "col": 3,
+      "type": "security",
+      "label": "Tu OK",
+      "sublabel": "árbol de archivos",
+      "tag": "sin árbol no hay código",
+      "width": 148
+    },
+    {
+      "id": "interview",
+      "lane": "orch",
+      "col": 1,
+      "type": "frontend",
+      "label": "Entrevista",
+      "sublabel": "Clean/estándar · MP · 2D/3D",
+      "width": 168
+    },
+    {
+      "id": "feature",
+      "lane": "orch",
+      "col": 2,
+      "type": "backend",
+      "label": "/implement-feature",
+      "sublabel": "PRD/RFC opcionales",
+      "width": 160
+    },
+    {
+      "id": "close",
+      "lane": "orch",
+      "col": 5,
+      "type": "database",
+      "label": "Cierre",
+      "sublabel": "FEATURES.md + memoria",
+      "tag": "checklist de done",
+      "width": 160
+    },
+    {
+      "id": "lead",
+      "lane": "agents",
+      "col": 3,
+      "type": "backend",
+      "label": "studio-tech-lead",
+      "sublabel": "plan + árbol, sin código",
+      "width": 160
+    },
+    {
+      "id": "dev",
+      "lane": "agents",
+      "col": 4,
+      "type": "backend",
+      "label": "studio-developer",
+      "sublabel": "implementa el plan",
+      "width": 152
+    },
+    {
+      "id": "review",
+      "lane": "agents",
+      "col": 5,
+      "type": "backend",
+      "label": "studio-reviewer",
+      "sublabel": "un pase, con evidencia",
+      "width": 152
+    },
+    {
+      "id": "passes",
+      "lane": "optional",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Playtest / pase visual",
+      "sublabel": "solo si los pedís · módulo playtest",
+      "width": 190
+    }
+  ],
+  "edges": [
+    {
+      "id": "idea-interview",
+      "from": "idea",
+      "to": "interview",
+      "variant": "default"
+    },
+    {
+      "id": "interview-feature",
+      "from": "interview",
+      "to": "feature",
+      "label": "stack elegido",
+      "variant": "emphasis"
+    },
+    {
+      "id": "feature-lead",
+      "from": "feature",
+      "to": "lead",
+      "variant": "default"
+    },
+    {
+      "id": "lead-ok",
+      "from": "lead",
+      "to": "ok",
+      "label": "árbol: ¿más / menos piezas?",
+      "variant": "security"
+    },
+    {
+      "id": "ok-dev",
+      "from": "ok",
+      "to": "dev",
+      "label": "aprobado",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dev-review",
+      "from": "dev",
+      "to": "review",
+      "variant": "default"
+    },
+    {
+      "id": "review-close",
+      "from": "review",
+      "to": "close",
+      "label": "sin bloqueantes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "review-passes",
+      "from": "review",
+      "to": "passes",
+      "label": "si aceptás",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "passes-close",
+      "from": "passes",
+      "to": "close",
+      "variant": "dashed",
+      "role": "return"
+    }
+  ]
+}
