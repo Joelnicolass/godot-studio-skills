@@ -38,8 +38,6 @@ The `MpKit` autoload goes **before** `MpFlow` (or your subclass). For CI/headles
 
 Online = dedicated with a public IP and open UDP. Locally: `godot --headless --path . -- --dedicated` and clients to `127.0.0.1`.
 
-Cursor skill: `skills/godot-mp-kit/`.
-
 ## Two server modes
 
 Same ENet, **same project** as the clients:

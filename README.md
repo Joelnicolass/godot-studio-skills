@@ -2,9 +2,7 @@
 
 A small studio for **Cursor + Godot 4**: the chat does not “make the game”, it **orchestrates**. It interviews you, writes PRD/RFCs, and hands plan / code / review to subagents. The result is not a thousand-line `World.gd`: it is a **small, playable, clear base** that a human (or another AI) can continue from the inspector.
 
-Repo: https://github.com/Joelnicolass/godot-studio-skills
-
-Two principal branches: `main` (English) and `release/spanish` (Spanish). **Never** push work straight to them. Order: an RC pair — `rc/vX.Y.Z` from `main` and `rc/vX.Y.Z-spanish` from `release/spanish` — and merge to the principals only after the RC is accepted. A second candidate: `rc/vX.Y.Z-rc.2`.
+Repo: https://github.com/Joelnicolass/godot-studio-skills — English on `main`, Spanish on `release/spanish`.
 
 ## Why this exists
 

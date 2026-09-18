@@ -26,7 +26,7 @@ Roles (`Task` `subagent_type` = their `name`):
 | Developer | `studio-developer` | Implement **one** RFC or a bounded change |
 | Reviewer | `studio-reviewer` | After implementation (one pass) |
 | Tester | `studio-tester` | **Only** if the user asked for tests or RULES.md requires them |
-| Playtester | `studio-playtester` | **Only** if the user agrees to play the build after this iteration |
+| Playtester | `studio-playtester` (module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | **Only** if the user agrees to play the build after this iteration |
 | Visual | `studio-visual` | **Only** if the user wants a UI pass; requires `VISUAL.md` / refs |
 
 Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.

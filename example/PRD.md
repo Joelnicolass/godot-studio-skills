@@ -81,7 +81,7 @@ MoSCoW detail is in `FEATURES.md`.
 - Default port **7777**; override `MpBoot.user_value("mp-port", "7777")`.
 - Max **4** players.
 - Copy the kit with `./install.sh --addon-only example`; do not fork.
-- UI in English on `main`; Spanish on `release/spanish`.
+- UI in English in this edition of the kit; the Spanish edition ships the same example translated.
 - No secrets; no network beyond ENet UDP.
 
 ## User journeys
