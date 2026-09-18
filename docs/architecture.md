@@ -1,6 +1,6 @@
 # Kit architecture
 
-How the chat orchestrates, which Godot architectures the kit supports, and what one iteration looks like. The [README](../README.md) covers what the kit is and how to install it.
+How the chat orchestrates, which Godot architectures the kit supports, and what one iteration looks like. The [README](../README.md) covers what the kit is and how to install it. Interactive diagram: [docs/diagram/](diagram/README.md).
 
 ## Orchestrator architecture
 
