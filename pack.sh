@@ -21,6 +21,7 @@ cp -R "${ROOT}/skills" "$STAGE/"
 cp -R "${ROOT}/commands" "$STAGE/"
 cp -R "${ROOT}/agents" "$STAGE/"
 cp -R "${ROOT}/addons" "$STAGE/"
+cp -R "${ROOT}/docs" "$STAGE/"
 cp "${ROOT}/install.sh" "${ROOT}/uninstall.sh" "${ROOT}/pack.sh" \
   "${ROOT}/README.md" "${ROOT}/publish.env.example" "$STAGE/"
 # .gitignore es opcional en el zip; el usuario instala, no clona desde ahí.

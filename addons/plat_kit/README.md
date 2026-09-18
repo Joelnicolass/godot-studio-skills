@@ -23,7 +23,7 @@ Player (CharacterBody2D)
 └── PlatMotor          # body = Player (or the parent)
 ```
 
-If there is an FSM: `FsmMachine` is **another** child. A state calls `request_jump()` / sets `axis` with `read_input = false` (MP: the host simulates).
+If you use a state machine: it goes as **another** child of the actor. A state calls `request_jump()` / sets `axis` with `read_input = false` (MP: the host simulates).
 
 ## Knobs (inspector)
 
@@ -35,8 +35,8 @@ If there is an FSM: `FsmMachine` is **another** child. A state calls `request_ju
 | Lift | `lift_remember` — platform velocity for a few frames after |
 | Wall jump | off by default; `wall_extra_pixels` |
 
-Dash, one-way pop, stamina refund: **game glue**, not this addon. Recipes: skill `godot-platformer-2d`.
+Dash, one-way pop, stamina refund: **game glue**, not this addon.
 
 ## MP
 
-The motor runs where physics is authoritative (host / 1P). Guests do not simulate the jump. Do not put PlatKit in `addons/mp_kit`.
+The motor runs where physics is authoritative (host / 1P). Guests do not simulate the jump. Do not put PlatKit inside another addon.

@@ -1,0 +1,67 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Godot Studio Kit — one iteration",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "short-path",
+        "label": "Short path",
+        "focus": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "close"],
+        "note": "From idea to close: interview, /implement-feature, plan with a file tree, your OK, code, review."
+      },
+      {
+        "id": "user-gates",
+        "label": "User gates",
+        "focus": ["ok", "lead", "passes"],
+        "note": "Where you decide: approve the tree, accept playtest, ask for a visual pass."
+      },
+      {
+        "id": "optional-validation",
+        "label": "Optional validation",
+        "focus": ["review", "passes", "close"],
+        "note": "Playtest and visual pass only if you ask; closing always leaves a trace."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "you", "label": "You" },
+    { "id": "orch", "label": "Orchestrator (main chat)" },
+    { "id": "agents", "label": "Subagents" },
+    { "id": "optional", "label": "Optional validation", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "setup", "label": "Interview", "fromCol": 0, "toCol": 1 },
+    { "id": "plan", "label": "Plan + OK", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "build", "label": "Code + validation", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "gate", "label": "Human gate", "lane": "you", "fromCol": 3, "toCol": 3, "variant": "security" },
+    { "id": "opt", "label": "Only if you ask", "lane": "optional", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "close"],
+  "nodes": [
+    { "id": "idea", "lane": "you", "col": 0, "type": "external", "label": "Idea", "sublabel": "game or feature", "width": 136 },
+    { "id": "ok", "lane": "you", "col": 3, "type": "security", "label": "Your OK", "sublabel": "file tree", "tag": "no tree, no code", "width": 148 },
+    { "id": "interview", "lane": "orch", "col": 1, "type": "frontend", "label": "Interview", "sublabel": "Clean/standard · MP · 2D/3D", "width": 168 },
+    { "id": "feature", "lane": "orch", "col": 2, "type": "backend", "label": "/implement-feature", "sublabel": "PRD/RFC optional", "width": 160 },
+    { "id": "close", "lane": "orch", "col": 5, "type": "database", "label": "Close", "sublabel": "FEATURES.md + memory", "tag": "done checklist", "width": 160 },
+    { "id": "lead", "lane": "agents", "col": 3, "type": "backend", "label": "studio-tech-lead", "sublabel": "plan + tree, no code", "width": 160 },
+    { "id": "dev", "lane": "agents", "col": 4, "type": "backend", "label": "studio-developer", "sublabel": "implements the plan", "width": 152 },
+    { "id": "review", "lane": "agents", "col": 5, "type": "backend", "label": "studio-reviewer", "sublabel": "one pass, with evidence", "width": 152 },
+    { "id": "passes", "lane": "optional", "col": 5, "type": "messagebus", "label": "Playtest / visual pass", "sublabel": "only if you ask · playtest module", "width": 190 }
+  ],
+  "edges": [
+    { "id": "idea-interview", "from": "idea", "to": "interview", "variant": "default" },
+    { "id": "interview-feature", "from": "interview", "to": "feature", "label": "stack chosen", "variant": "emphasis" },
+    { "id": "feature-lead", "from": "feature", "to": "lead", "variant": "default" },
+    { "id": "lead-ok", "from": "lead", "to": "ok", "label": "tree: more / fewer pieces?", "variant": "security" },
+    { "id": "ok-dev", "from": "ok", "to": "dev", "label": "approved", "variant": "emphasis" },
+    { "id": "dev-review", "from": "dev", "to": "review", "variant": "default" },
+    { "id": "review-close", "from": "review", "to": "close", "label": "no blockers", "variant": "emphasis" },
+    { "id": "review-passes", "from": "review", "to": "passes", "label": "if you agree", "variant": "dashed", "role": "branch" },
+    { "id": "passes-close", "from": "passes", "to": "close", "variant": "dashed", "role": "return" }
+  ]
+}

@@ -26,12 +26,14 @@ Roles (`Task` `subagent_type` = their `name`):
 | Developer | `studio-developer` | Implement **one** RFC or a bounded change |
 | Reviewer | `studio-reviewer` | After implementation (one pass) |
 | Tester | `studio-tester` | **Only** if the user asked for tests or RULES.md requires them |
-| Playtester | `studio-playtester` | **Only** if the user agrees to play the build after this iteration |
+| Playtester | `studio-playtester` (module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | **Only** if the user agrees to play the build after this iteration |
 | Visual | `studio-visual` | **Only** if the user wants a UI pass; requires `VISUAL.md` / refs |
 
 Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.
 
-When launching `studio-playtester` with AgentKit: the prompt must order reading `harness.md` from skill `godot-agent-kit` (playtest module) **before** writing a `.gd`. On return: if the playtest diff touched `src/` / glue (unless a product API with a game caller, not the flow), that is a **process FAIL** — ask for a revert; do not present it as playtest OK.
+If the `studio-playtester` subagent **does not exist** (the playtest module is not installed), do not invent it or simulate it with another role: offer a manual playtest (the user runs F5 and you walk the slice criteria as a checklist) or skip the step.
+
+When launching `studio-playtester` with AgentKit: the prompt must order reading `harness.md` from skill `godot-agent-kit` (playtest module) **before** writing a `.gd` — that file is the single source of the anti-contamination rule; it is not restated here. On return, demand mechanical evidence, not prose: `git diff --stat -- src scenes glue` empty and `rg -n "func agent_" src scenes glue` empty. If the playtest diff touched `src/` / glue (unless a product API with a game caller, not the flow), that is a **process FAIL** — ask for a revert; do not present it as playtest OK.
 
 A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 
@@ -78,8 +80,10 @@ orchestrator (chat)
   → studio-reviewer      one pass; one correction if there are blockers
   → playtest?            ask → studio-playtester (Godot, not GUT)
   → visual pass?         ask; without VISUAL.md/refs, ask for them first
-  → orchestrator         synthesizes; note gotchas in memory if needed
+  → orchestrator         synthesizes and CLOSES: FEATURES.md up to date + a trace in memory
 ```
+
+Closing the iteration **leaves a trace** every time (not optional): the `F<n>` in `FEATURES.md` with its criteria, and — if the `godot-studio-memory` skill is present — decision taken + next step. In a new chat, `/workflow-status` rebuilds from those files; with no trace, it rebuilds nothing.
 
 The subagent prompt includes: repo path, RFC id, architecture style, **MP type** (none / local-Wi-Fi / online), compact rules, and to read PRD / FEATURES / RULES / VISUAL / that RFC.
 
@@ -102,6 +106,13 @@ Without the [file tree](file-tree.md) there is no “OK, implement”.
 - `enum` + `match` for actor states: `/add-state-machine`.
 - Platformer without coyote/buffer: `/add-platformer-2d`, not a bare `is_on_floor()`.
 
-## 4. Done when
+## 4. Done when (exit checklist per iteration)
 
-The vertical slice plays; each feature is a small scene/component/`Resource`; a human can open the inspector and continue. That is the scalable base.
+Do not close an iteration “by feel”. Verify:
+
+- [ ] The project parses headless: `godot --headless --path . --quit` with no `SCRIPT ERROR` / `ERROR`.
+- [ ] The feature scene runs with F5/F6 and the slice action is exercised.
+- [ ] Every `F<n>` (or RFC) criterion has evidence in the review — a criterion without evidence = not done.
+- [ ] `FEATURES.md` updated; memory holds decision + next step if the skill is present.
+
+The north star stays the same: the slice plays, each feature is a small scene/component/`Resource`, and a human can open the inspector and continue.
