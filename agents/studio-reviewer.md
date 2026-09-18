@@ -26,7 +26,12 @@ Al invocarte:
 4. Extra no pedido en el RFC = señalarlo (alcance).
 5. Producto **juego**: no inventes hallazgos de SQL/XSS/auth SaaS. Marcá N/A con una línea.
 6. GUT no es playtest ni visual. Si el RFC es de HUD y no hay captura, decí que el look queda para `studio-visual`.
-7. Si hay `addons/agent_kit/`: métodos en `src/` / glue cuyo trabajo es spawn / forzar estado / contar / pausar para el flow (`agent_*` o el mismo rol con otro nombre) = **FAIL** (van en `res://agent/harness/`). Una API pública cuyo único caller es el flow también.
+7. Si hay `addons/agent_kit/`: aplicá la regla playtest del bloque de estándares del prompt (helpers de playtest solo en `res://agent/harness/`; API de producto cuyo único caller es el flow = **FAIL**). No lo juzgues solo a ojo — corré y pegá la salida:
+
+   ```bash
+   rg -n "func agent_" src scenes glue        # debe dar vacío
+   git diff --stat -- src scenes glue          # en un diff de playtest debe dar vacío
+   ```
 
 Un pase. Veredicto por dimensión: PASS / NEEDS WORK / FAIL. Bloqueantes vs nits. Si hay bloqueantes, el orquestador puede pedir **una** corrección; vos no la implementás. No pidas iterar hasta verde.
 

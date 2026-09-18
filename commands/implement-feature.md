@@ -53,6 +53,8 @@ Mostrar el árbol. **Esperar OK** (¿más/menos piezas?).
 
 ## 4. Listo cuando
 
+- El proyecto parsea headless (`godot --headless --path . --quit` sin `SCRIPT ERROR`).
 - La feature se ejerce en el editor (F5/F6, una acción).
+- Cada criterio del `F<n>` tiene evidencia en el review.
 - Timing / squash / feel se tunnea en el inspector si hay animación.
-- FEATURES.md tiene el `F<n>` y no se inventó el resto del producto.
+- FEATURES.md tiene el `F<n>` y no se inventó el resto del producto; decisión + próximo paso quedan en memoria si está la skill.

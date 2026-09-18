@@ -31,7 +31,9 @@ Roles (`Task` con `subagent_type` = su `name`):
 
 Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
 
-Al lanzar `studio-playtester` con AgentKit: el prompt debe ordenar leer `harness.md` de la skill `godot-agent-kit` (módulo playtest) **antes** de escribir un `.gd`. Al volver: si el diff del playtest tocó `src/` / glue (salvo API de producto con caller de juego, no el flow), **FAIL de proceso** — pedí revert, no lo presentes como playtest OK.
+Si el subagente `studio-playtester` **no existe** (el módulo playtest no está instalado), no lo inventes ni lo simules con otro rol: ofrecé playtest manual (el usuario corre F5 y vos pasás los criterios del slice como checklist) o saltear el paso.
+
+Al lanzar `studio-playtester` con AgentKit: el prompt debe ordenar leer `harness.md` de la skill `godot-agent-kit` (módulo playtest) **antes** de escribir un `.gd` — ese archivo es la fuente única de la regla anti-contaminación; acá no se repite. Al volver, exigí evidencia mecánica, no prosa: `git diff --stat -- src scenes glue` vacío y `rg -n "func agent_" src scenes glue` vacío. Si el diff del playtest tocó `src/` / glue (salvo API de producto con caller de juego, no el flow), **FAIL de proceso** — pedí revert, no lo presentes como playtest OK.
 
 Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
 
@@ -78,8 +80,10 @@ orquestador (chat)
   → studio-reviewer      un pase; una corrección si hay bloqueantes
   → ¿playtest?           preguntar → studio-playtester (Godot, no GUT)
   → ¿pase visual?        preguntar; sin VISUAL.md/refs, pedirlos primero
-  → orquestador          sintetiza; anotá gotchas en memoria si hace falta
+  → orquestador          sintetiza y CIERRA: FEATURES.md al día + rastro en memoria
 ```
+
+Cerrar la iteración **deja rastro** siempre (no es opcional): el `F<n>` en `FEATURES.md` con sus criterios, y — si está la skill `godot-studio-memory` — decisión tomada + próximo paso. En un chat nuevo, `/workflow-status` reconstruye desde esos archivos; sin rastro, no reconstruye nada.
 
 El prompt al subagente incluye: ruta del repo, id de feature o RFC, estilo de arquitectura, **tipo de MP**, compact rules, y que lea RULES / VISUAL / FEATURES / el RFC si existe.
 
@@ -103,6 +107,13 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”.
 - `enum` + `match` de estados en el actor: `/add-state-machine`.
 - Platformer sin coyote/buffer: `/add-platformer-2d`, no un `is_on_floor()` pelado.
 
-## 4. Listo cuando
+## 4. Listo cuando (checklist de salida por iteración)
 
-El vertical slice se juega; cada feature es escena/componente/`Resource` chico; un humano puede abrir el inspector y seguir. Eso es la base escalable.
+No cierres una iteración “de sensación”. Verificá:
+
+- [ ] El proyecto parsea headless: `godot --headless --path . --quit` sin `SCRIPT ERROR` / `ERROR`.
+- [ ] La escena de la feature corre con F5/F6 y la acción del slice se ejerce.
+- [ ] Cada criterio del `F<n>` (o del RFC) tiene evidencia en el review — un criterio sin evidencia = no hecho.
+- [ ] `FEATURES.md` actualizado; memoria con decisión + próximo paso si está la skill.
+
+El norte sigue siendo el mismo: el slice se juega, cada feature es escena/componente/`Resource` chico, y un humano puede abrir el inspector y seguir.
