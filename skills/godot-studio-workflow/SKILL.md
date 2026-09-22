@@ -26,14 +26,14 @@ Roles (`Task` con `subagent_type` = su `name`):
 | Desarrollador | `studio-developer` | Implementar **un** RFC o un cambio acotado |
 | Reviewer | `studio-reviewer` | Después de implementar (un pase) |
 | Tester | `studio-tester` | **Solo** si el usuario pide tests o RULES.md los exige |
-| Playtester | `studio-playtester` (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | **Solo** si el usuario acepta jugar el build post-iteración |
+| Playtester | `studio-playtester` (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | Después del review, sobre `res://debug/` o la escena del jugador. No pide un segundo OK |
 | Visual | `studio-visual` | **Solo** si el usuario quiere pase UI; exige `VISUAL.md` / refs |
 
 Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
 
 Si el subagente `studio-playtester` **no existe** (el módulo playtest no está instalado), no lo inventes ni lo simules con otro rol: ofrecé playtest manual (el usuario corre F5 y vos pasás los criterios del slice como checklist) o saltear el paso.
 
-Al lanzar `studio-playtester` con AgentKit: el prompt debe ordenar leer `harness.md` de la skill `godot-agent-kit` (módulo playtest) **antes** de escribir un `.gd` — ese archivo es la fuente única de la regla anti-contaminación; acá no se repite. Al volver, exigí evidencia mecánica, no prosa: `git diff --stat -- src scenes glue` vacío y `rg -n "func agent_" src scenes glue` vacío. Si el diff del playtest tocó `src/` / glue (salvo API de producto con caller de juego, no el flow), **FAIL de proceso** — pedí revert, no lo presentes como playtest OK.
+Al lanzar `studio-playtester`: pasale el path `res://debug/…` y la acción del InputMap que quedaron en el `F<n>` o el RFC. El playtester **juega** esa escena; no la construye y no usa `call()` para armarla. Si esa escena no está, tiene que devolver `NEED_SETUP`, no inventar un mundo. Ordenale leer `harness.md` de `godot-agent-kit` **antes** de escribir un `.gd`. Al volver, el diff del playtest solo puede tocar `agent/` (flows, out). Si tocó `src/`, `scenes/` o `debug/`, **FAIL de proceso** — pedí revert.
 
 Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
 
@@ -72,16 +72,32 @@ Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva ch
 
 Una feature / un RFC a la vez. Predecesores listos.
 
+Corte chico (un componente, un `@export`, sin escena de prueba que pueda hacer trampa): el plan queda en este chat. No lances tech lead.
+
+Corte con árbol o con `res://debug/`:
+
 ```
-orquestador (chat)
-  → studio-tech-lead     plan + árbol + mapa de responsabilidades  [sin código]
-  → el usuario ve el árbol (¿más/menos piezas?) y da OK
-  → studio-developer     implementa el plan
-  → studio-reviewer      un pase; una corrección si hay bloqueantes
-  → ¿playtest?           preguntar → studio-playtester (Godot, no GUT)
-  → ¿pase visual?        preguntar; sin VISUAL.md/refs, pedirlos primero
-  → orquestador          sintetiza y CIERRA: FEATURES.md al día + rastro en memoria
+orquestador
+  → studio-tech-lead     plan + árbol + res://debug/   [sin código]
+  → el usuario ve el árbol (una sola vez) y da OK
+  → studio-developer     producto + res://debug/
+  → studio-reviewer      un pase
+  → studio-playtester    juega esa escena; no pide otro OK
+  → orquestador          clasifica el informe y cierra
 ```
+
+Varios developers solo si las features no comparten escena. Nunca developer y reviewer a la vez sobre el mismo corte.
+
+### Vuelta de un FAIL
+
+No reabre el tech lead salvo que el corte o la escena de prueba estén mal planteados.
+
+| Informe | Vuelve a |
+|---------|----------|
+| El criterio no se cumple (JSON + consola) | `studio-developer`, una corrección |
+| `res://debug/` ya muestra el resultado | `studio-reviewer` (la escena hace trampa) |
+| Cache (`CACHE_STALE`) o el CLI no pudo correr | Este chat. Un `--import` y se relanza el playtester |
+| Falta `res://debug/` (`NEED_SETUP`) | Este chat completa el plan. No la inventa el playtester |
 
 Cerrar la iteración **deja rastro** siempre (no es opcional): el `F<n>` en `FEATURES.md` con sus criterios, y — si está la skill `godot-studio-memory` — decisión tomada + próximo paso. En un chat nuevo, `/workflow-status` reconstruye desde esos archivos; sin rastro, no reconstruye nada.
 
@@ -100,7 +116,7 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”.
 - Copiar `addons/mp_kit` si eligieron sin multiplayer.
 - Tratar un listen-server detrás de NAT como multiplayer por internet.
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
-- Tests, playtest o pases visuales sin preguntar (salvo RULES que exija tests).
+- Un segundo OK para playtest: el árbol ya incluía `res://debug/` y la acción. El pase visual sí se pregunta, y sin `VISUAL.md` no hay look.
 - Pase visual sin estilo/referencias: no inventar look.
 - Instalar MCP (Aseprite, Blender, Engram) o crear arte sin preguntar.
 - Feel hardcodeado. Elegí Tween o `AnimationPlayer` por clip, no por costumbre. Feel jugoso: `/add-juicy`, no un `World.gd` de partículas.
@@ -113,7 +129,8 @@ No cierres una iteración “de sensación”. Verificá:
 
 - [ ] El proyecto parsea headless: `godot --headless --path . --quit` sin `SCRIPT ERROR` / `ERROR`.
 - [ ] La escena de la feature corre con F5/F6 y la acción del slice se ejerce.
-- [ ] Cada criterio del `F<n>` (o del RFC) tiene evidencia en el review — un criterio sin evidencia = no hecho.
+- [ ] El `F<n>` nombra la escena (`res://debug/…` o la del jugador), la acción del InputMap y el observable. El RFC solo si el corte es grande.
+- [ ] Cada criterio tiene evidencia del review y, si hubo playtest, del flow en `res://agent/`.
 - [ ] `FEATURES.md` actualizado; memoria con decisión + próximo paso si está la skill.
 
 El norte sigue siendo el mismo: el slice se juega, cada feature es escena/componente/`Resource` chico, y un humano puede abrir el inspector y seguir.

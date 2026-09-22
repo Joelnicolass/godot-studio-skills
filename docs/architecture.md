@@ -50,7 +50,7 @@ Roles (`Task` → `subagent_type`):
 | Developer | `studio-developer` | Implementa ese plan |
 | Reviewer | `studio-reviewer` | Después del código (un pase) |
 | Tester | `studio-tester` | Solo si pedís tests o RULES los exige |
-| Playtester | `studio-playtester` | Solo si aceptás jugar el build (módulo [playtest](https://github.com/Joelnicolass/godot-studio-playtest); si no está instalado, playtest manual o se saltea) |
+| Playtester | `studio-playtester` | Después del review, juega la escena del `F<n>`. Módulo [playtest](https://github.com/Joelnicolass/godot-studio-playtest). Si no está instalado: checklist manual o se saltea |
 | Visual | `studio-visual` | Solo si pedís pase UI; hace falta `VISUAL.md` o refs |
 
 Los subagentes **no** ven este chat. El prompt les pasa repo, RFC, estilo de arquitectura, y que lean los artefactos.
@@ -114,24 +114,26 @@ Tests: skill `godot-testing` (GUT / GdUnit4) **solo** si los pedís.
 De la idea a una base **jugable**. **Iterar gana a un PRD con todo definido.** El camino corto es `/implement-feature`. PRD/RFC siguen siendo opcionales.
 
 ```mermaid
-flowchart TD
-  idea[Idea del juego] --> arch[Elegir Clean o estándar]
-  idea --> mp[Elegir tipo de MP]
-  arch --> slice["/implement-feature — slice jugable"]
-  mp --> slice
-  slice --> plan[studio-tech-lead: plan + árbol]
-  plan --> ok{¿OK tuyo?}
-  ok -->|no| plan
-  ok -->|sí| dev[studio-developer]
-  dev --> rev[studio-reviewer]
-  rev --> play{¿Playtest?}
-  play -->|sí| pt[studio-playtester]
-  play -->|no| more
-  pt --> more{¿Otra feature?}
-  more -->|sí| slice
-  more -->|no| done[Base chica, jugable, escalable]
-  slice -.-> prd["/create-prd opcional — GDD corto"]
+sequenceDiagram
+  participant U as Vos
+  participant O as Orquestador
+  participant T as Tech lead
+  participant D as Developer
+  participant R as Reviewer
+  participant P as Playtester
+  U->>O: Una feature
+  O->>T: Corte con árbol o escena de prueba
+  T-->>U: Árbol + res://debug
+  U->>O: OK, una vez
+  O->>D: Implementá el plan
+  D->>R: Diff
+  R->>P: Escena del F n
+  P->>O: Informe
+  Note over O: Criterio roto vuelve a D. Escena trampa vuelve a R. Cache lo resuelve O.
+  O->>U: FEATURES.md al día
 ```
+
+La escena de prueba no la inventa quien juega. El tech lead la nombra en el árbol (`res://debug/…`, piezas del producto, estado inicial, acción del InputMap). El developer la construye. El reviewer mira que el resultado del criterio no esté ya puesto en el `.tscn`. El playtester solo corre esa escena con input mapeado. Un `.tres` de debug (más daño, mismo script) evita jugar toda la batalla; un script paralelo o un `call()` que deja el boss muerto no prueba la feature.
 
 En un chat nuevo, con el kit instalado, pedí el juego o **una feature**. El orquestador corre `/implement-feature` **sin** exigir un GDD completo. Playtest y visual: el orquestador **pregunta**. Tester GUT solo si los pedís. Un RFC grande: `/implement-rfc`. Alcance a mitad de un RFC: `/manage-changes`. Dónde estamos: `/workflow-status`.
 

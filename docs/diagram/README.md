@@ -1,6 +1,6 @@
 # Diagrama del flujo
 
-Fuente Archify del flujo de una iteración. El HTML interactivo se publica en GitHub Pages; este JSON es lo que se versiona con el kit.
+Fuente Archify del trabajo de una feature: un OK sobre el árbol, construcción, review, playtest de `res://debug/`, y la vuelta del FAIL. El HTML se publica en GitHub Pages; este JSON es lo que se versiona.
 
 - Live: https://joelnicolass.github.io/godot-studio-skills/
 - Spec: [studio-flow.workflow.json](studio-flow.workflow.json)

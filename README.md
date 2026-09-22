@@ -36,7 +36,7 @@ Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `Sc
 
 ## Cómo funciona
 
-El detalle (diagramas del orquestador, roles, Clean vs estándar, tipos de multiplayer, flujo de una iteración, arte/shaders) está en [docs/architecture.md](docs/architecture.md). Diagrama interactivo del flujo: [joelnicolass.github.io/godot-studio-skills](https://joelnicolass.github.io/godot-studio-skills/). En corto: entrevista (arquitectura + MP + 2D/3D) → `/implement-feature` → tech-lead con árbol → tu OK → developer → reviewer → playtest / pase visual **si los pedís** → cierre con `FEATURES.md` y memoria al día.
+El detalle (diagramas del orquestador, roles, Clean vs estándar, tipos de multiplayer, flujo de una iteración, arte/shaders) está en [docs/architecture.md](docs/architecture.md). Diagrama interactivo del flujo: [joelnicolass.github.io/godot-studio-skills](https://joelnicolass.github.io/godot-studio-skills/). En corto: entrevista → `/implement-feature` → un OK sobre el árbol (incluye `res://debug/` si hace falta) → developer → reviewer → playtester sobre esa escena → el orquestador clasifica el FAIL → cierre en `FEATURES.md`. El pase visual se pregunta. El contrato del slice es el `F<n>`, no un RFC obligatorio.
 
 ## Instalar (Cursor)
 

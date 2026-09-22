@@ -27,6 +27,17 @@ Más un **mapa de responsabilidades** (una fila por archivo o nodo):
 Clean: `src/features/<n>/`, `src/core/`, `src/domain/` según [clean.md](../godot-layered-architecture/clean.md).  
 Estándar: junto a la escena; no inventar `src/domain/`.
 
+## Escena de prueba
+
+Va en el mismo árbol, bajo `res://debug/`, y en el RFC o en el `F<n>`. La construye el developer con piezas del producto. El playtester no la crea y no la altera: solo la juega.
+
+```text
+debug/
+└── boss_dying.tscn     # player + boss + gun_debug.tres (mismo Gun, más daño)
+```
+
+El estado inicial hace **fácil** el criterio (no jugar toda la batalla). No lo deja **ya cumplido** (el boss no empieza muerto, el banner no empieza visible). Un `.tres` de debug cambia números; no un script paralelo. `res://debug/` no entra en el export de release.
+
 ## Señales de “componé más”
 
 - Un `.gd` pinta, spawnea, puntúa y cambia de escena.

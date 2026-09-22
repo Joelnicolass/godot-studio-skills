@@ -2,7 +2,9 @@ Implementá **una** feature de gameplay en el **proyecto Godot del juego**. Iter
 
 Esto **no** es `/new-mp-feature` (eso solo scaffoldea un actor MpKit). Esto **no** es `/implement-rfc` (eso sigue un RFC ya escrito). Si ya hay un RFC con ID, usá `/implement-rfc <id>`.
 
-Si está cargada `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo: `studio-tech-lead` (plan **con árbol**) → el usuario aprueba el corte → `studio-developer` → `studio-reviewer` (un pase). Después **preguntá** playtest y, si tocó UI, pase visual. Tester GUT solo si el usuario o RULES lo piden.
+Si está cargada `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo. Corte chico (un componente, sin escena que pueda hacer trampa): el plan queda en este chat. Si hay árbol o `res://debug/`: `studio-tech-lead` → el usuario aprueba el corte **una vez** → `studio-developer` → `studio-reviewer` → `studio-playtester` sobre la escena del `F<n>`. No preguntes otra vez si se juega. Pase visual: preguntá, y sin `VISUAL.md` no hay look. Tester GUT solo si el usuario o RULES lo piden.
+
+Cuando vuelva el playtester, clasificá: criterio roto → developer, una corrección; la escena de debug ya muestra el resultado → reviewer; cache o CLI → este chat reimporta y relanza; falta la escena → `NEED_SETUP`, no un tech lead nuevo.
 
 Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
 
@@ -37,6 +39,7 @@ Autoridad si hay conflicto: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > 
 `studio-tech-lead` (o este chat si el corte es 1–3 archivos):
 
 - Árbol + mapa de responsabilidades ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
+- Escena de prueba en `res://debug/`: estado inicial fácil, resultado todavía no ocurrido, acción de InputMap. Queda escrita en el `F<n>` (o en el RFC si hay contrato).
 - Qué es `.tres`, qué es nodo, qué es `@export`
 - Motion: evaluar Tween vs `AnimationPlayer` (skill `godot-animation`); knobs en inspector o timeline
 - Checklist de [adding-features.md](../skills/godot-layered-architecture/adding-features.md)
