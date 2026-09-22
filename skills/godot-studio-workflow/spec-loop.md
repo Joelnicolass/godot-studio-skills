@@ -8,8 +8,9 @@
 |----------|------------|
 | `RULES.md` | Technical constitution (stack, layers, MP, code non-goals) |
 | `VISUAL.md` | Look constitution (style, refs, hierarchy, do not invent) |
-| `PRD.md` / `FEATURES.md` | Intent and scope |
-| `RFCs/` | Slice contract: acceptance criteria |
+| `FEATURES.md` | The slice contract: `F<n>`, criteria, `res://debug/…` path if needed, InputMap action, observable. Grows with `/implement-feature`. |
+| `PRD.md` | Optional and short. Not the suite. |
+| `RFCs/` | Contract for a large slice (optional). `/implement-feature` does not require an RFC. |
 | Tech-lead plan | File tree + responsibilities (derived; rewrite if the RFC changes) |
 
 Code, review, playtest, and the visual pass are measured **against** those files, not by ear.
@@ -35,7 +36,7 @@ When launching a `Task`, paste [compact-rules.md](compact-rules.md) (subagents d
 ## Three ways to validate
 
 - `studio-tester` + `godot-testing` = the repo’s automated runner.
-- `studio-playtester` + `godot-playtest` = **play** the build (playtest module; if not installed, manual playtest or skip). Ask for OK **after each iteration**.
+- `studio-playtester` + `godot-playtest` = **play** the scene named on the `F<n>` (playtest module; if not installed, manual playtest or skip). Does not ask for a second OK. The live playtest rule is in that module (`evaluate.md`); do not restate a second copy here.
 - `studio-visual` + `godot-visual-qa` = UI/UX. Without style/refs/`VISUAL.md`, **stop** and ask for them.
 
 A review = one pass. If there are blockers, one correction; not a loop until green.

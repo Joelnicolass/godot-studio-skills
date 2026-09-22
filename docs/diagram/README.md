@@ -1,6 +1,6 @@
 # Flow diagram
 
-Archify source for one iteration of the studio workflow. The interactive HTML is published on GitHub Pages; this JSON is what the kit versions.
+Archify source for one feature: one OK on the tree, build, review, playtest of `res://debug/`, and where a FAIL returns. The HTML is published on GitHub Pages; this JSON is what the kit versions.
 
 - Live: https://joelnicolass.github.io/godot-studio-skills/en.html
 - Spec: [studio-flow.workflow.json](studio-flow.workflow.json)

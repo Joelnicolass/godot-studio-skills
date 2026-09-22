@@ -36,7 +36,7 @@ What **does not** belong here: score, product copy, a title’s scenes, `GameSes
 
 ## How it works
 
-The details (orchestrator diagrams, roles, Clean vs standard, multiplayer types, the iteration flow, art/shaders) live in [docs/architecture.md](docs/architecture.md). Interactive flow diagram: [joelnicolass.github.io/godot-studio-skills/en.html](https://joelnicolass.github.io/godot-studio-skills/en.html). In short: interview (architecture + MP + 2D/3D) → `/implement-feature` → tech-lead with a file tree → your OK → developer → reviewer → playtest / visual pass **if you ask** → close with `FEATURES.md` and memory up to date.
+The details (orchestrator diagrams, roles, Clean vs standard, multiplayer types, the iteration flow, art/shaders) live in [docs/architecture.md](docs/architecture.md). Interactive flow diagram: [joelnicolass.github.io/godot-studio-skills/en.html](https://joelnicolass.github.io/godot-studio-skills/en.html). In short: interview → `/implement-feature` → one OK on the tree (includes `res://debug/` when needed) → developer → reviewer → playtester on that scene → the orchestrator classifies the FAIL → close on `FEATURES.md`. A visual pass is asked. The slice contract is the `F<n>`, not a mandatory RFC.
 
 ## Install (Cursor)
 

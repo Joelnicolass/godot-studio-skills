@@ -26,14 +26,14 @@ Roles (`Task` `subagent_type` = their `name`):
 | Developer | `studio-developer` | Implement **one** RFC or a bounded change |
 | Reviewer | `studio-reviewer` | After implementation (one pass) |
 | Tester | `studio-tester` | **Only** if the user asked for tests or RULES.md requires them |
-| Playtester | `studio-playtester` (module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | **Only** if the user agrees to play the build after this iteration |
+| Playtester | `studio-playtester` (module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | After review, on `res://debug/` or the player scene. Does not ask for a second OK |
 | Visual | `studio-visual` | **Only** if the user wants a UI pass; requires `VISUAL.md` / refs |
 
 Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.
 
 If the `studio-playtester` subagent **does not exist** (the playtest module is not installed), do not invent it or simulate it with another role: offer a manual playtest (the user runs F5 and you walk the slice criteria as a checklist) or skip the step.
 
-When launching `studio-playtester` with AgentKit: the prompt must order reading `harness.md` from skill `godot-agent-kit` (playtest module) **before** writing a `.gd` — that file is the single source of the anti-contamination rule; it is not restated here. On return, demand mechanical evidence, not prose: `git diff --stat -- src scenes glue` empty and `rg -n "func agent_" src scenes glue` empty. If the playtest diff touched `src/` / glue (unless a product API with a game caller, not the flow), that is a **process FAIL** — ask for a revert; do not present it as playtest OK.
+When launching `studio-playtester`: pass the `res://debug/…` path and the InputMap action recorded on the `F<n>` or the RFC. The playtester **plays** that scene; they do not build it and they do not use `call()` to assemble it. If that scene is missing, they must return `NEED_SETUP`, not invent a world. Order them to read `harness.md` from `godot-agent-kit` **before** writing a `.gd`. On return, the playtest diff may only touch `agent/` (flows, out). If it touched `src/`, `scenes/`, or `debug/`, that is a **process FAIL** — ask for a revert.
 
 A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 
@@ -72,16 +72,32 @@ Mid-work scope changes: `/manage-changes`.
 
 One RFC at a time. Predecessors done.
 
+Small cut (one component, one `@export`, no test scene that could cheat): the plan stays in this chat. Do not launch a tech lead.
+
+Cut with a tree or with `res://debug/`:
+
 ```
-orchestrator (chat)
-  → studio-tech-lead     plan + file tree + responsibility map  [no code]
-  → user sees the tree (more/fewer pieces?) and OKs
-  → studio-developer     implements the plan
-  → studio-reviewer      one pass; one correction if there are blockers
-  → playtest?            ask → studio-playtester (Godot, not GUT)
-  → visual pass?         ask; without VISUAL.md/refs, ask for them first
-  → orchestrator         synthesizes and CLOSES: FEATURES.md up to date + a trace in memory
+orchestrator
+  → studio-tech-lead     plan + tree + res://debug/   [no code]
+  → the user sees the tree once and OKs
+  → studio-developer     product + res://debug/
+  → studio-reviewer      one pass
+  → studio-playtester    plays that scene; does not ask for another OK
+  → orchestrator         classifies the report and closes
 ```
+
+Several developers only when the features do not share a scene. Never developer and reviewer at once on the same cut.
+
+### FAIL return
+
+Do not reopen the tech lead unless the cut or the test scene was framed wrong.
+
+| Report | Returns to |
+|--------|------------|
+| The criterion failed (JSON + console) | `studio-developer`, one correction |
+| `res://debug/` already shows the outcome | `studio-reviewer` (the scene cheats) |
+| Cache (`CACHE_STALE`) or the CLI could not run | This chat. One `--import`, then relaunch the playtester |
+| Missing `res://debug/` (`NEED_SETUP`) | This chat completes the plan. The playtester does not invent it |
 
 Closing the iteration **leaves a trace** every time (not optional): the `F<n>` in `FEATURES.md` with its criteria, and — if the `godot-studio-memory` skill is present — decision taken + next step. In a new chat, `/workflow-status` rebuilds from those files; with no trace, it rebuilds nothing.
 
@@ -99,7 +115,7 @@ Without the [file tree](file-tree.md) there is no “OK, implement”.
 - Copy `addons/mp_kit` if they chose no multiplayer.
 - Treat a listen-server behind NAT as internet multiplayer.
 - Put score, copy, or title netcode in `addons/mp_kit`.
-- Tests, playtest, or visual passes without asking (unless RULES requires tests).
+- A second OK for playtest: the tree already included `res://debug/` and the action. A visual pass is still asked, and without `VISUAL.md` there is no look.
 - A visual pass without style/references: do not invent a look.
 - Install MCP (Aseprite, Blender, Engram) or create art without asking.
 - Hardcoded feel. Choose Tween or `AnimationPlayer` per clip, not by habit. Juicy feel: `/add-juicy`, not a `World.gd` of particles.
@@ -112,7 +128,8 @@ Do not close an iteration “by feel”. Verify:
 
 - [ ] The project parses headless: `godot --headless --path . --quit` with no `SCRIPT ERROR` / `ERROR`.
 - [ ] The feature scene runs with F5/F6 and the slice action is exercised.
-- [ ] Every `F<n>` (or RFC) criterion has evidence in the review — a criterion without evidence = not done.
+- [ ] The `F<n>` names the scene (`res://debug/…` or the player scene), the InputMap action, and the observable. An RFC only if the cut is large.
+- [ ] Every criterion has review evidence and, if there was a playtest, the flow under `res://agent/`.
 - [ ] `FEATURES.md` updated; memory holds decision + next step if the skill is present.
 
 The north star stays the same: the slice plays, each feature is a small scene/component/`Resource`, and a human can open the inspector and continue.

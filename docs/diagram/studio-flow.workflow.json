@@ -2,66 +2,64 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "Godot Studio Kit — one iteration",
-    "locale": "en",
+    "title": "One feature, from idea to close",
     "quality_profile": "showcase",
     "views": [
       {
-        "id": "short-path",
-        "label": "Short path",
-        "focus": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "close"],
-        "note": "From idea to close: interview, /implement-feature, plan with a file tree, your OK, code, review."
+        "id": "path",
+        "label": "The work",
+        "focus": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "play", "classify", "close"],
+        "note": "One OK on the tree. Then build, review, and play the scene named on F n."
       },
       {
-        "id": "user-gates",
-        "label": "User gates",
-        "focus": ["ok", "lead", "passes"],
-        "note": "Where you decide: approve the tree, accept playtest, ask for a visual pass."
+        "id": "suite",
+        "label": "What gets written",
+        "focus": ["feature", "lead", "dev", "play", "close"],
+        "note": "FEATURES names res://debug and the action. The developer builds that scene. The playtester writes the flow."
       },
       {
-        "id": "optional-validation",
-        "label": "Optional validation",
-        "focus": ["review", "passes", "close"],
-        "note": "Playtest and visual pass only if you ask; closing always leaves a trace."
+        "id": "return",
+        "label": "After the report",
+        "focus": ["classify", "dev", "review", "play", "lead"],
+        "note": "Broken criterion: developer. Cheating scene: reviewer. Cache: orchestrator. Tech lead only if the cut was wrong."
       }
     ]
   },
   "lanes": [
     { "id": "you", "label": "You" },
-    { "id": "orch", "label": "Orchestrator (main chat)" },
-    { "id": "agents", "label": "Subagents" },
-    { "id": "optional", "label": "Optional validation", "variant": "exception" }
+    { "id": "orch", "label": "Orchestrator" },
+    { "id": "agents", "label": "Subagents" }
   ],
   "phases": [
-    { "id": "setup", "label": "Interview", "fromCol": 0, "toCol": 1 },
-    { "id": "plan", "label": "Plan + OK", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
-    { "id": "build", "label": "Code + validation", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+    { "id": "setup", "label": "Ask", "fromCol": 0, "toCol": 1 },
+    { "id": "plan", "label": "Plan", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "build", "label": "Build and play", "fromCol": 4, "toCol": 5 }
   ],
-  "groups": [
-    { "id": "gate", "label": "Human gate", "lane": "you", "fromCol": 3, "toCol": 3, "variant": "security" },
-    { "id": "opt", "label": "Only if you ask", "lane": "optional", "fromCol": 5, "toCol": 5, "variant": "dashed" }
-  ],
-  "mainPath": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "close"],
+  "mainPath": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "play", "classify", "close"],
   "nodes": [
-    { "id": "idea", "lane": "you", "col": 0, "type": "external", "label": "Idea", "sublabel": "game or feature", "width": 136 },
-    { "id": "ok", "lane": "you", "col": 3, "type": "security", "label": "Your OK", "sublabel": "file tree", "tag": "no tree, no code", "width": 148 },
-    { "id": "interview", "lane": "orch", "col": 1, "type": "frontend", "label": "Interview", "sublabel": "Clean/standard · MP · 2D/3D", "width": 168 },
-    { "id": "feature", "lane": "orch", "col": 2, "type": "backend", "label": "/implement-feature", "sublabel": "PRD/RFC optional", "width": 160 },
-    { "id": "close", "lane": "orch", "col": 5, "type": "database", "label": "Close", "sublabel": "FEATURES.md + memory", "tag": "done checklist", "width": 160 },
-    { "id": "lead", "lane": "agents", "col": 3, "type": "backend", "label": "studio-tech-lead", "sublabel": "plan + tree, no code", "width": 160 },
-    { "id": "dev", "lane": "agents", "col": 4, "type": "backend", "label": "studio-developer", "sublabel": "implements the plan", "width": 152 },
-    { "id": "review", "lane": "agents", "col": 5, "type": "backend", "label": "studio-reviewer", "sublabel": "one pass, with evidence", "width": 152 },
-    { "id": "passes", "lane": "optional", "col": 5, "type": "messagebus", "label": "Playtest / visual pass", "sublabel": "only if you ask · playtest module", "width": 190 }
+    { "id": "idea", "lane": "you", "col": 0, "type": "external", "label": "Feature", "sublabel": "one slice", "width": 120 },
+    { "id": "ok", "lane": "you", "col": 3, "type": "security", "label": "One OK", "sublabel": "tree and scene", "width": 130 },
+    { "id": "interview", "lane": "orch", "col": 1, "type": "frontend", "label": "Interview", "sublabel": "architecture, MP, 2D/3D", "width": 160 },
+    { "id": "feature", "lane": "orch", "col": 2, "type": "backend", "label": "F n", "sublabel": "FEATURES.md", "width": 130 },
+    { "id": "classify", "lane": "orch", "col": 5, "type": "backend", "label": "Classify", "sublabel": "the report", "width": 130 },
+    { "id": "close", "lane": "you", "col": 5, "type": "database", "label": "Close", "sublabel": "F n up to date", "width": 130 },
+    { "id": "lead", "lane": "agents", "col": 2, "type": "backend", "label": "Tech lead", "sublabel": "plan + res://debug", "width": 150 },
+    { "id": "dev", "lane": "agents", "col": 3, "type": "backend", "label": "Developer", "sublabel": "product and debug", "width": 150 },
+    { "id": "review", "lane": "agents", "col": 4, "type": "backend", "label": "Reviewer", "sublabel": "one pass", "width": 130 },
+    { "id": "play", "lane": "agents", "col": 5, "type": "frontend", "label": "Playtester", "sublabel": "InputMap only", "width": 140 }
   ],
   "edges": [
-    { "id": "idea-interview", "from": "idea", "to": "interview", "variant": "default" },
-    { "id": "interview-feature", "from": "interview", "to": "feature", "label": "stack chosen", "variant": "emphasis" },
-    { "id": "feature-lead", "from": "feature", "to": "lead", "variant": "default" },
-    { "id": "lead-ok", "from": "lead", "to": "ok", "label": "tree: more / fewer pieces?", "variant": "security" },
-    { "id": "ok-dev", "from": "ok", "to": "dev", "label": "approved", "variant": "emphasis" },
-    { "id": "dev-review", "from": "dev", "to": "review", "variant": "default" },
-    { "id": "review-close", "from": "review", "to": "close", "label": "no blockers", "variant": "emphasis" },
-    { "id": "review-passes", "from": "review", "to": "passes", "label": "if you agree", "variant": "dashed", "role": "branch" },
-    { "id": "passes-close", "from": "passes", "to": "close", "variant": "dashed", "role": "return" }
+    { "id": "e1", "from": "idea", "to": "interview" },
+    { "id": "e2", "from": "interview", "to": "feature", "label": "stack", "variant": "emphasis" },
+    { "id": "e3", "from": "feature", "to": "lead" },
+    { "id": "e4", "from": "lead", "to": "ok", "label": "tree", "variant": "security" },
+    { "id": "e5", "from": "ok", "to": "dev", "label": "approved", "variant": "emphasis" },
+    { "id": "e6", "from": "dev", "to": "review" },
+    { "id": "e7", "from": "review", "to": "play", "label": "F n scene", "variant": "emphasis" },
+    { "id": "e8", "from": "play", "to": "classify", "label": "report" },
+    { "id": "e9", "from": "classify", "to": "close", "label": "no product FAIL", "variant": "emphasis" },
+    { "id": "back-dev", "from": "classify", "to": "dev", "label": "criterion failed", "variant": "dashed", "role": "return" },
+    { "id": "back-review", "from": "classify", "to": "review", "label": "cheating scene", "variant": "dashed", "role": "return" },
+    { "id": "back-play", "from": "classify", "to": "play", "label": "import and retry", "variant": "dashed", "role": "return" }
   ]
 }
