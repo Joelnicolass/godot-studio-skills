@@ -14,7 +14,7 @@ Subagents **do not** see the chat. The orchestrator pastes this block into every
 - Juicy: shake, VFX, post, impact = local presentation, packed + `@export`. Skill `godot-juicy` / `/add-juicy`. Not score.
 - FSM: `FsmState` children under `FsmMachine` (addon `fsm_kit` / `/add-state-machine`). Not a 200-line `enum`.
 - 2D platformer: coyote / buffer / apex = `PlatMotor` (addon `plat_kit` / `/add-platformer-2d`). Dash/stamina only if the product asks.
-- Whoever writes does not self-validate. Playtest ≠ GUT. The test scene is `res://debug/` (tech lead names it, developer builds it, reviewer checks it). The playtester only writes `res://agent/flows` and plays with InputMap / click. No `call()` to build the world. No helpers in `src/`. Cover **all** criteria of **this** slice. `ERROR` / `SCRIPT ERROR` / `AGENT_STEP_ERROR` = FAIL. Visual requires `VISUAL.md` or refs. The live detail is `evaluate.md` in the playtest module.
+- Whoever writes does not self-validate. Playtest ≠ GUT. The test scene is `res://debug/` (tech lead names it, developer builds it, reviewer checks it). The playtester only writes `res://agent/flows` and plays with InputMap / click. No `call()` to build the world. No helpers in `src/`. Cover **all** criteria of **this** slice. A PNG that does not show what the criterion named is FAIL, even if a number changed. `ERROR` / `SCRIPT ERROR` / `AGENT_STEP_ERROR` = FAIL. Palette and type are the visual pass, not this one. Visual requires `VISUAL.md` or refs. The live detail is `evaluate.md` in the playtest module.
 - One RFC or a bounded change. Extra not asked for = scope, not a “improvement”.
 ```
 

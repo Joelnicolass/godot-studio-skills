@@ -33,10 +33,10 @@ It belongs in the same tree, under `res://debug/`, and on the RFC or the `F<n>`.
 
 ```text
 debug/
-└── boss_dying.tscn     # player + boss + gun_debug.tres (same Gun, more damage)
+└── goal_ready.tscn     # actor + goal + stats_debug.tres (same script, other numbers)
 ```
 
-The initial state makes the criterion **easy** (do not play the whole fight). It does not leave the criterion **already true** (the boss does not start dead, the banner does not start visible). A debug `.tres` changes numbers; not a parallel script. `res://debug/` stays out of the release export.
+The initial state makes the criterion **easy** (do not play the whole game to reach it). It does not leave the criterion **already true** (the goal is not already done, the notice does not start visible). A debug `.tres` changes numbers; not a parallel script. `res://debug/` stays out of the release export.
 
 ## Signals to compose more
 

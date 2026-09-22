@@ -94,7 +94,7 @@ Do not reopen the tech lead unless the cut or the test scene was framed wrong.
 
 | Report | Returns to |
 |--------|------------|
-| The criterion failed (JSON + console) | `studio-developer`, one correction |
+| The criterion failed, or the PNG shows something other than what was asked (a number changed, but what is on screen is not the thing named) | `studio-developer`, one correction |
 | `res://debug/` already shows the outcome | `studio-reviewer` (the scene cheats) |
 | Cache (`CACHE_STALE`) or the CLI could not run | This chat. One `--import`, then relaunch the playtester |
 | Missing `res://debug/` (`NEED_SETUP`) | This chat completes the plan. The playtester does not invent it |

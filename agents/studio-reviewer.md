@@ -26,7 +26,7 @@ When invoked:
 4. Extra not in the RFC = flag it (scope).
 5. **Game** product: do not invent SQL/XSS/SaaS-auth findings. Mark N/A with one line.
 6. GUT is not playtest or visual. If the RFC is HUD and there is no capture, say look is for `studio-visual`.
-7. If the plan has `res://debug/`: the scene instances product pieces; a debug `.tres` is not a parallel script; the criterion’s outcome is **not** already in the `.tscn` (boss alive, banner hidden). If the outcome is already placed, that is **FAIL**: the assert passes without playing.
+7. If the plan has `res://debug/`: the scene instances product pieces; a debug `.tres` is not a parallel script; the criterion’s outcome is **not** already in the `.tscn` (the goal is still pending, the notice hidden). If the outcome is already placed, that is **FAIL**: the assert passes without playing.
 8. If `addons/agent_kit/` is present: playtest helpers only in `res://agent/`; the playtester does not create `res://debug/`. A product API whose only caller is the flow = **FAIL**. Do not judge by eye only — run and paste the output:
 
    ```bash

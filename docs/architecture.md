@@ -133,7 +133,7 @@ sequenceDiagram
   O->>U: FEATURES.md up to date
 ```
 
-The test scene is not invented by whoever plays. The tech lead names it on the tree (`res://debug/…`, product pieces, initial state, InputMap action). The developer builds it. The reviewer checks that the criterion’s outcome is not already in the `.tscn`. The playtester only runs that scene with mapped input. A debug `.tres` (more damage, same script) avoids playing the whole fight; a parallel script or a `call()` that leaves the boss dead does not test the feature.
+The test scene is not invented by whoever plays. The tech lead names it on the tree (`res://debug/…`, product pieces, initial state, InputMap action). The developer builds it. The reviewer checks that the criterion’s outcome is not already in the `.tscn`. The playtester only runs that scene with mapped input. A debug `.tres` (other numbers, same script) avoids playing the whole game to reach the criterion; a parallel script or a `call()` that leaves the goal already done does not test it.
 
 In a new chat, with the kit installed, ask for the game or **one feature**. The orchestrator runs `/implement-feature` without a full GDD. A visual pass is asked. GUT tester only if you ask. A large RFC: `/implement-rfc`. Scope mid-build: `/manage-changes`. Where we are: `/workflow-status`.
 
