@@ -33,10 +33,10 @@ Va en el mismo árbol, bajo `res://debug/`, y en el RFC o en el `F<n>`. La const
 
 ```text
 debug/
-└── boss_dying.tscn     # player + boss + gun_debug.tres (mismo Gun, más daño)
+└── goal_ready.tscn     # actor + objetivo + stats_debug.tres (mismo script, otros números)
 ```
 
-El estado inicial hace **fácil** el criterio (no jugar toda la batalla). No lo deja **ya cumplido** (el boss no empieza muerto, el banner no empieza visible). Un `.tres` de debug cambia números; no un script paralelo. `res://debug/` no entra en el export de release.
+El estado inicial hace **fácil** el criterio (no recorrer todo el juego hasta llegar). No lo deja **ya cumplido** (el objetivo no empieza resuelto, el aviso no empieza visible). Un `.tres` de debug cambia números; no un script paralelo. `res://debug/` no entra en el export de release.
 
 ## Señales de “componé más”
 

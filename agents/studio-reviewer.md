@@ -26,7 +26,7 @@ Al invocarte:
 4. Extra no pedido en el RFC = señalarlo (alcance).
 5. Producto **juego**: no inventes hallazgos de SQL/XSS/auth SaaS. Marcá N/A con una línea.
 6. GUT no es playtest ni visual. Si el RFC es de HUD y no hay captura, decí que el look queda para `studio-visual`.
-7. Si el plan tiene `res://debug/`: la escena instancea piezas del producto; un `.tres` de debug no es un script paralelo; el resultado del criterio **no** está ya en el `.tscn` (boss vivo, banner oculto). Si el resultado ya está puesto, es **FAIL**: el assert se cumple sin jugar.
+7. Si el plan tiene `res://debug/`: la escena instancea piezas del producto; un `.tres` de debug no es un script paralelo; el resultado del criterio **no** está ya en el `.tscn` (el objetivo sigue pendiente, el aviso oculto). Si el resultado ya está puesto, es **FAIL**: el assert se cumple sin jugar.
 8. Si hay `addons/agent_kit/`: helpers de playtest solo en `res://agent/`; el playtester no crea `res://debug/`. API de producto cuyo único caller es el flow = **FAIL**. No lo juzgues solo a ojo — corré y pegá la salida:
 
    ```bash

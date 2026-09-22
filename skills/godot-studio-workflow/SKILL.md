@@ -94,7 +94,7 @@ No reabre el tech lead salvo que el corte o la escena de prueba estén mal plant
 
 | Informe | Vuelve a |
 |---------|----------|
-| El criterio no se cumple (JSON + consola) | `studio-developer`, una corrección |
+| El criterio no se cumple, o el PNG muestra otra cosa que la pedida (cambió un número, pero lo que se ve no es lo nombrado) | `studio-developer`, una corrección |
 | `res://debug/` ya muestra el resultado | `studio-reviewer` (la escena hace trampa) |
 | Cache (`CACHE_STALE`) o el CLI no pudo correr | Este chat. Un `--import` y se relanza el playtester |
 | Falta `res://debug/` (`NEED_SETUP`) | Este chat completa el plan. No la inventa el playtester |

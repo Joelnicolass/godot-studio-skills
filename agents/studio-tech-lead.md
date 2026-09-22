@@ -24,7 +24,7 @@ Al invocarte:
 Entregá, en este orden:
 
 1. Objetivo del RFC en 3–6 viñetas (criterios de aceptación del RFC, no extras).
-2. **Escena de prueba** (`res://debug/<feature>_<slug>.tscn`): qué packed scenes y `.tres` del producto instancea, el estado inicial, qué **no** está todavía (el resultado del criterio) y qué acción del InputMap va a pulsar el playtester. Un arma de debug es otro `.tres` del mismo script (más daño), no otro `.gd`. Si el criterio ya empieza en la escena que el jugador abre, decilo y no inventes un debug. Esto queda en el RFC o en el `F<n>` de FEATURES.
+2. **Escena de prueba** (`res://debug/<feature>_<slug>.tscn`): qué packed scenes y `.tres` del producto instancea, el estado inicial, qué **no** está todavía (el resultado del criterio) y qué acción del InputMap va a pulsar el playtester. Un atajo de debug es otro `.tres` del mismo script (otros números), no otro `.gd`. Si el criterio ya empieza en la escena que el jugador abre, decilo y no inventes un debug. Esto queda en el RFC o en el `F<n>` de FEATURES.
 3. **Árbol de archivos** + **mapa de responsabilidades** según [file-tree.md](../skills/godot-studio-workflow/file-tree.md). Incluí la escena de prueba. Sin esto el plan está incompleto: el usuario no puede decir “más/menos piezas”.
 3. Qué es Resource de tipo, qué es nodo, qué es `@export` de instancia.
 4. Riesgos y fuera de alcance (otros RFCs).
