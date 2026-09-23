@@ -24,7 +24,8 @@ When invoked:
 Deliver, in this order:
 
 1. RFC goal in 3–6 bullets (RFC acceptance criteria, no extras).
-2. **File tree** + **responsibility map** per [file-tree.md](../skills/godot-studio-workflow/file-tree.md). Without this the plan is incomplete: the user cannot say “more/fewer pieces”.
+2. **Test scene** (`res://debug/<feature>_<slug>.tscn`): which product packed scenes and `.tres` it instances, the initial state, what has **not** happened yet (the criterion’s outcome), and which InputMap action the playtester will press. A debug shortcut is another `.tres` of the same script (other numbers), not another `.gd`. If the criterion already starts in the scene the player opens, say so and do not invent a debug scene. This is recorded on the RFC or the FEATURES `F<n>`.
+3. **File tree** + **responsibility map** per [file-tree.md](../skills/godot-studio-workflow/file-tree.md). Include the test scene. Without this the plan is incomplete: the user cannot say “more/fewer pieces”.
 3. What is a type Resource, what is a node, what is instance `@export`.
 4. Risks and out of scope (other RFCs).
 5. Short implementation steps.

@@ -27,6 +27,17 @@ Plus a **responsibility map** (one row per file or node):
 Clean: `src/features/<n>/`, `src/core/`, `src/domain/` per [clean.md](../godot-layered-architecture/clean.md).  
 Standard: next to the scene; do not invent `src/domain/`.
 
+## Test scene
+
+It belongs in the same tree, under `res://debug/`, and on the RFC or the `F<n>`. The developer builds it from product pieces. The playtester does not create it and does not edit it: they only play it.
+
+```text
+debug/
+└── goal_ready.tscn     # actor + goal + stats_debug.tres (same script, other numbers)
+```
+
+The initial state makes the criterion **easy** (do not play the whole game to reach it). It does not leave the criterion **already true** (the goal is not already done, the notice does not start visible). A debug `.tres` changes numbers; not a parallel script. `res://debug/` stays out of the release export.
+
 ## Signals to compose more
 
 - One `.gd` paints, spawns, scores, and changes scene.

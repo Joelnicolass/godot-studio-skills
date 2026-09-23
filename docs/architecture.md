@@ -50,7 +50,7 @@ Roles (`Task` → `subagent_type`):
 | Developer | `studio-developer` | Implements that plan |
 | Reviewer | `studio-reviewer` | After the code (one pass) |
 | Tester | `studio-tester` | Only if you ask for tests or RULES requires them |
-| Playtester | `studio-playtester` | Only if you agree to play the build ([playtest module](https://github.com/Joelnicolass/godot-studio-playtest); if not installed, manual playtest or skip) |
+| Playtester | `studio-playtester` | After review, plays the scene named on the `F<n>`. [Playtest module](https://github.com/Joelnicolass/godot-studio-playtest). If it is not installed: a manual checklist or skip |
 | Visual | `studio-visual` | Only if you ask for a UI pass; needs `VISUAL.md` or refs |
 
 Subagents **do not** see this chat. The prompt passes repo, RFC, architecture style, and tells them to read the artifacts.
@@ -114,31 +114,28 @@ Tests: skill `godot-testing` (GUT / GdUnit4) **only** if you ask.
 From idea to a **playable** base. The first RFC is the vertical slice, not endless infra.
 
 ```mermaid
-flowchart TD
-  idea[Game idea] --> arch[Choose Clean or standard]
-  idea --> mp[Choose MP type]
-  arch --> prd["/create-prd → PRD / GDD"]
-  mp --> prd
-  prd --> ver["/verify-prd"]
-  ver --> feat["/extract-features"]
-  feat --> rules["/generate-rules"]
-  rules --> rfcs["/generate-rfcs"]
-  rfcs --> slice[RFC-001 vertical slice]
-
-  slice --> plan[studio-tech-lead: plan + tree]
-  plan --> ok{Your OK?}
-  ok -->|no| plan
-  ok -->|yes| dev[studio-developer]
-  dev --> rev[studio-reviewer]
-  rev --> play{Playtest?}
-  play -->|yes| pt[studio-playtester]
-  play -->|no| more
-  pt --> more{Another RFC?}
-  more -->|yes| plan
-  more -->|no| done[Small, playable, scalable base]
+sequenceDiagram
+  participant U as You
+  participant O as Orchestrator
+  participant T as Tech lead
+  participant D as Developer
+  participant R as Reviewer
+  participant P as Playtester
+  U->>O: One feature
+  O->>T: Cut with a tree or a test scene
+  T-->>U: Tree + res://debug
+  U->>O: OK, once
+  O->>D: Implement the plan
+  D->>R: Diff
+  R->>P: Scene from F n
+  P->>O: Report
+  Note over O: Broken criterion returns to D. A cheating scene returns to R. Cache is fixed by O.
+  O->>U: FEATURES.md up to date
 ```
 
-In a new chat, with the kit installed, ask for the game. The orchestrator runs those commands **without** you typing every slash. Playtest and visual: the orchestrator **asks**. GUT tester only if you ask. Scope mid-build: `/manage-changes`. Where we are: `/workflow-status`.
+The test scene is not invented by whoever plays. The tech lead names it on the tree (`res://debug/…`, product pieces, initial state, InputMap action). The developer builds it. The reviewer checks that the criterion’s outcome is not already in the `.tscn`. The playtester only runs that scene with mapped input. A debug `.tres` (other numbers, same script) avoids playing the whole game to reach the criterion; a parallel script or a `call()` that leaves the goal already done does not test it.
+
+In a new chat, with the kit installed, ask for the game or **one feature**. The orchestrator runs `/implement-feature` without a full GDD. A visual pass is asked. GUT tester only if you ask. A large RFC: `/implement-rfc`. Scope mid-build: `/manage-changes`. Where we are: `/workflow-status`.
 
 Done when: the project parses headless, the slice plays, every criterion has review evidence, and `FEATURES.md` + memory are up to date (full checklist in the `godot-studio-workflow` skill).
 
