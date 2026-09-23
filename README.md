@@ -8,29 +8,31 @@ Repo: https://github.com/Joelnicolass/godot-studio-skills — en inglés en `mai
 
 Sin este kit, un agente suele:
 
-- asumir Clean Architecture o un género (wrap, CRT, plasma…)
-- mezclar puntaje, spawn, FX y red en un solo script
-- implementar el producto entero en un turno, sin PRD ni RFC
+- Perder el contexto del desarrollo.
+- Asumir una arquitectura, o mezclar varias en un mismo desarrollo.
+- Crear scripts con muchas responsabilidades: mezclar puntaje, spawn, vfx, etc.
+- Implementar el producto entero en un turno, sin PRD ni RFC.
+- Saltarse la fase de testeo antes de entregar la implementación.
 
 Con el kit:
 
-- **vos** elegís Clean o estándar Godot **antes** de scaffoldear
-- **vos** elegís si hay multiplayer y de qué tipo (sin MP · local/WiFi · online)
-- cada feature es escena + `@export` + Resource `.tres`, no un `match kind`
-- un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
-- MpKit aparte del gameplay; notas entre chats en Engram o `.studio/MEMORY.md` si hace falta
-- el juego vive en **otro** repo; acá hay skills, commands, agentes y addons (MpKit, FsmKit, PlatKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- **Vos** elegís Clean o estándar Godot **antes** de scaffoldear. Dandote una estructura clara para el desarrollo.
+- **Vos** elegís si hay multiplayer y de qué tipo (sin MP · local/WiFi · online)
+- Se prioriza la estructura desacoplada: cada feature es escena(s) con prioridad a los `@export`, Resources `.tres`, no un `match kind`. El editor expone para mayor comodidad.
+- Un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
+- MpKit aparte del gameplay; notas entre chats en Engram o `.studio/MEMORY.md` si hace falta.
+- El juego vive en **otro** repo; acá hay skills, commands, agentes y addons (MpKit, FsmKit, PlatKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
-| Pieza | Dónde | Qué es |
-|-------|--------|--------|
-| Orquestador | `skills/godot-studio-workflow/` | El agente del chat: entrevista + `/implement-feature` (PRD/RFC opcionales) |
-| Cómo escribir Godot | `skills/` | Capas, composición, MpKit, FSM, plataformas 2D, juicy, visual, memoria, tests |
-| Subagentes | `agents/` | Tech lead, developer, reviewer; tester y visual opcionales. Playtester: módulo playtest |
-| Commands | `commands/` | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
-| MpKit | `addons/mp_kit/` | Listen o dedicated, nodos de replicación, túnel Dictionary. **Cero** gameplay. |
-| AgentKit | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | CLI de agentes + harness. Este kit lo instala; no se mantiene acá. |
-| FsmKit | `addons/fsm_kit/` | `FsmMachine` + `FsmState`. Sin autoload. |
-| PlatKit | `addons/plat_kit/` | Motor 2D: coyote, buffer, apex, corner, lift. Sin niveles ni puntaje. |
+| Pieza               | Dónde                                                                          | Qué es                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Orquestador         | `skills/godot-studio-workflow/`                                                | El agente del chat: entrevista + `/implement-feature` (PRD/RFC opcionales)                       |
+| Cómo escribir Godot | `skills/`                                                                      | Capas, composición, MpKit, FSM, plataformas 2D, juicy, visual, memoria, tests                    |
+| Subagentes          | `agents/`                                                                      | Tech lead, developer, reviewer; tester y visual opcionales. Playtester: módulo playtest          |
+| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
+| MpKit               | `addons/mp_kit/`                                                               | Listen o dedicated, nodos de replicación, túnel Dictionary. **Cero** gameplay.                   |
+| AgentKit            | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | CLI de agentes + harness. Este kit lo instala; no se mantiene acá.                               |
+| FsmKit              | `addons/fsm_kit/`                                                              | `FsmMachine` + `FsmState`. Sin autoload.                                                         |
+| PlatKit             | `addons/plat_kit/`                                                             | Motor 2D: coyote, buffer, apex, corner, lift. Sin niveles ni puntaje.                            |
 
 Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
 
