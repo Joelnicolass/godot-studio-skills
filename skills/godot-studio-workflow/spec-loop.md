@@ -8,7 +8,8 @@ La **verdad de producto** está en artefactos versionados. El **cómo** escribir
 |-----------|--------|
 | `RULES.md` | Constitución técnica (stack, capas, MP, no-goals de código) |
 | `VISUAL.md` | Constitución de look (estilo, refs, jerarquía, no inventar) |
-| `PRD.md` / `FEATURES.md` | Intent y alcance. FEATURES crece con `/implement-feature`; el PRD es opcional y corto. |
+| `FEATURES.md` | El contrato del slice: `F<n>`, criterios, path `res://debug/…` si hace falta, acción del InputMap, observable. Crece con `/implement-feature`. |
+| `PRD.md` | Opcional y corto. No es la suite. |
 | `RFCs/` | Contrato de un slice grande (opcional). `/implement-feature` no exige RFC. |
 | Plan del tech-lead | Árbol de archivos + responsabilidades (derivado; se reescribe si cambia el RFC) |
 
@@ -35,7 +36,7 @@ Al lanzar un `Task`, pegá [compact-rules.md](compact-rules.md) (los subagentes 
 ## Tres formas de validar
 
 - `studio-tester` + `godot-testing` = runner automático del repo.
-- `studio-playtester` + `godot-playtest` = **jugar** el build (módulo playtest; si no está instalado, playtest manual o saltear). Pedir OK **después de cada iteración**.
+- `studio-playtester` + `godot-playtest` = **jugar** la escena del `F<n>` (módulo playtest; si no está instalado, playtest manual o saltear). No pide un segundo OK. La regla viva del playtest está en ese módulo (`evaluate.md`); no la reescribas acá.
 - `studio-visual` + `godot-visual-qa` = UI/UX. Sin estilo/refs/`VISUAL.md`, **parar** y pedirlos.
 
 Un review = un pase. Si hay bloqueantes, una corrección; no un loop hasta verde.
