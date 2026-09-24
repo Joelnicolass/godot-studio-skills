@@ -41,15 +41,16 @@ func notify_actor_ready() -> void:
 func _try_start() -> void:
 	if _started or actor == null or Engine.is_editor_hint():
 		return
-	_started = true
 	var start := initial_state
 	if start == null:
 		for child in get_children():
 			if child is FsmState:
 				start = child
 				break
-	if start != null:
-		_enter(start, true)
+	if start == null:
+		return
+	_started = true
+	_enter(start, true)
 
 
 func _process(delta: float) -> void:
