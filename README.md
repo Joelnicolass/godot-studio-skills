@@ -74,7 +74,7 @@ The same files serve both; the kit keeps no per-harness copy.
 | MCP (optional) | `.mcp.json` at the game root or `claude mcp add`                                            | `.cursor/mcp.json`                        |
 | Game rules     | `CLAUDE.md` importing `@RULES.md` (see [`example/CLAUDE.md`](example/CLAUDE.md))            | `AGENTS.md` or `.cursor/rules/`           |
 
-In Claude Code, subagents do not ask the user or launch other subagents: they return the open question and the orchestrator asks. `./install.sh --addon … agent_kit` also drops a rule into the game’s `.cursor/rules/` (the playtest module writes it); Claude Code does not read it — if you want it, reference it from the game’s `CLAUDE.md`.
+In Claude Code, subagents do not ask the user or launch other subagents: they return the open question and the orchestrator asks. `./install.sh --addon … agent_kit` also drops the workspace rule into the game (the playtest module writes it): `.cursor/rules/` for Cursor and, from playtest v0.3.0 on, `.claude/rules/` for Claude Code.
 
 ## Product commands
 
