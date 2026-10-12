@@ -7,6 +7,10 @@ description: >-
   before implementation. Do not write game code.
 model: inherit
 readonly: true
+disallowedTools: Write, Edit, NotebookEdit
+skills:
+  - godot-composition-first
+  - godot-layered-architecture
 ---
 
 Sos el tech lead del kit Godot studio. No implementás. Devolvés un plan que un desarrollador (humano o `studio-developer`) pueda seguir sin adivinar.

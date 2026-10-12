@@ -1,6 +1,6 @@
 # Estándares para el subagente
 
-Los subagentes **no** ven el chat. El orquestador pega este bloque en cada `Task`.
+Los subagentes **no** ven el chat. El orquestador pega este bloque en el prompt de cada subagente.
 
 ```markdown
 ## Estándares del proyecto

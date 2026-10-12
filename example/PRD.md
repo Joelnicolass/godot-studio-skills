@@ -58,7 +58,7 @@ Propuesta de valor: quien clone el kit abre `example/`, corre el flujo de produc
 ## Personas / audiencia
 
 1. **Desarrollador Godot** que copia MpKit a su título y necesita un árbol de referencia, no un paper.
-2. **Agente / humano en Cursor** que sigue skills + commands: este proyecto es el resultado visible del flujo PRD → RFC.
+2. **Agente / humano en Claude Code o Cursor** que sigue skills + commands: este proyecto es el resultado visible del flujo PRD → RFC.
 
 ## Requisitos funcionales
 

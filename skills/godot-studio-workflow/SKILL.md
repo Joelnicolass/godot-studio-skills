@@ -18,7 +18,7 @@ Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [fil
 
 Objetivo: un juego Godot 4 con **base chica y clara**. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables.
 
-Roles (`Task` con `subagent_type` = su `name`):
+Roles (tool de subagentes — `Agent` en Claude Code, `Task` en Cursor — con `subagent_type` = su `name`):
 
 | Rol | Subagente | Cuándo |
 |-----|-----------|--------|
@@ -29,7 +29,7 @@ Roles (`Task` con `subagent_type` = su `name`):
 | Playtester | `studio-playtester` (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | Después del review, sobre `res://debug/` o la escena del jugador. No pide un segundo OK |
 | Visual | `studio-visual` | **Solo** si el usuario quiere pase UI; exige `VISUAL.md` / refs |
 
-Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
+Cada prompt de subagente lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat, **no** le preguntan al usuario y **no** lanzan otros subagentes: si a un rol le falta una decisión (arte, MCP, alcance), la devuelve y el orquestador pregunta.
 
 Si el subagente `studio-playtester` **no existe** (el módulo playtest no está instalado), no lo inventes ni lo simules con otro rol: ofrecé playtest manual (el usuario corre F5 y vos pasás los criterios del slice como checklist) o saltear el paso.
 
@@ -39,7 +39,7 @@ Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RF
 
 ## 1. Arranque (vos preguntás y ejecutás)
 
-Si el usuario quiere un juego / feature nueva, **no esperes** a que tipee el slash: ejecutá el command correspondiente.
+Si el usuario quiere un juego / feature nueva, **no esperes** a que tipee el slash: ejecutá el command correspondiente (Claude Code: tool `Skill` con el nombre del command; si no está, leé `../../commands/<nombre>.md` — `~/.claude/commands/` o `~/.cursor/commands/`, o los del proyecto — y seguilo).
 
 **Iterar gana a un PRD con todo definido.** Un slice jugable esta semana vale más que un GDD de 20 páginas. `/create-prd` es opcional y **corto**; no entrevistas el título entero antes de código.
 
@@ -48,7 +48,7 @@ Si el repo ya tiene PRD/RULES, leelos y `/workflow-status` si hace falta; no reg
 Orden para un **juego nuevo**:
 
 1. Arquitectura Clean vs estándar — **preguntar** (skill layered). Sin respuesta: no scaffoldear.
-2. Multiplayer — **preguntar** (AskQuestion si está disponible), **antes** de copiar `addons/mp_kit` o de escribir RPCs:
+2. Multiplayer — **preguntar** (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está), **antes** de copiar `addons/mp_kit` o de escribir RPCs:
    - **Sin multiplayer** — no instales MpKit. Sin RPCs, sin `MultiplayerSpawner`.
    - **Local / WiFi** (mismo dispositivo o LAN) — `MpKit.host()` listen-server (el host es jugador).
    - **Online** (internet / VPS) — **dedicated server** en el mismo proyecto: `MpKit.host_dedicated()`, clientes `join(ip)`. Desarrollá dedicated + clientes desde el día uno. Steam/WebRTC/matchmaking solo si el producto los pide después. No fingir que un listen detrás de NAT es online.
@@ -64,7 +64,7 @@ Orden para un **juego nuevo**:
 9. `/test-strategy` solo si el usuario quiere tests o el PRD los pide
 10. `/workflow-status` cuando pida “dónde estamos”
 
-Investigación (API Godot, un patrón, un addon, un shader): subagente `explore` o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
+Investigación (API Godot, un patrón, un addon, un shader): subagente de exploración (`Explore` en Claude Code, `explore` en Cursor) o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
 
 Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva chica: `/implement-feature`.
 

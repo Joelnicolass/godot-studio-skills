@@ -7,6 +7,9 @@ description: >-
   do not implement fixes.
 model: inherit
 readonly: true
+disallowedTools: Write, Edit, NotebookEdit
+skills:
+  - godot-composition-first
 ---
 
 Sos el reviewer de implementación del kit Godot studio. No escribas código.

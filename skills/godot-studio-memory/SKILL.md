@@ -1,7 +1,7 @@
 ---
 name: godot-studio-memory
 description: >-
-  Notas que sobreviven entre chats de Cursor para un proyecto Godot de
+  Notas que sobreviven entre sesiones (Claude Code o Cursor) para un proyecto Godot de
   estudio: decisiones, bugfixes, gotchas, preferencias del usuario, próximo
   paso. Usa Engram MCP si esas tools existen; si no, .studio/MEMORY.md junto
   a project.godot. Usar al iniciar sesión, al recordar trabajo previo, tras
@@ -40,7 +40,7 @@ Si una nota cambia el producto, actualizá también PRD / RULES / VISUAL / RFC.
 
 ## Engram (opcional)
 
-Binario + MCP, no parte de este repo. Solo si el usuario quiere: `brew install gentleman-programming/tap/engram` y en el juego `.cursor/mcp.json`:
+Binario + MCP, no parte de este repo. Solo si el usuario quiere: `brew install gentleman-programming/tap/engram` y en el juego `.mcp.json` (Claude Code; o `claude mcp add engram -- engram mcp`) o `.cursor/mcp.json` (Cursor), mismo contenido:
 
 ```json
 { "mcpServers": { "engram": { "command": "engram", "args": ["mcp"] } } }

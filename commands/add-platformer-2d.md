@@ -1,3 +1,7 @@
+---
+description: "Agrega perdón de plataformas 2D (coyote, jump buffer, apex, corner, lift) con PlatKit."
+---
+
 Agregá **perdón de plataformas 2D** (coyote, jump buffer, apex, corner, lift) al jugador que ya existe — o scaffoldeá un `CharacterBody2D` flaco + `PlatMotor`.
 
 Esto **no** es una feature de puntaje/niveles (`/implement-feature` si el alcance es “el mundo 1-1”). **No** es juicy (`/add-juicy` es squash/VFX). **No** copies dash/stamina de Celeste salvo que el producto los pida.

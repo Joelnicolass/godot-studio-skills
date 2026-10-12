@@ -1,3 +1,8 @@
+---
+description: "Implementa una feature de gameplay o el slice vertical en el juego Godot: árbol, OK, código, review, playtest."
+argument-hint: "[feature]"
+---
+
 Implementá **una** feature de gameplay en el **proyecto Godot del juego**. Iterar un slice jugable gana a un PRD que define el título entero.
 
 Esto **no** es `/new-mp-feature` (eso solo scaffoldea un actor MpKit). Esto **no** es `/implement-rfc` (eso sigue un RFC ya escrito). Si ya hay un RFC con ID, usá `/implement-rfc <id>`.
@@ -10,7 +15,7 @@ Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-
 
 ## 1. Acotar (antes de código)
 
-Si el pedido es vago, preguntá en un lote (AskQuestion si está):
+Si el pedido es vago, preguntá en un lote (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está):
 
 1. Qué hace el jugador / qué se ve. Una o dos frases.
 2. Dónde vive (escena, actor, HUD). Clean vs estándar **ya elegido**; no lo cambies.

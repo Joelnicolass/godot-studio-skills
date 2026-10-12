@@ -18,7 +18,7 @@ Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 
 ## Alcance de red (obligatorio)
 
-**Preguntar siempre** (AskQuestion si está disponible) **antes** de copiar el addon o de escribir RPCs. No asumas LAN.
+**Preguntar siempre** (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está) **antes** de copiar el addon o de escribir RPCs. No asumas LAN.
 
 | Elección | Qué hacer |
 |----------|-----------|

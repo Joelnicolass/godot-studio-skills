@@ -100,7 +100,7 @@ Fases = RFC-001 → 004 (ver `RFCS.md`).
 
 ## 9. Agente
 
-Cablear este archivo: `example/AGENTS.md` apunta a `RULES.md`. Quien implemente en Cursor debe leerlo.
+Cablear este archivo: `example/AGENTS.md` apunta a `RULES.md` y `example/CLAUDE.md` importa los dos. Quien implemente (Claude Code o Cursor) debe leerlo.
 
 ## Autochequeo
 

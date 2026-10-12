@@ -1,3 +1,8 @@
+---
+description: "Revisa la implementación de un RFC contra su spec y RULES.md; guarda reviews/REVIEW-RFC-[ID].md."
+argument-hint: "<id-del-rfc>"
+---
+
 RFC objetivo: el ID provisto después de este comando en mi mensaje — sustituilo por [ID] en todos lados abajo. Si no se dio ningún ID, preguntá en qué RFC trabajar antes de hacer cualquier otra cosa.
 
 **Ejecutá esto en una sesión nueva, idealmente con un modelo distinto al que escribió el código.** El RFC, RULES.md y FEATURES.md contienen todo lo necesario -- ese es el punto. Un reviewer que sostiene el razonamiento del autor no es un reviewer.

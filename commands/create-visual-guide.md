@@ -1,3 +1,7 @@
+---
+description: "Escribe VISUAL.md (pilares, referencias, jerarquía, no-goals) a partir del estilo y las refs del usuario."
+---
+
 Si el usuario ya dijo estilo, referencias o no-goals de look, escribí `VISUAL.md` en el mismo directorio que `PRD.md` / `RULES.md` (raíz del juego Godot o del repo de producto).
 
 Si **no** hay estilo ni refs: preguntá primero (pixel, FUT, flat, …; 2–5 imágenes/URLs; qué no querés). No inventes una estética.

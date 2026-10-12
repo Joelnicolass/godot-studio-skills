@@ -31,7 +31,7 @@ Autoridad: `PRD.md` > `FEATURES.md` > `RULES.md` > `VISUAL.md` > RFC > plan gene
 
 Quien **escribe** no se auto-valida. Developer ≠ reviewer ≠ playtester ≠ visual.
 
-Al lanzar un `Task`, pegá [compact-rules.md](compact-rules.md) (los subagentes no ven este chat).
+Al lanzar un subagente, pegá [compact-rules.md](compact-rules.md) (los subagentes no ven este chat).
 
 ## Tres formas de validar
 

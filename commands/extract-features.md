@@ -1,3 +1,7 @@
+---
+description: "Extrae y prioriza features del PRD en FEATURES.md."
+---
+
 Eres un product manager y tech lead experto encargado de extraer y organizar features a partir del Documento de requisitos de producto (PRD.md, o el PRD provisto en la conversación).
 
 Creá un archivo FEATURES.md completo que describa con claridad todas las features, organizadas por prioridad y categoría. Esta lista de features la usará el equipo de desarrollo para planificar la implementación.

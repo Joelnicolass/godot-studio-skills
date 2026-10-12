@@ -1,3 +1,8 @@
+---
+description: "Implementa un RFC ya escrito, por ID, con la tubería del estudio."
+argument-hint: "<id-del-rfc>"
+---
+
 RFC objetivo: el ID provisto después de este comando en mi mensaje — sustituilo por [ID] en todos lados abajo. Si no se dio ningún ID, preguntá en qué RFC trabajar antes de hacer cualquier otra cosa.
 
 Si está cargada la skill `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo: `studio-tech-lead` (plan **con árbol** y `res://debug/` si hace falta) → el usuario aprueba el corte **una vez** → `studio-developer` → `studio-reviewer` (un pase) → `studio-playtester` sobre la escena del RFC. No preguntes otra vez si se juega. Si tocó UI, el pase visual sí se pregunta (`studio-visual`; sin `VISUAL.md`/refs, pedilos antes). Al volver el playtester, clasificá el FAIL (developer / reviewer / este chat). Tester GUT solo si el usuario o RULES.md lo piden. Un RFC por vez. Un typo o bug de 1–3 archivos: este chat, sin RFC nuevo.
