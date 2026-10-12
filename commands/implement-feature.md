@@ -1,3 +1,8 @@
+---
+description: "Implement one gameplay feature or the vertical slice in the Godot game: tree, OK, code, review, playtest."
+argument-hint: "[feature]"
+---
+
 Implement **one** gameplay feature in the **game’s Godot project**. Iterating a playable slice beats a PRD that defines the whole title.
 
 This is **not** `/new-mp-feature` (that only scaffolds an MpKit actor). This is **not** `/implement-rfc` (that follows an RFC already written). If an RFC id already exists, use `/implement-rfc <id>`.
@@ -10,7 +15,7 @@ Load `godot-layered-architecture` and `godot-composition-first`. Motion: `godot-
 
 ## 1. Scope (before code)
 
-If the request is vague, ask in one batch (AskQuestion if available):
+If the request is vague, ask in one batch (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available):
 
 1. What the player does / what you see. One or two sentences.
 2. Where it lives (scene, actor, HUD). Clean vs standard is **already chosen**; do not change it.

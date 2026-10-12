@@ -1,3 +1,7 @@
+---
+description: "Generate a test plan from FEATURES and the RFCs. Optional."
+---
+
 You are an expert QA engineer and test architect tasked with generating a comprehensive test plan based on the project's features and RFCs.
 
 Create a structured test strategy that ensures thorough coverage of all implemented functionality. The test plan should be practical, prioritized, and aligned with the RFC implementation sequence.

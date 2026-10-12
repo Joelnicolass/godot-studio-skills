@@ -1,6 +1,6 @@
 # Godot studio kit
 
-A small studio for **Cursor + Godot 4**: the chat does not “make the game”, it **orchestrates**. It interviews you, writes PRD/RFCs, and hands plan / code / review to subagents. The result is not a thousand-line `World.gd`: it is a **small, playable, clear base** that a human (or another AI) can continue from the inspector.
+A small studio for **Claude Code or Cursor + Godot 4**: the chat does not “make the game”, it **orchestrates**. It interviews you, writes PRD/RFCs, and hands plan / code / review to subagents. The result is not a thousand-line `World.gd`: it is a **small, playable, clear base** that a human (or another AI) can continue from the inspector.
 
 Repo: https://github.com/Joelnicolass/godot-studio-skills — English on `main`, Spanish on `release/spanish`.
 
@@ -20,7 +20,7 @@ With the kit:
 - **You** choose whether there is multiplayer and which type (none · local/Wi-Fi · online)
 - Decoupled structure comes first: each feature is scene(s) with priority to `@export`s, Resource `.tres` files, not a `match kind`. The editor exposes the knobs for convenience.
 - One RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
-- MpKit kept off gameplay; notes across chats in Engram or `.studio/MEMORY.md` if needed.
+- MpKit kept off gameplay; notes across sessions in Engram or `.studio/MEMORY.md` if needed.
 - The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Piece               | Where                                                                          | What it is                                                                                       |
@@ -40,23 +40,41 @@ What **does not** belong here: score, product copy, a title’s scenes, `GameSes
 
 The details (orchestrator diagrams, roles, Clean vs standard, multiplayer types, the iteration flow, art/shaders) live in [docs/architecture.md](docs/architecture.md). Interactive flow diagram: [joelnicolass.github.io/godot-studio-skills/en.html](https://joelnicolass.github.io/godot-studio-skills/en.html). In short: interview → `/implement-feature` → one OK on the tree (includes `res://debug/` when needed) → developer → reviewer → playtester on that scene → the orchestrator classifies the FAIL → close on `FEATURES.md`. A visual pass is asked. The slice contract is the `F<n>`, not a mandatory RFC.
 
-## Install (Cursor)
+## Install (Claude Code or Cursor)
 
 ```bash
-./install.sh                 # ~/.cursor/skills, commands, agents
-./install.sh --project       # ./.cursor/ of cwd
+./install.sh --claude            # ~/.claude/skills, commands, agents
+./install.sh                     # ~/.cursor/skills, commands, agents (default)
+./install.sh --all               # both
+./install.sh --claude --project  # ./.claude/ of cwd (without --claude: ./.cursor/)
 ```
 
 From GitHub:
 
 ```bash
-npx skills add Joelnicolass/godot-studio-skills -g -a cursor -y
-npx skills add Joelnicolass/godot-studio-playtest -g -a cursor -y
+npx skills add Joelnicolass/godot-studio-skills -g -a claude-code -y   # or -a cursor
+npx skills add Joelnicolass/godot-studio-playtest -g -a claude-code -y
 ```
 
-`npx skills` only copies `skills/`. Commands, subagents, and the addons go through `./install.sh` (this installer also pulls the playtest module).
+`npx skills` only copies `skills/`. Commands, subagents, and the addons go through `./install.sh` (this installer also pulls the playtest module). Uninstall: `./uninstall.sh` with the same flags (`--claude`, `--all`, `--project`).
 
-Open a **new chat** in Cursor after installing.
+Open a **new session** after installing. In Claude Code, `/agents` lists the `studio-*` roles and `/` shows the commands.
+
+### What differs between Claude Code and Cursor
+
+The same files serve both; the kit keeps no per-harness copy.
+
+| Piece          | Claude Code                                                                                 | Cursor                                    |
+| -------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Skills         | `~/.claude/skills/<skill>/SKILL.md`                                                         | `~/.cursor/skills/<skill>/SKILL.md`       |
+| Commands       | `~/.claude/commands/*.md` → `/implement-feature`. Uses `description` / `argument-hint`      | `~/.cursor/commands/*.md`                 |
+| Subagents      | `~/.claude/agents/*.md`. Read-only through `disallowedTools`; `skills:` preloads the role’s | `~/.cursor/agents/*.md`. `readonly: true` |
+| Launch a role  | `Agent` tool (`subagent_type`)                                                              | `Task` tool (`subagent_type`)             |
+| Ask the user   | `AskUserQuestion`                                                                           | `AskQuestion`                             |
+| MCP (optional) | `.mcp.json` at the game root or `claude mcp add`                                            | `.cursor/mcp.json`                        |
+| Game rules     | `CLAUDE.md` importing `@RULES.md` (see [`example/CLAUDE.md`](example/CLAUDE.md))            | `AGENTS.md` or `.cursor/rules/`           |
+
+In Claude Code, subagents do not ask the user or launch other subagents: they return the open question and the orchestrator asks. `./install.sh --addon … agent_kit` also drops a rule into the game’s `.cursor/rules/` (the playtest module writes it); Claude Code does not read it — if you want it, reference it from the game’s `CLAUDE.md`.
 
 ## Product commands
 
@@ -93,7 +111,7 @@ Written contract, if you ask:
 
 Enable each plugin in Project → Plugins. MpKit also needs the autoload (`MpKit="*res://addons/mp_kit/mp_kit.gd"`); full guide in `addons/mp_kit/README.md`, editor in `skills/godot-mp-kit/editor.md`, online/VPS in `skills/godot-mp-kit/dedicated.md`. AgentKit lives in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest): JSON/harness live in the game’s `res://agent/`; details in that repo’s README. PlatKit is not a Celeste clone: dash/stamina stay in the game.
 
-A ready demo lives in [`example/`](example/README.md) (1P, LAN, dedicated, 2D and 3D worlds with placeholders, PRD→RFC flow). Cursor/VS Code snippets: `.vscode/mpkit.code-snippets` (the installer copies them).
+A ready demo lives in [`example/`](example/README.md) (1P, LAN, dedicated, 2D and 3D worlds with placeholders, PRD→RFC flow). VS Code/Cursor snippets: `.vscode/mpkit.code-snippets` (the installer copies them).
 
 ## Layout
 

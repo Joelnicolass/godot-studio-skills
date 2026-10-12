@@ -1,6 +1,6 @@
 # Standards for the subagent
 
-Subagents **do not** see the chat. The orchestrator pastes this block into every `Task`.
+Subagents **do not** see the chat. The orchestrator pastes this block into every subagent prompt.
 
 ```markdown
 ## Project standards

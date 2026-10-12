@@ -19,7 +19,7 @@ Composition: [godot-composition-first](../godot-composition-first/SKILL.md). Ass
 
 Do **not** install Aseprite MCP, do **not** call Aseprite tools, and do **not** create sprites until the user says yes.
 
-1. Ask (AskQuestion if available): do you want sprites created / animated now (Aseprite MCP), or is a placeholder enough?
+1. Ask (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available): do you want sprites created / animated now (Aseprite MCP), or is a placeholder enough?
 2. If **no**: `PlaceholderTexture2D` / ColorRect and continue with code. Do not push.
 3. If **yes**: ask for **references** before a single pixel — images, URLs, palette, size (e.g. 16 / 32 / 48), style, which cycles (idle, walk, jump, attack), mood. With no references, **do not invent** a look: ask again.
 4. Only then install or use the MCP. Export into the **Godot project**.

@@ -18,7 +18,7 @@ Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-
 
 Goal: a Godot 4 game with a **small, clear base**. Priorities: clean layers, composition, editor/`@export`, reusable components.
 
-Roles (`Task` `subagent_type` = their `name`):
+Roles (subagent tool — `Agent` in Claude Code, `Task` in Cursor — with `subagent_type` = their `name`):
 
 | Role | Subagent | When |
 |------|----------|------|
@@ -29,7 +29,7 @@ Roles (`Task` `subagent_type` = their `name`):
 | Playtester | `studio-playtester` (module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | After review, on `res://debug/` or the player scene. Does not ask for a second OK |
 | Visual | `studio-visual` | **Only** if the user wants a UI pass; requires `VISUAL.md` / refs |
 
-Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.
+Every subagent prompt includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat, **do not** ask the user, and **do not** launch other subagents: when a role is missing a decision (art, MCP, scope) it returns it and the orchestrator asks.
 
 If the `studio-playtester` subagent **does not exist** (the playtest module is not installed), do not invent it or simulate it with another role: offer a manual playtest (the user runs F5 and you walk the slice criteria as a checklist) or skip the step.
 
@@ -39,14 +39,14 @@ A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new
 
 ## 1. Startup (you ask and you run commands)
 
-If the user wants a game / new feature and artifacts are missing, **do not wait** for them to type the slash: execute the matching command (read `commands/*.md` in the kit or `.cursor/commands/` in the project).
+If the user wants a game / new feature and artifacts are missing, **do not wait** for them to type the slash: execute the matching command (Claude Code: `Skill` tool with the command name; otherwise read `../../commands/<name>.md` — `~/.claude/commands/` or `~/.cursor/commands/`, or the project’s — and follow it).
 
 If the repo already has PRD/RULES, read them and `/workflow-status` if needed; do not regenerate artifacts.
 
 Order for a **new game**:
 
 1. Architecture Clean vs standard — **ask** (layered skill). No answer: do not scaffold.
-2. Multiplayer — **ask** (AskQuestion if available) **before** copying `addons/mp_kit` or writing RPCs:
+2. Multiplayer — **ask** (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available) **before** copying `addons/mp_kit` or writing RPCs:
    - **No multiplayer** — do not install MpKit. No RPCs, no `MultiplayerSpawner`.
    - **Local / Wi-Fi** (same device or LAN) — `MpKit.host()` listen-server (the host is a player).
    - **Online** (internet / VPS) — **dedicated server** in the same project: `MpKit.host_dedicated()`, clients `join(ip)`. Develop dedicated + clients from day one. Steam/WebRTC/matchmaking only if the product asks later. Do not pretend a listen server behind NAT is online.
@@ -64,7 +64,7 @@ Order for a **new game**:
 11. Implement RFC by RFC with the pipeline below
 12. `/workflow-status` when they ask where things stand
 
-Research (Godot API, a pattern, an addon, a shader): `explore` subagent or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references. If **3D**: **ask** and install the Blender MCP only with OK + references. The orchestrator summarizes; do not paste dumps.
+Research (Godot API, a pattern, an addon, a shader): exploration subagent (`Explore` in Claude Code, `explore` in Cursor) or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references. If **3D**: **ask** and install the Blender MCP only with OK + references. The orchestrator summarizes; do not paste dumps.
 
 Mid-work scope changes: `/manage-changes`.
 

@@ -69,7 +69,7 @@ Must F1–F16. Should F17–F18. Won't F19–F23. Phases = RFC-001 → 004.
 
 ## 9. Agent
 
-`example/AGENTS.md` points at this file.
+`example/AGENTS.md` points at this file and `example/CLAUDE.md` imports both.
 
 ## Autocheck
 

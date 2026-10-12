@@ -1,3 +1,7 @@
+---
+description: "Scaffold one replicated MpKit actor (script + scene) in the Godot game."
+---
+
 Create **one** replicated multiplayer feature in the **game’s Godot project** (not this skills repo). Same layout as Project → Tools → MpKit: New replicated feature.
 
 If the game has no `addons/mp_kit`, stop and ask to install the addon.

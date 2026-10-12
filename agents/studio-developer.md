@@ -7,6 +7,9 @@ description: >-
   game or extra RFCs.
 model: inherit
 readonly: false
+skills:
+  - godot-composition-first
+  - godot-layered-architecture
 ---
 
 You are the Godot studio kit developer. You implement **only** the RFC (or change) in the prompt, following the approved plan (tree included).

@@ -18,7 +18,7 @@ Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 
 ## Network scope (required)
 
-**Always ask** (AskQuestion if available) **before** copying the addon or writing RPCs. Do not assume LAN.
+**Always ask** (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available) **before** copying the addon or writing RPCs. Do not assume LAN.
 
 | Choice | What to do |
 |----------|-----------|

@@ -26,7 +26,7 @@ If they said yes: pixel art / spritesheet via **Aseprite MCP**, not an eternal `
 Repo: [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp)
 
 1. User OK + references.
-2. If MCP tools **already exist**: use them. If **not**: install (below), new chat, then draw.
+2. If MCP tools **already exist**: use them. If **not**: install (below), new session, then draw.
 3. Export PNG / spritesheet into the game (`res://assets/…`) → `Sprite2D` / `AnimatedSprite2D`. The `.aseprite` can sit next to the PNG.
 
 Short loop: palette (`generate_color_ramp` or a preset) → layers → silhouette → `export_frame` at 8× to look → iterate → `export_sprite` / `export_spritesheet` into the Godot project.
@@ -41,7 +41,7 @@ Clone the server once (outside the game):
 git clone https://github.com/diivi/aseprite-mcp.git
 ```
 
-In Cursor → Settings → MCP, or in `~/.cursor/mcp.json` / the **game’s** `.cursor/mcp.json`:
+Claude Code: `.mcp.json` at the **game’s** root (or `claude mcp add`). Cursor: Settings → MCP, or `~/.cursor/mcp.json` / the game’s `.cursor/mcp.json`. Same content:
 
 ```json
 {
@@ -57,7 +57,7 @@ In Cursor → Settings → MCP, or in `~/.cursor/mcp.json` / the **game’s** `.
 }
 ```
 
-On macOS `uv` is often `/opt/homebrew/bin/uv`. Open a **new** chat after saving.
+On macOS `uv` is often `/opt/homebrew/bin/uv`. Open a **new** session after saving (in Claude Code, `/mcp` shows whether it connected).
 
 If the MCP does not start: do not fake the sprite; say what is missing (Aseprite, path, uv) and use a `PlaceholderTexture2D` **only** until the user enables it.
 
@@ -77,11 +77,11 @@ The server executes LLM-generated Python **with no** sandbox. Do not use it on f
 
 ### Install the Blender MCP
 
-Official requirements: **Blender 5.1 or newer**, Lab add-on, MCP client (Cursor), MCP server.
+Official requirements: **Blender 5.1 or newer**, Lab add-on, MCP client (Claude Code or Cursor), MCP server.
 
 1. Blender → Edit → Preferences → Extensions → Get Extensions. Search **MCP** / Blender Lab and install the official add-on. (Drag & drop the Lab repo: twice — first the repository, then the add-on.)
 2. In the add-on preferences: **Start MCP Server** (typically `localhost:9876`).
-3. In Cursor: Settings → MCP. If the client accepts **`.mcpb`**, download the bundle from the [release / docs page](https://www.blender.org/lab/mcp-server/) and add it. Otherwise follow the *setup instructions* on that same page (do not use a community `uvx blender-mcp`: it is a **different** protocol).
-4. **New** chat. Confirm Blender tools appear. If not: Blender open + server started + reload MCP.
+3. In the client (Cursor: Settings → MCP; Claude Code: `claude mcp add` or `.mcp.json`). If the client accepts **`.mcpb`**, download the bundle from the [release / docs page](https://www.blender.org/lab/mcp-server/) and add it. Otherwise follow the *setup instructions* on that same page (do not use a community `uvx blender-mcp`: it is a **different** protocol).
+4. **New** session. Confirm Blender tools appear. If not: Blender open + server started + reload MCP.
 
-If it does not start: do not invent a mesh; say what is missing (5.1, add-on, server, Cursor MCP).
+If it does not start: do not invent a mesh; say what is missing (5.1, add-on, server, the client’s MCP config).

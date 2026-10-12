@@ -58,7 +58,7 @@ Value: clone the kit, open `example/`, follow this PRD → RFCs → code, and se
 ## Audience
 
 1. A **Godot developer** copying MpKit into a title who needs a reference tree, not a paper.
-2. A **Cursor agent / human** following skills + commands: this project is the visible PRD → RFC result.
+2. A **Claude Code or Cursor agent / human** following skills + commands: this project is the visible PRD → RFC result.
 
 ## Functional requirements
 

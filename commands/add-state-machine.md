@@ -1,3 +1,7 @@
+---
+description: "Add a composition state machine (FsmMachine + FsmState, FsmKit addon)."
+---
+
 Add a composition **state machine** to the **game’s Godot project**: `FsmState` children under an `FsmMachine`.
 
 This is **not** a rules feature (`/implement-feature`) unless the new state **is** the scope. **Not** the platformer motor (`/add-platformer-2d`). **Does not** invent HP or score.

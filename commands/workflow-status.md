@@ -1,3 +1,7 @@
+---
+description: "Report which workflow stage the project is at and what the next step is."
+---
+
 You are guiding a project through an RFC-driven development workflow with these stages.
 
 The orchestrator (`godot-studio-workflow`) runs these steps; the user does not have to type every slash if they asked to make the game. `/test-strategy` is optional if there are no tests.

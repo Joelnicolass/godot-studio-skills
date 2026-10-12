@@ -1,3 +1,7 @@
+---
+description: "Write VISUAL.md (pillars, references, hierarchy, non-goals) from the user's style and references."
+---
+
 If the user already gave style, references, or look non-goals, write `VISUAL.md` in the same directory as `PRD.md` / `RULES.md` (Godot game root or product repo).
 
 If there is **no** style and no refs: ask first (pixel, FUT, flat, …; 2–5 images/URLs; what you do not want). Do not invent an aesthetic.

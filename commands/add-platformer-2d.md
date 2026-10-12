@@ -1,3 +1,7 @@
+---
+description: "Add 2D platformer forgiveness (coyote, jump buffer, apex, corner, lift) with PlatKit."
+---
+
 Add **2D platformer forgiveness** (coyote, jump buffer, apex, corner, lift) to the player that already exists — or scaffold a thin `CharacterBody2D` + `PlatMotor`.
 
 This is **not** a score/level feature (`/implement-feature` if the scope is “world 1-1”). **Not** juicy (`/add-juicy` is squash/VFX). **Do not** copy Celeste dash/stamina unless the product asks.

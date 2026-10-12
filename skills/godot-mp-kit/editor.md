@@ -7,13 +7,13 @@ With the plugin enabled, the autoload is registered and **Project → Tools** ga
 | **Wire replication on selection** | Child `MpReplicate` + `MultiplayerSynchronizer` (undo). Does not clone Godot’s Replication dock. |
 | **New replicated feature...** | Writes `res://features/<id>/` (or the folder you pick): `.gd` + `.tscn` with replicate, sync, and optional `MpCustomPipe`. |
 | **New session flow...** | Writes `res://glue/session_flow.tscn` + `.gd` (`extends MpFlow`) and registers it as an autoload. |
-| **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the Cursor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
+| **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the editor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
 Enable also copies **script templates** to `res://script_templates/` (with `.gdignore`). When attaching a script to `CharacterBody2D/3D` or `Node2D/3D`, template **MpKit replicated**.
 
 CI/headless: autoload in `project.godot`. Do not duplicate Enable + a manual line.
 
-Cursor without Godot open: command `/new-mp-feature` (same file layout). `./install.sh --addon` also installs snippets into `.vscode/`.
+Without Godot open (Claude Code or Cursor): command `/new-mp-feature` (same file layout). `./install.sh --addon` also installs snippets into `.vscode/`.
 
 ## Nodes (Create New Node)
 
