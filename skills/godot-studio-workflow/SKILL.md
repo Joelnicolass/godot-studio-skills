@@ -3,7 +3,7 @@ name: godot-studio-workflow
 description: >-
   Orquesta un juego Godot 4 de la idea a una base simple y escalable:
   entrevista al usuario (Clean vs estándar, tipo de multiplayer, 2D/3D, MCP
-  Aseprite/Blender), corre commands de producto (GDD corto opcional, features,
+  Aseprite/Blender, Material Maker, REA), corre commands de producto (GDD corto opcional, features,
   rules, RFCs), itera con /implement-feature y delega en tech-lead /
   developer / reviewer (tester, playtester y visual opcionales). Usar al
   arrancar un juego, un proyecto Godot, implementar una feature, PRD, RFC, o
@@ -14,7 +14,7 @@ description: >-
 
 El **agente principal de este chat** es el orquestador. Habla con el usuario. No descarga el producto entero en un solo subagente.
 
-Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows: skill `godot-agent-kit` del módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh` de este kit la trae). Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige. Feel jugoso: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`.
+Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows: skill `godot-agent-kit` del módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh` de este kit la trae). Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige. Feel jugoso: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Materiales / texturas procedurales: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. Mecánica “como en X” (ingeniería inversa): [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) + `/reverse-engineer`.
 
 Objetivo: un juego Godot 4 con **base chica y clara**. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables.
 
@@ -56,6 +56,7 @@ Orden para un **juego nuevo**:
 3. 2D / 3D — **preguntar** (o ambos).
    - **2D**: sprites vía Aseprite MCP **solo** si el usuario quiere (referencias). Skill [godot-animation](../godot-animation/SKILL.md) (12 principios; Tween o AnimationPlayer según el clip).
    - **3D**: **preguntá** si quiere el MCP de Blender ([docs oficiales](https://www.blender.org/lab/mcp-server/)). Si sí: instalalo, pedí referencias, exportá `.glb` al juego. Si no: placeholder 3D. Guía: [assets.md](../godot-composition-first/assets.md).
+   - **Materiales / texturas** (2D o 3D): cuando una superficie deja de ser placeholder y no hay textura del usuario, decí que se puede crear con **Material Maker** (procedural, export PNG + `.tres`). Solo con OK + referencias. Skill [godot-material-maker](../godot-material-maker/SKILL.md) / `/create-material`.
 4. Slice vertical: `/implement-feature` (o un RFC-001 si piden contrato). Pilares + loop + una escena. No hace falta FEATURES de todo el juego.
 5. Si quieren un GDD escrito: `/create-prd` → `PRD.md` **corto y vivo** (solo el slice + no-goals). No definas sistemas futuros.
 6. Si ya hay estilo o refs: `/create-visual-guide` → `VISUAL.md`. Si no, **preguntá** antes de cualquier pase visual.
@@ -65,6 +66,8 @@ Orden para un **juego nuevo**:
 10. `/workflow-status` cuando pida “dónde estamos”
 
 Investigación (API Godot, un patrón, un addon, un shader): subagente de exploración (`Explore` en Claude Code, `explore` en Cursor) o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
+
+Si el usuario quiere una mecánica o feature “como en X” (otro juego o app): decí que se puede **deducir** (observar, medir) o **decompilar** con [REA](https://github.com/Joelnicolass/rea) para entender cómo funciona — solo con software propio o autorizado, y extrayendo comportamiento, no código ni assets. La investigación la corrés vos (no un developer) y queda en el `F<n>`; después, `/implement-feature`. Skill [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) / `/reverse-engineer`.
 
 Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva chica: `/implement-feature`.
 
@@ -118,7 +121,8 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”.
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
 - Un segundo OK para playtest: el árbol ya incluía `res://debug/` y la acción. El pase visual sí se pregunta, y sin `VISUAL.md` no hay look.
 - Pase visual sin estilo/referencias: no inventar look.
-- Instalar MCP (Aseprite, Blender, Engram) o crear arte sin preguntar.
+- Instalar MCP (Aseprite, Blender, Engram, REA), Material Maker, o crear arte sin preguntar.
+- Decompilar software sin autorización del usuario, o pegar pseudocódigo / assets del original en el juego.
 - Feel hardcodeado. Elegí Tween o `AnimationPlayer` por clip, no por costumbre. Feel jugoso: `/add-juicy`, no un `World.gd` de partículas.
 - `enum` + `match` de estados en el actor: `/add-state-machine`.
 - Platformer sin coyote/buffer: `/add-platformer-2d`, no un `is_on_floor()` pelado.

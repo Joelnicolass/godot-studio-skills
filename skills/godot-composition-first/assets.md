@@ -15,6 +15,10 @@ Respetá la licencia y la atribución de la página. No copies un FX de otro tí
 
 El pass no conoce puntaje ni sesión. Gameplay tweenea **ese** pass.
 
+## Materiales y texturas procedurales (Material Maker)
+
+**Preguntá primero.** Si una superficie (piso, pared, roca, terreno, tile 2D) necesita textura y el usuario no trajo una, ofrecé crearla con [Material Maker](https://github.com/RodZill4/material-maker): grafo `.ptex` → PNG por canal + material Godot (`.tres`). Sin OK + referencias: placeholder. Instalación, export por CLI y wiring: skill [godot-material-maker](../godot-material-maker/SKILL.md).
+
 ## Sprites 2D (Aseprite MCP)
 
 Animación: [godot-animation](../godot-animation/SKILL.md) (12 principios; Tween o `AnimationPlayer` según el clip).

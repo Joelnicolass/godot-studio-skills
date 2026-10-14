@@ -9,7 +9,8 @@ Los subagentes **no** ven el chat. El orquestador pega este bloque en el prompt 
 - Clean vs estándar y tipo de MP **ya elegidos**: no los cambies. Sin MP → ni addon ni RPCs. Local/WiFi → listen-server. Online → dedicated (`host_dedicated`), no un listen detrás de NAT.
 - Composición: contenedor flaco, hijos / packed, `@export` / `%UniqueName`, tipos en Resource `.tres`. Un nodo no pinta + spawnea + puntúa + cambia de escena.
 - Copy de UI en el idioma del producto; IDs en inglés. Puntaje/copy/fútbol **fuera** de `addons/mp_kit`.
-- Arte: no inventar sprites ni modelos. MCP Aseprite/Blender solo con OK + referencias. Shaders: Godot Shaders / Shadertoy; un pass = packed scene.
+- Arte: no inventar sprites ni modelos. MCP Aseprite/Blender solo con OK + referencias. Materiales / texturas procedurales: Material Maker solo con OK + referencias; el tipo de superficie es un `.tres` (skill `godot-material-maker`). Shaders: Godot Shaders / Shadertoy; un pass = packed scene.
+- Ingeniería inversa (REA): la investiga el orquestador. Si el `F<n>` trae hallazgos, reimplementá con piezas propias y los números en `@export` / `.tres`. Nunca pseudocódigo decompilado ni assets del original en el juego.
 - Motion: 12 principios. Tween **o** `AnimationPlayer` según el clip; knobs `@export` / timeline, sin números mágicos. Skill `godot-animation`.
 - Juicy (jugoso): shake, VFX, post, impacto = presentación local, packed + `@export`. Skill `godot-juicy` / `/add-juicy`. No es puntaje.
 - FSM: hijos `FsmState` bajo `FsmMachine` (addon `fsm_kit` / `/add-state-machine`). No un `enum` de 200 líneas.
