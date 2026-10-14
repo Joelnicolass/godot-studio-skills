@@ -26,7 +26,7 @@ With the kit:
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orchestrator        | `skills/godot-studio-workflow/`                                                | The chat agent: interview + `/implement-feature` (PRD/RFC optional)                              |
-| How to write Godot  | `skills/`                                                                      | Layers, composition, MpKit, FSM, 2D platformer, juicy, visual, memory, tests                     |
+| How to write Godot  | `skills/`                                                                      | Layers, composition, MpKit, FSM, 2D platformer, juicy, materials, reverse eng., visual, memory, tests                     |
 | Subagents           | `agents/`                                                                      | Tech lead, developer, reviewer; optional tester and visual. Playtester: playtest module         |
 | Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Listen or dedicated, replication nodes, Dictionary tunnel. **Zero** gameplay.                    |
@@ -85,20 +85,22 @@ Short path (default):
 3. `/add-state-machine` — `FsmMachine` + child states (FsmKit addon)
 4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (PlatKit addon)
 5. `/new-mp-feature` — MpKit actor scaffold only
-6. `/workflow-status`
+6. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
+7. `/reverse-engineer` — understand a mechanic from another game / app with [REA](https://github.com/Joelnicolass/rea) (deduce or decompile, only with authorization) before implementing it
+8. `/workflow-status`
 
 Written contract, if you ask:
 
-7. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
-8. `/verify-prd` → `PRD-REVIEW.md`
-9. `/extract-features` → `FEATURES.md`
-10. `/generate-rules` → `RULES.md`
-11. `/create-visual-guide` → `VISUAL.md`
-12. `/generate-rfcs` → `RFCs/` + `RFCS.md`
-13. `/implement-rfc <id>`
-14. `/review-rfc <id>`
-15. `/manage-changes`
-16. `/test-strategy` — optional
+9. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
+10. `/verify-prd` → `PRD-REVIEW.md`
+11. `/extract-features` → `FEATURES.md`
+12. `/generate-rules` → `RULES.md`
+13. `/create-visual-guide` → `VISUAL.md`
+14. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+15. `/implement-rfc <id>`
+16. `/review-rfc <id>`
+17. `/manage-changes`
+18. `/test-strategy` — optional
 
 ## Install addons in a Godot project
 
@@ -110,6 +112,8 @@ Written contract, if you ask:
 ```
 
 Enable each plugin in Project → Plugins. MpKit also needs the autoload (`MpKit="*res://addons/mp_kit/mp_kit.gd"`); full guide in `addons/mp_kit/README.md`, editor in `skills/godot-mp-kit/editor.md`, online/VPS in `skills/godot-mp-kit/dedicated.md`. AgentKit lives in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest): JSON/harness live in the game’s `res://agent/`; details in that repo’s README. PlatKit is not a Celeste clone: dash/stamina stay in the game.
+
+External tools the flow **offers** when needed (never installed without asking): [Material Maker](https://github.com/RodZill4/material-maker) for procedural materials and textures (skill `godot-material-maker`), and [REA](https://github.com/Joelnicolass/rea) to reverse engineer a mechanic — deduce or decompile, only software you own or are authorized to examine (skill `godot-reverse-engineering`; `npx rea-agents setup` registers it in Claude Code and Cursor). Same as the Aseprite and Blender MCPs.
 
 A ready demo lives in [`example/`](example/README.md) (1P, LAN, dedicated, 2D and 3D worlds with placeholders, PRD→RFC flow). VS Code/Cursor snippets: `.vscode/mpkit.code-snippets` (the installer copies them).
 
@@ -133,6 +137,8 @@ skills/
   godot-juicy/
   godot-fsm/
   godot-platformer-2d/
+  godot-material-maker/
+  godot-reverse-engineering/
 agents/                        # studio-tech-lead, studio-developer, …
 commands/
 install.sh

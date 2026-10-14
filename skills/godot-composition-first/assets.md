@@ -15,6 +15,10 @@ Honor the page’s license and attribution. Do not copy another title’s FX (CR
 
 The pass does not know score or session. Gameplay tweens **that** pass.
 
+## Procedural materials and textures (Material Maker)
+
+**Ask first.** If a surface (floor, wall, rock, terrain, 2D tile) needs a texture and the user brought none, offer to create it with [Material Maker](https://github.com/RodZill4/material-maker): `.ptex` graph → per-channel PNGs + a Godot material (`.tres`). Without OK + references: placeholder. Install, CLI export, and wiring: skill [godot-material-maker](../godot-material-maker/SKILL.md).
+
 ## 2D sprites (Aseprite MCP)
 
 Animation: [godot-animation](../godot-animation/SKILL.md) (12 principles).

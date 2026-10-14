@@ -15,6 +15,8 @@ SKILL_NAMES=(
   godot-juicy
   godot-fsm
   godot-platformer-2d
+  godot-material-maker
+  godot-reverse-engineering
   godot-visual-qa
   godot-studio-memory
   godot-playtest
@@ -31,6 +33,8 @@ COMMAND_FILES=(
   add-juicy.md
   add-state-machine.md
   add-platformer-2d.md
+  create-material.md
+  reverse-engineer.md
   manage-changes.md
   new-mp-feature.md
   review-rfc.md

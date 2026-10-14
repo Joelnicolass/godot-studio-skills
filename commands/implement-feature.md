@@ -11,7 +11,7 @@ If `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not 
 
 When the playtester returns, classify: broken criterion → developer, one correction; the debug scene already shows the outcome → reviewer; cache or CLI → this chat imports and relaunches; missing scene → `NEED_SETUP`, not a new tech lead.
 
-Load `godot-layered-architecture` and `godot-composition-first`. Motion: `godot-animation`. Juicy feel on an event that already exists: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. 2D platformer: `/add-platformer-2d` + `godot-platformer-2d`. If there is MP: `godot-mp-kit`. If not: do not load the kit.
+Load `godot-layered-architecture` and `godot-composition-first`. Motion: `godot-animation`. Juicy feel on an event that already exists: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. 2D platformer: `/add-platformer-2d` + `godot-platformer-2d`. Materials / textures: `/create-material` + `godot-material-maker`. A mechanic “like in X”: `/reverse-engineer` + `godot-reverse-engineering` before planning. If there is MP: `godot-mp-kit`. If not: do not load the kit.
 
 ## 1. Scope (before code)
 
@@ -20,7 +20,8 @@ If the request is vague, ask in one batch (`AskUserQuestion` in Claude Code / `A
 1. What the player does / what you see. One or two sentences.
 2. Where it lives (scene, actor, HUD). Clean vs standard is **already chosen**; do not change it.
 3. Is there networking? If yes: local/Wi-Fi or online. If no: zero RPCs.
-4. 2D / 3D. Art: placeholder unless OK + references.
+4. 2D / 3D. Art: placeholder unless OK + references. If there are surfaces (floor, wall, terrain): offer Material Maker.
+5. Is it “like in X” (another game / app)? Offer to deduce or decompile it with REA (`/reverse-engineer`, only with authorization) and use the report for the criteria.
 
 Do not interview a full GDD. Do not run `/create-prd` or `/generate-rfcs` “just in case”.
 
