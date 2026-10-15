@@ -12,14 +12,16 @@ extends MultiplayerSpawner
 ##   engine never retries: that spawner (or static node) stays dead for the peer.
 ## - The spawn packet lists the synchronizers the node has when it is sent.
 ##
-## Scope: every MultiplayerSynchronizer under this spawner's parent is held,
-## the actors under spawn_path and static world nodes alike. A child subtree
-## that has its own MpSpawner belongs to that spawner (rooms, sub-worlds).
+## Scope: the synchronizers this spawner owns are held, spawned actors and
+## static world nodes alike. A synchronizer belongs to the spawners whose parent
+## is its nearest ancestor with MpSpawner children (rooms, sub-worlds); one with
+## no such ancestor (a static node beside the world) belongs to every MpSpawner
+## of the scene. Everything under spawn_path belongs to this spawner.
 ##
 ## Server: held synchronizers are hidden; a peer is revealed when its copy of
 ## this spawner reports ready (and, with room_id, while it is seated there).
 ## Client: reports ready on its own (deferred) and asks MpKit for world_ready.
-## Cost (server): one walk of the scope per reveal / seat change, and a type
+## Cost (server): one walk of the scene per reveal / seat change, and a type
 ## check per node added to the tree (only synchronizers do more). Nothing per frame.
 
 const GATE_NAME := "MpSpawnGate"
@@ -182,7 +184,10 @@ func _refresh(peer_id: int) -> void:
 		if sync.public_visibility:
 			_warn_late(sync)
 			_hold(sync)
-		sync.set_visibility_for(peer_id, visible)
+		# A shared synchronizer (no spawner above it) is revealed by any of its
+		# spawners and never hidden by one: a room spawner must not hide it.
+		if visible or not _is_shared(sync):
+			sync.set_visibility_for(peer_id, visible)
 
 
 ## Hidden from everyone, then shown to the peers that already qualify.
@@ -205,15 +210,22 @@ func _warn_late(sync: MultiplayerSynchronizer) -> void:
 
 
 func _owns(node: Node) -> bool:
-	var scope := get_parent()
+	var anchor := _anchor_of(node)
+	return anchor == null or anchor == _root or anchor == get_parent()
+
+
+func _is_shared(node: Node) -> bool:
+	return _anchor_of(node) == null
+
+
+## spawn_path, or the nearest ancestor with MpSpawner children; null if neither.
+func _anchor_of(node: Node) -> Node:
 	var cursor := node.get_parent()
-	while cursor:
-		if cursor == scope or cursor == _root:
-			return true
-		if _has_other_spawner(cursor):
-			return false
+	while cursor and cursor != get_tree().root:
+		if cursor == _root or _has_spawner(cursor):
+			return cursor
 		cursor = cursor.get_parent()
-	return false
+	return null
 
 
 ## The direct child of spawn_path that holds `node`, or null for static nodes.
@@ -226,36 +238,48 @@ func _actor_of(node: Node) -> Node:
 	return null
 
 
-## Synchronizers this spawner owns: under its parent, plus spawn_path if it lives
-## elsewhere, skipping subtrees that hold another MpSpawner.
+## Synchronizers this spawner owns, from the top of the scene down. Subtrees
+## owned by other spawners are skipped.
 func _held_syncs() -> Array[MultiplayerSynchronizer]:
 	var out: Array[MultiplayerSynchronizer] = []
-	var scope := get_parent()
-	if scope == null:
-		return out
-	_collect(scope, out, true)
-	if _root and not scope.is_ancestor_of(_root) and _root != scope:
-		_collect(_root, out, true)
+	_collect(_scene_top(), out)
 	return out
 
 
-func _collect(node: Node, out: Array[MultiplayerSynchronizer], is_scope: bool) -> void:
-	if not is_scope and _has_other_spawner(node):
+func _collect(node: Node, out: Array[MultiplayerSynchronizer]) -> void:
+	if _is_foreign(node):
 		return
-	if node is MultiplayerSynchronizer:
+	if node is MultiplayerSynchronizer and _owns(node):
 		out.append(node as MultiplayerSynchronizer)
 	for child in node.get_children():
-		_collect(child, out, false)
+		_collect(child, out)
 
 
-func _has_other_spawner(node: Node) -> bool:
+## A subtree that belongs to other spawners: it has MpSpawner children and holds
+## neither this spawner nor its spawn_path.
+func _is_foreign(node: Node) -> bool:
+	if not _has_spawner(node) or node == get_parent():
+		return false
+	if node.is_ancestor_of(self):
+		return false
+	return not (_root and (node == _root or node.is_ancestor_of(_root)))
+
+
+func _has_spawner(node: Node) -> bool:
 	for child in node.get_children():
-		if child is MpSpawner and child != self:
+		if child is MpSpawner:
 			return true
 	return false
 
 
+func _scene_top() -> Node:
+	var node: Node = self
+	while node.get_parent() and node.get_parent() != get_tree().root:
+		node = node.get_parent()
+	return node
+
+
 func _syncs_under(node: Node) -> Array[MultiplayerSynchronizer]:
 	var out: Array[MultiplayerSynchronizer] = []
-	_collect(node, out, true)
+	_collect(node, out)
 	return out

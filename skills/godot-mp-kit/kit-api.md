@@ -151,7 +151,7 @@ Extiende `MultiplayerSpawner` nativo. Usa la **visibilidad por peer** del `Multi
 
 Default `hold_until_world_ready = true`:
 
-1. Servidor: todo synchronizer bajo el **padre** del spawner (actores bajo `spawn_path` y nodos estáticos del mundo; se saltea un subárbol con su propio `MpSpawner`) nace oculto, también los que se agregan después.
+1. Servidor: todo synchronizer que le pertenece al spawner nace oculto, también los que se agregan después. Dueño: los spawners cuyo padre es el ancestro más cercano del synchronizer con un hijo `MpSpawner`; si no hay, todos los `MpSpawner` de la escena. Bajo `spawn_path`, este spawner.
 2. Cliente: el spawner llama `MpKit.request_world_ready()` y `rpc_spawner_ready` sobre sí mismo (deferred).
 3. Servidor: con `rpc_spawner_ready` de un peer, `set_visibility_for(peer, true)` en lo que retiene → Godot entrega spawn + sync.
 4. `room_id` (opcional, en el servidor): revela solo a peers sentados en esa sala; `peer_seated` / `peer_unseated` revelan / ocultan (al levantarse se despawnea en ese cliente).
@@ -162,7 +162,7 @@ Default `hold_until_world_ready = true`:
 - Synchronizers: en la escena, o `MpAuthority.ensure_sync` antes del `add_child` / en el `_ready` del propio actor. Los posteriores faltan en el paquete de spawn (el que entra tarde: `ERR_INVALID_DATA`); el spawner les hace `push_error`.
 - `is_revealed_to(peer_id)` (servidor): ese peer tiene el spawner y pasa el `room_id`.
 - `hold_until_world_ready = false` solo si todos los peers ya tienen esta escena.
-- Costo: por revelado / cambio de asiento, un recorrido del alcance; por nodo que entra al árbol, un chequeo de tipo. Nada por frame.
+- Costo: por revelado / cambio de asiento, un recorrido de la escena; por nodo que entra al árbol, un chequeo de tipo. Nada por frame.
 
 ## MpSlotSpawner
 

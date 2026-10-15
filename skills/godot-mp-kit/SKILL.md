@@ -62,7 +62,7 @@ Guía humana (inspector, paso a paso, túnel custom, salas hub y cola): `addons/
 
 1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit` **antes** del flow).
 2. Tools → **MpKit: New session flow...** (o `extends MpFlow`). Asigná boot/world. `play_solo()` / `host_lan()` / `join_lan()`. 1P: no llames `host()` a mano.
-3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). Retiene todo synchronizer bajo su padre; el cliente avisa solo que está listo; no hace falta un nodo `MpWorldReady`.
+3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). Retiene los synchronizers de su parte de la escena (también los estáticos); el cliente avisa solo que está listo; no hace falta un nodo `MpWorldReady`.
 4. Pawns: hijo `MpReplicate` + `submit_*` con `MpAuthority.accept_command(self, player_slot)`.
 5. LAN: `MpFlow` ya hace `advertise` en el host; el lobby hace `browse` (o `MpBootMenu`). Online: dedicated + IP pública, no `host()` detrás de NAT.
 
@@ -118,7 +118,7 @@ func submit_x(payload) -> void:
 
 ## Handshake de spawn (obligatorio)
 
-El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cliente **sigue en el lobby**; la ruta falla y Godot no la reintenta, así que ese spawner (o nodo estático con sync) queda muerto para ese peer. `MpSpawner` (default `hold_until_world_ready`) usa la visibilidad por peer del `MultiplayerSynchronizer`: todo lo que está bajo su padre queda oculto y cada peer se revela cuando su propia copia del spawner avisa que está lista; recién ahí Godot manda spawn + sync emparejados. Los actores sin synchronizer reciben un `MpSpawnGate` vacío (si no, Godot los manda a todos).
+El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cliente **sigue en el lobby**; la ruta falla y Godot no la reintenta, así que ese spawner (o nodo estático con sync) queda muerto para ese peer. `MpSpawner` (default `hold_until_world_ready`) usa la visibilidad por peer del `MultiplayerSynchronizer`: todo lo que le pertenece en la escena queda oculto y cada peer se revela cuando su propia copia del spawner avisa que está lista; recién ahí Godot manda spawn + sync emparejados. Los actores sin synchronizer reciben un `MpSpawnGate` vacío (si no, Godot los manda a todos).
 
 ```
 Server broadcast_load_world() + glue carga el mundo en el proceso servidor

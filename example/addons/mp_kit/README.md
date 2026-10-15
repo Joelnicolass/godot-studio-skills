@@ -214,14 +214,14 @@ sequenceDiagram
   H->>C: spawn nativo + sync
 ```
 
-Qué retiene el spawner: todo `MultiplayerSynchronizer` bajo **su padre**, tanto los actores bajo `spawn_path` como los nodos estáticos del mundo (una puerta, un manantial). Un subárbol hijo con su propio `MpSpawner` le pertenece a ese spawner. Nada le llega a un peer hasta que su copia del spawner existe, así que un peer en el lobby o todavía cargando nunca recibe un paquete de un nodo que no tiene (Godot no reintenta una ruta que falló: ese spawner o nodo quedaría muerto para ese peer).
+Qué retiene el spawner: los `MultiplayerSynchronizer` de la escena que le pertenecen, tanto los actores bajo `spawn_path` como los nodos estáticos del mundo (una puerta, un manantial). Un synchronizer le pertenece a los spawners cuyo padre es su ancestro más cercano con un hijo `MpSpawner` (una sala, un sub-mundo). Uno sin ese ancestro (un nodo estático al lado de un mundo instanciado) le pertenece a todos los `MpSpawner` de la escena. Nada le llega a un peer hasta que su copia del spawner existe, así que un peer en el lobby o todavía cargando nunca recibe un paquete de un nodo que no tiene (Godot no reintenta una ruta que falló: ese spawner o nodo quedaría muerto para ese peer).
 
 Reglas:
 
-- Todo nodo replicado del mundo va bajo el padre de un `MpSpawner`. Un `MultiplayerSpawner` común, o un nodo con sync fuera de ese alcance, sigue mandando a peers en el lobby.
+- Todo mundo replicado necesita al menos un `MpSpawner` en la escena (un `MultiplayerSpawner` común solo sigue mandando a peers en el lobby). Los nodos estáticos con sync no necesitan nada más.
 - Los synchronizers van en la escena, o se agregan por código **antes** del `add_child`, o en el `_ready` del propio actor. Uno agregado después (diferido, un timer) falta en el paquete de spawn: el que entra tarde recibe `ERR_INVALID_DATA` para ese actor. El spawner igual lo retiene y lo reporta con `push_error`.
 - Un actor sin synchronizer recibe un synchronizer vacío `MpSpawnGate` en todos los peers al entrar a `spawn_path` (`gate_unsynced_spawns`). Sin él, Godot manda ese actor a todos los peers, lobby incluido, y la ruta fallida rompe el spawner para ellos. Apagalo solo si toda escena spawneada tiene synchronizer.
-- Costo: en el servidor, un recorrido del alcance del spawner por cada revelado o cambio de asiento, y un chequeo de tipo por nodo que entra al árbol. Nada por frame.
+- Costo: en el servidor, un recorrido de la escena por cada revelado o cambio de asiento, y un chequeo de tipo por nodo que entra al árbol. Nada por frame.
 
 ### 4. Pawn (actor replicado)
 
@@ -613,7 +613,7 @@ func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
 	add_child(room)
 ```
 
-El servidor revela ese spawner solo a los peers sentados en `room_id` (lo chequea en `MpKit.rooms`, no le cree al cliente). Al levantarse se oculta de nuevo y Godot despawnea sus actores en ese cliente. Los clientes arman el mismo nodo `Room_<id>` (por ejemplo en `MpKit.rooms.room_assigned`); su spawner avisa que está listo al entrar al árbol. No pongas un spawner sin `room_id` arriba de las salas: su alcance corta en los subárboles con `MpSpawner` propio, pero los hermanos en el mismo padre lo comparten.
+El servidor revela ese spawner solo a los peers sentados en `room_id` (lo chequea en `MpKit.rooms`, no le cree al cliente). Al levantarse se oculta de nuevo y Godot despawnea sus actores en ese cliente. Los clientes arman el mismo nodo `Room_<id>` (por ejemplo en `MpKit.rooms.room_assigned`); su spawner avisa que está listo al entrar al árbol. Los synchronizers de cada sala le pertenecen al spawner de la sala, así que un spawner del mundo sin `room_id` (en la raíz del hub) no los revela. No pongas dos spawners con distinto `room_id` bajo el mismo padre: comparten lo que retiene ese padre.
 
 ### Comandos de gameplay en una sala
 

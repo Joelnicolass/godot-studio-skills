@@ -4,6 +4,8 @@ extends Node2D
 ## a client prints which actors it has and whether their `tick` still grows.
 ## Batch names: b0 = before anyone joins, j<slot> = that peer is on the lobby,
 ## r<slot> = that peer is world-ready. ra/rb = actors of RoomA / RoomB.
+## StaticProp sits beside Main / RoomA / RoomB, under no spawner's parent: every
+## spawner of the scene holds it (like a static node next to an instanced world).
 
 const KINDS := {
 	"S": preload("res://debug/spawn_lab/actor_synced.tscn"),
@@ -16,7 +18,7 @@ var _room_ids: Dictionary = {}
 ## Server args: --lab-kinds=SULD (which actor kinds to spawn), --lab-static=1 (sync StaticProp).
 var _kinds: String = "SULD"
 
-@onready var _actors: Node2D = $Actors
+@onready var _actors: Node2D = $Main/Actors
 @onready var _room_a: Node2D = $RoomA/Actors
 @onready var _room_b: Node2D = $RoomB/Actors
 @onready var _static: Node2D = $StaticProp
