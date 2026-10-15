@@ -56,6 +56,8 @@ static func accept_room_command(node: Node, room_id: StringName, seat: int) -> b
 	return node.multiplayer.get_remote_sender_id() == MpKit.rooms.peer_for_seat(room_id, seat)
 
 
+## Code-built actors: call before add_child, so the synchronizer is in the spawn packet
+## and MpSpawner holds it. Not from a child's _ready (the actor is still busy).
 static func ensure_sync(node: Node, properties: PackedStringArray) -> MultiplayerSynchronizer:
 	if node.has_node("MultiplayerSynchronizer"):
 		return node.get_node("MultiplayerSynchronizer") as MultiplayerSynchronizer

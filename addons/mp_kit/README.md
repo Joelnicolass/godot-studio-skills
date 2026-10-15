@@ -191,9 +191,11 @@ flowchart TB
 | `pawn_scene` | tu `pawn_2d.tscn` / `pawn_3d.tscn` |
 | `spawn_points` | `../SpawnPoints` |
 | `hold_until_world_ready` | **on** (default) |
+| `gate_unsynced_spawns` | **on** (default) |
+| `room_id` | vacío (un match por servidor); ver [Actores por sala](#actores-por-sala) |
 | `despawn_on_leave` | on si querés borrar el pawn al irse |
 
-No hace falta un nodo `MpWorldReady`. El spawner pide `world_ready` en el cliente.
+No hace falta un nodo `MpWorldReady`. El spawner avisa solo que está listo en el cliente.
 
 Dedicated **no** spawnea slot 0. Listen host spawnea su pawn en `_ready`. Los que se unen, en `client_world_ready`.
 
@@ -207,18 +209,27 @@ sequenceDiagram
   H->>H: carga el match
   H->>C: rpc_load_world
   C->>C: change_scene al match
-  C->>H: rpc_world_ready
-  H->>H: set_visibility_for(peer)
+  C->>H: rpc_world_ready + rpc_spawner_ready (cada MpSpawner)
+  H->>H: set_visibility_for(peer) en lo que retiene ese spawner
   H->>C: spawn nativo + sync
 ```
+
+Qué retiene el spawner: todo `MultiplayerSynchronizer` bajo **su padre**, tanto los actores bajo `spawn_path` como los nodos estáticos del mundo (una puerta, un manantial). Un subárbol hijo con su propio `MpSpawner` le pertenece a ese spawner. Nada le llega a un peer hasta que su copia del spawner existe, así que un peer en el lobby o todavía cargando nunca recibe un paquete de un nodo que no tiene (Godot no reintenta una ruta que falló: ese spawner o nodo quedaría muerto para ese peer).
+
+Reglas:
+
+- Todo nodo replicado del mundo va bajo el padre de un `MpSpawner`. Un `MultiplayerSpawner` común, o un nodo con sync fuera de ese alcance, sigue mandando a peers en el lobby.
+- Los synchronizers van en la escena, o se agregan por código **antes** del `add_child`, o en el `_ready` del propio actor. Uno agregado después (diferido, un timer) falta en el paquete de spawn: el que entra tarde recibe `ERR_INVALID_DATA` para ese actor. El spawner igual lo retiene y lo reporta con `push_error`.
+- Un actor sin synchronizer recibe un synchronizer vacío `MpSpawnGate` en todos los peers al entrar a `spawn_path` (`gate_unsynced_spawns`). Sin él, Godot manda ese actor a todos los peers, lobby incluido, y la ruta fallida rompe el spawner para ellos. Apagalo solo si toda escena spawneada tiene synchronizer.
+- Costo: en el servidor, un recorrido del alcance del spawner por cada revelado o cambio de asiento, y un chequeo de tipo por nodo que entra al árbol. Nada por frame.
 
 ### 4. Pawn (actor replicado)
 
 1. Escena packed: `CharacterBody2D` o `CharacterBody3D`.
 2. Collision + visual. `@export var player_slot: int = 1`.
 3. Seleccioná la raíz → Project → Tools → **MpKit: Wire replication on selection**.  
-   Eso agrega hijo `MpReplicate` + `MultiplayerSynchronizer`.
-4. En el dock **Replication** del synchronizer (o en el `.tscn`):
+   Eso agrega hijo `MpReplicate` + `MultiplayerSynchronizer` ya con posición / rotación / visible. El synchronizer tiene que vivir en la escena: `MpReplicate` no lo crea en runtime y, si falta, lo reporta con `push_error`.
+4. En el dock **Replication** del synchronizer (o en el `.tscn`) agregá el resto:
 
 | Path | spawn | replication |
 |------|-------|-------------|
@@ -435,8 +446,8 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 | `mp_boot.gd` | detectar proceso dedicated |
 | `mp_flow.gd` | escenas, host/join/1P, catálogo de mundos |
 | `mp_world_ref.gd` | un mundo del catálogo |
-| `mp_replicate.gd` | authority + sync + freeze + lerp de proxy |
-| `mp_spawner.gd` | MultiplayerSpawner + hold hasta `world_ready` |
+| `mp_replicate.gd` | authority + freeze + lerp de proxy (el synchronizer vive en la escena) |
+| `mp_spawner.gd` | MultiplayerSpawner + hold por peer de su alcance + `room_id` |
 | `mp_slot_spawner.gd` | un pawn packed por slot ocupado |
 | `mp_boot_menu.gd` / `.tscn` | lobby drop-in |
 | `mp_custom_pipe.gd` | un canal del túnel |
@@ -444,7 +455,7 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 | `mp_authority.gd` | `accept_command`, `command_slot`, `accept_room_command`, freeze, sync |
 | `mp_world_ready.gd` | legado (no-op si hay `MpSpawner`) |
 
-Handshake de spawn: `hold_until_world_ready` (actores ocultos hasta `client_world_ready`; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en glue.
+Handshake de spawn: `hold_until_world_ready` (synchronizers ocultos hasta que el spawner de ese peer avisa que está listo; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en glue.
 
 ## Salas hub y cola (opcional)
 
@@ -579,6 +590,30 @@ flowchart LR
   R1 --> A[peers de r_1]
   R1 -.->|no| B[peers de r_2]
 ```
+
+### Actores por sala
+
+Varias partidas en una misma escena de mundo: cada sala tiene su subárbol con su propio spawner, y en el servidor se le pone `room_id` cuando la sala existe.
+
+```
+Hub (escena de mundo)
+├── Room_r_1
+│   ├── Actors
+│   └── MpSpawner   # room_id = r_1, spawn_path = ../Actors
+└── Room_r_2
+    ├── Actors
+    └── MpSpawner   # room_id = r_2
+```
+
+```gdscript
+func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
+	var room := ROOM_SCENE.instantiate()
+	room.name = "Room_%s" % room_id
+	room.get_node("MpSpawner").room_id = room_id
+	add_child(room)
+```
+
+El servidor revela ese spawner solo a los peers sentados en `room_id` (lo chequea en `MpKit.rooms`, no le cree al cliente). Al levantarse se oculta de nuevo y Godot despawnea sus actores en ese cliente. Los clientes arman el mismo nodo `Room_<id>` (por ejemplo en `MpKit.rooms.room_assigned`); su spawner avisa que está listo al entrar al árbol. No pongas un spawner sin `room_id` arriba de las salas: su alcance corta en los subárboles con `MpSpawner` propio, pero los hermanos en el mismo padre lo comparten.
 
 ### Comandos de gameplay en una sala
 

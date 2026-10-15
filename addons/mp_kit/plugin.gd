@@ -73,11 +73,23 @@ func _on_wire_replication() -> void:
 		if node.get_node_or_null("MultiplayerSynchronizer") == null:
 			var sync := MultiplayerSynchronizer.new()
 			sync.name = "MultiplayerSynchronizer"
+			sync.replication_config = _default_replication(replicate)
 			ur.add_do_method(node, "add_child", sync)
 			ur.add_do_method(sync, "set_owner", edited)
 			ur.add_undo_method(node, "remove_child", sync)
 			ur.add_do_reference(sync)
 	ur.commit_action()
+
+
+## MpReplicate.sync_properties as spawn + always, like the README table.
+func _default_replication(replicate: Node) -> SceneReplicationConfig:
+	var cfg := SceneReplicationConfig.new()
+	for property in replicate.get("sync_properties"):
+		var path := NodePath(property)
+		cfg.add_property(path)
+		cfg.property_set_spawn(path, true)
+		cfg.property_set_replication_mode(path, SceneReplicationConfig.REPLICATION_MODE_ALWAYS)
+	return cfg
 
 
 func _on_new_feature() -> void:

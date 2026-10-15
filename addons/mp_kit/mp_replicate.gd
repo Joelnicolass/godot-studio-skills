@@ -5,6 +5,8 @@ extends Node
 ## Same code for listen-server and dedicated.
 
 @export var actor: NodePath
+## Properties Wire replication puts on the new synchronizer (spawn + always).
+## The synchronizer must exist in the scene; this node does not create it at runtime.
 @export var sync_properties: PackedStringArray = PackedStringArray([
 	".:position",
 	".:rotation",
@@ -33,8 +35,13 @@ func _ready() -> void:
 		push_warning("MpReplicate: no actor (parent or NodePath)")
 		return
 	MpAuthority.claim_server(_target)
-	if not sync_properties.is_empty():
-		MpAuthority.ensure_sync(_target, sync_properties)
+	if not sync_properties.is_empty() and not _has_sync(_target):
+		# A child cannot add a sibling here (the actor is still setting up its
+		# children), and a later one would miss the spawn packet.
+		push_error(
+			"MpReplicate: '%s' has no MultiplayerSynchronizer. Add it in the scene (Project → Tools → MpKit: Wire replication on selection) or with MpAuthority.ensure_sync before add_child."
+			% _target.name
+		)
 	if freeze_rigid_if_proxy:
 		MpAuthority.freeze_rigid_proxy(_target)
 	_is_2d = _target is Node2D
@@ -90,6 +97,13 @@ func _interp_3d(alpha: float) -> void:
 	_display_quat = _display_quat.slerp(_net_quat, alpha)
 	n.position = _display_pos
 	n.quaternion = _display_quat
+
+
+func _has_sync(node: Node) -> bool:
+	for child in node.get_children():
+		if child is MultiplayerSynchronizer and child.name != MpSpawner.GATE_NAME:
+			return true
+	return false
 
 
 func _resolve_target() -> Node:
