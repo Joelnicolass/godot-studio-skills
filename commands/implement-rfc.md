@@ -35,7 +35,7 @@ Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
 ### Phase 1: Planning (No Code)
 1. Analyze the requirements and existing codebase
 2. Present a comprehensive implementation plan covering:
-   - File tree + responsibility map (one job per piece; why it is not merged)
+   - File tree with `[+]` new / `[~]` modified / `[-]` deleted + responsibility map (one job per piece; why it is not merged)
    - Files to create or modify
    - What is a Resource `.tres`, what is a node, what is `@export`
    - Proposed implementation sequence

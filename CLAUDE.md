@@ -16,6 +16,6 @@ Keep the ES/EN mirror on the same cut. Do not land on the principals “to get a
 
 ## Kit
 
-Skills in `skills/`, commands in `commands/`, subagents in `agents/`: the same files install into Claude Code (`./install.sh --claude`) and Cursor (`./install.sh`). Do not write instructions that only hold in one harness without naming the other’s equivalent. A read-only subagent carries `readonly: true` (Cursor) **and** `disallowedTools` (Claude Code).
+Skills in `skills/`, commands in `commands/`, subagents in `agents/`: the same files install into Claude Code (`./install.sh --claude`) and Cursor (`./install.sh`). Do not write instructions that only hold in one harness without naming the other’s equivalent. The flow **always** asks for the file tree (`[+]` / `[~]` / `[-]`) before touching the game; do not add a path that skips it. A read-only subagent carries `readonly: true` (Cursor) **and** `disallowedTools` (Claude Code).
 
 This rule also lives in `.cursor/rules/release-candidate.mdc`; change both.

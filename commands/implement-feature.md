@@ -7,7 +7,7 @@ Implement **one** gameplay feature in the **game’s Godot project**. Iterating 
 
 This is **not** `/new-mp-feature` (that only scaffolds an MpKit actor). This is **not** `/implement-rfc` (that follows an RFC already written). If an RFC id already exists, use `/implement-rfc <id>`.
 
-If `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone. Small cut (one component, no scene that could cheat): the plan stays in this chat. If there is a tree or `res://debug/`: `studio-tech-lead` → the user approves the cut **once** → `studio-developer` → `studio-reviewer` → `studio-playtester` on the scene named by the `F<n>`. Do not ask again whether to play. Visual pass: ask, and without `VISUAL.md` there is no look. GUT tester only if the user or RULES asked.
+If `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone. Small cut (one component, no scene that could cheat): the plan stays in this chat, but the tree is still shown and OK is still awaited. If there is a tree or `res://debug/`: `studio-tech-lead` → the user approves the cut **once** → `studio-developer` → `studio-reviewer` → `studio-playtester` on the scene named by the `F<n>`. Do not ask again whether to play. Visual pass: ask, and without `VISUAL.md` there is no look. GUT tester only if the user or RULES asked.
 
 When the playtester returns, classify: broken criterion → developer, one correction; the debug scene already shows the outcome → reviewer; cache or CLI → this chat imports and relaunches; missing scene → `NEED_SETUP`, not a new tech lead.
 
@@ -44,7 +44,7 @@ Authority on conflict: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > this 
 
 `studio-tech-lead` (or this chat if the cut is 1–3 files):
 
-- File tree + responsibility map ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
+- File tree with `[+]` / `[~]` / `[-]` + responsibility map ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
 - Test scene under `res://debug/`: easy initial state, criterion outcome not yet true, InputMap action. Written on the `F<n>` (or the RFC if there is a contract).
 - What is `.tres`, what is a node, what is `@export`
 - Motion: evaluate Tween vs `AnimationPlayer` (skill `godot-animation`); knobs in inspector or timeline

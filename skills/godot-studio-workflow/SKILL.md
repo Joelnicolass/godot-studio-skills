@@ -36,7 +36,7 @@ If the `studio-playtester` subagent **does not exist** (the playtest module is n
 
 When launching `studio-playtester`: pass the `res://debug/…` path and the InputMap action recorded on the `F<n>` or the RFC. The playtester **plays** that scene; they do not build it and they do not use `call()` to assemble it. If that scene is missing, they must return `NEED_SETUP`, not invent a world. Order them to read `harness.md` from `godot-agent-kit` **before** writing a `.gd`. On return, the playtest diff may only touch `agent/` (flows, out). If it touched `src/`, `scenes/`, or `debug/`, that is a **process FAIL** — ask for a revert.
 
-A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
+A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC, but still with a short [tree](file-tree.md) (`[~] path  # what changes`) and OK before touching anything. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 
 ## 1. Startup (you ask and you run commands)
 
@@ -76,7 +76,7 @@ Mid-work scope changes: `/manage-changes`.
 
 One RFC at a time. Predecessors done.
 
-Small cut (one component, one `@export`, no test scene that could cheat): the plan stays in this chat. Do not launch a tech lead.
+Small cut (one component, one `@export`, no test scene that could cheat): this chat builds the plan and the tree (no tech lead); they are still shown and OK is still awaited.
 
 Cut with a tree or with `res://debug/`:
 
@@ -109,7 +109,7 @@ The subagent prompt includes: repo path, RFC id, architecture style, **MP type**
 
 Do not launch developer and reviewer in parallel on the same RFC. Tech-lead on independent RFCs may run in parallel.
 
-Without the [file tree](file-tree.md) there is no “OK, implement”.
+Without the [file tree](file-tree.md) there is no “OK, implement”. **Always**, even for a one-line change: before creating, modifying, or deleting files, show the tree with `[+]` new / `[~]` modified / `[-]` deleted and wait for OK.
 
 ## 3. Do not
 
