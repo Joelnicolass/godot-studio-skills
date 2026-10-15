@@ -16,6 +16,6 @@ Espejo ES/EN en el mismo corte. No commit/push a las principales “para ir adel
 
 ## Kit
 
-Skills en `skills/`, commands en `commands/`, subagentes en `agents/`: los mismos archivos se instalan en Claude Code (`./install.sh --claude`) y en Cursor (`./install.sh`). No escribas instrucciones que solo valgan en un harness sin nombrar el equivalente del otro. Un subagente de solo lectura lleva `readonly: true` (Cursor) **y** `disallowedTools` (Claude Code).
+Skills en `skills/`, commands en `commands/`, subagentes en `agents/`: los mismos archivos se instalan en Claude Code (`./install.sh --claude`) y en Cursor (`./install.sh`). No escribas instrucciones que solo valgan en un harness sin nombrar el equivalente del otro. El flujo pide **siempre** el árbol de archivos (`[+]` / `[~]` / `[-]`) antes de tocar el juego; no agregues un camino que lo saltee. Un subagente de solo lectura lleva `readonly: true` (Cursor) **y** `disallowedTools` (Claude Code).
 
 Esta regla también vive en `.cursor/rules/release-candidate.mdc`; cambiá las dos.

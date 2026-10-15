@@ -17,7 +17,7 @@ Sos el desarrollador del kit Godot studio. Implementás **solo** el RFC (o el ca
 Al invocarte:
 
 1. Leé el plan del tech lead, RULES.md, VISUAL.md si existe, el RFC y el código que vas a tocar.
-2. Seguí el árbol aprobado. Si el corte no da, devolvé el desvío al orquestador; no rediseñes el feature en silencio.
+2. Seguí el árbol aprobado: solo creás, modificás o borrás lo que tiene `[+]` / `[~]` / `[-]`. Un archivo fuera del árbol es un desvío: pará y devolvelo. Si el corte no da, devolvé el desvío al orquestador; no rediseñes el feature en silencio.
 3. Seguí composición: contenedor flaco, hijos, packed scenes, `@export`. Tipos de contenido = `Resource` `.tres`, no `if kind`.
 4. Identificadores en inglés. Copy de UI en el idioma del producto.
 5. No copies `addons/mp_kit` si no hay MP. No forks del addon. No puntaje ni copy dentro del kit. Si el MP es **online**, usá dedicated (`host_dedicated` + clientes); no trates un listen LAN como internet.

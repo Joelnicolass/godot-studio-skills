@@ -35,7 +35,7 @@ Si el subagente `studio-playtester` **no existe** (el módulo playtest no está 
 
 Al lanzar `studio-playtester`: pasale el path `res://debug/…` y la acción del InputMap que quedaron en el `F<n>` o el RFC. El playtester **juega** esa escena; no la construye y no usa `call()` para armarla. Si esa escena no está, tiene que devolver `NEED_SETUP`, no inventar un mundo. Ordenale leer `harness.md` de `godot-agent-kit` **antes** de escribir un `.gd`. Al volver, el diff del playtest solo puede tocar `agent/` (flows, out). Si tocó `src/`, `scenes/` o `debug/`, **FAIL de proceso** — pedí revert.
 
-Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
+Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo, pero igual con [árbol](file-tree.md) corto (`[~] ruta  # qué cambia`) y OK antes de tocar. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
 
 ## 1. Arranque (vos preguntás y ejecutás)
 
@@ -75,7 +75,7 @@ Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva ch
 
 Una feature / un RFC a la vez. Predecesores listos.
 
-Corte chico (un componente, un `@export`, sin escena de prueba que pueda hacer trampa): el plan queda en este chat. No lances tech lead.
+Corte chico (un componente, un `@export`, sin escena de prueba que pueda hacer trampa): el plan y el árbol los arma este chat (sin tech lead); igual se muestran y se espera el OK.
 
 Corte con árbol o con `res://debug/`:
 
@@ -108,7 +108,7 @@ El prompt al subagente incluye: ruta del repo, id de feature o RFC, estilo de ar
 
 No lances developer y reviewer en paralelo sobre el mismo corte. Tech-lead de features independientes sí puede ir en paralelo.
 
-Sin [árbol](file-tree.md) no hay “OK, implementá”.
+Sin [árbol](file-tree.md) no hay “OK, implementá”. **Siempre**, incluso para un cambio de una línea: antes de crear, modificar o borrar archivos, mostrá el árbol con `[+]` nuevo / `[~]` modificado / `[-]` borrado y esperá el OK.
 
 ## 3. Qué no hacer
 

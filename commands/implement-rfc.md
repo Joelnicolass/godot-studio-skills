@@ -35,7 +35,7 @@ Orden de autoridad: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
 ### Fase 1: Planificación (sin código)
 1. Analizar los requisitos y el codebase existente
 2. Presentar un plan de implementación completo que cubra:
-   - Árbol de archivos + mapa de responsabilidades (qué pieza hace una sola cosa; por qué no se fusiona)
+   - Árbol de archivos con `[+]` nuevo / `[~]` modificado / `[-]` borrado + mapa de responsabilidades (qué pieza hace una sola cosa; por qué no se fusiona)
    - Archivos a crear o modificar
    - Qué es Resource `.tres`, qué es nodo, qué es `@export`
    - Secuencia de implementación propuesta

@@ -1,6 +1,18 @@
-# Árbol de archivos (antes del OK)
+# Árbol de archivos (siempre, antes del OK)
 
-El tech-lead lo entrega **antes** de pedir aprobación. El orquestador lo muestra al usuario. Sin esto no hay “OK, implementá”.
+**Siempre**, antes de crear, modificar o borrar cualquier archivo, se muestra el árbol y se espera el OK del usuario. Vale para una feature, un RFC, un command (`/add-juicy`, `/create-material`, `/new-mp-feature`, …), un typo o un `@export`. Lo arma el tech-lead si lo hay; si no, este chat. Sin árbol aprobado no se escribe nada.
+
+Únicas excepciones: lo que escribe el playtester en `res://agent/` (ya cubierto por el OK del slice) y las notas de memoria (`.studio/MEMORY.md`).
+
+Cada línea lleva una marca:
+
+| Marca | Significa |
+|-------|-----------|
+| `[+]` | Archivo nuevo |
+| `[~]` | Archivo existente que se modifica (decí qué cambia) |
+| `[-]` | Archivo que se borra |
+
+Los `[~]` y `[-]` también van: el usuario tiene que ver qué se toca de lo que ya existe, no solo lo nuevo.
 
 Sirve para ver, de un vistazo, si la feature es un god-node o un conjunto de piezas.
 
@@ -8,12 +20,22 @@ Sirve para ver, de un vistazo, si la feature es un god-node o un conjunto de pie
 
 ```text
 <feature>/
-├── foo.tscn              # contenedor: física/layout + orquesta hijos
-├── foo.gd                # thin: señales hacia arriba, sockets @export
-├── bar.tscn              # packed reutilizable (2º caller o F6 solo)
-├── bar.gd
+├── [+] foo.tscn              # contenedor: física/layout + orquesta hijos
+├── [+] foo.gd                # thin: señales hacia arriba, sockets @export
+├── [+] bar.tscn              # packed reutilizable (2º caller o F6 solo)
+├── [+] bar.gd
 └── data/
-    └── foo_stats.tres    # tipo; no mutar en runtime
+    └── [+] foo_stats.tres    # tipo; no mutar en runtime
+scenes/world/
+└── [~] world.tscn            # instancia foo.tscn bajo %Actors
+scenes/actors/
+└── [-] old_foo.gd            # reemplazado por foo.gd
+```
+
+Corte chico (typo, `@export`, bug de 1–3 archivos): alcanza la lista, sin tabla.
+
+```text
+[~] scenes/player/player.gd   # coyote_time 0.10 → 0.12 (@export)
 ```
 
 Más un **mapa de responsabilidades** (una fila por archivo o nodo):
@@ -53,4 +75,4 @@ El estado inicial hace **fácil** el criterio (no recorrer todo el juego hasta l
 
 ## Qué pedir al usuario
 
-Mostrá el árbol + la tabla. Preguntá: ¿está bien el corte, o querés más/menos piezas? Recién con OK corre `studio-developer`.
+Mostrá el árbol (con `[+]` / `[~]` / `[-]`) + la tabla. Preguntá: ¿está bien el corte, o querés más/menos piezas? Recién con OK se escribe: corre `studio-developer` o lo hace este chat. Si al implementar hace falta un archivo que no estaba en el árbol, se para y se muestra el árbol corregido antes de seguir.
