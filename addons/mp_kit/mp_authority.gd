@@ -34,6 +34,17 @@ static func accept_command(node: Node, player_slot: int) -> bool:
 	return node.multiplayer.get_remote_sender_id() == MpKit.peer_id_for(player_slot)
 
 
+## Call from submit_* RPCs on a node that serves every player (no player_slot of its own):
+## the slot of the peer that sent the RPC, on the server; 0 anywhere else or for an unknown peer.
+## `var slot := MpAuthority.command_slot(self)` then `if slot <= 0: return`.
+static func command_slot(node: Node) -> int:
+	if node == null or not MpKit.is_networked():
+		return 0
+	if not node.multiplayer.is_server():
+		return 0
+	return MpKit.slot_for_peer(node.multiplayer.get_remote_sender_id())
+
+
 ## Call from room-scoped submit_* RPCs: server + sender == peer seated at (room_id, seat).
 static func accept_room_command(node: Node, room_id: StringName, seat: int) -> bool:
 	if node == null or not MpKit.is_networked():

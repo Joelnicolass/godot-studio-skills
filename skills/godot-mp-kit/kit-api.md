@@ -91,6 +91,7 @@ MpAuthority.ensure_sync(node, PackedStringArray([".:position", ".:rotation"]))
 MpAuthority.freeze_rigid_proxy(body)     # RigidBody2D/3D; no-op if you are authority
 MpAuthority.should_send_command()        # networked and not server
 MpAuthority.accept_command(self, player_slot)  # in submit_*: server + sender == slot peer
+MpAuthority.command_slot(self)                 # in submit_* on a shared node: sender's slot (0 = reject)
 MpAuthority.accept_room_command(self, room_id, seat)  # server + sender == peer_for_seat
 ```
 
@@ -99,6 +100,7 @@ MpAuthority.accept_room_command(self, room_id, seat)  # server + sender == peer_
 | Method | Condition |
 |--------|-----------|
 | `accept_command(node, player_slot)` | Server and `get_remote_sender_id() == MpKit.peer_id_for(player_slot)` |
+| `command_slot(node)` | Server: slot of the sender (`0` off the server, offline, or unknown peer) |
 | `accept_room_command(node, room_id, seat)` | Server and `get_remote_sender_id() == MpKit.rooms.peer_for_seat(room_id, seat)` |
 
 ## MpRoomDirectory

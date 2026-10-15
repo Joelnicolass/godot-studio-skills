@@ -245,6 +245,19 @@ func submit_move(dir: Vector2) -> void:
 	apply_move(dir)
 ```
 
+If the `submit_*` lives on a node that serves **every** player (a match node, not a pawn with `player_slot`), take the slot from the sender:
+
+```gdscript
+@rpc("any_peer", "call_remote", "reliable")
+func submit_ready() -> void:
+	var slot := MpAuthority.command_slot(self)
+	if slot <= 0:
+		return
+	apply_ready(slot)
+```
+
+`command_slot(node)` is the slot of the peer that sent the RPC, on the server only. It is `0` off the server, offline (1P), or for a peer with no slot. Do not hand-roll `MpKit.slot_for_peer(multiplayer.get_remote_sender_id())` in each `submit_*`.
+
 - `call_remote`: the local host does **not** double the RPC.
 - Dedicated never sends `submit_*` (no local player).
 - Pawn/bullet types: Resource `.tres` on the actor, not a `kind` string over RPC.
@@ -392,7 +405,7 @@ The glue (autoload) still does the reflect `from_peer != 1` → `broadcast_custo
 | Data | Where |
 |------|--------|
 | Position, rotation, visible | `MultiplayerSynchronizer` (`MpReplicate`) |
-| “I want to move / shoot” | `submit_*` on **your** pawn + `accept_command` |
+| “I want to move / shoot” | `submit_*` on **your** pawn + `accept_command` (node with no `player_slot`: `command_slot`) |
 | Weapon type / look | Resource `.tres` on the actor, `spawn = true` if needed at spawn |
 | Timer / score / lives | One match: `MpKit.push_snapshot`. Several rooms: `MpKit.rooms.push_snapshot_to_room` |
 | Emote, ping, debug | Custom tunnel. Several rooms: `push_custom_to_room`, not `broadcast_custom` |
@@ -428,7 +441,7 @@ Enable copies templates to `res://script_templates/` (CharacterBody / Node2D / N
 | `mp_boot_menu.gd` / `.tscn` | drop-in lobby |
 | `mp_custom_pipe.gd` | one tunnel channel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
-| `mp_authority.gd` | `accept_command`, `accept_room_command`, freeze, sync |
+| `mp_authority.gd` | `accept_command`, `command_slot`, `accept_room_command`, freeze, sync |
 | `mp_world_ready.gd` | leftover (no-op if an `MpSpawner` is present) |
 
 Spawn handshake: `hold_until_world_ready` (actors hidden until `client_world_ready`; Godot sends spawn + sync together). Dedicated: no pawn for peer 1. Do not reparent actors in glue.
