@@ -122,7 +122,7 @@ A valid policy: guest drop does not pause the timer and leaves the pawn absent. 
 
 ## Pawns
 
-Prefer a child `MpReplicate` (Tools → Wire replication, or the scaffold). Equivalent to:
+Prefer a child `MpReplicate` + `MultiplayerSynchronizer` in the scene (Tools → Wire replication, or the scaffold). `MpReplicate` does not create the synchronizer at runtime. By code, in the actor's own `_ready`:
 
 ```gdscript
 MpAuthority.claim_server(self)

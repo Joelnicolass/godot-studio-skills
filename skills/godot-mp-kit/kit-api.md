@@ -14,7 +14,7 @@ Files (`res://addons/mp_kit/`):
 | `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer, `accept_room_command` |
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — one tunnel channel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / optional lerp |
-| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner that waits for `world_ready` |
+| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner that holds its scope per peer until that peer's spawner is ready |
 | `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — one packed pawn per occupied slot |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — drop-in lobby (`mp_boot_menu.tscn`) |
 | `mp_flow.gd` | `class_name MpFlow` — optional flow (scenes, host/join/1P, world catalog) |
@@ -147,18 +147,22 @@ When `queued_count() >= party_size`: FIFO takes `party_size`, `create_room(party
 
 ## MpSpawner
 
-Extends the native `MultiplayerSpawner`. Uses the `MultiplayerSynchronizer` **per-peer visibility** mechanism: Godot does not send a spawn to a peer until the actor's synchronizer is visible to it, and on reveal it delivers spawn + sync, paired.
+Extends the native `MultiplayerSpawner`. Uses the `MultiplayerSynchronizer` **per-peer visibility**: Godot sends a spawned node to a peer once any of its synchronizers is visible to it (a node with none goes to everyone), and a static synced node syncs only where visible.
 
-Default `hold_until_world_ready = true` (server side only):
+Default `hold_until_world_ready = true`:
 
-1. Every actor entering under `spawn_path` starts hidden (`public_visibility = false` on its synchronizers).
-2. On `client_world_ready`, `set_visibility_for(peer, true)` → Godot delivers spawn + sync to that peer.
-3. `peer_left` → visibility off for that peer (clean for rejoin).
+1. Server: every synchronizer under the spawner's **parent** (actors under `spawn_path` and static world nodes; a subtree with its own `MpSpawner` is skipped) starts hidden, including ones added later.
+2. Client: the spawner calls `MpKit.request_world_ready()` and `rpc_spawner_ready` on itself (deferred).
+3. Server: on `rpc_spawner_ready` from a peer, `set_visibility_for(peer, true)` on what it holds → Godot delivers spawn + sync.
+4. `room_id` (optional, set on the server): reveal only to peers seated in that room; `peer_seated` / `peer_unseated` reveal / hide (unseat despawns on that client).
+5. `gate_unsynced_spawns` (default on): an actor with no synchronizer gets an empty `MpSpawnGate` synchronizer on every peer as it enters `spawn_path`.
 
-- Inspector: `spawn_path` = parent of the actors (stays untouched; the client needs it to instantiate). `extra_scenes` = packed scenes.
+- Inspector: `spawn_path` = parent of the actors. `extra_scenes` = packed scenes.
 - Glue: `add_child(node, true)` under that parent, whenever. Identity (`player_slot`, etc.) goes on the `MultiplayerSynchronizer` with `spawn = true`, not an RPC.
+- Synchronizers: in the scene, or `MpAuthority.ensure_sync` before `add_child` / in the actor's own `_ready`. Later ones miss the spawn packet (late joiners: `ERR_INVALID_DATA`); the spawner `push_error`s them.
+- `is_revealed_to(peer_id)` (server): this peer has the spawner and passes `room_id`.
 - `hold_until_world_ready = false` only if every peer already has this scene.
-- Client: this same node calls `request_world_ready()` deferred. One `MpSpawner` is enough.
+- Cost: per reveal / seat change one walk of the scope; per node added to the tree a type check. Nothing per frame.
 
 ## MpSlotSpawner
 
@@ -170,7 +174,7 @@ Optional leftover. If the scene already has an `MpSpawner`, this node is a no-op
 
 ## MpReplicate
 
-Child of the actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Proxies only; authority does not interpolate.
+Child of the actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Proxies only; authority does not interpolate. `sync_properties` is what Wire replication puts on the new synchronizer; the synchronizer lives in the scene (no runtime creation; `push_error` if missing).
 
 ## MpBootMenu
 
@@ -233,7 +237,7 @@ MpLan.browse(parent)              # signal rooms_changed(rooms: Array) — **LAN
 |--------------|------------|
 | 1P opens a port | `is_networked()` false until `host()`/`join()` |
 | HUD uses unique_id | `local_slot()` (0 = dedicated) |
-| Spawn before client scene | `MpSpawner.hold_until_world_ready` + `request_world_ready` |
+| Spawn before client scene | `MpSpawner.hold_until_world_ready` + `rpc_spawner_ready` |
 | Client RigidBody fights sync | `freeze_rigid_proxy` |
 | `leave()` with null peer | `OfflineMultiplayerPeer` |
 | Host drops | `server_lost` |

@@ -1,0 +1,67 @@
+{
+  "scene": "res://scenes/ui/boot.tscn",
+  "wait_first": 1.0,
+  "steps": [
+    {
+      "click": "%Join"
+    },
+    {
+      "wait_until": {
+        "node": "Actors/Pawn_1",
+        "visible_in_tree": true,
+        "timeout": 10
+      }
+    },
+    {
+      "wait_until": {
+        "node": "Actors/Pawn_2",
+        "visible_in_tree": true,
+        "timeout": 10
+      }
+    },
+    {
+      "wait_until": {
+        "node": "%Status",
+        "text_contains": "Client slot 2",
+        "timeout": 5
+      }
+    },
+    {
+      "wait": 1.5
+    },
+    {
+      "print": {
+        "node": "Actors/Pawn_1",
+        "prop": "position"
+      }
+    },
+    {
+      "press": {
+        "name": "move_down",
+        "hold": 0.6
+      }
+    },
+    {
+      "print": {
+        "node": "Actors/Pawn_2",
+        "prop": "position"
+      }
+    },
+    {
+      "shot": "listen_client_01_both.png"
+    },
+    {
+      "wait": 2.5
+    },
+    {
+      "click": "%Leave"
+    },
+    {
+      "wait_until": {
+        "node": "%PlaySolo",
+        "visible_in_tree": true,
+        "timeout": 5
+      }
+    }
+  ]
+}

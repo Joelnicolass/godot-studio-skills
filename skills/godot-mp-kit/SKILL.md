@@ -62,7 +62,7 @@ Human guide (inspector, step-by-step, custom tunnel, hub rooms and queue): `addo
 
 1. Copy `addons/mp_kit/` and enable **MpKit** (`MpKit` autoload **before** flow).
 2. Tools → **MpKit: New session flow...** (or `extends MpFlow`). Set boot/world. `play_solo()` / `host_lan()` / `join_lan()`. 1P: do not call `host()` yourself.
-3. In the match: one `MpSpawner` or `MpSlotSpawner` (`spawn_path` = actor parent). The client requests `world_ready` itself; no extra `MpWorldReady` node.
+3. In the match: one `MpSpawner` or `MpSlotSpawner` (`spawn_path` = actor parent). It holds every synchronizer under its parent; the client reports ready itself; no extra `MpWorldReady` node.
 4. Pawns: child `MpReplicate` + `submit_*` with `MpAuthority.accept_command(self, player_slot)`.
 5. LAN: `MpFlow` advertises on the host; the lobby browses (or instance `MpBootMenu`). Online: dedicated + public IP, not `host()` behind NAT.
 
@@ -118,17 +118,17 @@ func submit_x(payload) -> void:
 
 ## Spawn handshake (required)
 
-Godot’s `MultiplayerSpawner` replicates children on `peer_connected`, while the client is **still on the lobby**; that spawn is lost. `MpSpawner` (default `hold_until_world_ready`) uses the `MultiplayerSynchronizer` per-peer visibility: actors spawn hidden and each peer is revealed on `client_world_ready`; only then does Godot deliver spawn + sync, paired.
+Godot’s `MultiplayerSpawner` replicates children on `peer_connected`, while the client is **still on the lobby**; the path fails and Godot never retries it, so that spawner (or synced static node) stays dead for the peer. `MpSpawner` (default `hold_until_world_ready`) uses the `MultiplayerSynchronizer` per-peer visibility: everything under its parent stays hidden and each peer is revealed when its own copy of the spawner reports ready; only then does Godot deliver spawn + sync, paired. Actors with no synchronizer get an empty `MpSpawnGate` (otherwise Godot sends them to everyone).
 
 ```
 Server broadcast_load_world() + glue loads the world on the server process
   → listen host add_child(local pawn) in _ready; hidden to not-ready peers
-  → client loads scene; MpSpawner calls request_world_ready() (deferred)
-  → MpSpawner reveals the peer (set_visibility_for) → Godot sends spawn + sync
+  → client loads scene; MpSpawner calls request_world_ready() + rpc_spawner_ready (deferred)
+  → server MpSpawner reveals the peer (set_visibility_for) → Godot sends spawn + sync
   → MpSlotSpawner (or glue) spawns the slot that just joined
 ```
 
-Do not unparent actors in glue: the kit already reveals on `client_world_ready`.
+Do not unparent actors in glue: the kit already reveals per peer. Synchronizers go in the scene (or are added before `add_child` / in the actor's own `_ready`), never deferred. Hub rooms: one subtree + `MpSpawner` per room with `room_id` (README → Actors per room).
 
 Actor identity (`player_slot`, etc.): `MultiplayerSynchronizer` properties with `spawn = true`, or the node name (`Pawn_2` / `Ship_2`).
 
@@ -138,7 +138,7 @@ Rejoin: do not reset score; snapshot + `load_world_to`. `MpSpawner` reveals agai
 
 ## Snapshots vs transforms
 
-- Position/rotation/visible: `MultiplayerSynchronizer` (`MpAuthority.ensure_sync`).
+- Position/rotation/visible: `MultiplayerSynchronizer` in the scene (Wire replication), or `MpAuthority.ensure_sync` before `add_child`.
 - Timer/score/lives: `to_snapshot()` at 2–10 Hz via `MpKit.push_snapshot` (Timer, not every `_process` frame).
 - Discrete events (floating `+N`): `authority` RPC on a node **of yours**, not MpKit.
 

@@ -186,6 +186,10 @@ func snapshot_for_joiner() -> Dictionary:
 
 func _begin_match() -> void:
 	match_running = true
+	# Peers already connected (dedicated first client) need the world id too.
+	var snap := snapshot_for_joiner()
+	if not snap.is_empty():
+		MpKit.push_snapshot(snap)
 	MpKit.broadcast_load_world()
 	_start_advertise()
 	goto_world()

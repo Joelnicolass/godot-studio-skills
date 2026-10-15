@@ -99,6 +99,7 @@ Or a child `MpCustomPipe` with `channel` in the inspector.
 Put `player_slot` (or another id) on the `MultiplayerSynchronizer` with `spawn = true`, like Asteroidcitos’ `player_id`. Stable name (`Pawn_2`) as fallback.
 
 ```gdscript
+# In the actor's own _ready (or before add_child). Not deferred: the spawn packet would miss it.
 MpAuthority.ensure_sync(self, PackedStringArray([
 	".:position",
 	".:rotation",
@@ -107,4 +108,4 @@ MpAuthority.ensure_sync(self, PackedStringArray([
 ]))
 ```
 
-`add_child` under `spawn_path`. `MpSpawner` reveals the actor to the peer on `world_ready` (Godot sends spawn + sync). An `MpSlotSpawner` does the per-slot pawn; glue does not need `ensure_pawn`.
+`add_child` under `spawn_path`. `MpSpawner` reveals the actor to the peer once its spawner is ready (Godot sends spawn + sync). An `MpSlotSpawner` does the per-slot pawn; glue does not need `ensure_pawn`.

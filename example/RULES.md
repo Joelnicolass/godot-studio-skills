@@ -3,7 +3,7 @@
 **Product type:** Godot game (demo / guide).  
 **Omitted (auditable):** responsive web, auth, SQL, REST, library semver, bundle size, web WCAG, SaaS infra.
 
-**Anchored in existing code:** `example/project.godot` (Godot 4.7, Jolt, mobile) and parent `addons/mp_kit` v0.3.0.
+**Anchored in existing code:** `example/project.godot` (Godot 4.7, Jolt, mobile) and parent `addons/mp_kit` v0.6.0.
 
 ## 1. Stack
 
@@ -13,8 +13,8 @@
 | GDScript | Godot 4.7 | same |
 | 3D physics | Jolt Physics | `example/project.godot` |
 | Renderer | mobile | same |
-| MpKit | 0.3.0 | `addons/mp_kit/plugin.cfg` |
-| Tests | no runner | PRD: F23 Won't |
+| MpKit | 0.6.0 | `addons/mp_kit/plugin.cfg` |
+| Tests | no runner (PRD: F23 Won't); network checks: `debug/spawn_lab/run_lab.sh`, `agent/run_mp_playtest.sh` (AgentKit) | README → Network checks |
 
 Copy the addon: from the studio kit root, `./install.sh --addon-only example`. Do not fork kit files into `glue/` or `scenes/`.
 
@@ -35,7 +35,7 @@ example/
   resources/looks/
 ```
 
-Match state lives on `DemoMatch` in the world. Autoloads: `MpKit` **before** `NetGlue` only.
+Match state lives on `DemoMatch` in the world. Autoloads: `MpKit` **before** `NetGlue`; `AgentKit` last (inert without `--agent=`).
 
 ## 3. Composition and editor
 

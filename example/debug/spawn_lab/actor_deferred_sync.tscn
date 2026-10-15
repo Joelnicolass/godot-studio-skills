@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://debug/spawn_lab/lab_actor.gd" id="1"]
+
+[sub_resource type="SceneReplicationConfig" id="cfg"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="ActorDeferredSync" type="Node2D"]
+script = ExtResource("1")
+add_sync_deferred = true
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("cfg")
