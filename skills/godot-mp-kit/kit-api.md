@@ -151,7 +151,7 @@ Extends the native `MultiplayerSpawner`. Uses the `MultiplayerSynchronizer` **pe
 
 Default `hold_until_world_ready = true`:
 
-1. Server: every synchronizer under the spawner's **parent** (actors under `spawn_path` and static world nodes; a subtree with its own `MpSpawner` is skipped) starts hidden, including ones added later.
+1. Server: every synchronizer the spawner owns starts hidden, including ones added later. Owner: the spawners whose parent is the synchronizer's nearest ancestor with an `MpSpawner` child; none → every `MpSpawner` of the scene. Under `spawn_path` → this spawner.
 2. Client: the spawner calls `MpKit.request_world_ready()` and `rpc_spawner_ready` on itself (deferred).
 3. Server: on `rpc_spawner_ready` from a peer, `set_visibility_for(peer, true)` on what it holds → Godot delivers spawn + sync.
 4. `room_id` (optional, set on the server): reveal only to peers seated in that room; `peer_seated` / `peer_unseated` reveal / hide (unseat despawns on that client).
@@ -162,7 +162,7 @@ Default `hold_until_world_ready = true`:
 - Synchronizers: in the scene, or `MpAuthority.ensure_sync` before `add_child` / in the actor's own `_ready`. Later ones miss the spawn packet (late joiners: `ERR_INVALID_DATA`); the spawner `push_error`s them.
 - `is_revealed_to(peer_id)` (server): this peer has the spawner and passes `room_id`.
 - `hold_until_world_ready = false` only if every peer already has this scene.
-- Cost: per reveal / seat change one walk of the scope; per node added to the tree a type check. Nothing per frame.
+- Cost: per reveal / seat change one walk of the scene; per node added to the tree a type check. Nothing per frame.
 
 ## MpSlotSpawner
 

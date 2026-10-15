@@ -62,7 +62,7 @@ Human guide (inspector, step-by-step, custom tunnel, hub rooms and queue): `addo
 
 1. Copy `addons/mp_kit/` and enable **MpKit** (`MpKit` autoload **before** flow).
 2. Tools → **MpKit: New session flow...** (or `extends MpFlow`). Set boot/world. `play_solo()` / `host_lan()` / `join_lan()`. 1P: do not call `host()` yourself.
-3. In the match: one `MpSpawner` or `MpSlotSpawner` (`spawn_path` = actor parent). It holds every synchronizer under its parent; the client reports ready itself; no extra `MpWorldReady` node.
+3. In the match: one `MpSpawner` or `MpSlotSpawner` (`spawn_path` = actor parent). It holds the synchronizers of its part of the scene (static ones included); the client reports ready itself; no extra `MpWorldReady` node.
 4. Pawns: child `MpReplicate` + `submit_*` with `MpAuthority.accept_command(self, player_slot)`.
 5. LAN: `MpFlow` advertises on the host; the lobby browses (or instance `MpBootMenu`). Online: dedicated + public IP, not `host()` behind NAT.
 
@@ -118,7 +118,7 @@ func submit_x(payload) -> void:
 
 ## Spawn handshake (required)
 
-Godot’s `MultiplayerSpawner` replicates children on `peer_connected`, while the client is **still on the lobby**; the path fails and Godot never retries it, so that spawner (or synced static node) stays dead for the peer. `MpSpawner` (default `hold_until_world_ready`) uses the `MultiplayerSynchronizer` per-peer visibility: everything under its parent stays hidden and each peer is revealed when its own copy of the spawner reports ready; only then does Godot deliver spawn + sync, paired. Actors with no synchronizer get an empty `MpSpawnGate` (otherwise Godot sends them to everyone).
+Godot’s `MultiplayerSpawner` replicates children on `peer_connected`, while the client is **still on the lobby**; the path fails and Godot never retries it, so that spawner (or synced static node) stays dead for the peer. `MpSpawner` (default `hold_until_world_ready`) uses the `MultiplayerSynchronizer` per-peer visibility: everything it owns in the scene stays hidden and each peer is revealed when its own copy of the spawner reports ready; only then does Godot deliver spawn + sync, paired. Actors with no synchronizer get an empty `MpSpawnGate` (otherwise Godot sends them to everyone).
 
 ```
 Server broadcast_load_world() + glue loads the world on the server process

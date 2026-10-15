@@ -214,14 +214,14 @@ sequenceDiagram
   H->>C: native spawn + sync
 ```
 
-What the spawner holds: every `MultiplayerSynchronizer` under **its parent** — the actors under `spawn_path` and the static nodes of the world (a door, a fount). A child subtree with its own `MpSpawner` belongs to that spawner. Nothing reaches a peer until its copy of the spawner exists, so a peer on the lobby or still loading never gets a packet for a node it does not have (Godot never retries a failed path: that spawner or node would stay dead for the peer).
+What the spawner holds: the `MultiplayerSynchronizer`s of the scene it owns — the actors under `spawn_path` and the static nodes of the world (a door, a fount). A synchronizer belongs to the spawners whose parent is its nearest ancestor with an `MpSpawner` child (a room, a sub-world). One with no such ancestor — a static node placed beside an instanced world — belongs to every `MpSpawner` of the scene. Nothing reaches a peer until its copy of the spawner exists, so a peer on the lobby or still loading never gets a packet for a node it does not have (Godot never retries a failed path: that spawner or node would stay dead for the peer).
 
 Rules:
 
-- Every replicated world node sits under an `MpSpawner`'s parent. A plain `MultiplayerSpawner`, or a synced node outside that scope, still sends to peers on the lobby.
+- Every replicated world needs at least one `MpSpawner` in the scene (a plain `MultiplayerSpawner` alone still sends to peers on the lobby). Static synced nodes need nothing extra.
 - Synchronizers go in the scene, or are added in code **before** `add_child`, or in the actor's own `_ready`. One added later (deferred, a timer) is missing from the spawn packet: late joiners get `ERR_INVALID_DATA` for that actor. The spawner holds it anyway and reports it with `push_error`.
 - An actor with no synchronizer gets an empty `MpSpawnGate` synchronizer on every peer as it enters `spawn_path` (`gate_unsynced_spawns`). Without it Godot sends that actor to every peer, lobby included, and the failed path breaks the spawner for them. Turn it off only if every spawned scene has a synchronizer.
-- Cost: on the server, one walk of the spawner's scope per reveal or seat change, and a type check per node added to the tree. Nothing per frame.
+- Cost: on the server, one walk of the scene per reveal or seat change, and a type check per node added to the tree. Nothing per frame.
 
 ### 4. Pawn (replicated actor)
 
@@ -613,7 +613,7 @@ func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
 	add_child(room)
 ```
 
-The server reveals that spawner only to peers seated in `room_id` (it checks `MpKit.rooms`, not the client). Unseating hides it again, and Godot despawns its actors on that client. Clients build the same `Room_<id>` node (for example on `MpKit.rooms.room_assigned`); their spawner reports ready when it enters the tree. Do not put a spawner without `room_id` above the rooms: its scope stops at subtrees with their own `MpSpawner`, but siblings in the same parent share it.
+The server reveals that spawner only to peers seated in `room_id` (it checks `MpKit.rooms`, not the client). Unseating hides it again, and Godot despawns its actors on that client. Clients build the same `Room_<id>` node (for example on `MpKit.rooms.room_assigned`); their spawner reports ready when it enters the tree. Each room's synchronizers belong to the room's spawner, so a world spawner without `room_id` (in the hub root) does not reveal them. Do not put two spawners with different `room_id` under the same parent: they share what that parent holds.
 
 ### Gameplay commands in a room
 

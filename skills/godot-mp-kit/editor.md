@@ -20,7 +20,7 @@ Without Godot open (Claude Code or Cursor): command `/new-mp-feature` (same file
 | Node | Use |
 |------|-----|
 | `MpReplicate` | Child of the actor. Authority peer 1, sync props, freeze RigidBody proxy. Optional `interpolate` on proxies. |
-| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Holds every synchronizer under its parent per peer; the client reports ready. `room_id` for hub rooms. One node per world (or per room). |
+| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Holds its synchronizers (spawned and static) per peer; the client reports ready. `room_id` for hub rooms. One node per world (or per room). |
 | `MpSlotSpawner` | Same + one `pawn_scene` per occupied slot (`Pawn_<n>`). Dedicated does not spawn slot 0. |
 | `MpBootMenu` | Drop-in lobby. Uses `MpFlow` if present; otherwise `world_scene` for zero-glue. Copy via `@export`. |
 | `MpFlow` | Session autoload: boot/world(s), host/join/1P, late join. Several maps: `add_world` / `select_world`. |
