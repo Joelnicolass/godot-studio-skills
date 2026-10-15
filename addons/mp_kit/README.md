@@ -245,6 +245,19 @@ func submit_move(dir: Vector2) -> void:
 	apply_move(dir)
 ```
 
+Si el `submit_*` vive en un nodo que atiende a **todos** los jugadores (un nodo del match, no un pawn con `player_slot`), el slot sale del sender:
+
+```gdscript
+@rpc("any_peer", "call_remote", "reliable")
+func submit_ready() -> void:
+	var slot := MpAuthority.command_slot(self)
+	if slot <= 0:
+		return
+	apply_ready(slot)
+```
+
+`command_slot(node)` devuelve el slot del peer que mandó el RPC, solo en el servidor. Da `0` fuera del servidor, sin red (1P) o si el peer no tiene slot. No uses `MpKit.slot_for_peer(multiplayer.get_remote_sender_id())` a mano en cada `submit_*`.
+
 - `call_remote`: el host local **no** duplica el RPC.
 - Dedicated nunca manda `submit_*` (no hay jugador local).
 - Tipos de pawn/bala: Resource `.tres` en el actor, no un string `kind` por RPC.
@@ -392,7 +405,7 @@ El glue (autoload) sigue haciendo el reflect `from_peer != 1` → `broadcast_cus
 | Dato | Dónde |
 |------|--------|
 | Posición, rotación, visible | `MultiplayerSynchronizer` (`MpReplicate`) |
-| “Quiero mover / disparar” | `submit_*` en **tu** pawn + `accept_command` |
+| “Quiero mover / disparar” | `submit_*` en **tu** pawn + `accept_command` (nodo sin `player_slot`: `command_slot`) |
 | Tipo de arma / look | Resource `.tres` en el actor, `spawn = true` si hace falta al nacer |
 | Timer / score / vidas | Un match: `MpKit.push_snapshot`. Varias salas: `MpKit.rooms.push_snapshot_to_room` |
 | Emote, ping, debug | Túnel custom. Varias salas: `push_custom_to_room`, no `broadcast_custom` |
@@ -428,7 +441,7 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 | `mp_boot_menu.gd` / `.tscn` | lobby drop-in |
 | `mp_custom_pipe.gd` | un canal del túnel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
-| `mp_authority.gd` | `accept_command`, `accept_room_command`, freeze, sync |
+| `mp_authority.gd` | `accept_command`, `command_slot`, `accept_room_command`, freeze, sync |
 | `mp_world_ready.gd` | legado (no-op si hay `MpSpawner`) |
 
 Handshake de spawn: `hold_until_world_ready` (actores ocultos hasta `client_world_ready`; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en glue.
