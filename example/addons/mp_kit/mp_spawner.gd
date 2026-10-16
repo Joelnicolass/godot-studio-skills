@@ -133,8 +133,12 @@ func _on_child_entered(node: Node) -> void:
 	if MpKit.is_server() and not node.is_node_ready():
 		# Synchronizers the actor adds while it sets up (_enter_tree, _ready) still
 		# go in its spawn packet; later ones do not.
-		_entering.append(node)
-		node.ready.connect(_entering.erase.bind(node), CONNECT_ONE_SHOT)
+		if not _entering.has(node):
+			_entering.append(node)
+		var done := _entering.erase.bind(node)
+		for sig: Signal in [node.ready, node.tree_exited]:
+			if not sig.is_connected(done):
+				sig.connect(done, CONNECT_ONE_SHOT)
 	if gate_unsynced_spawns and _syncs_under(node).is_empty():
 		var gate := MultiplayerSynchronizer.new()
 		gate.name = GATE_NAME
