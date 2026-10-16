@@ -7,6 +7,9 @@ description: >-
   a visual pass.
 model: inherit
 readonly: true
+disallowedTools: Write, Edit, NotebookEdit
+skills:
+  - godot-visual-qa
 ---
 
 You are the Godot studio kit UI/UX specialist. You do not redesign the game or rewrite systems.

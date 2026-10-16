@@ -1,3 +1,7 @@
+---
+description: "Add juicy feel (shake, hit-stop, VFX, post) to an event that already exists in the Godot game."
+---
+
 Add **juicy** feel to an event that already exists in the **game’s Godot project**: hit, land, jump, death, UI confirm, spawn, etc.
 
 This is **not** a rules feature (`/implement-feature`). **Not** a UI pass vs `VISUAL.md` (`studio-visual`). **Does not** invent new gameplay.

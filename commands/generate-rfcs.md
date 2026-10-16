@@ -1,3 +1,7 @@
+---
+description: "Break PRD / FEATURES / RULES down into ordered RFCs (RFCs/ + RFCS.md)."
+---
+
 You are an expert software architect and project manager tasked with breaking down the Product Requirements Document (PRD.md), features list (FEATURES.md), and project rules (RULES.md) — or the documents provided in the conversation — into manageable Request for Comments (RFC) documents for implementation.
 
 Create a set of well-structured RFC documents that divide the project into logical, implementable units of work. Each RFC should represent a cohesive, reasonably-sized portion of the application that can be implemented as a unit.

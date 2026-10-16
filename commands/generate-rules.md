@@ -1,3 +1,7 @@
+---
+description: "Generate RULES.md (stack, architecture, conventions) from the PRD and FEATURES."
+---
+
 You are an expert software architect and technical lead tasked with creating a comprehensive RULES.md file based on the Product Requirements Document (PRD.md) and features list (FEATURES.md), or the documents provided in the conversation.
 
 Create a clear, structured RULES.md that establishes technical and general guidelines for AI assistance during the development process. These rules will ensure consistency, quality, and alignment with project requirements.

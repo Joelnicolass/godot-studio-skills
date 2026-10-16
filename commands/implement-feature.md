@@ -1,21 +1,27 @@
+---
+description: "Implement one gameplay feature or the vertical slice in the Godot game: tree, OK, code, review, playtest."
+argument-hint: "[feature]"
+---
+
 Implement **one** gameplay feature in the **game’s Godot project**. Iterating a playable slice beats a PRD that defines the whole title.
 
 This is **not** `/new-mp-feature` (that only scaffolds an MpKit actor). This is **not** `/implement-rfc` (that follows an RFC already written). If an RFC id already exists, use `/implement-rfc <id>`.
 
-If `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone. Small cut (one component, no scene that could cheat): the plan stays in this chat. If there is a tree or `res://debug/`: `studio-tech-lead` → the user approves the cut **once** → `studio-developer` → `studio-reviewer` → `studio-playtester` on the scene named by the `F<n>`. Do not ask again whether to play. Visual pass: ask, and without `VISUAL.md` there is no look. GUT tester only if the user or RULES asked.
+If `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone. Small cut (one component, no scene that could cheat): the plan stays in this chat, but the tree is still shown and OK is still awaited. If there is a tree or `res://debug/`: `studio-tech-lead` → the user approves the cut **once** → `studio-developer` → `studio-reviewer` → `studio-playtester` on the scene named by the `F<n>`. Do not ask again whether to play. Visual pass: ask, and without `VISUAL.md` there is no look. GUT tester only if the user or RULES asked.
 
 When the playtester returns, classify: broken criterion → developer, one correction; the debug scene already shows the outcome → reviewer; cache or CLI → this chat imports and relaunches; missing scene → `NEED_SETUP`, not a new tech lead.
 
-Load `godot-layered-architecture` and `godot-composition-first`. Motion: `godot-animation`. Juicy feel on an event that already exists: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. 2D platformer: `/add-platformer-2d` + `godot-platformer-2d`. If there is MP: `godot-mp-kit`. If not: do not load the kit.
+Load `godot-layered-architecture` and `godot-composition-first`. Motion: `godot-animation`. Juicy feel on an event that already exists: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. 2D platformer: `/add-platformer-2d` + `godot-platformer-2d`. Materials / textures: `/create-material` + `godot-material-maker`. A mechanic “like in X”: `/reverse-engineer` + `godot-reverse-engineering` before planning. If there is MP: `godot-mp-kit`. If not: do not load the kit.
 
 ## 1. Scope (before code)
 
-If the request is vague, ask in one batch (AskQuestion if available):
+If the request is vague, ask in one batch (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available):
 
 1. What the player does / what you see. One or two sentences.
 2. Where it lives (scene, actor, HUD). Clean vs standard is **already chosen**; do not change it.
 3. Is there networking? If yes: local/Wi-Fi or online. If no: zero RPCs.
-4. 2D / 3D. Art: placeholder unless OK + references.
+4. 2D / 3D. Art: placeholder unless OK + references. If there are surfaces (floor, wall, terrain): offer Material Maker.
+5. Is it “like in X” (another game / app)? Offer to deduce or decompile it with REA (`/reverse-engineer`, only with authorization) and use the report for the criteria.
 
 Do not interview a full GDD. Do not run `/create-prd` or `/generate-rfcs` “just in case”.
 
@@ -38,7 +44,7 @@ Authority on conflict: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > this 
 
 `studio-tech-lead` (or this chat if the cut is 1–3 files):
 
-- File tree + responsibility map ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
+- File tree with `[+]` / `[~]` / `[-]` + responsibility map ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
 - Test scene under `res://debug/`: easy initial state, criterion outcome not yet true, InputMap action. Written on the `F<n>` (or the RFC if there is a contract).
 - What is `.tres`, what is a node, what is `@export`
 - Motion: evaluate Tween vs `AnimationPlayer` (skill `godot-animation`); knobs in inspector or timeline

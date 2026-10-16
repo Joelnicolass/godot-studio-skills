@@ -28,7 +28,7 @@ On the **standard** path, “layers” does **not** mean `domain/core/features` 
 
 ## 1. Choose a style (required)
 
-**Always ask** the user, with AskQuestion if available, **before** creating folders, autoloads, or a feature that locks in the project shape.
+**Always ask** the user, with the question tool (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available), **before** creating folders, autoloads, or a feature that locks in the project shape.
 
 1. **Clean / layered** — `features → core → domain`. See [clean.md](clean.md).
 2. **Standard Godot** — scenes + scripts next to the scene. See [standard.md](standard.md).

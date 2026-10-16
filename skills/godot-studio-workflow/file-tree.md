@@ -1,6 +1,18 @@
-# File tree (before OK)
+# File tree (always, before OK)
 
-The tech lead delivers this **before** asking for approval. The orchestrator shows it to the user. Without it there is no “OK, implement”.
+**Always**, before creating, modifying, or deleting any file, show the tree and wait for the user's OK. It applies to a feature, an RFC, a command (`/add-juicy`, `/create-material`, `/new-mp-feature`, …), a typo, or an `@export`. The tech lead builds it when there is one; otherwise this chat. Without an approved tree, nothing is written.
+
+Only exceptions: what the playtester writes in `res://agent/` (already covered by the slice's OK) and memory notes (`.studio/MEMORY.md`).
+
+Every line carries a mark:
+
+| Mark | Meaning |
+|------|---------|
+| `[+]` | New file |
+| `[~]` | Existing file that changes (say what changes) |
+| `[-]` | File that gets deleted |
+
+`[~]` and `[-]` lines are included too: the user must see what is touched among the existing files, not only what is new.
 
 It shows at a glance whether the feature is a god-node or a set of pieces.
 
@@ -8,12 +20,22 @@ It shows at a glance whether the feature is a god-node or a set of pieces.
 
 ```text
 <feature>/
-├── foo.tscn              # container: physics/layout + orchestrates children
-├── foo.gd                # thin: signals up, @export sockets
-├── bar.tscn              # reusable packed (2nd caller or F6 alone)
-├── bar.gd
+├── [+] foo.tscn              # container: physics/layout + orchestrates children
+├── [+] foo.gd                # thin: signals up, @export sockets
+├── [+] bar.tscn              # reusable packed (2nd caller or F6 alone)
+├── [+] bar.gd
 └── data/
-    └── foo_stats.tres    # type; do not mutate at runtime
+    └── [+] foo_stats.tres    # type; do not mutate at runtime
+scenes/world/
+└── [~] world.tscn            # instances foo.tscn under %Actors
+scenes/actors/
+└── [-] old_foo.gd            # replaced by foo.gd
+```
+
+Small cut (typo, `@export`, a 1–3 file bug): the list is enough, no table.
+
+```text
+[~] scenes/player/player.gd   # coyote_time 0.10 → 0.12 (@export)
 ```
 
 Plus a **responsibility map** (one row per file or node):
@@ -53,4 +75,4 @@ The initial state makes the criterion **easy** (do not play the whole game to re
 
 ## What to ask the user
 
-Show the tree + the table. Ask: is the cut right, or do you want more/fewer pieces? Only with OK does `studio-developer` run.
+Show the tree (with `[+]` / `[~]` / `[-]`) + the table. Ask: is the cut right, or do you want more/fewer pieces? Only with OK does anything get written: `studio-developer` runs or this chat does it. If implementing needs a file that was not in the tree, stop and show the corrected tree before continuing.

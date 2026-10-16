@@ -4,23 +4,23 @@ With the plugin enabled, the autoload is registered and **Project → Tools** ga
 
 | Action | What it does |
 |--------|----------|
-| **Wire replication on selection** | Child `MpReplicate` + `MultiplayerSynchronizer` (undo). Does not clone Godot’s Replication dock. |
+| **Wire replication on selection** | Child `MpReplicate` + `MultiplayerSynchronizer` with `MpReplicate.sync_properties` as spawn + always (undo). Does not clone Godot’s Replication dock. |
 | **New replicated feature...** | Writes `res://features/<id>/` (or the folder you pick): `.gd` + `.tscn` with replicate, sync, and optional `MpCustomPipe`. |
 | **New session flow...** | Writes `res://glue/session_flow.tscn` + `.gd` (`extends MpFlow`) and registers it as an autoload. |
-| **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the Cursor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
+| **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the editor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
 Enable also copies **script templates** to `res://script_templates/` (with `.gdignore`). When attaching a script to `CharacterBody2D/3D` or `Node2D/3D`, template **MpKit replicated**.
 
 CI/headless: autoload in `project.godot`. Do not duplicate Enable + a manual line.
 
-Cursor without Godot open: command `/new-mp-feature` (same file layout). `./install.sh --addon` also installs snippets into `.vscode/`.
+Without Godot open (Claude Code or Cursor): command `/new-mp-feature` (same file layout). `./install.sh --addon` also installs snippets into `.vscode/`.
 
 ## Nodes (Create New Node)
 
 | Node | Use |
 |------|-----|
 | `MpReplicate` | Child of the actor. Authority peer 1, sync props, freeze RigidBody proxy. Optional `interpolate` on proxies. |
-| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Hold + client `request_world_ready`. One node is enough. |
+| `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Holds its synchronizers (spawned and static) per peer; the client reports ready. `room_id` for hub rooms. One node per world (or per room). |
 | `MpSlotSpawner` | Same + one `pawn_scene` per occupied slot (`Pawn_<n>`). Dedicated does not spawn slot 0. |
 | `MpBootMenu` | Drop-in lobby. Uses `MpFlow` if present; otherwise `world_scene` for zero-glue. Copy via `@export`. |
 | `MpFlow` | Session autoload: boot/world(s), host/join/1P, late join. Several maps: `add_world` / `select_world`. |

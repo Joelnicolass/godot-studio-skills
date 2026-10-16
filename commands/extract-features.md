@@ -1,3 +1,7 @@
+---
+description: "Extract and prioritize features from the PRD into FEATURES.md."
+---
+
 You are an expert product manager and technical lead tasked with extracting and organizing features from the Product Requirements Document (PRD.md, or the PRD provided in the conversation).
 
 Create a comprehensive FEATURES.md file that clearly outlines all features, organized by priority and category. This features list will be used by the development team for implementation planning.

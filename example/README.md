@@ -46,9 +46,24 @@ Then a client in the editor: Join `127.0.0.1`.
 | UI copy | `glue/demo_copy.gd` | Product language |
 | Match | `scenes/world/demo_match.gd` | `elapsed` snapshot (no spawn) |
 | Spawn | `MpSlotSpawner` on `match_2d` / `match_3d` | One pawn per slot |
+| Network checks | `debug/spawn_lab/`, `agent/` | Spawn lab + AgentKit playtest |
 | Pawns | `scenes/actors/` | `submit_move` / `apply_move`, `MpReplicate`, pipe |
 | Looks | `resources/looks/*.tres` | Tint/badge/speed — no `if kind` |
 | Product | `PRD.md`, `FEATURES.md`, `RULES.md`, `RFCs/` | Studio flow |
+
+## Network checks
+
+Two scripts, one group of Godot processes at a time (do not run them while other Godot tests run):
+
+```bash
+debug/spawn_lab/run_lab.sh            # headless: MpSpawner lab
+agent/run_mp_playtest.sh              # windows: AgentKit flows on this demo + the lab
+```
+
+- **Spawn lab** (`debug/spawn_lab/`): dedicated + client A + late client B. The server spawns actors with a synchronizer, without one, with `MpReplicate` and no synchronizer, and with one added too late; a static synced node; two rooms with their own `MpSpawner` and `room_id`. It unseats slot 1 and, in a second run, reloads the world with both clients connected. `check_lab.py` prints PASS/FAIL per scenario.
+- **Playtest** (`agent/`): 1P 2D/3D, listen host + client, dedicated + A + late B in 2D and 3D, all through the boot buttons and the InputMap. Needs AgentKit (`./install.sh --addon example agent_kit` from the kit root). Shots and logs in `agent/out/mp/`.
+
+Network runs use `--max-fps 60`, never `--fixed-fps`: it drops real-time sync and a headless server quits before clients connect.
 
 ## Product flow
 
@@ -56,4 +71,4 @@ This folder **is** the output of `/create-prd` → `/verify-prd` → `/extract-f
 
 ## Not here
 
-Score, lives, Steam, prediction, production art, GUT tests. Those do not belong in the kit or in this guide.
+Score, lives, Steam, prediction, production art, GUT tests (the network checks above are scripts, not a test framework). Those do not belong in the kit or in this guide.

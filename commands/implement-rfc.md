@@ -1,3 +1,8 @@
+---
+description: "Implement an already written RFC, by ID, through the studio pipeline."
+argument-hint: "<rfc-id>"
+---
+
 Target RFC: the ID provided after this command in my message — substitute it for [ID] everywhere below. If no ID was given, ask which RFC to work on before doing anything else.
 
 If skill `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone: `studio-tech-lead` (plan **with a file tree** and `res://debug/` when needed) → the user approves the cut **once** → `studio-developer` → `studio-reviewer` (one pass) → `studio-playtester` on the scene named by the RFC. Do not ask again whether to play. If UI changed, a visual pass is still asked (`studio-visual`; without `VISUAL.md`/refs, ask for them first). When the playtester returns, classify the FAIL (developer / reviewer / this chat). GUT tester only if the user or RULES.md asks. One RFC at a time. A typo or 1–3 file bug: this chat, no new RFC.
@@ -30,7 +35,7 @@ Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
 ### Phase 1: Planning (No Code)
 1. Analyze the requirements and existing codebase
 2. Present a comprehensive implementation plan covering:
-   - File tree + responsibility map (one job per piece; why it is not merged)
+   - File tree with `[+]` new / `[~]` modified / `[-]` deleted + responsibility map (one job per piece; why it is not merged)
    - Files to create or modify
    - What is a Resource `.tres`, what is a node, what is `@export`
    - Proposed implementation sequence

@@ -2,7 +2,8 @@
 name: godot-studio-workflow
 description: >-
   Orchestrates a Godot 4 game from idea to a simple scalable base: interviews
-  the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP),
+  the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP,
+  Material Maker, REA),
   runs product commands (PRD, features, rules, RFCs, visual guide), researches
   when needed, then delegates tech-lead / developer / reviewer (optional
   tester, playtester and visual). Use when starting a game, a Godot project,
@@ -14,11 +15,11 @@ description: >-
 
 The **main agent in this chat** is the orchestrator. It talks to the user. It does not dump the whole product into one subagent.
 
-Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`.
+Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Procedural materials / textures: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. A mechanic “like in X” (reverse engineering): [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) + `/reverse-engineer`.
 
 Goal: a Godot 4 game with a **small, clear base**. Priorities: clean layers, composition, editor/`@export`, reusable components.
 
-Roles (`Task` `subagent_type` = their `name`):
+Roles (subagent tool — `Agent` in Claude Code, `Task` in Cursor — with `subagent_type` = their `name`):
 
 | Role | Subagent | When |
 |------|----------|------|
@@ -29,24 +30,24 @@ Roles (`Task` `subagent_type` = their `name`):
 | Playtester | `studio-playtester` (module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | After review, on `res://debug/` or the player scene. Does not ask for a second OK |
 | Visual | `studio-visual` | **Only** if the user wants a UI pass; requires `VISUAL.md` / refs |
 
-Every `Task` includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat.
+Every subagent prompt includes the [compact-rules.md](compact-rules.md) block. Subagents **do not** see this chat, **do not** ask the user, and **do not** launch other subagents: when a role is missing a decision (art, MCP, scope) it returns it and the orchestrator asks.
 
 If the `studio-playtester` subagent **does not exist** (the playtest module is not installed), do not invent it or simulate it with another role: offer a manual playtest (the user runs F5 and you walk the slice criteria as a checklist) or skip the step.
 
 When launching `studio-playtester`: pass the `res://debug/…` path and the InputMap action recorded on the `F<n>` or the RFC. The playtester **plays** that scene; they do not build it and they do not use `call()` to assemble it. If that scene is missing, they must return `NEED_SETUP`, not invent a world. Order them to read `harness.md` from `godot-agent-kit` **before** writing a `.gd`. On return, the playtest diff may only touch `agent/` (flows, out). If it touched `src/`, `scenes/`, or `debug/`, that is a **process FAIL** — ask for a revert.
 
-A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
+A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC, but still with a short [tree](file-tree.md) (`[~] path  # what changes`) and OK before touching anything. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 
 ## 1. Startup (you ask and you run commands)
 
-If the user wants a game / new feature and artifacts are missing, **do not wait** for them to type the slash: execute the matching command (read `commands/*.md` in the kit or `.cursor/commands/` in the project).
+If the user wants a game / new feature and artifacts are missing, **do not wait** for them to type the slash: execute the matching command (Claude Code: `Skill` tool with the command name; otherwise read `../../commands/<name>.md` — `~/.claude/commands/` or `~/.cursor/commands/`, or the project’s — and follow it).
 
 If the repo already has PRD/RULES, read them and `/workflow-status` if needed; do not regenerate artifacts.
 
 Order for a **new game**:
 
 1. Architecture Clean vs standard — **ask** (layered skill). No answer: do not scaffold.
-2. Multiplayer — **ask** (AskQuestion if available) **before** copying `addons/mp_kit` or writing RPCs:
+2. Multiplayer — **ask** (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available) **before** copying `addons/mp_kit` or writing RPCs:
    - **No multiplayer** — do not install MpKit. No RPCs, no `MultiplayerSpawner`.
    - **Local / Wi-Fi** (same device or LAN) — `MpKit.host()` listen-server (the host is a player).
    - **Online** (internet / VPS) — **dedicated server** in the same project: `MpKit.host_dedicated()`, clients `join(ip)`. Develop dedicated + clients from day one. Steam/WebRTC/matchmaking only if the product asks later. Do not pretend a listen server behind NAT is online.
@@ -54,6 +55,7 @@ Order for a **new game**:
 3. 2D / 3D — **ask** (or both).
    - **2D**: sprites via Aseprite MCP **only** if the user wants (references). Skill [godot-animation](../godot-animation/SKILL.md).
    - **3D**: **ask** if they want the Blender MCP ([official docs](https://www.blender.org/lab/mcp-server/)). If yes: install it, ask for references, export `.glb` into the game. If no: 3D placeholder. Guide: [assets.md](../godot-composition-first/assets.md).
+   - **Materials / textures** (2D or 3D): when a surface stops being a placeholder and the user has no texture, say it can be created with **Material Maker** (procedural, exports PNGs + `.tres`). Only with OK + references. Skill [godot-material-maker](../godot-material-maker/SKILL.md) / `/create-material`.
 4. `/create-prd` → `PRD.md` (for games: a short GDD; see that command). Document MP type and 2D/3D.
 5. If style or refs already exist: `/create-visual-guide` → `VISUAL.md`. If not, **ask** before any visual pass.
 6. `/verify-prd`
@@ -64,7 +66,9 @@ Order for a **new game**:
 11. Implement RFC by RFC with the pipeline below
 12. `/workflow-status` when they ask where things stand
 
-Research (Godot API, a pattern, an addon, a shader): `explore` subagent or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references. If **3D**: **ask** and install the Blender MCP only with OK + references. The orchestrator summarizes; do not paste dumps.
+Research (Godot API, a pattern, an addon, a shader): exploration subagent (`Explore` in Claude Code, `explore` in Cursor) or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references. If **3D**: **ask** and install the Blender MCP only with OK + references. The orchestrator summarizes; do not paste dumps.
+
+If the user wants a mechanic or feature “like in X” (another game or app): say it can be **deduced** (observe, measure) or **decompiled** with [REA](https://github.com/Joelnicolass/rea) to understand how it works — only with software the user owns or is authorized to examine, extracting behavior, not code or assets. You run the investigation (not a developer) and it lands in the `F<n>`; then `/implement-feature`. Skill [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) / `/reverse-engineer`.
 
 Mid-work scope changes: `/manage-changes`.
 
@@ -72,7 +76,7 @@ Mid-work scope changes: `/manage-changes`.
 
 One RFC at a time. Predecessors done.
 
-Small cut (one component, one `@export`, no test scene that could cheat): the plan stays in this chat. Do not launch a tech lead.
+Small cut (one component, one `@export`, no test scene that could cheat): this chat builds the plan and the tree (no tech lead); they are still shown and OK is still awaited.
 
 Cut with a tree or with `res://debug/`:
 
@@ -105,7 +109,7 @@ The subagent prompt includes: repo path, RFC id, architecture style, **MP type**
 
 Do not launch developer and reviewer in parallel on the same RFC. Tech-lead on independent RFCs may run in parallel.
 
-Without the [file tree](file-tree.md) there is no “OK, implement”.
+Without the [file tree](file-tree.md) there is no “OK, implement”. **Always**, even for a one-line change: before creating, modifying, or deleting files, show the tree with `[+]` new / `[~]` modified / `[-]` deleted and wait for OK.
 
 ## 3. Do not
 
@@ -117,7 +121,8 @@ Without the [file tree](file-tree.md) there is no “OK, implement”.
 - Put score, copy, or title netcode in `addons/mp_kit`.
 - A second OK for playtest: the tree already included `res://debug/` and the action. A visual pass is still asked, and without `VISUAL.md` there is no look.
 - A visual pass without style/references: do not invent a look.
-- Install MCP (Aseprite, Blender, Engram) or create art without asking.
+- Install MCP (Aseprite, Blender, Engram, REA), Material Maker, or create art without asking.
+- Decompile software without the user's authorization, or paste the original's pseudocode / assets into the game.
 - Hardcoded feel. Choose Tween or `AnimationPlayer` per clip, not by habit. Juicy feel: `/add-juicy`, not a `World.gd` of particles.
 - `enum` + `match` for actor states: `/add-state-machine`.
 - Platformer without coyote/buffer: `/add-platformer-2d`, not a bare `is_on_floor()`.

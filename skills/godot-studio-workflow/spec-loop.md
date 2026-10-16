@@ -31,7 +31,7 @@ Authority: `PRD.md` > `FEATURES.md` > `RULES.md` > `VISUAL.md` > RFC > generated
 
 Whoever **writes** does not self-validate. Developer ≠ reviewer ≠ playtester ≠ visual.
 
-When launching a `Task`, paste [compact-rules.md](compact-rules.md) (subagents do not see this chat).
+When launching a subagent, paste [compact-rules.md](compact-rules.md) (subagents do not see this chat).
 
 ## Three ways to validate
 
