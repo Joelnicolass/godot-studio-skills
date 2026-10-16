@@ -2,3 +2,7 @@
 .godot/
 /android/
 script_templates/
+
+# AgentKit run output
+agent/out/*
+!agent/out/.gdignore

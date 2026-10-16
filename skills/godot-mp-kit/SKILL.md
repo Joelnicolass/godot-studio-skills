@@ -18,7 +18,7 @@ Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 
 ## Alcance de red (obligatorio)
 
-**Preguntar siempre** (AskQuestion si está disponible) **antes** de copiar el addon o de escribir RPCs. No asumas LAN.
+**Preguntar siempre** (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está) **antes** de copiar el addon o de escribir RPCs. No asumas LAN.
 
 | Elección | Qué hacer |
 |----------|-----------|
@@ -62,7 +62,7 @@ Guía humana (inspector, paso a paso, túnel custom, salas hub y cola): `addons/
 
 1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit` **antes** del flow).
 2. Tools → **MpKit: New session flow...** (o `extends MpFlow`). Asigná boot/world. `play_solo()` / `host_lan()` / `join_lan()`. 1P: no llames `host()` a mano.
-3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). El cliente pide `world_ready` solo; no hace falta un nodo `MpWorldReady`.
+3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). Retiene los synchronizers de su parte de la escena (también los estáticos); el cliente avisa solo que está listo; no hace falta un nodo `MpWorldReady`.
 4. Pawns: hijo `MpReplicate` + `submit_*` con `MpAuthority.accept_command(self, player_slot)`.
 5. LAN: `MpFlow` ya hace `advertise` en el host; el lobby hace `browse` (o `MpBootMenu`). Online: dedicated + IP pública, no `host()` detrás de NAT.
 
@@ -118,17 +118,17 @@ func submit_x(payload) -> void:
 
 ## Handshake de spawn (obligatorio)
 
-El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cliente **sigue en el lobby**; ese spawn se pierde. `MpSpawner` (default `hold_until_world_ready`) usa la visibilidad por peer del `MultiplayerSynchronizer`: los actores nacen ocultos y cada peer se revela en `client_world_ready`; recién ahí Godot manda spawn + sync emparejados.
+El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cliente **sigue en el lobby**; la ruta falla y Godot no la reintenta, así que ese spawner (o nodo estático con sync) queda muerto para ese peer. `MpSpawner` (default `hold_until_world_ready`) usa la visibilidad por peer del `MultiplayerSynchronizer`: todo lo que le pertenece en la escena queda oculto y cada peer se revela cuando su propia copia del spawner avisa que está lista; recién ahí Godot manda spawn + sync emparejados. Los actores sin synchronizer reciben un `MpSpawnGate` vacío (si no, Godot los manda a todos).
 
 ```
 Server broadcast_load_world() + glue carga el mundo en el proceso servidor
   → listen host add_child(pawn local) en _ready; nace oculto para peers no listos
-  → cliente carga escena; MpSpawner pide request_world_ready() (deferred)
-  → MpSpawner revela al peer (set_visibility_for) → Godot manda spawn + sync
+  → cliente carga escena; MpSpawner pide request_world_ready() + rpc_spawner_ready (deferred)
+  → el MpSpawner del servidor revela al peer (set_visibility_for) → Godot manda spawn + sync
   → MpSlotSpawner (o glue) spawnea el slot que acaba de entrar
 ```
 
-No desparentes actors en glue: el kit ya revela al `client_world_ready`.
+No desparentes actors en glue: el kit ya revela por peer. Los synchronizers van en la escena (o se agregan antes del `add_child` / en el `_ready` del actor), nunca diferidos. Salas hub: un subárbol + `MpSpawner` por sala con `room_id` (README → Actores por sala).
 
 Identidad del actor (`player_slot`, etc.): propiedades del `MultiplayerSynchronizer` con `spawn = true`, o el nombre (`Pawn_2` / `Ship_2`).
 
@@ -138,7 +138,7 @@ Rejoin: no resetear score; snapshot + `load_world_to`. `MpSpawner` revela de nue
 
 ## Snapshots vs transforms
 
-- Posición/rotación/visible: `MultiplayerSynchronizer` (`MpAuthority.ensure_sync`).
+- Posición/rotación/visible: `MultiplayerSynchronizer` en la escena (Wire replication), o `MpAuthority.ensure_sync` antes del `add_child`.
 - Timer/score/vidas: `to_snapshot()` a 2–10 Hz vía `MpKit.push_snapshot` (Timer, no cada frame de `_process`).
 - Eventos discretos (`+N` flotante): RPC `authority` en un nodo **vuestro**, no en MpKit.
 

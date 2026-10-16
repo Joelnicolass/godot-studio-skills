@@ -1,0 +1,60 @@
+{
+  "scene": "res://scenes/ui/boot.tscn",
+  "wait_first": 1.0,
+  "steps": [
+    {
+      "click": "%World3D"
+    },
+    {
+      "click": "%PlaySolo"
+    },
+    {
+      "wait_until": {
+        "node": "Actors/Pawn_1",
+        "visible_in_tree": true,
+        "timeout": 5
+      }
+    },
+    {
+      "wait_until": {
+        "node": "%Status",
+        "text_contains": "1P",
+        "timeout": 5
+      }
+    },
+    {
+      "shot": "solo_3d_01_spawned.png"
+    },
+    {
+      "print": {
+        "node": "Actors/Pawn_1",
+        "prop": "position"
+      }
+    },
+    {
+      "press": {
+        "name": "move_right",
+        "hold": 0.6
+      }
+    },
+    {
+      "print": {
+        "node": "Actors/Pawn_1",
+        "prop": "position"
+      }
+    },
+    {
+      "shot": "solo_3d_02_moved.png"
+    },
+    {
+      "click": "%Leave"
+    },
+    {
+      "wait_until": {
+        "node": "%PlaySolo",
+        "visible_in_tree": true,
+        "timeout": 5
+      }
+    }
+  ]
+}

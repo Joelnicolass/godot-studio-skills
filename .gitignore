@@ -5,6 +5,7 @@ dist/
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+.claude/
 node_modules/
 pnpm-debug.log*
 .pnpm-store/

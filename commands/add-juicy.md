@@ -1,3 +1,7 @@
+---
+description: "Agrega feel jugoso (shake, hit-stop, VFX, post) a un evento que ya existe en el juego Godot."
+---
+
 Agregá **juicy** (jugoso) a un evento que ya existe en el **proyecto Godot del juego**: hit, land, jump, muerte, confirm de UI, spawn, etc.
 
 Esto **no** es una feature de reglas (`/implement-feature`). **No** es un pase UI vs `VISUAL.md` (`studio-visual`). **No** inventa gameplay nuevo.

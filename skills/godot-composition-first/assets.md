@@ -15,6 +15,10 @@ Respetá la licencia y la atribución de la página. No copies un FX de otro tí
 
 El pass no conoce puntaje ni sesión. Gameplay tweenea **ese** pass.
 
+## Materiales y texturas procedurales (Material Maker)
+
+**Preguntá primero.** Si una superficie (piso, pared, roca, terreno, tile 2D) necesita textura y el usuario no trajo una, ofrecé crearla con [Material Maker](https://github.com/RodZill4/material-maker): grafo `.ptex` → PNG por canal + material Godot (`.tres`). Sin OK + referencias: placeholder. Instalación, export por CLI y wiring: skill [godot-material-maker](../godot-material-maker/SKILL.md).
+
 ## Sprites 2D (Aseprite MCP)
 
 Animación: [godot-animation](../godot-animation/SKILL.md) (12 principios; Tween o `AnimationPlayer` según el clip).
@@ -26,7 +30,7 @@ Si dijo que sí: pixel art / spritesheet vía **Aseprite MCP**, no un `ColorRect
 Repo: [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp)
 
 1. Usuario OK + referencias.
-2. Si las tools MCP **ya están**: usalas. Si **no**: instalá (abajo), chat nuevo, dibujá.
+2. Si las tools MCP **ya están**: usalas. Si **no**: instalá (abajo), sesión nueva, dibujá.
 3. Exportá PNG / spritesheet al juego (`res://assets/…`) → `Sprite2D` / `AnimatedSprite2D`. El `.aseprite` puede ir junto al PNG.
 
 Flujo corto: paleta (`generate_color_ramp` o preset) → capas → silueta → `export_frame` a 8× para mirar → iterar → `export_sprite` / `export_spritesheet` al proyecto Godot.
@@ -41,7 +45,7 @@ Cloná el server (una vez, fuera del juego):
 git clone https://github.com/diivi/aseprite-mcp.git
 ```
 
-En Cursor → Settings → MCP, o en `~/.cursor/mcp.json` / `.cursor/mcp.json` del **juego**:
+Claude Code: `.mcp.json` en la raíz del **juego** (o `claude mcp add`). Cursor: Settings → MCP, o `~/.cursor/mcp.json` / `.cursor/mcp.json` del juego. Mismo contenido:
 
 ```json
 {
@@ -57,7 +61,7 @@ En Cursor → Settings → MCP, o en `~/.cursor/mcp.json` / `.cursor/mcp.json` d
 }
 ```
 
-En macOS el `uv` suele estar en `/opt/homebrew/bin/uv`. Chat **nuevo** después de guardar.
+En macOS el `uv` suele estar en `/opt/homebrew/bin/uv`. Sesión **nueva** después de guardar (en Claude Code, `/mcp` muestra si conectó).
 
 Si el MCP no arranca: no finjas el sprite; avisá qué falta (Aseprite, path, uv) y usá un placeholder `PlaceholderTexture2D` **solo** hasta que el usuario lo habilite.
 
@@ -77,11 +81,11 @@ El servidor ejecuta Python generado por la IA **sin** sandbox. No lo uses sobre 
 
 ### Instalar el MCP de Blender
 
-Requisitos (docs oficiales): **Blender 5.1 o más nuevo**, add-on Lab, cliente MCP (Cursor), servidor MCP.
+Requisitos (docs oficiales): **Blender 5.1 o más nuevo**, add-on Lab, cliente MCP (Claude Code o Cursor), servidor MCP.
 
 1. Blender → Edit → Preferences → Extensions → Get Extensions. Buscá **MCP** / Blender Lab e instalá el add-on oficial. (Drag & drop del repo Lab: dos veces — primero el repositorio, después el add-on.)
 2. En las preferencias del add-on: **Start MCP Server** (suele escuchar `localhost:9876`).
-3. En Cursor: Settings → MCP. Si el cliente acepta **`.mcpb`**, bajá el bundle de la [página de releases](https://www.blender.org/lab/mcp-server/) y agregalo. Si no: seguí las *setup instructions* de esa misma página (no uses un `uvx blender-mcp` comunitario: es **otro** protocolo).
-4. Chat **nuevo**. Verificá que las tools de Blender aparezcan. Si no: Blender abierto + server started + recargar MCP.
+3. En el cliente (Cursor: Settings → MCP; Claude Code: `claude mcp add` o `.mcp.json`). Si el cliente acepta **`.mcpb`**, bajá el bundle de la [página de releases](https://www.blender.org/lab/mcp-server/) y agregalo. Si no: seguí las *setup instructions* de esa misma página (no uses un `uvx blender-mcp` comunitario: es **otro** protocolo).
+4. Sesión **nueva**. Verificá que las tools de Blender aparezcan. Si no: Blender abierto + server started + recargar MCP.
 
-Si no arranca: no inventes un mesh; avisá qué falta (versión 5.1, add-on, server, Cursor MCP).
+Si no arranca: no inventes un mesh; avisá qué falta (versión 5.1, add-on, server, config MCP del cliente).

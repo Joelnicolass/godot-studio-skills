@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Quita skills, commands y subagentes de este kit. No toca otras piezas en ~/.cursor.
+# Quita skills, commands y subagentes de este kit. No toca otras piezas en ~/.cursor ni ~/.claude.
+#   ./uninstall.sh [--cursor | --claude | --all] [--project | --dest DIR]   (default: --cursor)
 # También quita godot-playtest / godot-agent-kit / /agent-kit / studio-playtester
 # si este instalador los copió desde godot-studio-playtest.
 set -euo pipefail
@@ -14,6 +15,8 @@ SKILL_NAMES=(
   godot-juicy
   godot-fsm
   godot-platformer-2d
+  godot-material-maker
+  godot-reverse-engineering
   godot-visual-qa
   godot-studio-memory
   godot-playtest
@@ -30,6 +33,8 @@ COMMAND_FILES=(
   add-juicy.md
   add-state-machine.md
   add-platformer-2d.md
+  create-material.md
+  reverse-engineer.md
   manage-changes.md
   new-mp-feature.md
   review-rfc.md
@@ -48,41 +53,26 @@ AGENT_FILES=(
 )
 
 MODE="global"
+HARNESS="cursor"
 DEST=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project) MODE="project"; shift ;;
+    --cursor) HARNESS="cursor"; shift ;;
+    --claude) HARNESS="claude"; shift ;;
+    --all) HARNESS="all"; shift ;;
     --dest)
       MODE="custom"
       DEST="${2:?--dest requiere un directorio}"
       shift 2
       ;;
     *)
-      echo "Uso: $0 [--project | --dest DIR]" >&2
+      echo "Uso: $0 [--cursor | --claude | --all] [--project | --dest DIR]" >&2
       exit 1
       ;;
   esac
 done
-
-case "$MODE" in
-  global)
-    SKILL_TARGET="${HOME}/.cursor/skills"
-    CMD_TARGET="${HOME}/.cursor/commands"
-    AGENT_TARGET="${HOME}/.cursor/agents"
-    ;;
-  project)
-    SKILL_TARGET="$(pwd)/.cursor/skills"
-    CMD_TARGET="$(pwd)/.cursor/commands"
-    AGENT_TARGET="$(pwd)/.cursor/agents"
-    ;;
-  custom)
-    SKILL_TARGET="$DEST"
-    parent="$(cd "$(dirname "$DEST")" && pwd)"
-    CMD_TARGET="${parent}/commands"
-    AGENT_TARGET="${parent}/agents"
-    ;;
-esac
 
 remove_named() {
   local target="$1"
@@ -102,6 +92,29 @@ remove_named() {
   done
 }
 
-remove_named "$SKILL_TARGET" "${SKILL_NAMES[@]}"
-remove_named "$CMD_TARGET" "${COMMAND_FILES[@]}"
-remove_named "$AGENT_TARGET" "${AGENT_FILES[@]}"
+remove_from_base() {
+  local base="$1"
+  remove_named "${base}/skills" "${SKILL_NAMES[@]}"
+  remove_named "${base}/commands" "${COMMAND_FILES[@]}"
+  remove_named "${base}/agents" "${AGENT_FILES[@]}"
+}
+
+if [[ "$MODE" == "custom" ]]; then
+  parent="$(cd "$(dirname "$DEST")" && pwd)"
+  remove_named "$DEST" "${SKILL_NAMES[@]}"
+  remove_named "${parent}/commands" "${COMMAND_FILES[@]}"
+  remove_named "${parent}/agents" "${AGENT_FILES[@]}"
+  exit 0
+fi
+
+case "$HARNESS" in
+  all) HARNESSES="cursor claude" ;;
+  *) HARNESSES="$HARNESS" ;;
+esac
+
+for harness in $HARNESSES; do
+  case "$MODE" in
+    global) remove_from_base "${HOME}/.${harness}" ;;
+    project) remove_from_base "$(pwd)/.${harness}" ;;
+  esac
+done

@@ -1,3 +1,7 @@
+---
+description: "Agrega una máquina de estados por composición (FsmMachine + FsmState, addon FsmKit)."
+---
+
 Agregá una **máquina de estados** por composición en el **proyecto Godot del juego**: hijos `FsmState` bajo un `FsmMachine`.
 
 Esto **no** es una feature de reglas (`/implement-feature`) salvo que el estado nuevo **sea** el alcance. **No** es el motor de plataformas (`/add-platformer-2d`). **No** inventa HP ni puntaje.

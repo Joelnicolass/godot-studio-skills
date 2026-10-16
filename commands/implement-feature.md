@@ -1,21 +1,27 @@
+---
+description: "Implementa una feature de gameplay o el slice vertical en el juego Godot: árbol, OK, código, review, playtest."
+argument-hint: "[feature]"
+---
+
 Implementá **una** feature de gameplay en el **proyecto Godot del juego**. Iterar un slice jugable gana a un PRD que define el título entero.
 
 Esto **no** es `/new-mp-feature` (eso solo scaffoldea un actor MpKit). Esto **no** es `/implement-rfc` (eso sigue un RFC ya escrito). Si ya hay un RFC con ID, usá `/implement-rfc <id>`.
 
-Si está cargada `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo. Corte chico (un componente, sin escena que pueda hacer trampa): el plan queda en este chat. Si hay árbol o `res://debug/`: `studio-tech-lead` → el usuario aprueba el corte **una vez** → `studio-developer` → `studio-reviewer` → `studio-playtester` sobre la escena del `F<n>`. No preguntes otra vez si se juega. Pase visual: preguntá, y sin `VISUAL.md` no hay look. Tester GUT solo si el usuario o RULES lo piden.
+Si está cargada `godot-studio-workflow`, el **orquestador** (este chat) no implementa solo. Corte chico (un componente, sin escena que pueda hacer trampa): el plan queda en este chat, pero el árbol se muestra y se espera el OK igual. Si hay árbol o `res://debug/`: `studio-tech-lead` → el usuario aprueba el corte **una vez** → `studio-developer` → `studio-reviewer` → `studio-playtester` sobre la escena del `F<n>`. No preguntes otra vez si se juega. Pase visual: preguntá, y sin `VISUAL.md` no hay look. Tester GUT solo si el usuario o RULES lo piden.
 
 Cuando vuelva el playtester, clasificá: criterio roto → developer, una corrección; la escena de debug ya muestra el resultado → reviewer; cache o CLI → este chat reimporta y relanza; falta la escena → `NEED_SETUP`, no un tech lead nuevo.
 
-Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
+Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Materiales / texturas: `/create-material` + `godot-material-maker`. Mecánica “como en X”: `/reverse-engineer` + `godot-reverse-engineering` antes de planificar. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
 
 ## 1. Acotar (antes de código)
 
-Si el pedido es vago, preguntá en un lote (AskQuestion si está):
+Si el pedido es vago, preguntá en un lote (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está):
 
 1. Qué hace el jugador / qué se ve. Una o dos frases.
 2. Dónde vive (escena, actor, HUD). Clean vs estándar **ya elegido**; no lo cambies.
 3. ¿Hay red? Si sí: local/WiFi u online. Si no: cero RPCs.
-4. 2D / 3D. Arte: placeholder salvo OK + referencias.
+4. 2D / 3D. Arte: placeholder salvo OK + referencias. Si hay superficies (piso, pared, terreno): ofrecé Material Maker.
+5. ¿Es “como en X” (otro juego / app)? Ofrecé deducirlo o decompilarlo con REA (`/reverse-engineer`, solo con autorización) y usá el informe para los criterios.
 
 No entrevistas un GDD completo. No corras `/create-prd` ni `/generate-rfcs` “por las dudas”.
 
@@ -38,7 +44,7 @@ Autoridad si hay conflicto: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > 
 
 `studio-tech-lead` (o este chat si el corte es 1–3 archivos):
 
-- Árbol + mapa de responsabilidades ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
+- Árbol con `[+]` / `[~]` / `[-]` + mapa de responsabilidades ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
 - Escena de prueba en `res://debug/`: estado inicial fácil, resultado todavía no ocurrido, acción de InputMap. Queda escrita en el `F<n>` (o en el RFC si hay contrato).
 - Qué es `.tres`, qué es nodo, qué es `@export`
 - Motion: evaluar Tween vs `AnimationPlayer` (skill `godot-animation`); knobs en inspector o timeline

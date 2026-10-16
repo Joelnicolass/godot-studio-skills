@@ -3,7 +3,7 @@ name: godot-studio-workflow
 description: >-
   Orquesta un juego Godot 4 de la idea a una base simple y escalable:
   entrevista al usuario (Clean vs estándar, tipo de multiplayer, 2D/3D, MCP
-  Aseprite/Blender), corre commands de producto (GDD corto opcional, features,
+  Aseprite/Blender, Material Maker, REA), corre commands de producto (GDD corto opcional, features,
   rules, RFCs), itera con /implement-feature y delega en tech-lead /
   developer / reviewer (tester, playtester y visual opcionales). Usar al
   arrancar un juego, un proyecto Godot, implementar una feature, PRD, RFC, o
@@ -14,11 +14,11 @@ description: >-
 
 El **agente principal de este chat** es el orquestador. Habla con el usuario. No descarga el producto entero en un solo subagente.
 
-Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows: skill `godot-agent-kit` del módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh` de este kit la trae). Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige. Feel jugoso: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`.
+Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows: skill `godot-agent-kit` del módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh` de este kit la trae). Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige. Feel jugoso: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Materiales / texturas procedurales: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. Mecánica “como en X” (ingeniería inversa): [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) + `/reverse-engineer`.
 
 Objetivo: un juego Godot 4 con **base chica y clara**. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables.
 
-Roles (`Task` con `subagent_type` = su `name`):
+Roles (tool de subagentes — `Agent` en Claude Code, `Task` en Cursor — con `subagent_type` = su `name`):
 
 | Rol | Subagente | Cuándo |
 |-----|-----------|--------|
@@ -29,17 +29,17 @@ Roles (`Task` con `subagent_type` = su `name`):
 | Playtester | `studio-playtester` (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) | Después del review, sobre `res://debug/` o la escena del jugador. No pide un segundo OK |
 | Visual | `studio-visual` | **Solo** si el usuario quiere pase UI; exige `VISUAL.md` / refs |
 
-Cada `Task` lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat.
+Cada prompt de subagente lleva el bloque de [compact-rules.md](compact-rules.md). Los subagentes **no** ven este chat, **no** le preguntan al usuario y **no** lanzan otros subagentes: si a un rol le falta una decisión (arte, MCP, alcance), la devuelve y el orquestador pregunta.
 
 Si el subagente `studio-playtester` **no existe** (el módulo playtest no está instalado), no lo inventes ni lo simules con otro rol: ofrecé playtest manual (el usuario corre F5 y vos pasás los criterios del slice como checklist) o saltear el paso.
 
 Al lanzar `studio-playtester`: pasale el path `res://debug/…` y la acción del InputMap que quedaron en el `F<n>` o el RFC. El playtester **juega** esa escena; no la construye y no usa `call()` para armarla. Si esa escena no está, tiene que devolver `NEED_SETUP`, no inventar un mundo. Ordenale leer `harness.md` de `godot-agent-kit` **antes** de escribir un `.gd`. Al volver, el diff del playtest solo puede tocar `agent/` (flows, out). Si tocó `src/`, `scenes/` o `debug/`, **FAIL de proceso** — pedí revert.
 
-Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
+Un typo, un `@export` o un bug con repro y 1–3 archivos: **este chat**, sin RFC nuevo, pero igual con [árbol](file-tree.md) corto (`[~] ruta  # qué cambia`) y OK antes de tocar. Feature nueva: `/implement-feature` (FEATURES crece). RFC solo si el corte es grande o el usuario pide contrato. Alcance que se mueve a mitad de un RFC: `/manage-changes`.
 
 ## 1. Arranque (vos preguntás y ejecutás)
 
-Si el usuario quiere un juego / feature nueva, **no esperes** a que tipee el slash: ejecutá el command correspondiente.
+Si el usuario quiere un juego / feature nueva, **no esperes** a que tipee el slash: ejecutá el command correspondiente (Claude Code: tool `Skill` con el nombre del command; si no está, leé `../../commands/<nombre>.md` — `~/.claude/commands/` o `~/.cursor/commands/`, o los del proyecto — y seguilo).
 
 **Iterar gana a un PRD con todo definido.** Un slice jugable esta semana vale más que un GDD de 20 páginas. `/create-prd` es opcional y **corto**; no entrevistas el título entero antes de código.
 
@@ -48,7 +48,7 @@ Si el repo ya tiene PRD/RULES, leelos y `/workflow-status` si hace falta; no reg
 Orden para un **juego nuevo**:
 
 1. Arquitectura Clean vs estándar — **preguntar** (skill layered). Sin respuesta: no scaffoldear.
-2. Multiplayer — **preguntar** (AskQuestion si está disponible), **antes** de copiar `addons/mp_kit` o de escribir RPCs:
+2. Multiplayer — **preguntar** (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está), **antes** de copiar `addons/mp_kit` o de escribir RPCs:
    - **Sin multiplayer** — no instales MpKit. Sin RPCs, sin `MultiplayerSpawner`.
    - **Local / WiFi** (mismo dispositivo o LAN) — `MpKit.host()` listen-server (el host es jugador).
    - **Online** (internet / VPS) — **dedicated server** en el mismo proyecto: `MpKit.host_dedicated()`, clientes `join(ip)`. Desarrollá dedicated + clientes desde el día uno. Steam/WebRTC/matchmaking solo si el producto los pide después. No fingir que un listen detrás de NAT es online.
@@ -56,6 +56,7 @@ Orden para un **juego nuevo**:
 3. 2D / 3D — **preguntar** (o ambos).
    - **2D**: sprites vía Aseprite MCP **solo** si el usuario quiere (referencias). Skill [godot-animation](../godot-animation/SKILL.md) (12 principios; Tween o AnimationPlayer según el clip).
    - **3D**: **preguntá** si quiere el MCP de Blender ([docs oficiales](https://www.blender.org/lab/mcp-server/)). Si sí: instalalo, pedí referencias, exportá `.glb` al juego. Si no: placeholder 3D. Guía: [assets.md](../godot-composition-first/assets.md).
+   - **Materiales / texturas** (2D o 3D): cuando una superficie deja de ser placeholder y no hay textura del usuario, decí que se puede crear con **Material Maker** (procedural, export PNG + `.tres`). Solo con OK + referencias. Skill [godot-material-maker](../godot-material-maker/SKILL.md) / `/create-material`.
 4. Slice vertical: `/implement-feature` (o un RFC-001 si piden contrato). Pilares + loop + una escena. No hace falta FEATURES de todo el juego.
 5. Si quieren un GDD escrito: `/create-prd` → `PRD.md` **corto y vivo** (solo el slice + no-goals). No definas sistemas futuros.
 6. Si ya hay estilo o refs: `/create-visual-guide` → `VISUAL.md`. Si no, **preguntá** antes de cualquier pase visual.
@@ -64,7 +65,9 @@ Orden para un **juego nuevo**:
 9. `/test-strategy` solo si el usuario quiere tests o el PRD los pide
 10. `/workflow-status` cuando pida “dónde estamos”
 
-Investigación (API Godot, un patrón, un addon, un shader): subagente `explore` o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
+Investigación (API Godot, un patrón, un addon, un shader): subagente de exploración (`Explore` en Claude Code, `explore` en Cursor) o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
+
+Si el usuario quiere una mecánica o feature “como en X” (otro juego o app): decí que se puede **deducir** (observar, medir) o **decompilar** con [REA](https://github.com/Joelnicolass/rea) para entender cómo funciona — solo con software propio o autorizado, y extrayendo comportamiento, no código ni assets. La investigación la corrés vos (no un developer) y queda en el `F<n>`; después, `/implement-feature`. Skill [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) / `/reverse-engineer`.
 
 Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva chica: `/implement-feature`.
 
@@ -72,7 +75,7 @@ Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva ch
 
 Una feature / un RFC a la vez. Predecesores listos.
 
-Corte chico (un componente, un `@export`, sin escena de prueba que pueda hacer trampa): el plan queda en este chat. No lances tech lead.
+Corte chico (un componente, un `@export`, sin escena de prueba que pueda hacer trampa): el plan y el árbol los arma este chat (sin tech lead); igual se muestran y se espera el OK.
 
 Corte con árbol o con `res://debug/`:
 
@@ -105,7 +108,7 @@ El prompt al subagente incluye: ruta del repo, id de feature o RFC, estilo de ar
 
 No lances developer y reviewer en paralelo sobre el mismo corte. Tech-lead de features independientes sí puede ir en paralelo.
 
-Sin [árbol](file-tree.md) no hay “OK, implementá”.
+Sin [árbol](file-tree.md) no hay “OK, implementá”. **Siempre**, incluso para un cambio de una línea: antes de crear, modificar o borrar archivos, mostrá el árbol con `[+]` nuevo / `[~]` modificado / `[-]` borrado y esperá el OK.
 
 ## 3. Qué no hacer
 
@@ -118,7 +121,8 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”.
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
 - Un segundo OK para playtest: el árbol ya incluía `res://debug/` y la acción. El pase visual sí se pregunta, y sin `VISUAL.md` no hay look.
 - Pase visual sin estilo/referencias: no inventar look.
-- Instalar MCP (Aseprite, Blender, Engram) o crear arte sin preguntar.
+- Instalar MCP (Aseprite, Blender, Engram, REA), Material Maker, o crear arte sin preguntar.
+- Decompilar software sin autorización del usuario, o pegar pseudocódigo / assets del original en el juego.
 - Feel hardcodeado. Elegí Tween o `AnimationPlayer` por clip, no por costumbre. Feel jugoso: `/add-juicy`, no un `World.gd` de partículas.
 - `enum` + `match` de estados en el actor: `/add-state-machine`.
 - Platformer sin coyote/buffer: `/add-platformer-2d`, no un `is_on_floor()` pelado.

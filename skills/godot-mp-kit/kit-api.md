@@ -14,7 +14,7 @@ Archivos (`res://addons/mp_kit/`):
 | `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer, `accept_room_command` |
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — un canal del túnel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / lerp opcional |
-| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que espera `world_ready` |
+| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que retiene su alcance por peer hasta que el spawner de ese peer está listo |
 | `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — un pawn packed por slot ocupado |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — lobby drop-in (`mp_boot_menu.tscn`) |
 | `mp_flow.gd` | `class_name MpFlow` — flow opcional (escenas, host/join/1P, catálogo de mundos) |
@@ -91,6 +91,7 @@ MpAuthority.ensure_sync(node, PackedStringArray([".:position", ".:rotation"]))
 MpAuthority.freeze_rigid_proxy(body)     # RigidBody2D/3D; no-op si sos authority
 MpAuthority.should_send_command()        # networked y no server
 MpAuthority.accept_command(self, player_slot)  # en submit_*: server + sender == peer del slot
+MpAuthority.command_slot(self)                 # en submit_* de un nodo compartido: slot del sender (0 = rechazar)
 MpAuthority.accept_room_command(self, room_id, seat)  # server + sender == peer_for_seat
 ```
 
@@ -99,6 +100,7 @@ MpAuthority.accept_room_command(self, room_id, seat)  # server + sender == peer_
 | Método | Condición |
 |--------|-----------|
 | `accept_command(node, player_slot)` | Servidor y `get_remote_sender_id() == MpKit.peer_id_for(player_slot)` |
+| `command_slot(node)` | Servidor: slot del sender (`0` fuera del servidor, sin red o peer desconocido) |
 | `accept_room_command(node, room_id, seat)` | Servidor y `get_remote_sender_id() == MpKit.rooms.peer_for_seat(room_id, seat)` |
 
 ## MpRoomDirectory
@@ -145,18 +147,22 @@ Cuando `queued_count() >= party_size`: FIFO toma `party_size`, `create_room(part
 
 ## MpSpawner
 
-Extiende `MultiplayerSpawner` nativo. Usa el mecanismo de **visibilidad por peer** del `MultiplayerSynchronizer`: Godot no manda el spawn a un peer hasta que el synchronizer del actor sea visible para él, y al revelarlo manda spawn + sync emparejados.
+Extiende `MultiplayerSpawner` nativo. Usa la **visibilidad por peer** del `MultiplayerSynchronizer`: Godot manda un nodo spawneado a un peer en cuanto alguno de sus synchronizers le es visible (un nodo sin ninguno va a todos), y un nodo estático con sync solo sincroniza donde es visible.
 
-Default `hold_until_world_ready = true` (solo actúa en el servidor):
+Default `hold_until_world_ready = true`:
 
-1. Cada actor que entra bajo `spawn_path` nace oculto (`public_visibility = false` en sus synchronizers).
-2. En `client_world_ready`, `set_visibility_for(peer, true)` → Godot entrega spawn + sync a ese peer.
-3. `peer_left` → visibilidad off para ese peer (limpio para rejoin).
+1. Servidor: todo synchronizer que le pertenece al spawner nace oculto, también los que se agregan después. Dueño: los spawners cuyo padre es el ancestro más cercano del synchronizer con un hijo `MpSpawner`; si no hay, todos los `MpSpawner` de la escena. Bajo `spawn_path`, este spawner.
+2. Cliente: el spawner llama `MpKit.request_world_ready()` y `rpc_spawner_ready` sobre sí mismo (deferred).
+3. Servidor: con `rpc_spawner_ready` de un peer, `set_visibility_for(peer, true)` en lo que retiene → Godot entrega spawn + sync.
+4. `room_id` (opcional, en el servidor): revela solo a peers sentados en esa sala; `peer_seated` / `peer_unseated` revelan / ocultan (al levantarse se despawnea en ese cliente).
+5. `gate_unsynced_spawns` (default on): un actor sin synchronizer recibe un synchronizer vacío `MpSpawnGate` en todos los peers al entrar a `spawn_path`.
 
-- Inspector: `spawn_path` = padre de los actores (queda intacto; el cliente lo necesita para instanciar). `extra_scenes` = packed scenes.
+- Inspector: `spawn_path` = padre de los actores. `extra_scenes` = packed scenes.
 - Glue: `add_child(node, true)` bajo ese padre, cuando quieras. Identidad (`player_slot`, etc.) va en el `MultiplayerSynchronizer` con `spawn = true`, no en un RPC.
+- Synchronizers: en la escena, o `MpAuthority.ensure_sync` antes del `add_child` / en el `_ready` del propio actor. Los posteriores faltan en el paquete de spawn (el que entra tarde: `ERR_INVALID_DATA`); el spawner les hace `push_error`.
+- `is_revealed_to(peer_id)` (servidor): ese peer tiene el spawner y pasa el `room_id`.
 - `hold_until_world_ready = false` solo si todos los peers ya tienen esta escena.
-- Cliente: este mismo nodo hace `request_world_ready()` deferred. Un `MpSpawner` basta.
+- Costo: por revelado / cambio de asiento, un recorrido de la escena; por nodo que entra al árbol, un chequeo de tipo. Nada por frame.
 
 ## MpSlotSpawner
 
@@ -168,7 +174,7 @@ Opcional / legado. Si la escena ya tiene un `MpSpawner`, este nodo no-op. Escena
 
 ## MpReplicate
 
-Hijo del actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Solo proxies; la authority no interpola.
+Hijo del actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Solo proxies; la authority no interpola. `sync_properties` es lo que Wire replication pone en el synchronizer nuevo; el synchronizer vive en la escena (no se crea en runtime; `push_error` si falta).
 
 ## MpBootMenu
 
@@ -231,7 +237,7 @@ MpLan.browse(parent)              # signal rooms_changed(rooms: Array) — **LAN
 |--------------|------------|
 | 1P abre puerto | `is_networked()` false hasta `host()`/`join()` |
 | HUD usa unique_id | `local_slot()` (0 = dedicated) |
-| Spawn antes de escena cliente | `MpSpawner.hold_until_world_ready` + `request_world_ready` |
+| Spawn antes de escena cliente | `MpSpawner.hold_until_world_ready` + `rpc_spawner_ready` |
 | RigidBody cliente pelea con sync | `freeze_rigid_proxy` |
 | `leave()` con peer null | `OfflineMultiplayerPeer` |
 | Host se cae | `server_lost` |

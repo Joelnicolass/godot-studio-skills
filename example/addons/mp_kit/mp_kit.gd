@@ -173,15 +173,18 @@ func push_snapshot_to(peer_id: int, data: Dictionary) -> void:
 	rpc_snapshot.rpc_id(peer_id, data)
 
 
+## Peers reload the world: their world_ready (and spawner reveals) start over.
 func broadcast_load_world() -> void:
 	if not is_server():
 		return
+	_world_ready.clear()
 	rpc_load_world.rpc()
 
 
 func load_world_to(peer_id: int) -> void:
 	if not is_server():
 		return
+	_world_ready.erase(peer_id)
 	rpc_load_world.rpc_id(peer_id)
 
 

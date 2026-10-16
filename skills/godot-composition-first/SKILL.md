@@ -6,7 +6,8 @@ description: >-
   sockets @export tipados, %UniqueName, InputMap y valores del editor por
   encima de hardcode. Prioriza reutilizar componentes en shared/addons.
   Usar al crear o editar .tscn, GDScript, shaders (Godot Shaders / Shadertoy),
-  sprites 2D (Aseprite MCP), modelos 3D (Blender MCP), FSM, HUD, o al decidir
+  sprites 2D (Aseprite MCP), modelos 3D (Blender MCP), materiales
+  procedurales (Material Maker), FSM, HUD, o al decidir
   entre herencia, constantes, Resources e inspector.
 ---
 
@@ -105,6 +106,8 @@ Shaders: un efecto, un archivo. **No inventes** el FX si hay catálogo: [Godot S
 Sprites 2D: **preguntá** si quiere MCP/sprites y pedí **referencias**. Skill [godot-animation](../godot-animation/SKILL.md). Si dice que sí: MCP [Aseprite](https://github.com/diivi/aseprite-mcp) ([assets.md](assets.md)). Si no: placeholder. No un sprite inventado.
 
 3D: **preguntá** si quiere el MCP de [Blender](https://www.blender.org/lab/mcp-server/). Si sí: instalalo, pedí referencias, exportá `.glb`. Si no: placeholder. Detalle en [assets.md](assets.md).
+
+Materiales / texturas (piso, pared, terreno, tile 2D): **preguntá** si quiere crearlos con [Material Maker](https://github.com/RodZill4/material-maker) y pedí referencias. Cada superficie es un `.tres` que se elige en el inspector. Skill [godot-material-maker](../godot-material-maker/SKILL.md).
 
 ## 6. Cómo implementar un componente
 

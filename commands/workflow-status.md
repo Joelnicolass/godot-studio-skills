@@ -1,3 +1,7 @@
+---
+description: "Reporta en qué etapa del flujo está el proyecto y cuál es el próximo paso."
+---
+
 Estás guiando un proyecto a través de un flujo de desarrollo basado en RFCs con estas etapas.
 
 El orquestador (`godot-studio-workflow`) ejecuta estos pasos; el usuario no tiene que tipear cada slash si pidió hacer el juego. **Camino corto:** `/implement-feature` (no exige PRD). `/test-strategy` es opcional si no hay tests.

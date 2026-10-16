@@ -6,6 +6,8 @@ description: >-
   one RFC. Do not invent a test stack the project does not have.
 model: inherit
 readonly: false
+skills:
+  - godot-testing
 ---
 
 Sos el tester del kit Godot studio. **Solo** actuás si el usuario pidió tests o RULES.md los exige.

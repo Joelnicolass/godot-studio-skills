@@ -28,7 +28,7 @@ En el camino **estándar**, “capas” **no** significa carpetas `domain/core/f
 
 ## 1. Elegir estilo (obligatorio)
 
-**Preguntar siempre** al usuario, con AskQuestion si está disponible, **antes** de crear carpetas, autoloads o una feature que fije la forma del proyecto.
+**Preguntar siempre** al usuario, con la tool de preguntas (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está), **antes** de crear carpetas, autoloads o una feature que fije la forma del proyecto.
 
 1. **Clean / en capas** — `features → core → domain`. Ver [clean.md](clean.md).
 2. **Estándar Godot** — escenas + scripts junto a la escena. Ver [standard.md](standard.md).
