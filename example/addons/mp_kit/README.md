@@ -16,7 +16,8 @@ Esta guía es para **configuración manual en el editor**. Los identificadores d
 6. [Qué va por cada canal](#qué-va-por-cada-canal)
 7. [Menú Tools](#menú-tools)
 8. [Piezas del addon](#piezas-del-addon)
-9. [Salas hub y cola (opcional)](#salas-hub-y-cola-opcional)
+9. [Servidor de salas](#servidor-de-salas)
+10. [Salas hub y cola (opcional)](#salas-hub-y-cola-opcional)
 
 ## Instalar
 
@@ -36,7 +37,33 @@ El autoload `MpKit` va **antes** de `MpFlow` (o tu subclase). En CI/headless dej
 2. 4.º argumento opcional: `PackedStringArray` de nombres de canal del túnel (vacío = todos permitidos).
 3. **No** metas reglas de juego en `mp_kit.gd`.
 
-Online = dedicated con IP pública y UDP abierto. En local: `godot --headless --path . -- --dedicated` y clientes a `127.0.0.1`.
+Online = dedicated con IP pública y UDP abierto (o TCP con `--transport=ws`, ver [Transporte](#transporte-enet-udp-o-websocket-tcp)). En local: `godot --headless --path . -- --dedicated` y clientes a `127.0.0.1`.
+
+## Transporte: ENet (UDP) o WebSocket (TCP)
+
+El transporte es elegible; la API, los RPC y la replicación son los mismos con los dos. `MpTransport` (`mp_transport.gd`) solo arma el `MultiplayerPeer`.
+
+| | ENet (por defecto) | WebSocket |
+|---|---|---|
+| Valor | `enet` | `ws` |
+| Protocolo | UDP | TCP (`WebSocketMultiplayerPeer`) |
+| Export web | no (el navegador no abre UDP) | si |
+| Túnel TCP (ngrok, etc.) | no | si |
+
+- **Flag**: `--transport=ws` (o `enet`). Lo leen `MpKit` (`MpKit.transport`, antes de `host()`/`host_dedicated()`/`join()`; el glue puede fijarlo a mano) y `MpLobbyClient.transport`.
+- **Servidor de salas**: `MpLobbyConfig.transport` (`.tres` o `--transport=ws`). Sirve el lobby con ese transporte, busca puertos libres de las partidas con TCP o UDP según corresponda y **se lo pasa al dedicado hijo** (`transport` está en `agent_fields`, llega como `--transport=ws`).
+- Mismo transporte en todos los procesos: cliente, servidor de salas y dedicados. Un cliente ENet no habla con un servidor WS.
+- Dentro de WebSocket el lobby y la partida usan puertos TCP; abrí TCP (no UDP) en el firewall del VPS.
+- No hay tope de clientes en el peer WS: el tope lo ponen `max_connections` (lobby) y la admisión por ticket (partida).
+
+### `wss://` (TLS) para el VPS
+
+El kit habla `ws://`. Para `wss://` hay dos caminos, sin cambiar el juego:
+
+1. **Proxy inverso (recomendado)**: nginx/Caddy termina TLS en 443 con el certificado del dominio y reenvía a los puertos WS locales (`proxy_pass http://127.0.0.1:7700;` con `Upgrade`/`Connection`). El cliente web usa `wss://juego.example.com/...`. Un puerto publico por partida es incomodo: mapeá una ruta o un subdominio por rango, o usá un puerto TLS por partida.
+2. **TLS en Godot**: `MpTransport.create_server(kind, port, max, TLSOptions.server(key, cert))` y `create_client(kind, host, port, TLSOptions.client())`. Hoy `MpKit`/lobby no los exponen; si hace falta se agrega un `@export` con el recurso de clave y certificado. En `create_client`, `host` puede ser ya una URL completa (`wss://dominio/ruta`).
+
+Probar: `TRANSPORT=ws bash agent/run_034d.sh` y `TRANSPORT=ws bash agent/run_034e.sh` (los scripts pasan `--transport=$TRANSPORT`; sin variable, ENet).
 
 ## Dos modos de servidor
 
@@ -48,6 +75,21 @@ Mismo ENet, **mismo proyecto** que los clientes:
 | **Dedicated** (online / VPS) | `MpKit.host_dedicated()` | Peer 1 **no** es jugador. Los slots van a clientes `join()` |
 
 1P: **no** llames `host()`. `MpKit.leave()` deja `OfflineMultiplayerPeer`.
+
+### Admisión por ticket (opcional)
+
+Sin `MpKit.admission` el slot se asigna por orden de conexión (todo lo de arriba). Con `admission` puesta en el servidor, un peer nuevo no recibe slot hasta presentar un ticket:
+
+```gdscript
+# servidor: el Callable devuelve el slot (1..max_players) o 0 para rechazar
+MpKit.admission = func(peer_id: int, ticket: String) -> int: return my_table.get(ticket, 0)
+MpKit.admission_timeout_s = 5.0   # sin ticket en ese tiempo: afuera
+# cliente
+MpKit.join(host, port, ticket)    # o MpFlow.join_endpoint(host, port, ticket)
+MpKit.admission_rejected.connect(func(reason: String): ...)
+```
+
+El kit no interpreta el ticket. Motivos de rechazo: `rejected` (el Callable dio 0 o el ticket pasa de `TICKET_MAX_LEN`), `slot_taken` (slot ocupado por otro peer) y `timeout` (sin ticket a tiempo). Con `admission`, `push_snapshot`, `broadcast_load_world`, `broadcast_session_ended` y `broadcast_custom` llegan solo a peers con slot. Ojo: un `MultiplayerSpawner`/synchronizer del juego replica a **todos** los peers conectados, también a los que esperan ticket; limitalo con visibilidad por peer (`set_visibility_for` / `add_visibility_filter`) para que solo vean los peers con slot. `MpFlow.StartWhen.MANUAL`: el flow no carga el mundo solo (el pegamento llama `start_match()`/`goto_world()`). `MpBoot.role()` devuelve `"room-server"` con `--room-server`.
 
 Varias partidas a la vez en **un** dedicated: [Salas hub y cola](#salas-hub-y-cola-opcional). Un match a la vez: no hace falta tocar eso.
 
@@ -439,7 +481,8 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 
 | Archivo | Rol |
 |---------|-----|
-| `mp_kit.gd` | ENet + slots + RPCs de sesión + túnel Dictionary. Hijos `Rooms` / `Matchmaker`. |
+| `mp_transport.gd` | `MpTransport`: arma el peer ENet (UDP) o WebSocket (TCP) segun `--transport=enet\|ws`; `create_server`, `create_client`, `port_is_free` |
+| `mp_kit.gd` | ENet o WebSocket (`MpKit.transport`) + slots + RPCs de sesión + túnel Dictionary. Hijos `Rooms` / `Matchmaker`. |
 | `mp_ids.gd` | slot ↔ peer |
 | `mp_room_directory.gd` | hub rooms (opt-in); asiento de sala ≠ slot del hub |
 | `mp_matchmaker.gd` | cola FIFO; arma una room al llenar `party_size` |
@@ -454,8 +497,78 @@ Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D /
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
 | `mp_authority.gd` | `accept_command`, `command_slot`, `accept_room_command`, freeze, sync |
 | `mp_world_ready.gd` | legado (no-op si hay `MpSpawner`) |
+| `lobby/mp_lobby_config.gd` | `MpLobbyConfig` (`.tres`): límites y tiempos del servidor de salas; cada campo numérico se pisa con `--nombre-con-guiones=N` (`with_cli_overrides()`). `max_matches` por defecto 99 |
+| `lobby/mp_match_launcher.gd` | `MpMatchLauncher`: un dedicado por partida (`launch(id, ticket)`, puerto libre del rango, tope `ERR_BUSY`, registro de pids, mata latido viejo / huérfanos). Señales `match_listening`, `match_ended`, `match_failed` |
+| `lobby/mp_match_agent.gd` | `MpMatchAgent` (en el dedicado): lee `--match-ticket-file` y `--room-pid`, pone `MpKit.admission` con el hash del token, escribe `state.json` (latido) y `result.json` (`report_result(data)`), sale si muere el padre |
+| `lobby/mp_process_runner.gd` / `_stub.gd` | (pids e identidad por `ps`: validado en macOS y Linux; en Windows, mejor esfuerzo) `OS.create_process` / `is_process_running` / `kill`; el stub simula procesos sin Godot |
+| `lobby/mp_lobby_rooms.gd` | `MpLobbyRooms` (RefCounted, sin red): estados de sala `OPEN`/`COUNTDOWN`/`LAUNCHING`/`IN_MATCH`/`CLOSED`, asientos por `session_id` (`resume_grace_s`), pick opaco validado por Callable, cuenta regresiva con `tick(delta)`, lanza con `MpMatchLauncher`. Los comandos devuelven un código String ("" = ok); señales `room_changed`, `match_assigned`, `room_error`, `room_closed` |
+| `lobby/mp_lobby_server.gd` | `MpLobbyServer`: pone `MpLobbyRooms` en ENet o WebSocket (`lobby_port`, `MpLobbyConfig.transport`). Valida versión, nombre, tamaño de `options`/`meta`, ritmo de chat y `hello_timeout_s`; el cliente no elige slot, puerto ni semilla. `meta_validator`, `options_validator` y `ticket_builder` los pone el juego antes de `start(config, launcher)`. Códigos de error estables (`version`, `bad_name`, `rate`, `bad_options`, `bad_meta` y los de `MpLobbyRooms`) |
+| `lobby/mp_lobby_client.gd` | `MpLobbyClient`: espejo (`rooms`, `room`, `chat_log`), comandos (`create_room`, `join_room`, `join_code`, `leave_room`, `choose_seat`, `set_pick`, `set_ready`, `send_chat`, `refresh_rooms`, `resume`) y señales en pasado (`room_updated`, `countdown_started`, `match_ready(host, port, token)`, `match_finished(result)`, `error_received`...). `host` vacío en `match_ready` = el del lobby (`MpLobbyConfig.public_host`). `auto_resume` (apagado por defecto, con `resume_window_s` = 120 y `resume_retry_s` = 2): si el enlace cae, el cliente reintenta con su ficha y no emite `lobby_lost` hasta agotar la ventana (`lobby_resuming(attempt)` en el medio, `lobby_lost("resume_window")` al final); la ventana debe coincidir con `MpLobbyConfig.resume_grace_s` del servidor |
+| `lobby/mp_lobby.gd` | Autoload `MpLobby` (después de `MpKit`): hijos `Server` y `Client` con un `SceneMultiplayer` propio; no toca el peer de `MpKit`. `MpLobby.start_server(config, launcher)` / `MpLobby.connect_to(host, port, nombre)`. Prueba: `agent/run_034d.sh` |
+| `lobby/mp_match_files.gd` | rutas `user://mp_matches/<id>/{ticket,state,result}.json`, JSON atómico (0600), sha256 |
 
 Handshake de spawn: `hold_until_world_ready` (synchronizers ocultos hasta que el spawner de ese peer avisa que está listo; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en glue.
+
+## Servidor de salas
+
+Camino de internet: un **servidor de salas** (lobby, un proceso) y **un dedicado por partida** (otro proceso Godot que el servidor lanza). Los clientes no escriben la IP de la partida: hablan con el lobby y reciben `(host, port, token)` cuando arranca. Todo vive en `lobby/` y no sabe nada del juego: reglas, textos y resultados entran por `Callable` y `Dictionary` que pone el pegamento.
+
+```mermaid
+flowchart LR
+  C1[Cliente A] --- L
+  C2[Cliente B] --- L
+  L[Servidor de salas<br/>MpLobby + MpLobbyRooms + MpMatchLauncher]
+  L -- "lanza con ticket" --> D[Dedicado de la partida<br/>MpMatchAgent + MpKit.admission]
+  C1 -- "host, port, token" --> D
+  C2 -- "host, port, token" --> D
+  D -- "result.json / state.json" --> L
+```
+
+### Piezas
+
+| Pieza | Para qué |
+|-------|----------|
+| `MpLobbyConfig` (`.tres`) | Límites y tiempos (puerto, tope de salas y partidas, rango de puertos, TTL del ticket, gracias de reconexión). Cada campo numérico se pisa con `--nombre-con-guiones=N`. |
+| `MpLobby` (autoload, después de `MpKit`) | Contenedor con `Server` y `Client`, con su propio `SceneMultiplayer`: el enlace al lobby nunca toca el peer de `MpKit`. |
+| `MpLobbyRooms` | Estado de salas sin red: `OPEN`, `COUNTDOWN`, `LAUNCHING`, `IN_MATCH`, `CLOSED`; asientos por sesión, pick opaco, cuenta regresiva. |
+| `MpLobbyServer` / `MpLobbyClient` | Protocolo del lobby. El cliente nunca elige slot, puerto ni semilla. El cliente es un espejo (`rooms`, `room`) con señales en pasado. |
+| `MpMatchLauncher` | Un dedicado por partida (ver abajo). |
+| `MpMatchAgent` | Lado del dedicado: lee el ticket, arma `MpKit.admission`, escribe latido y resultado. |
+
+### Admisión y tickets
+
+1. Al terminar la cuenta regresiva, el servidor llama al `ticket_builder` del juego (`seats`, `options` → `Dictionary`) y le pasa el resultado al launcher.
+2. El launcher agrega `match_id`, `port`, `room_pid`, `expires_ms` y, por asiento, cambia el `token` por su `token_sha256`. Escribe `user://mp_matches/<id>/ticket.json` (0600). El token en claro solo viaja al cliente de ese asiento.
+3. El dedicado se lanza con `--match-ticket-file`. `MpMatchAgent` compara `sha256(token presentado)` contra el ticket y fija `MpKit.admission`: un ticket de otra sala, inventado, vencido (`ticket_ttl_s`) o ya conectado se rechaza. Sin ticket a tiempo: `timeout`.
+4. Los clientes se conectan con `MpKit.join(host, port, token)` / `MpFlow.join_endpoint(...)`. Un `host` vacío en `match_ready` significa «el mismo del lobby» (o `MpLobbyConfig.public_host`).
+
+El juego inyecta, sin tocar el kit: `meta_validator` (pick de cada asiento), `options_validator` (opciones de la sala) y `ticket_builder`. Los textos de error son códigos estables (`version`, `bad_name`, `bad_options`, `rate`...); la UI los traduce.
+
+### `MpMatchLauncher`
+
+- `launch(id, ticket)`: elige un puerto libre del rango (`match_port_min`..`match_port_max`, probado con `MpTransport.port_is_free`), escribe el ticket y crea el proceso. Tope `max_matches`: devuelve `ERR_BUSY`.
+- Sigue `state.json` (latido cada `heartbeat_s`) y `result.json`. Mata la partida sin latido (`heartbeat_stale_s`), la que pasa de `match_max_s` y las que dejó una corrida anterior (`reap_on_ready`, con registro de pids y chequeo de identidad por `ps`).
+- Señales: `match_listening`, `match_ended(id, result)`, `match_failed(id, reason)`.
+- `executable`, `base_args` y `agent_args` los pone el juego (`--headless --path <dir> <escena> -- --dedicated`...). `agent_fields` del config son las cifras que el servidor reenvía al dedicado como `--campo=valor` (incluye `transport`).
+- `keep_files` conserva la carpeta de la partida (solo pruebas); por defecto se borra al terminar.
+- El dedicado sale solo si muere el servidor (`--room-pid`), si no queda nadie (`idle_no_players_s`) o `result_quit_delay_s` después del resultado.
+
+### Transportes: ENet y WebSocket
+
+Un solo valor: `MpLobbyConfig.transport` o `--transport=enet|ws`. El servidor lo usa para el lobby y se lo reenvía a cada dedicado. ENet (UDP) es el defecto; WebSocket (TCP) sirve para web y para túneles TCP. Mismo transporte en cliente, servidor y dedicados. Detalle en [Transporte](#transporte-enet-udp-o-websocket-tcp).
+
+### Reconexión y retomar
+
+- **Lobby**: la sesión tiene un token. Si el enlace cae, el servidor guarda el asiento `resume_grace_s`. `MpLobbyClient.resume()` vuelve con el mismo token (misma sesión y asiento). Con `auto_resume = true` el cliente reintenta solo cada `resume_retry_s` durante `resume_window_s` (igualala a `resume_grace_s`) y emite `lobby_resuming(attempt)`; `lobby_lost("resume_window")` solo al agotarse.
+- **Partida**: un jugador que se cayó vuelve al mismo dedicado con **el mismo ticket** dentro de `rejoin_grace_s` y recupera su slot (el juego decide qué conserva, p.ej. su pawn). Pasada la gracia, el asiento cuenta como abandono y el juego decide el resultado. Un segundo peer con el ticket de alguien que sigue conectado se rechaza.
+- `load_timeout_s`: cuánto espera el dedicado a que cada asiento cargue el mundo; qué significa no cargar lo decide el juego.
+
+### Probar y desplegar
+
+- Local, headless y sin ventanas: `agent/run_034d.sh` (protocolo, con el runner stub), `run_034e.sh` (dos salas 1v1 en paralelo con dos dedicados reales), `run_034g.sh` (reconexión), `run_034_soak.sh [N]` (N corridas seguidas con ENet y WS, más chequeo de procesos huérfanos). `TRANSPORT=ws` en el entorno cambia el transporte.
+- Servidor de salas con un runner de procesos propio: `MpProcessRunner` (`OS.create_process`, `is_process_running`, `kill`); `MpProcessRunnerStub` simula procesos para pruebas sin Godot.
+- Despliegue en un VPS Linux: export headless de Linux, una unidad `systemd` para `--room-server` y puertos abiertos (lobby y rango de partidas; UDP con ENet, TCP con WS). La guía y la checklist del juego están en `tools/deploy/README.md` y `tools/deploy/room_server.service`; el ejemplo de unidad sirve como base para otro juego.
+- Para `wss://` (TLS) mirá la sección de transporte.
 
 ## Salas hub y cola (opcional)
 
@@ -643,5 +756,5 @@ func submit_move(dir: Vector2) -> void:
 - Usar `local_slot()` como asiento de la partida.
 - `push_snapshot` / `broadcast_custom` a todo el hub si hay más de una sala.
 - Esperar que el kit abra un match scene por sala.
-- Meter Steam, WebRTC o un proceso Godot por partida en el addon. Cero puntaje / copy de título acá.
+- Meter Steam o WebRTC en el addon. Cero puntaje / copy de título acá.
 
