@@ -24,7 +24,7 @@ Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 |----------|-----------|
 | **No multiplayer** | Do not install MpKit. No autoload, no RPC, no `MultiplayerSpawner`. |
 | **Local / Wi-Fi** (same device or same LAN) | `MpKit.host()` listen-server. The host process **is** a player (slot 1 / peer 1). |
-| **Online** (internet, VPS) | **Dedicated server** in the **same project**. `MpKit.host_dedicated()`; clients `join(ip)`. Peer 1 is **not** a player. Develop that way from day one (headless + clients to `127.0.0.1`); the VPS is the same binary with a public IP and open UDP. Several matches = **in-process rooms** (`MpKit.rooms` / `MpKit.matchmaker`) on that process. Steam / WebRTC / process-per-match: only if the product asks, **later**, not instead of dedicated. |
+| **Online** (internet, VPS) | **Dedicated server** in the **same project**. `MpKit.host_dedicated()`; clients `join(ip)`. Peer 1 is **not** a player. Develop that way from day one (headless + clients to `127.0.0.1`); the VPS is the same binary with a public IP and open UDP. Rooms and several matches: **room server** (lobby + one dedicated per match, see below) for the internet, or in-process rooms (`MpKit.rooms` / `MpKit.matchmaker`) on one dedicated. Steam / WebRTC: only if the product asks, **later**, not instead of dedicated. |
 
 Do not ask again if the user already chose in this chat or PRD/RULES declares it.
 
@@ -56,7 +56,7 @@ If the project addon and a loose copy diverge, `res://addons/mp_kit/` in this pr
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / tunnel / scaffold: [editor.md](editor.md). Generic code: [examples.md](examples.md).
 
-Human guide (inspector, step-by-step, custom tunnel, hub rooms and queue): `addons/mp_kit/README.md`.
+Human guide (inspector, step-by-step, custom tunnel, room server, hub rooms and queue): `addons/mp_kit/README.md`.
 
 ## Quickstart (5 steps)
 
@@ -70,11 +70,22 @@ Human guide (inspector, step-by-step, custom tunnel, hub rooms and queue): `addo
 
 Copy `addons/mp_kit/` → autoload `MpKit`.
 
-**Does:** ENet listen or dedicated, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push (snapshot **and** `send_custom` tunnel), signals, replication nodes, `MpBoot`. Optional: `MpFlow` (boot/world scenes, not rules). Optional: in-process hub rooms (`MpRoomDirectory` + FIFO `MpMatchmaker`) on a dedicated.
+**Does:** ENet listen or dedicated, slot ↔ peer map, capacity, `world_ready` handshake, opaque `Dictionary` push (snapshot **and** `send_custom` tunnel), signals, replication nodes, `MpBoot`. Optional: `MpFlow` (boot/world scenes, not rules). Optional: in-process hub rooms (`MpRoomDirectory` + FIFO `MpMatchmaker`) on a dedicated. Optional: room server (`lobby/`), ticket admission and WebSocket transport.
 
-**Does not:** score, title copy, actor input, prediction, Steam/WebRTC, process-per-match, “who wins”. `MpReplicate.interpolate` is an optional proxy lerp, not rollback.
+**Does not:** score, title copy, actor input, prediction, Steam/WebRTC, “who wins”. `MpReplicate.interpolate` is an optional proxy lerp, not rollback.
 
 If you put score in `mp_kit.gd`, the kit stops being portable.
+
+## Room server (online, one dedicated per match)
+
+Lives in `addons/mp_kit/lobby/`, generic (no game rules or text). Short form:
+
+- **Room server** process (`--room-server`): `MpLobby.start_server(config, launcher)`. Clients `MpLobby.connect_to(host, port, name)`, create/join rooms, pick, ready, chat; the client never picks slot, port or seed. `MpLobbyConfig` (`.tres`, every number overridable with `--field-name=N`) holds limits and times.
+- **Tickets**: when the countdown ends the game's `ticket_builder` returns the ticket; `MpMatchLauncher.launch(id, ticket)` picks a free port, stores only `sha256(token)` and starts a dedicated with `--match-ticket-file`. The client gets `match_ready(host, port, token)` and does `MpKit.join(host, port, token)`. In the dedicated `MpMatchAgent` sets `MpKit.admission` from the ticket: foreign, made-up, expired or already-connected tickets are rejected.
+- **Launcher**: one process per match, `max_matches` cap (`ERR_BUSY`), heartbeat in `state.json`, result in `result.json` (`MpMatchAgent.report_result`), kills stale/over-long/orphan matches. The game injects `meta_validator`, `options_validator` and `ticket_builder`; the kit stays free of rules and text.
+- **Rejoin**: lobby `MpLobbyClient.resume()` / `auto_resume` (same session and seat, `resume_grace_s`); match: same ticket within `rejoin_grace_s` gets the slot back (the game decides what it keeps).
+- **Transport**: `--transport=enet|ws` (`MpLobbyConfig.transport`), the same in client, room server and dedicated. ENet is UDP (default); WebSocket is TCP (web, TCP tunnels). `wss://` through a reverse proxy.
+- Local check: two parallel 1v1 rooms with two real dedicated, headless, then repeat (soak) and look for orphan processes. Details: `addons/mp_kit/README.md` (Room server).
 
 ## Required model
 
@@ -166,7 +177,7 @@ Same collision and `submit_*` code (the local host does not send an RPC). Always
 - [ ] MP type declared (none / local-Wi-Fi / online). No MP: this checklist does not apply.
 - [ ] Autoload `MpKit` **before** glue. `configure(port, max_players)` before host/join.
 - [ ] `MpFlow` autoload (Tools → New session flow) or `extends MpFlow`. Several maps: `add_world` + `select_world`. Extra glue only for copy or a tunnel.
-- [ ] Online: `MpBoot` + `host_dedicated()`; clients `join`; dedicated export; spawn only `occupied_slots()`. Optional hub: `MpKit.rooms` / `MpKit.matchmaker` on the same process; score still stays out of the addon.
+- [ ] Online: `MpBoot` + `host_dedicated()`; clients `join`; dedicated export; spawn only `occupied_slots()`. Several players per match over the internet: room server + tickets (`MpMatchLauncher`), not a free-for-all `join(ip)`. Optional hub: `MpKit.rooms` / `MpKit.matchmaker` on the same process; score still stays out of the addon.
 - [ ] Slots in domain; peers only in RPC/authority.
 - [ ] `MpSpawner` or `MpSlotSpawner` with `hold_until_world_ready` (default). The client does not need `MpWorldReady`. No pawn restage in glue.
 - [ ] Guest does not simulate rules; server validates sender.

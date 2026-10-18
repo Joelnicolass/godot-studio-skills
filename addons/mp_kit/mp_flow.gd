@@ -12,6 +12,7 @@ signal world_changed(id: StringName)
 enum StartWhen {
 	LISTEN_IMMEDIATE, ## host_lan() enters the world now
 	DEDICATED_FIRST_CLIENT, ## dedicated enters when the first client joins
+	MANUAL, ## the flow never loads the world by itself; glue calls start_match()/goto_world()
 }
 
 @export var boot_scene: PackedScene
@@ -35,6 +36,9 @@ enum StartWhen {
 @export var server_lost_status: String = "Lost the server"
 @export var dedicated_status: String = "Dedicated on port %d"
 
+const PORT_MIN := 1
+const PORT_MAX := 65535
+
 var match_running: bool = false
 
 var _lan: MpLanBeacon
@@ -50,6 +54,9 @@ static func find_in_tree(from: Node) -> MpFlow:
 
 
 func _ready() -> void:
+	## `--no-flow`: tools and probes that use MpKit directly; the flow never reacts to it.
+	if MpBoot.user_flag("no-flow"):
+		return
 	_pick_world_from_args()
 	var port := int(MpBoot.user_value("mp-port", "7777"))
 	MpKit.configure(port, max_players, host_slot, custom_channels)
@@ -58,6 +65,24 @@ func _ready() -> void:
 	MpKit.join_failed.connect(_on_join_failed)
 	MpKit.server_lost.connect(_on_server_lost)
 	MpKit.snapshot_received.connect(_on_flow_snapshot)
+	var role := MpBoot.role()
+	if role == "server":
+		var err := MpKit.host_dedicated()
+		if err != OK:
+			push_error("MpKit.host_dedicated failed: %s" % err)
+			get_tree().quit(1)
+			return
+		match_running = true
+		_set_status(dedicated_status % MpKit.port)
+		call_deferred("goto_world")
+		return
+	if role == "client1" or role == "client2":
+		var ip := MpBoot.user_value("join-ip", "127.0.0.1")
+		var err := join_lan(ip)
+		if err != OK:
+			get_tree().quit(1)
+			return
+		return
 	if MpBoot.is_dedicated_process():
 		var err := MpKit.host_dedicated()
 		if err != OK:
@@ -102,6 +127,23 @@ func join_lan(ip: String) -> Error:
 		_set_status(bad_ip_status)
 		return ERR_INVALID_PARAMETER
 	var err := MpKit.join(trimmed)
+	if err != OK:
+		_set_status(join_fail_status)
+		return err
+	_set_status(joining_status % trimmed)
+	return OK
+
+
+## Join a dedicated by host (IPv4 or name) and port; `ticket` is presented for admission.
+func join_endpoint(host: String, p_port: int, ticket: String = "") -> Error:
+	var trimmed := host.strip_edges()
+	if not MpLan.is_valid_ipv4(trimmed) and not MpLan.is_valid_hostname(trimmed):
+		_set_status(bad_ip_status)
+		return ERR_INVALID_PARAMETER
+	if p_port < PORT_MIN or p_port > PORT_MAX:
+		_set_status(bad_ip_status)
+		return ERR_INVALID_PARAMETER
+	var err := MpKit.join(trimmed, p_port, ticket)
 	if err != OK:
 		_set_status(join_fail_status)
 		return err
@@ -186,6 +228,10 @@ func snapshot_for_joiner() -> Dictionary:
 
 func _begin_match() -> void:
 	match_running = true
+	# Peers already connected (dedicated first client) need the world id too.
+	var snap := snapshot_for_joiner()
+	if not snap.is_empty():
+		MpKit.push_snapshot(snap)
 	MpKit.broadcast_load_world()
 	_start_advertise()
 	goto_world()
