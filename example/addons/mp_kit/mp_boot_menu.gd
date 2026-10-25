@@ -10,6 +10,10 @@ signal hosted
 signal joining(ip: String)
 signal status_changed(text: String)
 
+## Show a "Private server" button: a dedicated match on this PC with an invite code (MpLocalServer).
+@export var offer_private_server: bool = false
+## The online lobby screen (MpLobbyScreen). Set = an "Online rooms" button opens it.
+@export_file("*.tscn") var lobby_scene_path: String = ""
 @export var world_scene: PackedScene
 @export var world_id: StringName = &""
 @export var drive_kit: bool = true
@@ -21,6 +25,9 @@ signal status_changed(text: String)
 @export var play_solo_text: String = "Play solo"
 @export var host_text: String = "Host LAN"
 @export var join_text: String = "Join"
+@export var online_text: String = "Online rooms"
+@export var private_text: String = "Private server"
+@export var private_ready_status: String = "Private match on %s:%d · friends join with %s:%d#%s"
 @export var ip_hint: String = "127.0.0.1"
 @export var rooms_header: String = "LAN rooms"
 @export var idle_status: String = "Pick a mode."
@@ -46,8 +53,10 @@ func _ready() -> void:
 		_bind_flow()
 	else:
 		_bind_local()
-	_beacon = MpLan.browse(self)
-	_beacon.rooms_changed.connect(_on_rooms)
+	## A browser can neither host nor listen for LAN rooms: those rows are hidden there.
+	if MpNetConfig.can_host():
+		_beacon = MpLan.browse(self)
+		_beacon.rooms_changed.connect(_on_rooms)
 	if MpBoot.is_dedicated_process():
 		visible = false
 
@@ -60,8 +69,10 @@ func _bind_flow() -> void:
 		_flow.select_world(world_id)
 	if not room_name.is_empty():
 		_flow.room_name = room_name
-	_flow.advertise_lan = advertise_lan
-	_flow.max_players = max_players
+	## A flow with an MpNetConfig owns these settings; the menu only fills them for a flow without one.
+	if _flow.net_config == null:
+		_flow.advertise_lan = advertise_lan and MpNetConfig.can_host()
+		_flow.max_players = max_players
 
 
 func _bind_local() -> void:
@@ -94,7 +105,12 @@ func _build() -> void:
 	title.add_theme_font_size_override("font_size", 28)
 	box.add_child(title)
 	_add_button(box, play_solo_text, _on_play_solo)
-	_add_button(box, host_text, _on_host)
+	if MpNetConfig.can_host():
+		_add_button(box, host_text, _on_host)
+	if offer_private_server and MpNetConfig.can_host():
+		_add_button(box, private_text, _on_private)
+	if not lobby_scene_path.is_empty():
+		_add_button(box, online_text, func() -> void: get_tree().change_scene_to_file(lobby_scene_path))
 	var join_row := HBoxContainer.new()
 	join_row.add_theme_constant_override("separation", 8)
 	box.add_child(join_row)
@@ -110,15 +126,18 @@ func _build() -> void:
 	var rooms_label := Label.new()
 	rooms_label.text = rooms_header
 	rooms_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rooms_label.visible = MpNetConfig.can_host()
 	box.add_child(rooms_label)
 	_rooms = ItemList.new()
 	_rooms.custom_minimum_size = Vector2(320, 88)
 	_rooms.item_selected.connect(_on_room_selected)
+	_rooms.visible = MpNetConfig.can_host()
 	box.add_child(_rooms)
 	_lan = Label.new()
 	_lan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var local := MpLan.get_local_ipv4()
 	_lan.text = local if not local.is_empty() else "—"
+	_lan.visible = MpNetConfig.can_host()
 	box.add_child(_lan)
 	_status = Label.new()
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -165,15 +184,28 @@ func _on_host() -> void:
 	_go_world()
 
 
+func _on_private() -> void:
+	## By path: the menu must not load the lobby scripts unless this button is used.
+	var local_server: GDScript = load("res://addons/mp_kit/rooms/mp_local_server.gd")
+	var server: Node = local_server.call(&"start_on", get_tree(), max_players)
+	server.server_ready.connect(func(address: String, p_port: int, codes: Dictionary) -> void:
+		var shown := address if not address.is_empty() else "127.0.0.1"
+		var all := ", ".join(PackedStringArray(codes.values()))
+		_set_status(private_ready_status % [shown, p_port, shown, p_port, all]))
+	server.server_failed.connect(func(reason: String) -> void: _set_status(host_fail_status + " (%s)" % reason))
+
+
 func _on_join() -> void:
 	var ip := _ip.text.strip_edges()
+	## With a flow: an IP, a domain, either with ":port", or a wss:// URL.
+	if _flow:
+		joining.emit(ip)
+		_flow.join_address(ip)
+		return
 	if not MpLan.is_valid_ipv4(ip):
 		_set_status(bad_ip_status)
 		return
 	joining.emit(ip)
-	if _flow:
-		_flow.join_lan(ip)
-		return
 	if drive_kit:
 		var err := MpKit.join(ip)
 		if err != OK:
