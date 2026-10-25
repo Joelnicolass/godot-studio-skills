@@ -33,12 +33,20 @@ var admission_timeout_s: float = 5.0
 const TICKET_MAX_LEN := 512
 ## Seconds between the rejection RPC and the disconnect.
 const REJECT_FLUSH_S := 0.2
+## Peers that may wait for admission at once; more are disconnected on arrival (a flood of empty connections).
+var max_pending_admission: int = 64
+## Largest Dictionary a client may send through the custom tunnel (var_to_bytes), and how often.
+var custom_max_bytes: int = 8192
+var custom_limit := MpRateLimit.new(30.0, 60.0)
 var rooms: MpRoomDirectory
 var matchmaker: MpMatchmaker
 
 ## `MpTransport.ENET` (default) or `MpTransport.WS`. Read from `--transport=` at startup; glue may set it
 ## before `host()` / `join()`. Same API and RPCs with both.
 var transport: String = MpTransport.ENET
+## WebSocket TLS (wss://). Server: certificate + key; client: TLSOptions.client(). Null = plain. MpNetConfig sets them.
+var tls_server: TLSOptions
+var tls_client: TLSOptions
 var _peer: MultiplayerPeer
 var _world_ready: Dictionary = {}
 var _broadcasting_custom: bool = false
@@ -85,6 +93,13 @@ func is_listen_host() -> bool:
 	return is_server() and not ids.dedicated
 
 
+## True where the game rules run: solo (no network) or the server. Use it instead of
+## `not is_networked() or is_server()`.
+func is_authority() -> bool:
+	return not is_networked() or is_server()
+
+
+## The slot of the player on this machine; 0 on a dedicated server and on a client that has not got one yet.
 func local_slot() -> int:
 	if not is_networked():
 		return ids.host_slot
@@ -92,9 +107,12 @@ func local_slot() -> int:
 		if ids.dedicated:
 			return 0
 		return ids.host_slot
-	if ids.local_slot != 0:
-		return ids.local_slot
-	return ids.host_slot + 1
+	return ids.local_slot
+
+
+## True when this machine has a player with a known slot (solo, a listen host, a client once the server assigned it).
+func has_local_slot() -> bool:
+	return local_slot() > 0
 
 
 func occupied_slots() -> Array[int]:
@@ -120,7 +138,7 @@ func is_peer_world_ready(peer_id: int) -> bool:
 func host(dedicated: bool = false) -> Error:
 	leave()
 	ids.dedicated = dedicated
-	var made := MpTransport.create_server(transport, port, _enet_max_clients())
+	var made := MpTransport.create_server(transport, port, _enet_max_clients(), tls_server)
 	var peer := made["peer"] as MultiplayerPeer
 	if int(made["error"]) != OK:
 		ids.dedicated = false
@@ -142,7 +160,7 @@ func host_dedicated() -> Error:
 ## `p_port` <= 0 uses `port`. A non-empty `ticket` is presented to the server on connect.
 func join(address: String, p_port: int = -1, ticket: String = "") -> Error:
 	leave()
-	var made := MpTransport.create_client(transport, address, p_port if p_port > 0 else port)
+	var made := MpTransport.create_client(transport, address, p_port if p_port > 0 else port, tls_client)
 	var peer := made["peer"] as MultiplayerPeer
 	if int(made["error"]) != OK:
 		return int(made["error"]) as Error
@@ -311,6 +329,9 @@ func _on_peer_connected(id: int) -> void:
 	if not multiplayer.is_server():
 		return
 	if admission.is_valid():
+		if _awaiting_ticket.size() >= max_pending_admission:
+			multiplayer.multiplayer_peer.disconnect_peer(id)
+			return
 		_awaiting_ticket[id] = true
 		get_tree().create_timer(admission_timeout_s).timeout.connect(_on_admission_timeout.bind(id))
 		return
@@ -331,6 +352,7 @@ func _on_peer_disconnected(id: int) -> void:
 	if _awaiting_ticket.erase(id):
 		return
 	_world_ready.erase(id)
+	custom_limit.forget(id)
 	var slot := ids.unbind_peer(id)
 	if slot == 0 and admission.is_valid():
 		return
@@ -456,6 +478,8 @@ func rpc_custom_to_server(channel: String, data: Dictionary) -> void:
 		return
 	var name := StringName(channel)
 	if not is_custom_channel_allowed(name):
+		return
+	if var_to_bytes(data).size() > custom_max_bytes or not custom_limit.allow(sender):
 		return
 	custom_received.emit(name, data.duplicate(true), sender)
 
