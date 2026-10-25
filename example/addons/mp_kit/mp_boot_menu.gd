@@ -12,7 +12,8 @@ signal status_changed(text: String)
 
 ## Show a "Private server" button: a dedicated match on this PC with an invite code (MpLocalServer).
 @export var offer_private_server: bool = false
-## The online lobby screen (MpLobbyScreen). Set = an "Online rooms" button opens it.
+## The online lobby screen (MpLobbyScreen). Set = an "Online rooms" button opens it. Empty = the flow's
+## (MpGame.lobby_scene), if any.
 @export_file("*.tscn") var lobby_scene_path: String = ""
 @export var world_scene: PackedScene
 @export var world_id: StringName = &""
@@ -28,12 +29,14 @@ signal status_changed(text: String)
 @export var online_text: String = "Online rooms"
 @export var private_text: String = "Private server"
 @export var private_ready_status: String = "Private match on %s:%d · friends join with %s:%d#%s"
+## The same through the relay: friends type only the port and a code.
+@export var private_relay_status: String = "Private match through the relay · friends join with :%d#%s"
 @export var ip_hint: String = "127.0.0.1"
 @export var rooms_header: String = "LAN rooms"
 @export var idle_status: String = "Pick a mode."
 @export var host_fail_status: String = "Could not host (port busy?)"
 @export var join_fail_status: String = "Could not join"
-@export var bad_ip_status: String = "Invalid IPv4"
+@export var bad_ip_status: String = "Invalid address (an IP or a name, optionally :port)"
 @export var joining_status: String = "Connecting to %s…"
 
 var _lan: Label
@@ -45,7 +48,12 @@ var _room_rows: Array[Dictionary] = []
 var _flow: MpFlow
 
 
+## Group of every boot menu (tools and tests find it there).
+const GROUP := &"mp_boot_menu"
+
+
 func _ready() -> void:
+	add_to_group(GROUP)
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	_build()
 	_flow = MpFlow.find_in_tree(self)
@@ -61,18 +69,13 @@ func _ready() -> void:
 		visible = false
 
 
+## With a flow, the flow owns the session (world, room name, players, LAN): the menu only shows it. The menu's own
+## world_scene / room_name / max_players / advertise_lan are for a menu without a flow (drive_kit).
 func _bind_flow() -> void:
 	_flow.status_changed.connect(_set_status)
-	if world_scene != null:
-		_flow.world_scene = world_scene
-	if world_id != &"":
-		_flow.select_world(world_id)
-	if not room_name.is_empty():
-		_flow.room_name = room_name
-	## A flow with an MpNetConfig owns these settings; the menu only fills them for a flow without one.
-	if _flow.net_config == null:
-		_flow.advertise_lan = advertise_lan and MpNetConfig.can_host()
-		_flow.max_players = max_players
+	## Where players find the server online, if the game says (MpNetConfig.public_host).
+	if _flow.net_config and not _flow.net_config.public_host.is_empty():
+		_ip.text = _flow.net_config.public_host
 
 
 func _bind_local() -> void:
@@ -109,8 +112,9 @@ func _build() -> void:
 		_add_button(box, host_text, _on_host)
 	if offer_private_server and MpNetConfig.can_host():
 		_add_button(box, private_text, _on_private)
-	if not lobby_scene_path.is_empty():
-		_add_button(box, online_text, func() -> void: get_tree().change_scene_to_file(lobby_scene_path))
+	var lobby := _lobby_path()
+	if not lobby.is_empty():
+		_add_button(box, online_text, func() -> void: get_tree().change_scene_to_file(lobby))
 	var join_row := HBoxContainer.new()
 	join_row.add_theme_constant_override("separation", 8)
 	box.add_child(join_row)
@@ -157,7 +161,6 @@ func _add_button(box: VBoxContainer, text: String, cb: Callable) -> void:
 func _on_play_solo() -> void:
 	play_solo_pressed.emit()
 	if _flow:
-		_apply_world_to_flow()
 		_flow.play_solo()
 		return
 	if drive_kit:
@@ -168,7 +171,6 @@ func _on_play_solo() -> void:
 func _on_host() -> void:
 	hosted.emit()
 	if _flow:
-		_apply_world_to_flow()
 		_flow.host_lan()
 		return
 	if drive_kit:
@@ -187,11 +189,21 @@ func _on_host() -> void:
 func _on_private() -> void:
 	## By path: the menu must not load the lobby scripts unless this button is used.
 	var local_server: GDScript = load("res://addons/mp_kit/rooms/mp_local_server.gd")
-	var server: Node = local_server.call(&"start_on", get_tree(), max_players)
-	server.server_ready.connect(func(address: String, p_port: int, codes: Dictionary) -> void:
+	var seats := _flow.net_config.effective_max_players() if _flow and _flow.net_config else max_players
+	## One per process: a second click gives the running one back (and its invite), it never starts another.
+	var server: Node = local_server.call(&"start_on", get_tree(), seats)
+	var show_invite := func(address: String, p_port: int, codes: Dictionary) -> void:
 		var shown := address if not address.is_empty() else "127.0.0.1"
 		var all := ", ".join(PackedStringArray(codes.values()))
-		_set_status(private_ready_status % [shown, p_port, shown, p_port, all]))
+		if MpKit.transport == MpTransport.RELAY:
+			_set_status(private_relay_status % [p_port, all])
+		else:
+			_set_status(private_ready_status % [shown, p_port, shown, p_port, all])
+	if server.call(&"is_ready"):
+		show_invite.call(server.get("address"), server.get("port"), server.get("codes"))
+		return
+	if not server.server_ready.is_connected(show_invite):
+		server.server_ready.connect(show_invite)
 	server.server_failed.connect(func(reason: String) -> void: _set_status(host_fail_status + " (%s)" % reason))
 
 
@@ -218,6 +230,19 @@ func _on_join_failed() -> void:
 	_set_status(join_fail_status)
 
 
+## The rooms the LAN list shows now: [{name, address, port, players, max_players}].
+func lan_rooms() -> Array[Dictionary]:
+	return _room_rows.duplicate()
+
+
+## Join the LAN room at `index` of the list (what clicking it and Join does).
+func join_lan_room(index: int) -> void:
+	if index < 0 or index >= _room_rows.size():
+		return
+	_ip.text = "%s:%d" % [_room_rows[index].get("address", ""), int(_room_rows[index].get("port", 0))]
+	_on_join()
+
+
 func _on_rooms(found: Array) -> void:
 	_room_rows.clear()
 	_rooms.clear()
@@ -239,16 +264,7 @@ func _on_room_selected(index: int) -> void:
 	if index < 0 or index >= _room_rows.size():
 		return
 	var row: Dictionary = _room_rows[index]
-	_ip.text = str(row.get("address", ""))
-
-
-func _apply_world_to_flow() -> void:
-	if _flow == null:
-		return
-	if world_scene != null:
-		_flow.world_scene = world_scene
-	if world_id != &"":
-		_flow.select_world(world_id)
+	_ip.text = "%s:%d" % [row.get("address", ""), int(row.get("port", 0))]
 
 
 func _go_world() -> void:
@@ -277,3 +293,11 @@ class LateJoin extends Node:
 	func _on_peer(peer_id: int, _slot: int) -> void:
 		if MpKit.is_server():
 			MpKit.load_world_to(peer_id)
+
+
+## The lobby scene: this menu's own, or the flow's (MpGame.lobby_scene).
+func _lobby_path() -> String:
+	if not lobby_scene_path.is_empty():
+		return lobby_scene_path
+	var flow := MpFlow.find_in_tree(self) if is_inside_tree() else null
+	return flow.lobby_path if flow else ""

@@ -52,8 +52,9 @@ The transport is selectable; the API, RPCs and replication are the same with bot
 | Web export | no (a browser cannot open UDP) | yes |
 | TCP tunnel (ngrok, etc.) | no | yes |
 
-- **One place**: an `MpNetConfig` (`.tres`) in `MpFlow.net_config` (transport, port, players, `public_host`, TLS). Flags win over it.
-- **Web**: a web export always uses WebSocket (`MpTransport.from_flags`), never hosts nor browses LAN rooms (`MpNetConfig.can_host()`); the menu hides those rows. Check: the lab e2e `run_mpkit_web.sh` (open the URL it prints in a new tab); see [tests/README.md](tests/README.md).
+- **One place**: an `MpGame` (`.tres`) in `MpFlow.game`: the network (it is an `MpNetConfig`: transport, port, players, `public_host`, relay, TLS) and the scenes (boot, world, lobby, rooms). The menu, the lobby screen and the room server read it from the flow. Flags win over it. A plain `MpNetConfig` in `MpFlow.net_config`, with the paths on the flow, still works.
+- **Web**: a web export uses WebSocket (direct, or through the relay when the `.tres` says `relay`), never hosts nor browses LAN rooms (`MpNetConfig.can_host()`); the menu hides those rows. Check: `mpkit_lab/run/web.sh` (and `TRANSPORT=relay`), which opens the page in a headless Chrome.
+- **Relay**: `--transport=relay` (or `transport = relay` in the `.tres`) with `relay_url` / `relay_room`: everything goes through a WebSocket tunnel ([relay/README.md](relay/README.md)); the server needs no public IP. It serves desktop and web.
 - **Flag**: `--transport=ws` (or `enet`). Read by `MpKit` (`MpKit.transport`, before `host()`/`host_dedicated()`/`join()`; glue may set it by hand) and `MpLobbyClient.transport`.
 - **Room server**: `MpLobbyConfig.transport` (`.tres` or `--transport=ws`). It serves the lobby with that transport, picks free match ports for TCP or UDP accordingly and **forwards it to the child dedicated** (`transport` is in `agent_fields`, it arrives as `--transport=ws`).
 - Same transport in every process: client, room server and dedicated. An ENet client does not talk to a WS server.
@@ -235,9 +236,11 @@ flowchart TB
 | `pawn_scene` | your `pawn_2d.tscn` / `pawn_3d.tscn` |
 | `spawn_points` | `../SpawnPoints` |
 | `hold_until_world_ready` | **on** (default) |
+| `gate_unsynced_spawns` | **on** (default) |
+| `room_id` | empty (one match per server); see [Actors per room](#actors-per-room) |
 | `despawn_on_leave` | on if you want the pawn deleted on leave |
 
-You do not need an `MpWorldReady` node. The spawner asks for `world_ready` on the client.
+You do not need an `MpWorldReady` node. The spawner says by itself that it is ready on the client.
 
 Dedicated does **not** spawn slot 0. Listen host spawns its pawn in `_ready`. Joiners, on `client_world_ready`.
 
@@ -251,18 +254,27 @@ sequenceDiagram
   H->>H: loads the match
   H->>C: rpc_load_world
   C->>C: change_scene to the match
-  C->>H: rpc_world_ready
-  H->>H: set_visibility_for(peer)
+  C->>H: rpc_world_ready + rpc_spawner_ready (each MpSpawner)
+  H->>H: set_visibility_for(peer) on what that spawner holds
   H->>C: native spawn + sync
 ```
+
+What the spawner holds: the scene's `MultiplayerSynchronizer`s that belong to it, both the actors under `spawn_path` and the static nodes of the world (a door, a chest). A synchronizer belongs to the spawners whose parent is its nearest ancestor with an `MpSpawner` child (a room, a sub-world). One without such an ancestor (a static node next to an instanced world) belongs to every `MpSpawner` of the scene. Nothing reaches a peer until its copy of the spawner exists, so a peer on the lobby or still loading never gets a packet for a node it does not have (Godot never retries a path that failed: that spawner or node would be dead for that peer).
+
+Rules:
+
+- Every replicated world needs at least one `MpSpawner` in the scene (a plain `MultiplayerSpawner` still sends to peers on the lobby). Static nodes with sync need nothing else.
+- Synchronizers live in the scene, or are added by code **before** `add_child`, or in the actor's own `_ready`. One added later (deferred, a timer) is missing from the spawn packet: a late joiner gets `ERR_INVALID_DATA` for that actor. The spawner still holds it and reports it with `push_error`.
+- An actor without a synchronizer gets an empty `MpSpawnGate` synchronizer on every peer when it enters `spawn_path` (`gate_unsynced_spawns`). Without it Godot sends that actor to every peer, lobby included, and the failed path breaks the spawner for them. Turn it off only if every spawned scene has a synchronizer. On the server, a node a script adds by hand under `spawn_path` (a server-only effect the engine does not replicate) gets no gate and is not held: the client never has it. A node is replicated when its scene is in the spawner's list or `spawn(data)` made it; for that, set `spawn_function` before `super._ready()` (set later, the spawner warns and takes it from the next node on).
+- Cost: on the server, one walk of the scene per reveal or seat change, and one type check per node entering the tree. Nothing per frame.
 
 ### 4. Pawn (replicated actor)
 
 1. Packed scene: `CharacterBody2D` or `CharacterBody3D`.
 2. Collision + visual. `@export var player_slot: int = 1`.
 3. Simpler: select the root → Project → Tools → **MpKit: Make selection a network actor** (adds `MpActor` + `MpInput`; see QUICKSTART). With `MpReplicate` (the path below) add the `MpReplicate` child and a `MultiplayerSynchronizer` by hand.  
-   That adds a child `MpReplicate` + `MultiplayerSynchronizer`.
-4. In the synchronizer **Replication** dock (or in the `.tscn`):
+   That adds a child `MpReplicate` + `MultiplayerSynchronizer` already with position / rotation / visible. The synchronizer has to live in the scene: `MpReplicate` does not create it at runtime and reports it with `push_error` if it is missing.
+4. In the synchronizer **Replication** dock (or in the `.tscn`) add the rest:
 
 | Path | spawn | replication |
 |------|-------|-------------|
@@ -288,6 +300,19 @@ func submit_move(dir: Vector2) -> void:
 		return
 	apply_move(dir)
 ```
+
+If the `submit_*` lives on a node that serves **every** player (a node of the match, not a pawn with `player_slot`), the slot comes from the sender:
+
+```gdscript
+@rpc("any_peer", "call_remote", "reliable")
+func submit_ready() -> void:
+	var slot := MpAuthority.command_slot(self)
+	if slot <= 0:
+		return
+	apply_ready(slot)
+```
+
+`command_slot(node)` returns the slot of the peer that sent the RPC, on the server only. It gives `0` off the server, without a network (1P) or when the peer has no slot. Do not write `MpKit.slot_for_peer(multiplayer.get_remote_sender_id())` by hand in every `submit_*`.
 
 - `call_remote`: the local host does **not** double the RPC.
 - Dedicated never sends `submit_*` (no local player).
@@ -450,7 +475,7 @@ Do not put meshes, scores, or bullet `kind` in the tunnel.
 
 With the plugin enabled, **Project → Tools**:
 
-- **Setup game...** — a whole multiplayer game from one dialog (`editor/mp_setup_wizard.gd`): boot, world, player with a predicted `MpActor` + `MpInput`, `MpNetConfig` and, optionally, online rooms. It shows the file tree (`[+]` / `[~]`) and never overwrites a file. Check: the lab e2e `run_mpkit_wizard.sh` (writes a game and plays it over the network; `WIZARD_3D=1` for 3D)
+- **Setup game...** — a whole multiplayer game from one dialog (`editor/mp_setup_wizard.gd`): `game.tres` (`MpGame`), a boot with an `MpFlow` that has only that `.tres`, a world with an `MpWorld`, a player with a predicted `MpActor` + `MpInput` and, optionally, online rooms. It shows the file tree (`[+]` / `[~]`) and never overwrites a file. Check: the lab e2e `run_mpkit_wizard.sh` (writes a game and plays it over the network; `WIZARD_3D=1` for 3D)
 - **Make selection a network actor** — child `MpActor` (with its `MpSync`, built and saved with the scene) and, for a `CharacterBody`, `MpInput`
 - **New replicated feature...** — `res://features/<id>/<id>.gd` + `.tscn`
 - **New session flow...** — `MpFlow` autoload (`res://glue/session_flow.tscn`)
@@ -476,13 +501,23 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `core/mp_proxy_motion.gd` / `mp_interpolator.gd` | drawing proxies: `BUFFERED` (in the past, between two real states) or `FOLLOW` |
 | `core/mp_net_clock.gd` | the server's simulation time (ticks / tps, even) and its estimate on clients (follows the least-delayed packet) |
 | `core/mp_lag_peer.gd` | a bad network on purpose for tests: `--net-lag-ms`, `--net-jitter-ms`, `--net-loss` wrap the peer (ENet or WS). Tests only |
-| `core/mp_net_config.gd` | `MpNetConfig` (`.tres`): the game's network in one place; `apply()` configures `MpKit`; on the web it forces WebSocket and `can_host()` is false |
+| `mp.gd` | `Mp`: the verbs of the match from any script (`play_solo`, `host`, `join`, `leave`, `open_rooms`, `is_server`, `is_online`, `me`, `player`, `state`, `current_match`, `finish`, `net_quality`); it calls the nodes that do the work |
+| `mp_game.gd` | `MpGame` (`.tres`): an `MpNetConfig` with the game's scenes; in `MpFlow.game` it fills `net_config` and every empty path |
+| `nodes/mp_invite_label.gd` | `MpInviteLabel`: in the HUD; in a private match of this PC (`MpLocalServer`) it shows what friends type (`ip:port#CODE`); hidden otherwise. It finds the server by group, without loading the rooms scripts |
+| `nodes/mp_world.gd` | `MpWorld`: one node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players` (`MpSlotSpawner`), `State` (`MpState`), `Match` (`MpMatch`) and `Hud/Leave` + `Hud/Invite`; `player_scene` is each seat's scene |
+| `core/mp_net_quality.gd` | `MpNetQuality` (a child of the autoload, `MpKit.net_quality`): 4 pings per second; RTT (median), jitter (97th percentile), loss and a grade `GOOD` / `FAIR` / `BAD`; the server keeps every player's. `Mp.net_quality()` |
+| `core/mp_lag_comp.gd` | `MpLagComp`: server-side lag compensation; a second of poses per actor (`MpActor.lag_compensate`), `position_at`, `rewind(stamp, callable)`; the time each player was seeing travels in `MpInputFrame.view` and with `to_server`; `--lag-comp=off` turns it off |
+| `core/mp_net_config.gd` | `MpNetConfig` (`.tres`): the game's network in one place; `apply()` configures `MpKit`; on the web it uses WebSocket (or the relay) and `can_host()` is false |
 | `core/mp_rate_limit.gd` | `MpRateLimit`: per-peer token bucket (tunnel and `mp_sv_*`) |
 | `core/mp_calls.gd` | calls by name (`mp_sv_*`, `mp_all_*`) with an argument count check |
 | `core/mp_smoother.gd` | `MpReplicate`'s exponential smoothing |
-| `rooms/mp_room_server.gd` | `MpRoomServer`: the room server scene (lobby + `MpMatchLauncher` + rules), with `MpLobbyConfig` flags, `--lobby-config=`, `--match-args=` and `--match-engine-args=` |
+| `rooms/mp_room_server.gd` | `MpRoomServer`: the room server scene (lobby + `MpMatchLauncher` + rules); `net_config` = the game's `MpNetConfig` (empty = the flow's, its `MpGame`); empty `match_scene` = the `MpGame`'s `boot_scene`; `MpLobbyConfig` flags, `--lobby-config=`, `--match-args=`, `--match-engine-args=` and `--keep-match-files` |
 | `rooms/mp_room_rules.gd` | `MpRoomRules`: room rules by overriding functions (`seats_for`, `accept_options`, `accept_pick`, `accept_bot`, `build_ticket`) |
-| `rooms/mp_local_server.gd` | `MpLocalServer`: a dedicated on the player's PC with a code per seat (`start_on(tree, seats)`, `server_ready(address, port, codes)`); friends join with `ip:port#CODE` (`MpFlow.join_address`) |
+| `rooms/mp_local_server.gd` | `MpLocalServer`: a dedicated on the player's PC with a code per seat (`start_on(tree, seats)`, `server_ready(address, port, codes)`, `invites()`); friends join with `ip:port#CODE` (`MpFlow.join_address`). One per process (a second `start_on` gives the running one back), its own matches folder per process |
+| `core/mp_address.gd` | `MpAddress`: what a person types to reach a server (IP, name, `:port`, `#CODE`, URL), the same in the menu, the lobby and `MpFlow.join_address` |
+| `core/mp_relay_peer.gd` | `MpRelayPeer`: the `relay` transport (WebSocket to an MpKit relay; the host connects out, no public IP). Each port is the room `<relay_room>-<port>`; a room with a live host is taken (4009) and the launcher tries another port |
+| `relay/` | `server.mjs` (a dependency-free Node relay, for Railway, Render, Fly or a VPS), `package.json` and the guide |
+| `nodes/mp_leave_button.gd` | `MpLeaveButton`: the HUD's Leave button (`MpFlow.leave_match()`: to the lobby or the menu); it works while the world is paused |
 | `rooms/mp_lobby_link.gd` | the `/root/MpLobby` stack (an autoload, or created on the fly) |
 | `rooms/ui/mp_lobby_screen.gd` / `mp_lobby_ui.gd` / `.tscn` | `MpLobbyScreen`: drop-in lobby (connect, rooms, create, code, seats, ready, chat) that joins the match through `MpFlow.join_match` |
 | `deploy/` | `deploy.sh user@vps build` (one command: user, files, systemd units, instances, firewall), `mp-rooms@.service` / `mp-dedicated@.service` (one instance per port), example export presets and the guide |
@@ -722,6 +757,30 @@ flowchart LR
   R1 --> A[peers in r_1]
   R1 -.->|not| B[peers in r_2]
 ```
+
+### Actors per room
+
+Several matches in one world scene: each room has its own subtree with its own spawner, and on the server it gets `room_id` once the room exists.
+
+```
+Hub (world scene)
+├── Room_r_1
+│   ├── Actors
+│   └── MpSpawner   # room_id = r_1, spawn_path = ../Actors
+└── Room_r_2
+    ├── Actors
+    └── MpSpawner   # room_id = r_2
+```
+
+```gdscript
+func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
+	var room := ROOM_SCENE.instantiate()
+	room.name = "Room_%s" % room_id
+	room.get_node("MpSpawner").room_id = room_id
+	add_child(room)
+```
+
+The server reveals that spawner only to the peers seated in `room_id` (it checks `MpKit.rooms`, it does not trust the client). When a player stands up it is hidden again and Godot despawns its actors on that client. Clients build the same `Room_<id>` node (for example on `MpKit.rooms.room_assigned`); its spawner says it is ready when it enters the tree. Each room's synchronizers belong to the room's spawner, so a world spawner without `room_id` (at the hub root) does not reveal them. Do not put two spawners with different `room_id` under the same parent: they share what that parent holds.
 
 ### Gameplay commands in a room
 

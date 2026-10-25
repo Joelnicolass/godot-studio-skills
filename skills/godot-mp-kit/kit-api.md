@@ -24,6 +24,23 @@ Files (`res://addons/mp_kit/`):
 
 These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or `submit_action`.
 
+## High-level layer (what a person uses first)
+
+| Piece | What for |
+|---|---|
+| `mp.gd` (`Mp`) | The match's verbs from any script: `play_solo`, `host`, `join(address)`, `leave`, `open_rooms`, `is_server`, `is_online`, `me`, `player(slot)`, `state`, `current_match`, `finish(result)`, `net_quality(slot)` |
+| `mp_game.gd` (`MpGame`) | The game in one `.tres`: an `MpNetConfig` plus `boot_scene`, `world_scene`, `lobby_scene`, `rooms_scene`. In `MpFlow.game` it fills `net_config` and every empty path |
+| `nodes/mp_world.gd` (`MpWorld`) | One node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite` |
+| `nodes/mp_actor.gd` (`MpActor`) | Sync, owner, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, prediction (`mp_move`), adaptive smoothing, lag compensation (`rewound`, `seen_position_of`, `view_lag`) |
+| `nodes/mp_input.gd` (`MpInput`) | The owner's keys with the `Input` API; an adaptive server buffer and the owner's pace |
+| `nodes/mp_state.gd`, `nodes/mp_match.gd` | Match values; start, waiting for seats, absences, end |
+| `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Leaving (it works while the world is paused); a private match's invite |
+| `core/mp_net_quality.gd` | RTT, jitter (97th percentile), loss and a grade per connection |
+| `core/mp_lag_comp.gd` | A second of poses per actor on the server; `rewind(stamp, callable)` |
+| `core/mp_relay_peer.gd` + `relay/server.mjs` | The `relay` transport (WebSocket to a Node relay, no public IP); a room with a live host is taken |
+
+The detail of every piece: `addons/mp_kit/README.md`. What follows is the low level (it keeps working).
+
 ## Install
 
 Copy `addons/mp_kit/` to `res://addons/mp_kit/` in the project. Autoload, **before** glue:

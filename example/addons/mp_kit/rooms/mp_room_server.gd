@@ -12,9 +12,13 @@ extends Node
 signal started(port: int)
 
 @export var config: MpLobbyConfig
+## The game's network .tres (the same one its MpFlow uses): the lobby and every match take transport, relay and TLS
+## from it, so they always talk like the game. Empty = the flow's (its MpGame), or what `config` says without one.
+@export var net_config: MpNetConfig
 ## Empty = the defaults (anything goes, 2 seats).
 @export var rules: MpRoomRules
-## Scene each match process opens. Empty = the project's main scene (the usual case: it holds the MpFlow).
+## Scene each match process opens. Empty = the game's boot scene (MpGame), or the project's main scene without one
+## (the usual case: it holds the MpFlow).
 @export_file("*.tscn") var match_scene: String = ""
 
 var launcher: MpMatchLauncher
@@ -31,10 +35,22 @@ func _start() -> void:
 		config = load(chosen)
 	if config == null:
 		config = MpLobbyConfig.new()
+	config = config.duplicate()
+	## No net_config of its own: the game's (the flow that opened this scene with --room-server).
+	var flow := MpFlow.find_in_tree(self)
+	if net_config == null and flow:
+		net_config = flow.net_config
+	## A game in one .tres: each match opens the game's boot scene (its flow plays the ticket's match).
+	if match_scene.is_empty() and flow and flow.game and not flow.game.boot_scene.is_empty():
+		match_scene = flow.game.boot_scene
+	if net_config:
+		net_config.fill_lobby_config(config)
 	launcher = MpMatchLauncher.new()
 	launcher.name = "Launcher"
 	launcher.config = config
 	launcher.base_args = _base_args()
+	## `--keep-match-files`: keep each match's folder (ticket, state, result and its log) to see what happened.
+	launcher.keep_files = MpBoot.user_flag("keep-match-files")
 	var extra := MpBoot.user_value("match-args", "")
 	if not extra.is_empty():
 		launcher.agent_args.append_array(extra.split(",", false))
@@ -53,6 +69,13 @@ func _start() -> void:
 		print("match %s ended %s" % [match_id, JSON.stringify(result)]))
 	launcher.match_failed.connect(func(match_id: String, reason: String) -> void:
 		print("match %s failed %s" % [match_id, reason]))
+	## Ready means reachable (a relay accepts the lobby a moment after it starts).
+	while not lobby.is_listening():
+		if lobby.listen_refused():
+			push_error("MpRoomServer: lobby port %d is in use on the relay (another room server of this game)" % launcher.config.lobby_port)
+			get_tree().quit(1)
+			return
+		await get_tree().process_frame
 	print("rooms ready port %d (%s)" % [launcher.config.lobby_port, launcher.config.transport])
 	started.emit(launcher.config.lobby_port)
 

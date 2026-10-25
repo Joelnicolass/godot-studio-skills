@@ -65,7 +65,9 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Need | Use | Do not write |
 |------|-----|--------------|
 | Start an MP game | Tools → **MpKit: Setup game...** (shows `[+]`/`[~]`, never overwrites) | boot/world scenes from scratch by hand |
-| Network in one place | `MpNetConfig` (`.tres`) in `MpFlow.net_config` | scattered `configure()` calls and flags |
+| The game in one place | **`MpGame`** (`game.tres`: the network and the scenes) in `MpFlow.game`; the menu, the lobby and the room server read it from the flow | scattered `configure()` calls, paths repeated on every node |
+| A networked world | one **`MpWorld`** node with `player_scene` (it builds `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite`) | wiring the spawner, state and match by hand |
+| The match's verbs from any script | **`Mp`**: `play_solo`, `host`, `join`, `leave`, `open_rooms`, `is_server`, `me`, `player`, `state`, `finish`, `net_quality` | finding the `MpFlow` or the `MpMatch` by hand |
 | Replicated actor | an **`MpActor`** child (Sync in the inspector; it builds and saves `MpSync`) | a hand-built `MultiplayerSynchronizer`, `MpReplicate` in new code |
 | Player input | an **`MpInput`** child + `input.get_vector(...)` on the server | a `submit_move` per frame |
 | Lag-free movement | `MpActor.predict` + `func mp_move(input, delta)` (movement only; effects behind `not input.is_replaying()`) | your own prediction or rollback |
@@ -74,25 +76,29 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Score, clock, round | **`MpState`** (`set_value`, `add`, `changed` signal) | `push_snapshot` + `snapshot_for_joiner` by hand |
 | Match start and end | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | your own ticket and abandon glue |
 | Online rooms | **`MpRoomServer`** + `MpLobbyConfig` + `MpRoomRules`; client **`MpLobbyScreen`** | lobby `Callable`s wired by hand |
-| A private match on the PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; join with `ip:port#CODE` | your own launcher |
+| A private match on the PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; the HUD shows `ip:port#CODE` (`MpInviteLabel`) | your own launcher |
+| Shots with ping | `MpActor.lag_compensate` + `net.rewound(func)` / `net.seen_position_of(node)` / `net.view_lag()` | checking against the present |
+| Showing the connection's quality | `Mp.net_quality()` (RTT, jitter, loss, `grade_name`) | your own pings |
+| No public IP | `transport = relay` + `relay/server.mjs` (Railway or another host), the secret in `MPKIT_RELAY_SECRET` | opening ports or a tunnel of your own |
 | Put it on a VPS | `addons/mp_kit/deploy/deploy.sh user@vps build --rooms 7700` | systemd units per game |
 | Test with a bad network | `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` on every process | assuming a perfect LAN |
 
-Human guide: `addons/mp_kit/QUICKSTART.md` (six steps) and `addons/mp_kit/deploy/README.md`. The kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd`.
+Human guide: `addons/mp_kit/QUICKSTART.md` (the short one), `addons/mp_kit/GUIDE.md` (step by step), `addons/mp_kit/deploy/README.md` and `addons/mp_kit/relay/README.md`. A lab without a game: `mpkit_lab/run/all.sh` and `mpkit_lab/CASES.md`. The kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd`.
 
 Rules that do not bend:
 
-- Web and desktop do not mix: a web export uses WebSocket only and never hosts; its server is a `ws` dedicated.
+- Web and desktop do not mix: a web export uses WebSocket (direct, or through the relay) and never hosts; its server is a `ws` dedicated or any server through the relay.
+- The network buffers are adaptive (the 97th percentile of the measured network): do not fix them by hand except to bound them (`buffer_delay_s` is the cap).
 - `MpFlow` and world nodes never name lobby classes (`MpMatchAgent`...): group or `load()` by path. Otherwise a game with the lobby as an autoload forms a load cycle.
 - Do not add a member to `MpFlow` / `MpSpawner` with the name of one in a game subclass: grep the subclasses first.
 
 ## Quickstart (5 steps)
 
 1. Copy `addons/mp_kit/` and enable **MpKit** (the `MpKit` autoload).
-2. Tools → **MpKit: Setup game...**, or by hand: an **`MpFlow`** node in the boot scene (it moves itself under the root) with `boot_path`, `world_path` and an `MpNetConfig`, plus `mp_boot_menu.tscn`.
-3. In the world: `MpSlotSpawner` (`spawn_path` = parent of the actors, `pawn_scene`, `spawn_points`), `MpState` and `MpMatch`. The spawner holds the synchronizers until each client is ready.
+2. Tools → **MpKit: Setup game...**, or by hand: an **`MpGame`** (`game.tres`, network and scenes) and an **`MpFlow`** node in the boot scene with `game` = that `.tres` (it moves itself under the root), plus `mp_boot_menu.tscn`.
+3. In the world: one **`MpWorld`** node with `player_scene` (it builds the spawner, `MpState` and `MpMatch`). By hand, when the world already has its structure: `MpSlotSpawner` (`spawn_path`, `pawn_scene`, `spawn_points`), `MpState` and `MpMatch`. The spawner holds the synchronizers until each client is ready.
 4. Player: `MpActor` (predict) + `MpInput` children; movement in `mp_move`, rules behind `net.is_authority()`, `mp_sv_*` / `mp_all_*` calls.
-5. LAN: Host LAN / Join. Online: a dedicated (`--dedicated`) or rooms (`MpRoomServer`, `--room-server`), with a public IP; never `host()` behind NAT.
+5. LAN: Host LAN / Join. Online: a dedicated (`--dedicated`) or rooms (`MpRoomServer`, `--room-server`), with a public IP or through the relay; never `host()` behind NAT without the relay.
 
 ## What the kit is / is not
 
@@ -204,7 +210,7 @@ Same collision and `submit_*` code (the local host does not send an RPC). Always
 
 - [ ] MP type declared (none / local-Wi-Fi / online). No MP: this checklist does not apply.
 - [ ] Autoload `MpKit` **before** glue. `configure(port, max_players)` before host/join.
-- [ ] `MpFlow` (a node in the boot, an autoload or `extends MpFlow`) with an `MpNetConfig`. Several maps: `add_world` + `select_world`. Extra glue only for copy or a tunnel.
+- [ ] `MpFlow` (a node in the boot, an autoload or `extends MpFlow`) with an `MpGame` (`game.tres`), or an `MpNetConfig` plus paths. The world with an `MpWorld` unless it already has its own structure. Several maps: `add_world` + `select_world`. Extra glue only for copy or a tunnel.
 - [ ] New actors with `MpActor` + `MpInput` (predict for the player); match state in `MpState`; the end with `MpMatch.finish`. No hand-written `@rpc` unless the node layer does not cover the case (write down why).
 - [ ] Online: `MpBoot` + `host_dedicated()`; clients `join`; dedicated export; spawn only `occupied_slots()`. Several players per match over the internet: room server + tickets (`MpMatchLauncher`), not a free-for-all `join(ip)`. Optional hub: `MpKit.rooms` / `MpKit.matchmaker` on the same process; score still stays out of the addon.
 - [ ] Slots in domain; peers only in RPC/authority.

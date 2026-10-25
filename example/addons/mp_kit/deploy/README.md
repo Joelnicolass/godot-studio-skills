@@ -29,7 +29,7 @@ That creates the `game` user, copies the build to `/opt/game`, installs the unit
 | You want | Option |
 |---|---|
 | More room servers on the same VPS | `--rooms 7700,7701,7702` (each gets 100 match ports of its own: 7800, 7900, 8000…) |
-| Dedicated servers without a lobby (join with IP and port) | `--dedicated 7777,7778` |
+| Dedicated servers without a lobby (join with IP and port) | `--dedicated 7777,7787` (without `--rooms`, no rooms are installed; the LAN search uses 7778-7781) |
 | Web clients | `--transport ws` (the lobby and the matches over TCP) |
 | The script to open the ports | `--open-firewall` (ufw: UDP with ENet, TCP with WebSocket) |
 | Web clients over https (`wss://`) | `--transport ws --tls-cert /etc/letsencrypt/live/DOMAIN/fullchain.pem --tls-key /etc/letsencrypt/live/DOMAIN/privkey.pem` |
@@ -49,6 +49,17 @@ If the room server goes down, systemd brings it back and its matches close by th
 ## Web over https
 
 A page served over `https` only opens `wss://`. On the server, `deploy.sh … --transport ws --tls-cert … --tls-key …` (or `tls_certificate_path` / `tls_key_path` in the `MpLobbyConfig`, or the `--tls-certificate-path=` and `--tls-key-path=` flags): the lobby and every match use that certificate. On the client, `MpNetConfig.tls_client` on and the address of the certificate's domain (`game.example.com:7700`). The service user must be able to read the certificate and the key (with Let's Encrypt, for example, a group allowed into `/etc/letsencrypt/live` and `archive`).
+
+## Relay (no open ports)
+
+With `transport = relay` the server connects out to the relay: the VPS opens no port (`--open-firewall` opens nothing). The secret comes from `MPKIT_RELAY_SECRET` on **your** machine and is kept in `/etc/NAME/relay.env`, which only the service user reads; a redeploy without the variable leaves it alone.
+
+```bash
+MPKIT_RELAY_SECRET=the-key addons/mp_kit/deploy/deploy.sh user@vps build/server --rooms 7700 \
+  --transport relay --relay-url wss://your-relay.up.railway.app
+```
+
+`--relay-room NAME` changes the prefix of the relay rooms if you do not want the game's. How to put the relay up: [../relay/README.md](../relay/README.md).
 
 ## Verified and not verified
 

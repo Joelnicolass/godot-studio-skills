@@ -47,6 +47,8 @@ var transport: String = MpTransport.ENET
 ## WebSocket TLS (wss://). Server: certificate + key; client: TLSOptions.client(). Null = plain. MpNetConfig sets them.
 var tls_server: TLSOptions
 var tls_client: TLSOptions
+## This connection's RTT, jitter and loss (and, on the server, every player's). Mp.net_quality() reads it.
+var net_quality: MpNetQuality
 var _peer: MultiplayerPeer
 var _world_ready: Dictionary = {}
 var _broadcasting_custom: bool = false
@@ -55,6 +57,11 @@ var _awaiting_ticket: Dictionary = {}
 
 
 func _ready() -> void:
+	## Infrastructure: the session (admission timers, rejections) keeps going while the game is paused.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	net_quality = MpNetQuality.new()
+	net_quality.name = "NetQuality"
+	add_child(net_quality)
 	transport = MpTransport.from_flags()
 	tls_server = MpTransport.server_tls_from_flags()
 	tls_client = MpTransport.client_tls_from_flags()
@@ -89,6 +96,16 @@ func is_server() -> bool:
 
 func is_dedicated() -> bool:
 	return is_server() and ids.dedicated
+
+
+## Server: clients can reach it now. ENet / WebSocket: as soon as it hosts; relay: once the relay accepted it.
+func is_listening() -> bool:
+	return is_server() and MpTransport.is_listening(_peer)
+
+
+## Server: the relay turned this server away (its port's room has another live host): host on another port.
+func listen_refused() -> bool:
+	return is_server() and MpTransport.is_refused(_peer)
 
 
 func is_listen_host() -> bool:
@@ -425,6 +442,9 @@ func rpc_present_ticket(ticket: String) -> void:
 	var slot := int(admission.call(sender, ticket))
 	if slot <= 0:
 		_reject_peer(sender, "rejected")
+		return
+	if slot < ids.first_client_slot() or slot > ids.max_players:
+		_reject_peer(sender, "slot_out_of_range")
 		return
 	if not ids.bind_client(sender, slot):
 		_reject_peer(sender, "slot_taken")
