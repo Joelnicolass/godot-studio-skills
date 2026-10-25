@@ -135,7 +135,7 @@ func accept_pick(pick: Dictionary) -> bool:
 
 ### Web
 
-A browser can neither open a server nor use UDP, so a web game joins a WebSocket dedicated (`MpNetConfig.transport = ws`). Desktop and web do not mix: a WebSocket server serves WebSocket clients. The menu's address field takes `192.168.1.5`, `game.example.com`, either with `:port`, or a `wss://…` URL. A page served over `https` needs `wss://`: either the dedicated has a certificate and key in its `MpNetConfig`, or a proxy (Caddy, nginx) puts TLS in front. A browser pauses a hidden tab: a web player who switches tabs stops for the others until they come back, and in a room match, being away longer than `rejoin_grace_s` counts as an abandon.
+A browser can neither open a server nor use UDP, so a web game joins a WebSocket dedicated (`MpNetConfig.transport = ws`). Desktop and web do not mix: a WebSocket server serves WebSocket clients. The menu's address field takes `192.168.1.5`, `game.example.com`, either with `:port`, or a `wss://…` URL. A page served over `https` needs `wss://`: the server carries a certificate and key (in its `MpNetConfig`, in the `MpLobbyConfig` for rooms, or with `deploy.sh --tls-cert … --tls-key …`) and the client turns on `MpNetConfig.tls_client`. A browser pauses a hidden tab: a web player who switches tabs stops for the others until they come back, and in a room match, being away longer than `rejoin_grace_s` counts as an abandon.
 
 ### Put it on a VPS
 

@@ -65,7 +65,7 @@ The transport is selectable; the API, RPCs and replication are the same with bot
 The kit speaks `ws://`. For `wss://` there are two ways, without changing the game:
 
 1. **Reverse proxy (recommended)**: nginx/Caddy terminates TLS on 443 with the domain certificate and forwards to the local WS ports (`proxy_pass http://127.0.0.1:7700;` with `Upgrade`/`Connection`). The web client uses `wss://game.example.com/...`. One public port per match is awkward: map a path or a subdomain per range, or use one TLS port per match.
-2. **TLS in Godot**: in the dedicated's `MpNetConfig`, `tls_certificate` + `tls_key`; in the client's, `tls_client` (and `tls_trusted_ca` when the certificate is not from a system CA). `MpKit.tls_server` / `tls_client` carry them to `MpTransport`. In `create_client`, `host` may already be a full URL (`wss://domain/path`). The lobby does not take them yet.
+2. **TLS in Godot**: in the dedicated's `MpNetConfig`, `tls_certificate` + `tls_key`; in the client's, `tls_client` (and `tls_trusted_ca` when the certificate is not from a system CA). `MpKit.tls_server` / `tls_client` carry them to `MpTransport`. In `create_client`, `host` may already be a full URL (`wss://domain/path`). Without a `.tres`: flags `--tls-certificate-path=` / `--tls-key-path=` (server) and `--tls-client` / `--tls-trusted-ca=` / `--tls-common-name=` (client). Rooms: `MpLobbyConfig.tls_certificate_path` / `tls_key_path`; the lobby listens on `wss://` and every match gets the same certificate; `MpLobbyScreen` uses the TLS of the flow's `MpNetConfig`.
 
 ## Two server modes
 
