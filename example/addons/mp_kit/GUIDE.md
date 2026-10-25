@@ -880,7 +880,7 @@ mpkit_lab/run/play.sh rooms         # a headless room server + 2 windows on the 
 
 Close the windows (or Ctrl+C) to finish. The logs stay in the folder it prints on start.
 
-The whole matrix of automatic cases: `mpkit_lab/run/all.sh`. What each test covers: `mpkit_lab/CASES.md`.
+The whole matrix of automatic cases: `mpkit_lab/run/all.sh` (an hour with a shared queue). For every change, `mpkit_lab/run/all.sh --quick`: one of each kind over ENet, in a few minutes. The relay's faults (a port clash, a restart, a frozen host): `mpkit_lab/run/relayfault.sh`. What each test covers: `mpkit_lab/CASES.md`.
 
 ### 8.7 How to read what happens
 
@@ -906,6 +906,7 @@ The whole matrix of automatic cases: `mpkit_lab/run/all.sh`. What each test cove
 | `--world=id` | The world, if you use the `MpFlow.worlds` catalog |
 | `--keep-match-files` | Room server: does not delete each match's folder |
 | `--lag-comp=off` | Server: no lag compensation (to compare) |
+| `--relay-refused-grace-s=N` | How long a host the relay refused retries before giving up (3 s; a room server's matches use 0.5 s) |
 | `--no-flow` | The `MpFlow` does nothing (tools and tests) |
 
 They go after `--` on the command line.
@@ -1241,7 +1242,7 @@ To try it all together on your PC: `mpkit_lab/run/play.sh dedicated --relay` or 
 
 - It passes packets between a room's host and its clients, all over WebSocket (reliable and ordered).
 - A room with a live host is taken, like a port in use: a second host is refused (4009). A room or private match tries the next port; a dedicated or a lobby says so and stops. Each server searches for a port from a random one, so two players with a private match rarely meet.
-- A host that does not answer the relay's pings for 15 s is dropped and its room is free (a server that restarted gets back in within that time).
+- A host that does not answer the relay's pings for 15 s is dropped and its room is free. A refused host retries for 3 s before giving up, so a server that restarts at once gets its room back; a room server's matches retry for 0.5 s and move to the next port.
 - A client of a room without a host is refused; when the host leaves, its clients are closed.
 - Limits, through the relay's variables: `RELAY_MAX_CLIENTS` per room (64), `RELAY_MAX_MESSAGE` in bytes (262144).
 - It stores nothing, it never sees the game. The latency is the relay's in the middle: pick a region near your players.

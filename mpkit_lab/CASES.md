@@ -1,6 +1,6 @@
 # MpKit: the case matrix
 
-Every case of the framework and the test that covers it. `run/all.sh` runs everything automatic; `run/play.sh` shows it in windows.
+Every case of the framework and the test that covers it. `run/all.sh` runs everything automatic (an hour with a shared queue); `run/all.sh --quick`, one of each kind over ENet (a few minutes); `run/play.sh` shows it in windows.
 Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANSPORT=enet|ws|relay`); **TLS** also over `wss://` (`TLS=1`).
 
 ## Session
@@ -72,6 +72,10 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | Relay: only whoever has the secret hosts (header or query); without a secret nobody, unless `RELAY_OPEN=1` | `relay.sh` |
 | Relay: a room with a live host refuses a second host (4009, like a port in use) | `relay.sh` |
 | Relay: a refused match is launched again on another port and only the one that listens is announced | `tests/test_launcher_relay_retry.gd` |
+| Relay end to end: with every port but one taken, the private match starts on the free one and is played | `relayfault.sh` clash |
+| Relay: a dedicated killed (kill -9) and started again at once gets its room back | `relayfault.sh` restart |
+| Relay: with the host frozen, another dedicated is refused and stops; once the relay drops the silent one, a third gets in | `relayfault.sh` frozen |
+| Visible windows: LAN, dedicated and rooms, also through the relay (`play.sh … --watch`) | `play.sh` |
 | Private match: the invite in the HUD, a second click, another private match on the same PC (through the relay too) | `private.sh` **T** |
 | The Leave button while the match waits for seats (paused world) | `rooms.sh` wait |
 | `deploy.sh` (the commands it would run), also with `--transport relay` and the secret apart | `deploy.sh … --dry-run` |
@@ -84,5 +88,3 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | The relay running on Railway | it is the same `server.mjs` tested locally; Railway is not reached from here |
 | Web clients through the relay with a public `wss://` | it needs the Railway domain (over a local `ws://` it is covered: `TRANSPORT=relay web.sh`) |
 | A *Dedicated Server* export started without `--dedicated` | the `dedicated_server` tag only exists in an export |
-| A relay port clash end to end (two matches on the same room) | the retry is tested in `test_launcher_relay_retry.gd`; end to end, the random port almost never clashes |
-| A relay server that restarts within the 3 s grace | covered indirectly: the arena and rooms over the relay start each scenario right after the previous one |
