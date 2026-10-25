@@ -29,7 +29,7 @@ Eso crea el usuario `juego`, copia el build a `/opt/juego`, instala las unidades
 | Querés | Opción |
 |---|---|
 | Más servidores de salas en el mismo VPS | `--rooms 7700,7701,7702` (cada uno tiene 100 puertos de partida propios: 7800, 7900, 8000…) |
-| Servidores dedicados sin lobby (entrar con IP y puerto) | `--dedicated 7777,7778` |
+| Servidores dedicados sin lobby (entrar con IP y puerto) | `--dedicated 7777,7787` (sin `--rooms`, no instala salas; 7778-7781 los usa la búsqueda LAN) |
 | Clientes web | `--transport ws` (el lobby y las partidas por TCP) |
 | Que el script abra los puertos | `--open-firewall` (ufw: UDP con ENet, TCP con WebSocket) |
 | Clientes web por https (`wss://`) | `--transport ws --tls-cert /etc/letsencrypt/live/DOMINIO/fullchain.pem --tls-key /etc/letsencrypt/live/DOMINIO/privkey.pem` |
@@ -49,6 +49,17 @@ Si el servidor de salas se cae, systemd lo levanta y sus partidas se cierran sol
 ## Web por https
 
 Una página servida por `https` solo abre `wss://`. En el servidor, `deploy.sh … --transport ws --tls-cert … --tls-key …` (o `tls_certificate_path` / `tls_key_path` en el `MpLobbyConfig`, o los flags `--tls-certificate-path=` y `--tls-key-path=`): el lobby y cada partida usan ese certificado. En el cliente, `MpNetConfig.tls_client` encendido y la dirección del dominio del certificado (`juego.ejemplo.com:7700`). El usuario del servicio tiene que poder leer el certificado y la clave (con Let's Encrypt, por ejemplo, un grupo con permiso sobre `/etc/letsencrypt/live` y `archive`).
+
+## Relay (sin puertos abiertos)
+
+Con `transport = relay` el servidor se conecta hacia afuera al relay: el VPS no abre ningún puerto (`--open-firewall` no abre nada). El secreto sale de `MPKIT_RELAY_SECRET` en **tu** máquina y queda en `/etc/NOMBRE/relay.env`, que solo lee el usuario del servicio; un redeploy sin la variable no lo toca.
+
+```bash
+MPKIT_RELAY_SECRET=la-clave addons/mp_kit/deploy/deploy.sh usuario@vps build/server --rooms 7700 \
+  --transport relay --relay-url wss://tu-relay.up.railway.app
+```
+
+`--relay-room NOMBRE` cambia el prefijo de las salas del relay si no querés el del juego. Cómo subir el relay: [../relay/README.md](../relay/README.md).
 
 ## Verificado y no verificado
 

@@ -5,11 +5,17 @@ extends Node
 ## Drop one inside anything the network shares: a player, a bullet, a door. The server owns that node; what you
 ## tick under "Sync" reaches every peer (the synchronizer is built here, in the editor, and saved in the scene) and
 ## is drawn smoothly there. `owner_slot` says which player owns it (0 = nobody, the server). Calls travel by name:
-##   net.to_server(&"buy", item)  ->  mp_sv_buy(item)  runs on the server (only the owner may ask)
+##   net.to_server(&"buy", item)  ->  mp_sv_buy(item)  runs on the server (the owner may ask; see `callers`)
 ##   net.to_all(&"flash")         ->  mp_all_flash()   runs on every peer (only the server may send)
 ## With `predict`, movement goes in `mp_move(input, delta)`: the server runs it, and the owner runs it at once with
 ## its own keys and corrects itself from the server's state (reconciliation), so its node answers without lag.
 ## Not: spawning (MpSpawner), input (MpInput), match state (MpState).
+
+## Who may ask for this node's mp_sv_* calls.
+enum Callers {
+	OWNER, ## the player in owner_slot (with owner_slot 0: only the server itself)
+	ANYONE, ## any seated player (a door, a bell, a shop): check what they ask inside mp_sv_*
+}
 
 enum Smoothing {
 	NONE, ## draw each server state as it arrives
@@ -53,8 +59,15 @@ static var server_calls := MpRateLimit.new(60.0, 120.0)
 	set(value):
 		smoothing = value
 		_editor_rebuild()
-## BUFFERED: how far in the past proxies are drawn. About two server states; more hides worse networks.
+## BUFFERED: how far in the past proxies are drawn, at most. With adaptive_buffer it uses only what the network
+## needs (a few ticks on a good one); more hides worse networks.
 @export_range(0.0, 0.5, 0.01) var buffer_delay_s: float = 0.1
+## BUFFERED: measure the states' spacing and lateness and draw only that far behind (up to buffer_delay_s).
+## Off: always buffer_delay_s.
+@export var adaptive_buffer: bool = true
+## BUFFERED, adaptive: share of states allowed to come too late to be drawn on time (3 % = the 97th percentile, as
+## Photon Fusion). Lower = smoother on a bad network, a little more behind.
+@export_range(0.0, 0.2, 0.005) var late_tolerance: float = 0.03
 ## FOLLOW: how fast proxies chase the newest state.
 @export var follow_speed: float = 14.0
 @export var freeze_rigid_if_proxy: bool = true
@@ -64,9 +77,17 @@ static var server_calls := MpRateLimit.new(60.0, 120.0)
 	set(value):
 		predict = value
 		_editor_rebuild()
+## Most ticks one correction replays (a high ping replays more); past it, fewer corrections are made.
+@export_range(4, 240) var max_resim_ticks: int = 32
 @export_group("Owner")
 ## The player slot that owns this node (0 = the server). Spawners set it before the node enters the tree.
 @export var owner_slot: int = 0
+## Who may call mp_sv_* here. OWNER (default) or ANYONE (things of the world every player uses).
+@export var callers: Callers = Callers.OWNER
+@export_group("Lag compensation")
+## Server: keep the last second of this node's poses, so a shot can be checked against where its shooter saw it
+## (MpActor.rewound / seen_position_of on the shooter). Off for things nobody aims at.
+@export var lag_compensate: bool = true
 
 ## Server time of the state being sent (synced with it; 0 = none yet). Proxies and reconciliation read it.
 var net_stamp: float = 0.0
@@ -76,10 +97,14 @@ var net_position: Vector3 = Vector3.ZERO
 var net_rotation: Quaternion = Quaternion.IDENTITY
 
 var _root: Node
+## Loaded as part of a saved scene (it had an owner when it entered); a node a spawner or script made has none then.
+var _from_saved_scene: bool = false
 var _calls: MpCalls
 var _motion: MpProxyMotion
 var _prediction: MpPrediction
 var _sender_slot: int = -1
+## Inside an mp_sv_* call from a client: the server time that client was seeing (0 = unknown).
+var _call_view: float = 0.0
 
 
 ## The MpActor child of `node`, or null.
@@ -96,12 +121,18 @@ func _enter_tree() -> void:
 	_editor_rebuild()
 
 
+func _exit_tree() -> void:
+	if not Engine.is_editor_hint() and _root:
+		MpLagComp.forget(_root)
+
+
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		set_process(false)
 		set_physics_process(false)
 		return
 	_root = get_parent()
+	_from_saved_scene = _root.owner != null
 	_calls = MpCalls.new(_root)
 	process_priority = 10000
 	MpAuthority.claim_server(_root)
@@ -114,8 +145,11 @@ func _ready() -> void:
 		predict = false
 	if predict:
 		_prediction = MpPrediction.new(_root, input())
+		_prediction.max_resim_ticks = max_resim_ticks
 	_motion = MpProxyMotion.new(_root, smoothing == Smoothing.BUFFERED)
 	_motion.delay_s = buffer_delay_s
+	_motion.adaptive = adaptive_buffer
+	_motion.late_tolerance = late_tolerance
 	_motion.follow_speed = follow_speed
 	_motion.move_position = sync_position
 	_motion.move_rotation = sync_rotation
@@ -176,6 +210,51 @@ func sender_slot() -> int:
 	return _sender_slot
 
 
+## Server: the time the owner of this node was seeing (its proxies are drawn in the past): inside an mp_sv_* call
+## the caller's, else the owner's current input frame's; the present for the host's own player, solo, or unknown.
+## Never ahead of now, never more than MpLagComp.HISTORY_S back.
+func view_stamp() -> float:
+	var now := MpNetClock.stamp()
+	if not MpKit.is_networked() or not MpKit.is_server():
+		return now
+	var view := _call_view
+	if view <= 0.0 and not is_local():
+		var keys := input()
+		if keys and keys.current_frame():
+			view = keys.current_frame().view
+	return MpLagComp.clamp_view(view, now)
+
+
+## Server: how far behind the present this node's owner sees the others, in seconds.
+func view_lag() -> float:
+	return MpNetClock.stamp() - view_stamp()
+
+
+## Server: runs `body` with every other lag-compensated node moved to where this node's owner saw it (then puts
+## them back). For a hitscan shot: `net.rewound(func(): return space.intersect_ray(query))`.
+func rewound(body: Callable) -> Variant:
+	return MpLagComp.rewind(view_stamp(), body, _root)
+
+
+## Server: where `node` was when this node's owner saw it (Vector2 for 2D, Vector3 for 3D).
+func seen_position_of(node: Node) -> Variant:
+	return MpLagComp.position_at_like(node, view_stamp())
+
+
+## Server (or solo) only: remove this node everywhere. Only for nodes a spawner made (the spawner removes them on every
+## peer, late joiners never get them). A node of the world scene cannot be despawned: a late joiner loads the scene
+## and would still have it; hide it instead (sync `visible`) or spawn it.
+func despawn() -> void:
+	if not MpKit.is_authority():
+		push_warning("MpActor '%s': despawn() only runs on the server" % _root.name)
+		return
+	## Saved in the world scene = it had an owner when it loaded (an owner a script sets later does not count).
+	if _from_saved_scene:
+		push_error("MpActor '%s': despawn() on a node of the world scene; hide it (sync visible) or spawn it" % _root.name)
+		return
+	_root.queue_free()
+
+
 ## After a teleport or respawn: on a client, jump to the server's pose instead of sliding there.
 func snap() -> void:
 	if _motion and not is_authority():
@@ -187,10 +266,11 @@ func to_server(action: StringName, ...args: Array) -> void:
 	if MpKit.is_authority():
 		_run_sv(action, args, MpKit.local_slot())
 		return
-	if owner_slot != 0 and not is_local():
-		push_warning("MpActor '%s': to_server(%s) from a peer that does not own it" % [_root.name, action])
+	if callers == Callers.OWNER and not is_local():
+		push_warning("MpActor '%s': to_server(%s) from a peer that does not own it (callers = OWNER)" % [_root.name, action])
 		return
-	rpc_server_call.rpc_id(MpAuthority.SERVER_PEER, action, args)
+	## With what this player sees, so the server can rewind the others to it (lag compensation).
+	rpc_server_call_seen.rpc_id(MpAuthority.SERVER_PEER, action, args, MpNetClock.view_stamp())
 
 
 ## Server only: run mp_all_<action>(args...) here and on every peer that has this node.
@@ -217,11 +297,19 @@ func rpc_server_call(action: StringName, args: Array) -> void:
 	if not multiplayer.is_server():
 		return
 	var slot := MpKit.slot_for_peer(multiplayer.get_remote_sender_id())
-	if slot <= 0 or (owner_slot != 0 and slot != owner_slot):
+	if slot <= 0 or (callers == Callers.OWNER and slot != owner_slot):
 		return
 	if var_to_bytes(args).size() > MAX_ARGS_BYTES or not server_calls.allow(multiplayer.get_remote_sender_id()):
 		return
 	_run_sv(action, args, slot)
+
+
+## to_server with the server time the caller was seeing (lag compensation reads it as view_stamp()).
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_server_call_seen(action: StringName, args: Array, view: float) -> void:
+	_call_view = view if is_finite(view) else 0.0
+	rpc_server_call(action, args)
+	_call_view = 0.0
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -240,6 +328,8 @@ func _publish_pose() -> void:
 	net_stamp = MpNetClock.stamp()
 	net_position = MpProxyMotion.position_of(_root)
 	net_rotation = MpProxyMotion.rotation_of(_root)
+	if lag_compensate and MpKit.is_networked() and sync_position:
+		MpLagComp.record(_root, net_stamp)
 
 
 func _editor_rebuild() -> void:

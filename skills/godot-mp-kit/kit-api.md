@@ -24,6 +24,23 @@ Archivos (`res://addons/mp_kit/`):
 
 Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` ni `submit_action`.
 
+## Capa alta (lo primero que usa una persona)
+
+| Pieza | Para qué |
+|---|---|
+| `mp.gd` (`Mp`) | Verbos de la partida desde cualquier script: `play_solo`, `host`, `join(dirección)`, `leave`, `open_rooms`, `is_server`, `is_online`, `me`, `player(slot)`, `state`, `current_match`, `finish(result)`, `net_quality(slot)` |
+| `mp_game.gd` (`MpGame`) | El juego en un `.tres`: es un `MpNetConfig` más `boot_scene`, `world_scene`, `lobby_scene`, `rooms_scene`. En `MpFlow.game` llena `net_config` y cada ruta vacía |
+| `nodes/mp_world.gd` (`MpWorld`) | Un nodo en el mundo; en el editor arma `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite` |
+| `nodes/mp_actor.gd` (`MpActor`) | Sync, dueño, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, predicción (`mp_move`), suavizado adaptativo, compensación de lag (`rewound`, `seen_position_of`, `view_lag`) |
+| `nodes/mp_input.gd` (`MpInput`) | Las teclas del dueño con la API de `Input`; buffer del servidor adaptativo y ritmo del dueño |
+| `nodes/mp_state.gd`, `nodes/mp_match.gd` | Valores de partida; inicio, espera de asientos, ausencias, fin |
+| `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Salir (anda con el mundo pausado); la invitación de una partida privada |
+| `core/mp_net_quality.gd` | RTT, jitter (percentil 97), pérdida y nota por conexión |
+| `core/mp_lag_comp.gd` | Un segundo de poses por actor en el servidor; `rewind(stamp, callable)` |
+| `core/mp_relay_peer.gd` + `relay/server.mjs` | El transporte `relay` (WebSocket a un relay Node, sin IP pública); una sala con host vivo está ocupada |
+
+Detalle de cada pieza: `addons/mp_kit/README.md`. Lo de abajo es el bajo nivel (sigue andando).
+
 ## Install
 
 Copiá `addons/mp_kit/` a `res://addons/mp_kit/` del proyecto. Autoload, **antes** del glue:

@@ -1,5 +1,5 @@
-; MpKit lab: a tiny project that runs the kit's own examples and tests, apart from the game's autoloads.
-; addons/mp_kit is a symlink to game/addons/mp_kit (one copy of the kit).
+; MpKit lab: a tiny project that runs the kit's own examples and tests, apart from any game.
+; addons/mp_kit is a symlink to the kit's own addons/mp_kit (one copy of the kit).
 
 config_version=5
 
@@ -16,7 +16,7 @@ MpLabProbe="*res://probe/lab_probe.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/mp_kit/plugin.cfg")
+enabled=PackedStringArray("res://addons/mp_kit/plugin.cfg", "res://addons/lab_editor_check/plugin.cfg")
 
 [display]
 

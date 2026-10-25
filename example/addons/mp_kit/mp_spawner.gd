@@ -25,6 +25,8 @@ extends MultiplayerSpawner
 ## check per node added to the tree (only synchronizers do more). Nothing per frame.
 
 const GATE_NAME := "MpSpawnGate"
+## Meta set on the nodes spawn(data) makes (see _is_replicated).
+const SPAWNED_META := &"mp_spawned"
 
 @export var extra_scenes: Array[PackedScene] = []
 ## Hold spawn/sync per peer until that peer's copy of this spawner is ready.
@@ -44,6 +46,7 @@ const GATE_NAME := "MpSpawnGate"
 		_refresh_all()
 
 var _root: Node
+var _user_spawn: Callable
 var _ready_peers: Dictionary = {}
 var _entering: Array[Node] = []
 var _warned: Dictionary = {}
@@ -58,6 +61,7 @@ func _ready() -> void:
 			continue
 		add_spawnable_scene(path)
 
+	_wrap_spawn_function()
 	if spawn_path.is_empty() or spawn_path == NodePath("."):
 		push_warning("MpSpawner '%s': set spawn_path to the parent of replicated actors" % name)
 		return
@@ -127,6 +131,21 @@ func _lists(path: String) -> bool:
 	return false
 
 
+## A spawn_function set before this point is wrapped so the nodes it makes are known as replicated.
+func _wrap_spawn_function() -> void:
+	if not spawn_function.is_valid() or spawn_function.get_method() == &"_marked_spawn":
+		return
+	_user_spawn = spawn_function
+	spawn_function = _marked_spawn
+
+
+func _marked_spawn(data: Variant) -> Node:
+	var node: Node = _user_spawn.call(data)
+	if node:
+		node.set_meta(SPAWNED_META, true)
+	return node
+
+
 ## True on the server once `peer_id` has this spawner and may see its actors.
 func is_revealed_to(peer_id: int) -> bool:
 	if not _ready_peers.has(peer_id):
@@ -159,6 +178,10 @@ func rpc_spawner_ready() -> void:
 func _on_child_entered(node: Node) -> void:
 	if node.get_parent() != _root:
 		return
+	# A node a server script adds by hand (a server-only effect) never reaches a peer: no gate, nothing to hold.
+	# A gate there would be a synchronizer the peers never get, and its sync would fail by path on every client.
+	if MpKit.is_server() and not _is_replicated(node):
+		return
 	if MpKit.is_server() and not node.is_node_ready():
 		# Synchronizers the actor adds while it sets up (_enter_tree, _ready) still
 		# go in its spawn packet; later ones do not.
@@ -177,6 +200,19 @@ func _on_child_entered(node: Node) -> void:
 		return
 	for sync in _syncs_under(node):
 		_hold(sync)
+
+
+## True when the engine replicates `node`: its scene is in this spawner's list (the engine replicates those), or
+## spawn(data) made it (the wrapped spawn_function marks it). A node a server script adds by hand is neither.
+## Contract: set spawn_function before this spawner's _ready (before super._ready()); one set later is wrapped
+## the first time a node enters spawn_path, with a warning (that first node counts as added by hand).
+func _is_replicated(node: Node) -> bool:
+	if spawn_function.is_valid() and spawn_function.get_method() != &"_marked_spawn":
+		push_warning("MpSpawner '%s': spawn_function was set after _ready; set it before super._ready()" % name)
+		_wrap_spawn_function()
+	if not node.scene_file_path.is_empty() and _lists(node.scene_file_path):
+		return true
+	return node.has_meta(SPAWNED_META)
 
 
 ## Every synchronizer entering this spawner's scope is held before the engine
