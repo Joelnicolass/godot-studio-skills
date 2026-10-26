@@ -23,7 +23,7 @@ Without Godot open (Claude Code or Cursor): command `/new-mp-feature` (same file
 | `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = actor parent. Holds its synchronizers (spawned and static) per peer; the client reports ready. `room_id` for hub rooms. One node per world (or per room). |
 | `MpSlotSpawner` | Same + one `pawn_scene` per occupied slot (`Pawn_<n>`). Dedicated does not spawn slot 0. |
 | `MpBootMenu` | Drop-in lobby. Uses `MpFlow` if present; otherwise `world_scene` for zero-glue. Copy via `@export`. |
-| `MpFlow` | Session autoload: boot/world(s), host/join/1P, late join. Several maps: `add_world` / `select_world`. |
+| `MpFlow` | Session autoload: boot/world(s), host/join/1P, arms the start gate (no late join; rejoin within the grace). Several maps: `add_world` / `select_world`. |
 | `MpWorldReady` | Leftover. Not needed if an `MpSpawner` is present. |
 | `MpCustomPipe` | One Dictionary-tunnel channel. |
 

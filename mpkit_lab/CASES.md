@@ -26,9 +26,9 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | Sync of position and extra properties, on spawn and live | `arena.sh` **T** |
 | The owner's `to_server` (`mp_sv_*`) | `arena.sh` recolor **T** |
 | `to_all` (`mp_all_*`) | `arena.sh` flash **T** |
-| The server refuses `mp_sv_*` from a non-owner (a direct RPC) | `arena.sh` late **T** |
+| The server refuses `mp_sv_*` from a non-owner (a direct RPC) | `arena.sh` listen, rejoin **T** |
 | An ownerless actor with `callers = ANYONE` and `sender_slot` | `arena.sh` bell **T** |
-| `spawn_actor` and `despawn` everywhere; the late joiner sees no leftovers | `arena.sh` shot **T** |
+| `spawn_actor` and `despawn` everywhere; the one coming back sees no leftovers | `arena.sh` shot, rejoin **T** |
 | A server-only node under `spawn_path`: no gate, clients unbroken | `arena.sh` watch `--probe-server-node` **T** |
 | `MpInput.set_value` reaches the server | `arena.sh` watch (aim) **T** |
 | Prediction: an immediate answer and a ~0 correction with lag, jitter and loss | `arena.sh` lag **T** |
@@ -45,7 +45,9 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 
 | Case | Test |
 |---|---|
-| `MpState` and the late joiner | `arena.sh` late **T** |
+| `MpState` and the one coming back: same slot with the seat's credential, score and bell still there, `player_back` | `arena.sh` rejoin (LAN and dedicated) **T** |
+| Start gate: whoever arrives after the start is turned away (`match_started`), with no slot nor world, and the flow shows the reason | `arena.sh` late **T** |
+| The gate's rules (filling, full, `need`, grace, a live seat, ticket, `load_timeout`, `all_gone`, `reset`) | `tests/test_match_gate.gd` |
 | `MpMatch.finish` reaches everyone and the room | `rooms.sh` public **T TLS** |
 | Going back to the match (the lobby's button) within the grace | `rooms.sh` rejoin **T** |
 | Abandoning past the grace: the other one wins | `rooms.sh` abandon **T** |

@@ -138,6 +138,7 @@ Two more scenes, written down in `game.tres` (`lobby_scene`, `rooms_scene`); the
 | Server (VPS or your PC) | **MpRoomServer** in a scene of its own, with an **MpLobbyConfig** (`.tres`: port, rooms, match port range, times) and optionally an **MpRoomRules** | Opens the lobby. When a room is full and everyone is ready, it starts **one dedicated process per match** with a ticket: only the seated players get in. It takes the game's network. Run it with `godot --headless --path . -- --room-server`. Several matches at once = several processes; the cap is `max_matches` |
 | Client | **MpLobbyScreen** (`rooms/ui/mp_lobby_screen.tscn`) in a scene. With `lobby_scene` in the game, the menu shows *Online rooms* and the Back button goes to the boot | Connect with a name, see rooms, create one (public or with a code), sit, *ready*, chat. When the match starts it joins by itself, and when it ends it comes back with the result |
 | World | **MpMatch** | On the server: `all_loaded`, `player_joined`, `player_left`, `player_back`, `player_abandoned`. `finish(result)` ends the match for everyone (`finished` on every peer) and tells the room |
+| (kit) | **MpMatchGate** | The start gate (`Mp.gate()`): the world waits paused until the seats load; after the start only the one who left comes back (within `rejoin_grace_s`), the rest are turned away with a reason. Knobs: the `MpFlow`'s **Match start** group |
 
 Each match process is your own project with `--dedicated` and a ticket: `MpFlow` builds the agent that checks the ticket by itself. Room rules of your own (how many seats per mode, which characters are allowed):
 
@@ -161,7 +162,7 @@ If your server has no public IP (your PC behind the router) or you want a domain
 
 ### Web
 
-A browser can neither open a server nor use UDP, so a web game joins a WebSocket dedicated (`transport = ws` in `game.tres`) or goes through the relay (`transport = relay`). Desktop and web do not mix: a WebSocket server serves WebSocket clients. The menu's address field takes `192.168.1.5`, `game.example.com`, either with `:port`, or a `wss://…` URL. A page served over `https` needs `wss://`: the server carries a certificate and key (in its `game.tres`, or in the `MpLobbyConfig` for rooms, or with `deploy.sh --tls-cert … --tls-key …`) and the client turns on `tls_client` in `game.tres`. A browser pauses a hidden tab: a web player who switches tabs freezes for the others until they come back, and staying away longer than `rejoin_grace_s` in a room match counts as abandoning it.
+A browser can neither open a server nor use UDP, so a web game joins a WebSocket dedicated (`transport = ws` in `game.tres`) or goes through the relay (`transport = relay`). Desktop and web do not mix: a WebSocket server serves WebSocket clients. The menu's address field takes `192.168.1.5`, `game.example.com`, either with `:port`, or a `wss://…` URL. A page served over `https` needs `wss://`: the server carries a certificate and key (in its `game.tres`, or in the `MpLobbyConfig` for rooms, or with `deploy.sh --tls-cert … --tls-key …`) and the client turns on `tls_client` in `game.tres`. A browser pauses a hidden tab: a web player who switches tabs freezes for the others until they come back, and staying away longer than `rejoin_grace_s` counts as abandoning it.
 
 ### Put it on a VPS
 

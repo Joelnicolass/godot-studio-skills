@@ -264,7 +264,7 @@ What the menu has: **Play solo**, **Host LAN**, **Private server** (optional), *
 
 The address field takes: `192.168.1.5`, `game.example.com`, either with `:port`, `#CODE` at the end (a private match) or a `ws://…` / `wss://…` URL. The lobby screen and `MpFlow.join_address` take the same (all three use `MpAddress.parse`).
 
-What the `MpFlow` does: it starts the network with the config, changes scenes (boot ↔ world), sends the world to a late joiner and goes back to the boot if the server is lost. It moves itself under the root of the tree and survives scene changes. No autoload needed.
+What the `MpFlow` does: it starts the network with the config, arms the start gate, changes scenes (boot ↔ world), sends the world to every admitted seat (the one coming back too) and goes back to the boot if the server is lost. It moves itself under the root of the tree and survives scene changes. No autoload needed.
 
 ### 5.3 World scene
 
@@ -656,7 +656,7 @@ What a spawner replicates:
 
 - A node of a scene in its list (**Extra Scenes**), or one made by `spawn(data)` with your `spawn_function`.
 - A node a script adds by hand under `spawn_path` (`add_child` of something not in the list) is **not** replicated: it stays on the server only. That is useful for a server-only effect.
-- If you use `spawn_function`, set it **before** `super._ready()` in your spawner script. Set later, a warning shows and the first node counts as added by hand.
+- If you use `spawn_function`, set it in a `_ready` of the scene (the spawner's, a sibling's or the parent's): the spawner takes it at the end of that frame, before anything spawns. Set later, a warning shows and the first node counts as added by hand.
 
 ### 7.3 Removing things
 
@@ -703,17 +703,23 @@ Do not write `state.values["x"] = 3` by hand: it is not synced. Use `set_value`.
 
 ### 7.5 Start and end: `MpMatch`
 
-An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone.
+An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone. What counts is decided by the **start gate** (`MpMatchGate`, at `/root/MpKit/Gate`, `Mp.gate()`), which the `MpFlow` arms on every path that hosts (Host LAN, a dedicated by hand, a room's dedicated):
+
+- **Before the start** the free seats are open. The world stays **paused on every peer** until the seats it expects have loaded: all of them in a room match or in Host LAN (`start_seats` = 0), and one in a dedicated by hand (`dedicated_start_seats` = 1). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` has passed since the first one came in, it starts with those who loaded.
+- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. Any other peer is turned away with a reason: `match_started`, `full`, `grace_over`, `slot_taken`. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
+- A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`. Clients get the gate's state when they are admitted and pause as soon as their world loads, so their `MatchClock` starts at 0.
+
+The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_seats`, `dedicated_start_seats`, `pause_clients`, `match_started_status`). In a room match, the grace and the load time come from the `MpLobbyConfig`. In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. In Host LAN the host can start with those already loaded: `Mp.gate().can_start_now()` / `Mp.gate().start_now()` (for a "Start now" button).
 
 Signals:
 
 | Signal | Where | When |
 |---|---|---|
-| `all_loaded` | server | Everyone is in (a room match) or the world is ready (LAN, dedicated, solo) |
+| `all_loaded` | server | The match starts (the seats it expected loaded) or the world is ready (solo) |
 | `player_joined(slot)` | server | A player entered for the first time |
 | `player_left(slot)` | server | A player left |
-| `player_back(slot)` | server | Room match only: came back within the grace, same slot |
-| `player_abandoned(slot)` | server | Room match only: did not come back in time, or never loaded |
+| `player_back(slot)` | server | Came back within the grace, same slot |
+| `player_abandoned(slot)` | server | Did not come back in time, or never loaded |
 | `waiting_changed(waiting)` | **everyone** | The match starts or stops waiting for seats |
 | `finished(result)` | **everyone** | The server called `finish` |
 
@@ -722,9 +728,8 @@ Methods and properties:
 | Name | What it does |
 |---|---|
 | `finish(result)` | Server only: ends the match. Everyone gets `finished(result)`. In a room match it also writes the result for the room |
-| `seats()` | The slots of the room ticket (empty outside a room match) |
+| `seats()` | The match's slots (the gate's; empty in solo) |
 | `waiting` | True while it waits for seats, on every peer |
-| `pause_until_loaded` | (on) In a room match, the world stays **paused on every peer** until everyone loaded or `load_timeout_s` passes. That way nobody walks ahead of the others |
 
 While it waits, the tree is paused. The kit's network keeps going (MpKit, the lobby, the agent, the launcher, the LAN beacon run anyway), and so do the Leave button and the invite line. Your own nodes do not: to show "Waiting for players…", give that HUD node **Process › Mode = Always** and listen to `waiting_changed`.
 
@@ -1437,8 +1442,8 @@ Add that scene to the spawner's **Extra Scenes**, in the editor.
 **"MpSpawner 'X': set spawn_path to the parent of replicated actors"** / **"spawn_path does not resolve"**
 Point `spawn_path` at the empty node where things appear (`../Actors`, `../Projectiles`).
 
-**"MpSpawner 'X': spawn_function was set after _ready; set it before super._ready()"**
-In your spawner script, set `spawn_function` before calling `super._ready()`.
+**"MpSpawner 'X': spawn_function was set after the scene was set up; set it in a _ready"**
+Set `spawn_function` in a `_ready` of the scene (the spawner's, a sibling's or the parent's), not later.
 
 **"MpSlotSpawner 'X': assign pawn_scene"**
 Set the player's scene.
@@ -1493,7 +1498,10 @@ Some file of the folder already exists (`[~]`) or the folder does not start with
 4. Without `predict`, do you move behind `is_authority()`? If you move behind `is_local()`, the client moves on its screen but the server puts it back.
 5. Is `sync_position` ticked? Did you save the player scene after ticking it?
 6. Does the `MpSlotSpawner` (the `MpWorld`'s `Players`) have `spawn_path` and `pawn_scene`?
-7. Is it a room match waiting for seats? The world is paused until everyone loads (`MpMatch.waiting`).
+7. Is the match waiting for seats? The world is paused until the seats it expects load (`MpMatch.waiting`, `Mp.gate().is_waiting()`). With a single client in Host LAN or in a dedicated for several, try `--start-seats=1`.
+
+**A second client does not get in: "The match already started" (`match_started`).**
+The gate already started the match: after the start only a seat that left comes back. For several to get in, have them load before the start: `--start-seats=N` on the server (or `dedicated_start_seats` / `start_seats` in the `MpFlow` inspector).
 
 **It moves, but the other players stutter.**
 Use `smoothing = BUFFERED` with `adaptive_buffer` on; if it stays, lower `late_tolerance` (0.01) or raise the `buffer_delay_s` cap (0.15, 0.2). If you lowered `send_hz`, raise it or leave it at 0.

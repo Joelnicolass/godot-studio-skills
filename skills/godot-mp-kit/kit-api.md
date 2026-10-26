@@ -51,11 +51,14 @@ MpKit="*res://addons/mp_kit/mp_kit.gd"
 
 `MpKit.configure(port, max_players, host_slot, custom_channels)` before `host()` / `host_dedicated()` / `join()`. Empty `custom_channels` = every tunnel channel.
 
+ENet's own peer cap is `max_players + max_pending_admission` (at most `MpKit.ENET_MAX_PEERS`, 4095), so a peer past the seats still connects and is turned away with a reason (`full`) instead of timing out.
+
 ## Signals (the game listens)
 
 - `peer_joined(peer_id, slot)` — accepted and slotted
 - `peer_left(peer_id, slot)` — mapping cleared; the slot stays reserved for rejoin
 - `join_failed` — the client never arrived
+- `admission_rejected(reason)` — client: the server turned it away (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`)
 - `server_lost` — server down; the kit already called `leave()`
 - `client_world_ready(peer_id)` — the client registered spawners
 - `load_world` — open the match scene (the server process does not receive this RPC)
@@ -176,7 +179,8 @@ Default `hold_until_world_ready = true`:
 
 - Inspector: `spawn_path` = parent of the actors. `extra_scenes` = packed scenes.
 - Glue: `add_child(node, true)` under that parent, whenever. Identity (`player_slot`, etc.) goes on the `MultiplayerSynchronizer` with `spawn = true`, not an RPC.
-- Synchronizers: in the scene, or `MpAuthority.ensure_sync` before `add_child` / in the actor's own `_ready`. Later ones miss the spawn packet (late joiners: `ERR_INVALID_DATA`); the spawner `push_error`s them.
+- Synchronizers: in the scene, or `MpAuthority.ensure_sync` before `add_child` / in the actor's own `_ready`. Later ones miss the spawn packet (a peer that comes back: `ERR_INVALID_DATA`); the spawner `push_error`s them.
+- `spawn_function`: set it in any `_ready` of the scene (the spawner's, a sibling's or the parent's); the spawner wraps it at the end of that frame (deferred), before anything spawns. Set later, it warns and the first node counts as added by hand.
 - `is_revealed_to(peer_id)` (server): this peer has the spawner and passes `room_id`.
 - `hold_until_world_ready = false` only if every peer already has this scene.
 - Cost: per reveal / seat change one walk of the scene; per node added to the tree a type check. Nothing per frame.
@@ -195,11 +199,15 @@ Child of the actor. Inspector: `interpolate` (default on) + `interpolate_speed`.
 
 ## MpBootMenu
 
-Scene `res://addons/mp_kit/mp_boot_menu.tscn`. Copy via `@export`. If an `MpFlow` autoload is present, it uses it. Otherwise assigned `world_scene` = loop without glue (host `broadcast_load_world` + late join). Empty = UI only; your glue listens to the signals.
+Scene `res://addons/mp_kit/mp_boot_menu.tscn`. Copy via `@export`. If an `MpFlow` autoload is present, it uses it. Otherwise assigned `world_scene` = loop without glue (`drive_kit`: the host arms the start gate with `start_seats` and sends the world to every seat it admits). Empty = UI only; your glue listens to the signals.
 
 ## MpFlow
 
-Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, late join, dedicated on first client.
+Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `dedicated_start_seats`; `--start-seats=N`), dedicated on first client.
+
+## MpMatchGate
+
+`/root/MpKit/Gate` (`MpKit.gate`, `Mp.gate()`). One owner for who sits and when the match starts: `IDLE` (not armed: solo or a server without a flow) → `FILLING` (free seats open; the world paused on every peer until the expected seats load or `load_timeout_s`) → `RUNNING` (only a seat that left comes back within `rejoin_grace_s`; anyone else is turned away with `match_started` / `grace_over` / `slot_taken` / `full`). A seat credential per seat in open mode (LAN, dedicated by hand), the ticket in rooms. `loaded_count()` / `expected_count()` are valid on the client too (for a "waiting" HUD). Host LAN: `can_start_now()` / `start_now()`. `MpMatch` re-emits its signals in the world.
 
 One world:
 
