@@ -51,11 +51,14 @@ MpKit="*res://addons/mp_kit/mp_kit.gd"
 
 `MpKit.configure(port, max_players, host_slot, custom_channels)` antes de `host()` / `host_dedicated()` / `join()`. `custom_channels` vacío = todos los canales del túnel.
 
+El tope propio de ENet es `max_players + max_pending_admission` (máximo `MpKit.ENET_MAX_PEERS`, 4095), así un peer que sobra igual conecta y se rechaza con un motivo (`full`) en vez de esperar el timeout.
+
 ## Signals (el juego escucha)
 
 - `peer_joined(peer_id, slot)` — aceptado y sloteado
 - `peer_left(peer_id, slot)` — mapping limpio; el slot queda reservado para rejoin
 - `join_failed` — el cliente no llegó
+- `admission_rejected(reason)` — cliente: el servidor lo rechazó (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`)
 - `server_lost` — servidor caído; el kit ya hizo `leave()`
 - `client_world_ready(peer_id)` — el cliente registró spawners
 - `load_world` — hay que abrir la escena de match (el proceso servidor no recibe este RPC)
@@ -176,7 +179,8 @@ Default `hold_until_world_ready = true`:
 
 - Inspector: `spawn_path` = padre de los actores. `extra_scenes` = packed scenes.
 - Glue: `add_child(node, true)` bajo ese padre, cuando quieras. Identidad (`player_slot`, etc.) va en el `MultiplayerSynchronizer` con `spawn = true`, no en un RPC.
-- Synchronizers: en la escena, o `MpAuthority.ensure_sync` antes del `add_child` / en el `_ready` del propio actor. Los posteriores faltan en el paquete de spawn (el que entra tarde: `ERR_INVALID_DATA`); el spawner les hace `push_error`.
+- Synchronizers: en la escena, o `MpAuthority.ensure_sync` antes del `add_child` / en el `_ready` del propio actor. Los posteriores faltan en el paquete de spawn (el que vuelve: `ERR_INVALID_DATA`); el spawner les hace `push_error`.
+- `spawn_function`: asignala en cualquier `_ready` de la escena (el del spawner, un hermano o el padre); el spawner la envuelve al final de ese frame (diferido), antes de que nada spawnee. Si la asignás más tarde, avisa y el primer nodo cuenta como agregado a mano.
 - `is_revealed_to(peer_id)` (servidor): ese peer tiene el spawner y pasa el `room_id`.
 - `hold_until_world_ready = false` solo si todos los peers ya tienen esta escena.
 - Costo: por revelado / cambio de asiento, un recorrido de la escena; por nodo que entra al árbol, un chequeo de tipo. Nada por frame.
@@ -195,11 +199,15 @@ Hijo del actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Sol
 
 ## MpBootMenu
 
-Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un autoload `MpFlow`, lo usa. Si no: `world_scene` asignado = loop sin glue (host hace `broadcast_load_world` + late join). Vacío = solo UI; tu glue escucha las signals.
+Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un autoload `MpFlow`, lo usa. Si no: `world_scene` asignado = loop sin glue (`drive_kit`: el host arma la puerta de arranque con `start_seats` y le manda el mundo a cada asiento que admite). Vacío = solo UI; tu glue escucha las signals.
 
 ## MpFlow
 
-Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, late join, dedicated al primer cliente.
+Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `dedicated_start_seats`; `--start-seats=N`), dedicated al primer cliente.
+
+## MpMatchGate
+
+`/root/MpKit/Gate` (`MpKit.gate`, `Mp.gate()`). Un solo dueño de quién se sienta y cuándo arranca la partida: `IDLE` (sin armar: solo o un servidor sin flow) → `FILLING` (asientos libres abiertos; el mundo pausado en todos los peers hasta que cargan los asientos esperados o `load_timeout_s`) → `RUNNING` (solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`; el resto se rechaza con `match_started` / `grace_over` / `slot_taken` / `full`). Credencial por asiento en modo abierto (LAN, dedicado a mano), el ticket en salas. `loaded_count()` / `expected_count()` valen también en el cliente (para un HUD de «esperando»). Host LAN: `can_start_now()` / `start_now()`. `MpMatch` reemite sus señales en el mundo.
 
 Un mundo:
 
