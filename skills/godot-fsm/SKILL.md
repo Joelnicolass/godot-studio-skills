@@ -35,7 +35,7 @@ Actor
 
 - `@export var actor` on the machine (the container).
 - `@export var initial_state`.
-- `transition(&"Hurt")` = node name.
+- `transition(&"Hurt")` = node name. `transition(&"Hurt", payload)` carries generic data (`machine.payload`); the same state again only calls `apply_payload`. States or actor added later: `notify_actor_ready()`.
 - The state uses `actor` / `machine`, not `get_parent()` as API.
 
 When overriding `enter` / `exit`, call `super.enter()` if you want the signals.
