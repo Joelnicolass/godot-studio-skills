@@ -86,7 +86,7 @@ Camino corto (default):
 4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (addon PlatKit)
 5. `/new-mp-feature` — solo scaffold de un actor MpKit
 6. `/create-material` — material / textura procedural con [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
-7. `/research-feature` — entender una mecánica de un juego similar investigándola en la web y deduciendo su comportamiento (nunca ingeniería inversa) antes de implementarla
+7. `/research-feature` — entender una mecánica de un juego similar (investigación web, y decompilarlo si se puede abrir) antes de implementarla
 8. `/workflow-status`
 
 Contrato escrito, si lo pedís:
@@ -113,7 +113,7 @@ Contrato escrito, si lo pedís:
 
 Habilitá cada plugin en Proyecto → Plugins. MpKit además necesita el autoload (`MpKit="*res://addons/mp_kit/mp_kit.gd"`); primeros pasos en `addons/mp_kit/QUICKSTART.md`, referencia en `addons/mp_kit/README.md`, editor en `skills/godot-mp-kit/editor.md`, online/VPS en `skills/godot-mp-kit/dedicated.md`. AgentKit vive en [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest): JSON/harness en `res://agent/` del juego; detalle en el README de ese repo. PlatKit no es un clon de Celeste: dash/stamina quedan en el juego.
 
-Herramientas externas que el flujo **ofrece** cuando hacen falta (nunca las instala sin preguntar): [Material Maker](https://github.com/RodZill4/material-maker) para materiales y texturas procedurales (skill `godot-material-maker`). Igual que los MCP de Aseprite y Blender. Una mecánica “como en X” no necesita herramienta: se investiga en la web y se deduce, nunca con ingeniería inversa (skill `godot-feature-research`).
+Herramientas externas que el flujo **ofrece** cuando hacen falta (nunca las instala sin preguntar): [Material Maker](https://github.com/RodZill4/material-maker) para materiales y texturas procedurales (skill `godot-material-maker`), y un decompilador (gdsdecomp, ILSpy, …) para abrir un juego similar al investigar una mecánica (skill `godot-feature-research`). Igual que los MCP de Aseprite y Blender.
 
 Hay una demo lista en [`example/`](example/README.md) (1P, LAN, dedicated, mundos 2D y 3D con placeholders, flujo PRD→RFC). Snippets VS Code/Cursor: `.vscode/mpkit.code-snippets` (el instalador los copia).
 

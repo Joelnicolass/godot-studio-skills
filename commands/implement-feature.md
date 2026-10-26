@@ -21,7 +21,7 @@ Si el pedido es vago, preguntá en un lote (`AskUserQuestion` en Claude Code / `
 2. Dónde vive (escena, actor, HUD). Clean vs estándar **ya elegido**; no lo cambies.
 3. ¿Hay red? Si sí: local/WiFi u online. Si no: cero RPCs.
 4. 2D / 3D. Arte: placeholder salvo OK + referencias. Si hay superficies (piso, pared, terreno): ofrecé Material Maker.
-5. ¿Es “como en X” (otro juego / app)? Ofrecé investigarlo en la web y deducir cómo se comporta (`/research-feature`), y usá el informe para los criterios.
+5. ¿Es “como en X” (otro juego / app)? Ofrecé investigarlo (web, y decompilarlo si el juego se puede abrir; `/research-feature`), y usá el informe para los criterios.
 
 No entrevistas un GDD completo. No corras `/create-prd` ni `/generate-rfcs` “por las dudas”.
 

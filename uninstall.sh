@@ -17,7 +17,6 @@ SKILL_NAMES=(
   godot-platformer-2d
   godot-material-maker
   godot-feature-research
-  godot-reverse-engineering
   godot-visual-qa
   godot-studio-memory
   godot-playtest
@@ -36,7 +35,6 @@ COMMAND_FILES=(
   add-platformer-2d.md
   create-material.md
   research-feature.md
-  reverse-engineer.md
   manage-changes.md
   new-mp-feature.md
   review-rfc.md

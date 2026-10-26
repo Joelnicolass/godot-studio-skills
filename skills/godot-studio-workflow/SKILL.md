@@ -67,7 +67,7 @@ Orden para un **juego nuevo**:
 
 Investigación (API Godot, un patrón, un addon, un shader): subagente de exploración (`Explore` en Claude Code, `explore` en Cursor) o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
 
-Si el usuario quiere una mecánica o feature “como en X” (otro juego): decí que podés investigar en la web cómo funciona (su wiki, devlogs y charlas de sus desarrolladores, frame data, video de gameplay) y deducir el comportamiento de ahí, nunca con ingeniería inversa. La investigación la corrés vos (no un developer) y queda en el `F<n>` con sus fuentes; después, `/implement-feature`, con código propio. Skill [godot-feature-research](../godot-feature-research/SKILL.md) / `/research-feature`.
+Si el usuario quiere una mecánica o feature “como en X” (otro juego): decí que podés investigar cómo funciona, en la web (su wiki, devlogs y charlas, código fuente, frame data, video de gameplay) y, si el juego se puede abrir, decompilándolo. La investigación la corrés vos (no un developer) y queda en el `F<n>` con sus fuentes; después, `/implement-feature`. Skill [godot-feature-research](../godot-feature-research/SKILL.md) / `/research-feature`.
 
 Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva chica: `/implement-feature`.
 
@@ -121,8 +121,8 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”. **Siempre**, incluso pa
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
 - Un segundo OK para playtest: el árbol ya incluía `res://debug/` y la acción. El pase visual sí se pregunta, y sin `VISUAL.md` no hay look.
 - Pase visual sin estilo/referencias: no inventar look.
-- Instalar MCP (Aseprite, Blender, Engram), Material Maker, o crear arte sin preguntar.
-- Hacer ingeniería inversa de otro juego (abrirlo, decompilarlo o desensamblarlo), o pegar código o assets del original en el juego.
+- Instalar MCP (Aseprite, Blender, Engram), Material Maker, un decompilador, o crear arte sin preguntar.
+- Traer assets del original al juego sin preguntar.
 - Feel hardcodeado. Elegí Tween o `AnimationPlayer` por clip, no por costumbre. Feel jugoso: `/add-juicy`, no un `World.gd` de partículas.
 - `enum` + `match` de estados en el actor: `/add-state-machine`.
 - Platformer sin coyote/buffer: `/add-platformer-2d`, no un `is_on_floor()` pelado.
