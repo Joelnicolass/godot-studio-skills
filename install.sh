@@ -5,7 +5,8 @@
 #   ./install.sh --all                # los dos
 #   ./install.sh --project            # ./.cursor/ (o ./.claude/ con --claude) del cwd
 #   ./install.sh --addon GODOT_ROOT   # addons/mp_kit → GODOT_ROOT/addons/mp_kit
-# AgentKit vive en github.com/Joelnicolass/godot-studio-playtest (este script lo trae).
+# AgentKit se instala desde github.com/Joelnicolass/godot-studio-playtest (este script lo trae, con su módulo
+# determinism). example/addons/agent_kit/ de acá es una copia de referencia del mismo módulo, no la fuente de instalación.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

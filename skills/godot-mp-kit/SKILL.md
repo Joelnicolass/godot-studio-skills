@@ -24,7 +24,7 @@ Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 |----------|-----------|
 | **Sin multiplayer** | No instales MpKit. Sin autoload, sin RPC, sin `MultiplayerSpawner`. |
 | **Local / WiFi** (mismo dispositivo o misma LAN) | `MpKit.host()` listen-server. El proceso host **es** un jugador (slot 1 / peer 1). |
-| **Online** (internet, VPS) | **Dedicated server** en el **mismo proyecto**. `MpKit.host_dedicated()`; clientes `join(ip)`. Peer 1 **no** es jugador. Desarrollá así desde el día uno (headless + clientes a `127.0.0.1`); la VPS es el mismo binario con IP pública y UDP abierto. Varias partidas = **salas in-process** (`MpKit.rooms` / `MpKit.matchmaker`) en ese proceso. Steam / WebRTC / process-per-match: solo si el producto los pide, **después**, no en lugar de dedicated. |
+| **Online** (internet, VPS) | **Dedicated server** en el **mismo proyecto**. `MpKit.host_dedicated()`; clientes `join(ip)`. Peer 1 **no** es jugador. Desarrollá así desde el día uno (headless + clientes a `127.0.0.1`); la VPS es el mismo binario con IP pública y UDP abierto. Salas y varias partidas: **servidor de salas** (lobby + un dedicado por partida, ver abajo) para internet, o salas in-process (`MpKit.rooms` / `MpKit.matchmaker`) en un dedicated. Steam / WebRTC: solo si el producto los pide, **después**, no en lugar de dedicated. |
 
 No preguntar de nuevo si el usuario ya eligió en este chat o el PRD/RULES lo declara.
 
@@ -56,25 +56,70 @@ Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
-Guía humana (inspector, paso a paso, túnel custom, salas hub y cola): `addons/mp_kit/README.md`.
+Guía humana (inspector, paso a paso, túnel custom, servidor de salas, salas hub y cola): `addons/mp_kit/README.md`.
+
+## Primero los nodos (human first)
+
+El kit tiene que poder usarlo una persona **sin IA**. Por eso, en código nuevo, preferí siempre la capa de nodos; los `@rpc` / `submit_*` escritos a mano son el camino de bajo nivel (siguen funcionando y no se borran).
+
+| Necesidad | Usá | No escribas |
+|-----------|-----|-------------|
+| Arrancar un juego MP | Tools → **MpKit: Setup game...** (muestra `[+]`/`[~]`, nunca pisa) | escenas de boot/mundo a mano desde cero |
+| El juego en un lugar | **`MpGame`** (`game.tres`: la red y las escenas) en `MpFlow.game`; el menú, el lobby y el servidor de salas lo leen del flow | `configure()` sueltos, rutas repetidas en cada nodo |
+| El mundo en red | un nodo **`MpWorld`** con `player_scene` (arma `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite`) | cablear spawner, estado y partida a mano |
+| Verbos de la partida desde cualquier script | **`Mp`**: `play_solo`, `host`, `join`, `leave`, `open_rooms`, `is_server`, `me`, `player`, `state`, `finish`, `net_quality` | buscar el `MpFlow` o el `MpMatch` a mano |
+| Actor replicado | hijo **`MpActor`** (Sync en el inspector, arma y guarda `MpSync`) | `MultiplayerSynchronizer` armado a mano, `MpReplicate` en código nuevo |
+| Input del jugador | hijo **`MpInput`** + `input.get_vector(...)` en el servidor | un `submit_move` por frame |
+| Movimiento sin lag | `MpActor.predict` + `func mp_move(input, delta)` (solo movimiento; efectos detrás de `not input.is_replaying()`) | predicción o rollback propios |
+| Orden puntual del dueño | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
+| Efecto en todos | `net.to_all(&"x", args)` → `func mp_all_x(args)` (solo el servidor) | `@rpc("authority")` propio |
+| Score, reloj, ronda | **`MpState`** (`set_value`, `add`, señal `changed`) | `push_snapshot` + `snapshot_for_joiner` a mano |
+| Inicio y fin de partida | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | glue propio de tickets y abandonos |
+| Salas online | **`MpRoomServer`** + `MpLobbyConfig` + `MpRoomRules`; cliente **`MpLobbyScreen`** | `Callable`s del lobby cableados a mano |
+| Partida privada en la PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; el HUD muestra `ip:puerto#CÓDIGO` (`MpInviteLabel`) | un launcher propio |
+| Disparos con ping | `MpActor.lag_compensate` + `net.rewound(func)` / `net.seen_position_of(nodo)` / `net.view_lag()` | validar contra el presente |
+| Mostrar la calidad de la conexión | `Mp.net_quality()` (RTT, jitter, pérdida, `grade_name`) | pings propios |
+| Sin IP pública | `transport = relay` + `relay/server.mjs` (Railway u otro host), secreto en `MPKIT_RELAY_SECRET` | abrir puertos o un túnel propio |
+| Subir a un VPS | `addons/mp_kit/deploy/deploy.sh usuario@vps build --rooms 7700` | unidades systemd por juego |
+| Probar con red mala | `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` en cada proceso | suponer LAN perfecta |
+
+Guía humana: `addons/mp_kit/QUICKSTART.md` (la corta), `addons/mp_kit/GUIDE.md` (paso a paso), `addons/mp_kit/deploy/README.md` y `addons/mp_kit/relay/README.md`. Laboratorio sin juego: `mpkit_lab/run/all.sh` y `mpkit_lab/CASES.md`. Tests propios del kit: `godot --headless --path <proyecto> --script res://addons/mp_kit/tests/mp_test_runner.gd`.
+
+Reglas que no se rompen:
+
+- Web y escritorio no se mezclan: un export web usa WebSocket (directo, o por el relay) y no hostea; su servidor es un dedicado `ws` o cualquiera por el relay.
+- Los buffers de red son adaptativos (percentil 97 de la red medida): no los fijes a mano salvo para acotarlos (`buffer_delay_s` es el tope).
+- `MpFlow` y los nodos del mundo nunca nombran clases del lobby (`MpMatchAgent`...): grupo o `load()` por ruta. Si no, un juego con el lobby como autoload forma un ciclo de carga.
+- No agregues un miembro a `MpFlow` / `MpSpawner` con el nombre de uno de una subclase del juego: grepeá las subclases antes.
 
 ## Arranque en 5 pasos
 
-1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit` **antes** del flow).
-2. Tools → **MpKit: New session flow...** (o `extends MpFlow`). Asigná boot/world. `play_solo()` / `host_lan()` / `join_lan()`. 1P: no llames `host()` a mano.
-3. En el match: un `MpSpawner` o `MpSlotSpawner` (`spawn_path` = padre de actores). Retiene los synchronizers de su parte de la escena (también los estáticos); el cliente avisa solo que está listo; no hace falta un nodo `MpWorldReady`.
-4. Pawns: hijo `MpReplicate` + `submit_*` con `MpAuthority.accept_command(self, player_slot)`.
-5. LAN: `MpFlow` ya hace `advertise` en el host; el lobby hace `browse` (o `MpBootMenu`). Online: dedicated + IP pública, no `host()` detrás de NAT.
+1. Copiá `addons/mp_kit/` y enable **MpKit** (autoload `MpKit`).
+2. Tools → **MpKit: Setup game...**, o a mano: un **`MpGame`** (`game.tres`, red y escenas) y un nodo **`MpFlow`** en la escena de boot con `game` = ese `.tres` (se muda solo a la raíz), más `mp_boot_menu.tscn`.
+3. En el mundo: un nodo **`MpWorld`** con `player_scene` (arma spawner, `MpState` y `MpMatch`). A mano, si el mundo ya tiene su estructura: `MpSlotSpawner` (`spawn_path`, `pawn_scene`, `spawn_points`), `MpState` y `MpMatch`. El spawner retiene los synchronizers hasta que cada cliente está listo.
+4. Jugador: hijos `MpActor` (predict) + `MpInput`; movimiento en `mp_move`, reglas detrás de `net.is_authority()`, llamadas `mp_sv_*` / `mp_all_*`.
+5. LAN: Host LAN / Unirse. Online: dedicated (`--dedicated`) o salas (`MpRoomServer`, `--room-server`), con IP pública o por el relay; no `host()` detrás de NAT sin relay.
 
 ## Qué es el kit / qué no
 
 Copiar `addons/mp_kit/` → autoload `MpKit`.
 
-**Hace:** ENet listen o dedicated, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco (snapshot **y** túnel `send_custom`), signals, nodos de replicación, `MpBoot`. Opcional: `MpFlow` (escenas host/join/1P, no reglas). Opcional: salas hub in-process (`MpRoomDirectory` + cola FIFO `MpMatchmaker`) en un dedicated.
+**Hace:** ENet listen o dedicated, mapa slot ↔ peer, cupo, handshake `world_ready`, push de `Dictionary` opaco (snapshot **y** túnel `send_custom`), signals, nodos de replicación, `MpBoot`. Opcional: `MpFlow` (escenas host/join/1P, no reglas). Opcional: salas hub in-process (`MpRoomDirectory` + cola FIFO `MpMatchmaker`) en un dedicated. Opcional: servidor de salas (`lobby/`), admisión por ticket y transporte WebSocket.
 
-**No hace:** score, copy de un título, input de actor, predicción, Steam/WebRTC, process-per-match, “cuándo gana alguien”. `MpReplicate.interpolate` es un lerp opcional de proxy, no rollback.
+**No hace:** score, copy de un título, input de actor, predicción, Steam/WebRTC, “cuándo gana alguien”. `MpReplicate.interpolate` es un lerp opcional de proxy, no rollback.
 
 Si metés puntaje en `mp_kit.gd`, el kit deja de ser portable.
+
+## Servidor de salas (online, un dedicado por partida)
+
+Vive en `addons/mp_kit/lobby/`, genérico (sin reglas ni textos de juego). Resumen:
+
+- **Servidor de salas** (`--room-server`): `MpLobby.start_server(config, launcher)`. Los clientes hacen `MpLobby.connect_to(host, port, nombre)`, crean o se unen a salas, eligen, marcan listo y chatean; el cliente nunca elige slot, puerto ni semilla. `MpLobbyConfig` (`.tres`, cada número se pisa con `--nombre-con-guiones=N`) guarda límites y tiempos.
+- **Tickets**: al terminar la cuenta regresiva el `ticket_builder` del juego devuelve el ticket; `MpMatchLauncher.launch(id, ticket)` elige un puerto libre, guarda solo `sha256(token)` y lanza un dedicado con `--match-ticket-file`. El cliente recibe `match_ready(host, port, token)` y hace `MpKit.join(host, port, token)`. En el dedicado `MpMatchAgent` fija `MpKit.admission` desde el ticket: un ticket ajeno, inventado, vencido o ya conectado se rechaza.
+- **Launcher**: un proceso por partida, tope `max_matches` (`ERR_BUSY`), latido en `state.json`, resultado en `result.json` (`MpMatchAgent.report_result`), mata partidas sin latido, demasiado largas o huérfanas. El juego inyecta `meta_validator`, `options_validator` y `ticket_builder`; el kit queda sin reglas ni textos.
+- **Reconexión**: lobby `MpLobbyClient.resume()` / `auto_resume` (misma sesión y asiento, `resume_grace_s`); partida: el mismo ticket dentro de `rejoin_grace_s` devuelve el slot (el juego decide qué conserva).
+- **Transporte**: `--transport=enet|ws` (`MpLobbyConfig.transport`), igual en cliente, servidor de salas y dedicado. ENet es UDP (por defecto); WebSocket es TCP (web, túneles TCP). `wss://` con proxy inverso.
+- Prueba local: dos salas 1v1 en paralelo con dos dedicados reales, headless, repetida (soak) y buscando procesos huérfanos. Detalle: `addons/mp_kit/README.md` (Servidor de salas).
 
 ## Modelo obligatorio
 
@@ -165,8 +210,9 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 
 - [ ] Tipo de MP declarado (ninguno / local-WiFi / online). Sin MP: este checklist no aplica.
 - [ ] Autoload `MpKit` **antes** del glue. `configure(port, max_players)` antes de host/join.
-- [ ] `MpFlow` autoload (Tools → New session flow) o `extends MpFlow`. Varios mapas: `add_world` + `select_world`. Glue extra solo si hay copy o túnel.
-- [ ] Online: `MpBoot` + `host_dedicated()`; clientes `join`; export dedicated; spawn solo `occupied_slots()`. Hub opcional: `MpKit.rooms` / `MpKit.matchmaker` en el mismo proceso; el puntaje sigue fuera del addon.
+- [ ] `MpFlow` (nodo en el boot, autoload o `extends MpFlow`) con un `MpGame` (`game.tres`), o un `MpNetConfig` más rutas. El mundo con un `MpWorld`, salvo que ya tenga su estructura. Varios mapas: `add_world` + `select_world`. Glue extra solo si hay copy o túnel.
+- [ ] Actores nuevos con `MpActor` + `MpInput` (predict para el jugador); estado de partida en `MpState`; fin en `MpMatch.finish`. Sin `@rpc` a mano salvo un caso que la capa de nodos no cubra (anotalo).
+- [ ] Online: `MpBoot` + `host_dedicated()`; clientes `join`; export dedicated; spawn solo `occupied_slots()`. Varios jugadores por partida por internet: servidor de salas + tickets (`MpMatchLauncher`), no un `join(ip)` libre. Hub opcional: `MpKit.rooms` / `MpKit.matchmaker` en el mismo proceso; el puntaje sigue fuera del addon.
 - [ ] Slots en dominio; peers solo en RPC/authority.
 - [ ] `MpSpawner` o `MpSlotSpawner` con `hold_until_world_ready` (default). El cliente no necesita `MpWorldReady`. No restage de pawns en glue.
 - [ ] Guest no simula reglas; servidor valida sender.

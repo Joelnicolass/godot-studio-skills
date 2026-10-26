@@ -24,6 +24,22 @@ static func user_flag(name: String) -> bool:
 	return false
 
 
+static func role() -> String:
+	if user_flag("server"):
+		return "server"
+	if user_flag("client1"):
+		return "client1"
+	if user_flag("client2"):
+		return "client2"
+	if user_flag("listen-host"):
+		return "listen"
+	if user_flag("room-server"):
+		return "room-server"
+	if user_flag("dedicated"):
+		return "server"
+	return ""
+
+
 static func user_value(name: String, default: String = "") -> String:
 	var prefix := "--%s=" % name
 	for arg in OS.get_cmdline_user_args():

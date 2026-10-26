@@ -82,6 +82,21 @@ UI que aparece y desaparece:
 
 Editor experimental: `experimental/agent-flow-editor/` (Vite, **pnpm**). No entra en `./install.sh`.
 
+## Determinismo
+
+Banco de humo para simulaciones: `addons/agent_kit/determinism/`. Un nodo `DetRecorder` registra la partida en un sha256 y `det_run.sh` compara el digest entre relojes (`fixed`, `fixed2`, `stress`, `window`) y contra una base guardada.
+
+```bash
+bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt quick --no-window   # humo en cada corte
+bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt bless               # regrabar la base tras un cambio a propósito
+bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt table               # veredicto de lo que hay en disco
+```
+
+- Casos en `agent/det_cases.txt` (`nombre|args|quick|set`), config en `agent/det.cfg` (`DET_SCENE`, `DET_OUT`, `DET_BASELINE`).
+- Todo Godot pasa por `harness/godot_run.sh` (cola FIFO). Ninguna ventana corre en paralelo con el banco; una corrida marcada `CONTAMINATED` o con `watchdog` no cuenta.
+- Es una prueba de humo, no byte a byte: si un digest cambia por un cambio hecho a propósito, verificá que `fixed` y `fixed2` coincidan y regrabá con `bless`.
+- Autoprueba sin juego: `det_selftest.sh`. Guía completa: skill `godot-determinism`.
+
 ## Qué no es
 
 No es un runner de tests unitarios. No es un MCP. No es un motor de juego. El playtest no pide OK: solo escribe en `res://agent/` y no cambia reglas de negocio.
