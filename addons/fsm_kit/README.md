@@ -25,6 +25,8 @@ Actor (CharacterBody2D / …)
 
 `transition(&"Hurt")` busca el **nombre del nodo**. Cada estado overridea `enter` / `exit` / `update` / `physics_update` / `handle_input`.
 
+`transition(&"Hurt", payload)` lleva datos genéricos (un hitbox, un objetivo); el kit no los interpreta y el estado lee `machine.payload`. Pedir otra vez el estado actual con otro payload no hace exit / enter: el estado recibe `apply_payload(payload)`. La señal `transitioned(from, to, payload)` sale en cada transición, también en una repetición (`state_changed`, solo en un cambio real). Si los estados (o el actor) se agregan después de que el machine está listo, llamá `notify_actor_ready()` cuando existan: el primer `enter` los espera.
+
 ## No hagas
 
 - Un `enum` + `match` de 200 líneas en el actor.
