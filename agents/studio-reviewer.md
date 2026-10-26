@@ -28,7 +28,6 @@ When invoked:
    - If local/Wi-Fi MP: listen-server authority, handshake, same 1P offline code; glue outside the addon.
    - If online: dedicated (`host_dedicated`, `local_slot() == 0` on the server, spawn `occupied_slots()`); clients `join` a public IP or `127.0.0.1` in dev. Not a listen behind NAT faked as online.
 4. Extra not in the RFC = flag it (scope).
-   If the `F<n>` / RFC comes from researching another game: code taken from the original (or from sources about it) ported as-is, or the original's sprites / audio / text in the repo = **FAIL**.
 5. **Game** product: do not invent SQL/XSS/SaaS-auth findings. Mark N/A with one line.
 6. GUT is not playtest or visual. If the RFC is HUD and there is no capture, say look is for `studio-visual`.
 7. If the plan has `res://debug/`: the scene instances product pieces; a debug `.tres` is not a parallel script; the criterion’s outcome is **not** already in the `.tscn` (the goal is still pending, the notice hidden). If the outcome is already placed, that is **FAIL**: the assert passes without playing.

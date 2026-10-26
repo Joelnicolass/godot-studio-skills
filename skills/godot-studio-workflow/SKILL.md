@@ -68,7 +68,7 @@ Order for a **new game**:
 
 Research (Godot API, a pattern, an addon, a shader): exploration subagent (`Explore` in Claude Code, `explore` in Cursor) or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references. If **3D**: **ask** and install the Blender MCP only with OK + references. The orchestrator summarizes; do not paste dumps.
 
-If the user wants a mechanic or feature “like in X” (another game): say you can research how it works on the web (its wiki, devlogs and talks by its developers, frame data, gameplay video) and deduce the behavior from that, never by reverse engineering it. You run the research (not a developer) and it lands in the `F<n>` with its sources; then `/implement-feature`, with original code. Skill [godot-feature-research](../godot-feature-research/SKILL.md) / `/research-feature`.
+If the user wants a mechanic or feature “like in X” (another game): say you can research how it works, on the web (its wiki, devlogs and talks, source code, frame data, gameplay video) and, if the game can be opened, by decompiling it. You run the research (not a developer) and it lands in the `F<n>` with its sources; then `/implement-feature`. Skill [godot-feature-research](../godot-feature-research/SKILL.md) / `/research-feature`.
 
 Mid-work scope changes: `/manage-changes`.
 
@@ -121,8 +121,8 @@ Without the [file tree](file-tree.md) there is no “OK, implement”. **Always*
 - Put score, copy, or title netcode in `addons/mp_kit`.
 - A second OK for playtest: the tree already included `res://debug/` and the action. A visual pass is still asked, and without `VISUAL.md` there is no look.
 - A visual pass without style/references: do not invent a look.
-- Install MCP (Aseprite, Blender, Engram), Material Maker, or create art without asking.
-- Reverse engineer another game (open, decompile or disassemble it), or paste code or assets of the original into the game.
+- Install MCP (Aseprite, Blender, Engram), Material Maker, a decompiler, or create art without asking.
+- Bring the original's assets into the game without asking.
 - Hardcoded feel. Choose Tween or `AnimationPlayer` per clip, not by habit. Juicy feel: `/add-juicy`, not a `World.gd` of particles.
 - `enum` + `match` for actor states: `/add-state-machine`.
 - Platformer without coyote/buffer: `/add-platformer-2d`, not a bare `is_on_floor()`.
