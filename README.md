@@ -147,3 +147,7 @@ install.sh
 AgentKit, `/agent-kit`, `studio-playtester` y el editor de flow: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest).
 
 Cómo crece el framework: extraer a `addons/` o `skills/` cuando algo se reusa. No copiar un FX o un tracker de puntaje “por las dudas”.
+
+## Licencia
+
+[MIT](LICENSE).
