@@ -26,7 +26,7 @@ With the kit:
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orchestrator        | `skills/godot-studio-workflow/`                                                | The chat agent: interview + `/implement-feature` (PRD/RFC optional)                              |
-| How to write Godot  | `skills/`                                                                      | Layers, composition, MpKit, FSM, 2D platformer, juicy, materials, reverse eng., visual, memory, tests                     |
+| How to write Godot  | `skills/`                                                                      | Layers, composition, MpKit, FSM, 2D platformer, juicy, materials, feature research, visual, memory, tests                 |
 | Subagents           | `agents/`                                                                      | Tech lead, developer, reviewer; optional tester and visual. Playtester: playtest module         |
 | Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer with nodes and no hand-written RPCs: the game in one `.tres` (`MpGame`), the world in one node (`MpWorld`), the match's verbs in `Mp`, plus `MpActor`, `MpInput`, `MpState`, `MpMatch`. Prediction, adaptive buffers, lag compensation and network quality; LAN, dedicated, online rooms, private matches, web, a relay for servers without a public IP (Railway), VPS deploy and a *Setup game* wizard. **Zero** gameplay. Start with `addons/mp_kit/QUICKSTART.md` (step by step: `GUIDE.md`); game-free checks in `mpkit_lab/run/all.sh`. |
@@ -86,7 +86,7 @@ Short path (default):
 4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (PlatKit addon)
 5. `/new-mp-feature` — MpKit actor scaffold only
 6. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
-7. `/reverse-engineer` — understand a mechanic from another game / app with [REA](https://github.com/Joelnicolass/rea) (deduce or decompile, only with authorization) before implementing it
+7. `/research-feature` — understand a mechanic of a similar game by researching it on the web and deducing its behavior (never reverse engineering) before implementing it
 8. `/workflow-status`
 
 Written contract, if you ask:
@@ -113,7 +113,7 @@ Written contract, if you ask:
 
 Enable each plugin in Project → Plugins. MpKit also needs the autoload (`MpKit="*res://addons/mp_kit/mp_kit.gd"`); first steps in `addons/mp_kit/QUICKSTART.md`, reference in `addons/mp_kit/README.md`, editor in `skills/godot-mp-kit/editor.md`, online/VPS in `skills/godot-mp-kit/dedicated.md`. AgentKit lives in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest): JSON/harness live in the game’s `res://agent/`; details in that repo’s README. PlatKit is not a Celeste clone: dash/stamina stay in the game.
 
-External tools the flow **offers** when needed (never installed without asking): [Material Maker](https://github.com/RodZill4/material-maker) for procedural materials and textures (skill `godot-material-maker`), and [REA](https://github.com/Joelnicolass/rea) to reverse engineer a mechanic — deduce or decompile, only software you own or are authorized to examine (skill `godot-reverse-engineering`; `npx rea-agents setup` registers it in Claude Code and Cursor). Same as the Aseprite and Blender MCPs.
+External tools the flow **offers** when needed (never installed without asking): [Material Maker](https://github.com/RodZill4/material-maker) for procedural materials and textures (skill `godot-material-maker`). Same as the Aseprite and Blender MCPs. A mechanic “like in X” needs no tool: it is researched on the web and deduced, never reverse engineered (skill `godot-feature-research`).
 
 A ready demo lives in [`example/`](example/README.md) (1P, LAN, dedicated, 2D and 3D worlds with placeholders, PRD→RFC flow). VS Code/Cursor snippets: `.vscode/mpkit.code-snippets` (the installer copies them).
 
@@ -138,7 +138,7 @@ skills/
   godot-fsm/
   godot-platformer-2d/
   godot-material-maker/
-  godot-reverse-engineering/
+  godot-feature-research/
 agents/                        # studio-tech-lead, studio-developer, …
 commands/
 install.sh

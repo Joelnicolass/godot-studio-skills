@@ -10,7 +10,7 @@ Subagents **do not** see the chat. The orchestrator pastes this block into every
 - Composition: thin container, children / packed, `@export` / `%UniqueName`, types in Resource `.tres`. One node does not paint + spawn + score + change scene.
 - UI copy in the product language; IDs in English. Score/copy/title gameplay **out** of `addons/mp_kit`.
 - Art: do not invent sprites or models. Aseprite/Blender MCP only with OK + references. Procedural materials / textures: Material Maker only with OK + references; the surface type is a `.tres` (skill `godot-material-maker`). Shaders: Godot Shaders / Shadertoy; one pass = packed scene.
-- Reverse engineering (REA): the orchestrator investigates. If the `F<n>` carries findings, reimplement with original pieces and the numbers in `@export` / `.tres`. Never decompiled pseudocode or the original's assets in the game.
+- A feature “like in X”: the orchestrator researches it on the web and deduces the behavior (never reverse engineering). If the `F<n>` carries findings, build it with original pieces and the numbers in `@export` / `.tres`. Never code or assets of the original in the game.
 - Motion: 12 principles. Tween **or** `AnimationPlayer` per clip; `@export` / timeline knobs, no magic numbers. Skill `godot-animation`.
 - Juicy: shake, VFX, post, impact = local presentation, packed + `@export`. Skill `godot-juicy` / `/add-juicy`. Not score.
 - FSM: `FsmState` children under `FsmMachine` (addon `fsm_kit` / `/add-state-machine`). Not a 200-line `enum`.

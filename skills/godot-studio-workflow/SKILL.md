@@ -3,7 +3,7 @@ name: godot-studio-workflow
 description: >-
   Orchestrates a Godot 4 game from idea to a simple scalable base: interviews
   the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP,
-  Material Maker, REA),
+  Material Maker, web research of a similar game's feature),
   runs product commands (PRD, features, rules, RFCs, visual guide), researches
   when needed, then delegates tech-lead / developer / reviewer (optional
   tester, playtester and visual). Use when starting a game, a Godot project,
@@ -15,7 +15,7 @@ description: >-
 
 The **main agent in this chat** is the orchestrator. It talks to the user. It does not dump the whole product into one subagent.
 
-Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Procedural materials / textures: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. A mechanic “like in X” (reverse engineering): [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) + `/reverse-engineer`.
+Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Procedural materials / textures: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. A mechanic “like in X” (research it on the web, deduce it): [godot-feature-research](../godot-feature-research/SKILL.md) + `/research-feature`.
 
 Goal: a Godot 4 game with a **small, clear base**. Priorities: clean layers, composition, editor/`@export`, reusable components.
 
@@ -68,7 +68,7 @@ Order for a **new game**:
 
 Research (Godot API, a pattern, an addon, a shader): exploration subagent (`Explore` in Claude Code, `explore` in Cursor) or a targeted read (Godot Shaders, Shadertoy). 2D sprites: **ask** if they want MCP/art and ask for references. If **3D**: **ask** and install the Blender MCP only with OK + references. The orchestrator summarizes; do not paste dumps.
 
-If the user wants a mechanic or feature “like in X” (another game or app): say it can be **deduced** (observe, measure) or **decompiled** with [REA](https://github.com/Joelnicolass/rea) to understand how it works — only with software the user owns or is authorized to examine, extracting behavior, not code or assets. You run the investigation (not a developer) and it lands in the `F<n>`; then `/implement-feature`. Skill [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) / `/reverse-engineer`.
+If the user wants a mechanic or feature “like in X” (another game): say you can research how it works on the web (its wiki, devlogs and talks by its developers, frame data, gameplay video) and deduce the behavior from that, never by reverse engineering it. You run the research (not a developer) and it lands in the `F<n>` with its sources; then `/implement-feature`, with original code. Skill [godot-feature-research](../godot-feature-research/SKILL.md) / `/research-feature`.
 
 Mid-work scope changes: `/manage-changes`.
 
@@ -121,8 +121,8 @@ Without the [file tree](file-tree.md) there is no “OK, implement”. **Always*
 - Put score, copy, or title netcode in `addons/mp_kit`.
 - A second OK for playtest: the tree already included `res://debug/` and the action. A visual pass is still asked, and without `VISUAL.md` there is no look.
 - A visual pass without style/references: do not invent a look.
-- Install MCP (Aseprite, Blender, Engram, REA), Material Maker, or create art without asking.
-- Decompile software without the user's authorization, or paste the original's pseudocode / assets into the game.
+- Install MCP (Aseprite, Blender, Engram), Material Maker, or create art without asking.
+- Reverse engineer another game (open, decompile or disassemble it), or paste code or assets of the original into the game.
 - Hardcoded feel. Choose Tween or `AnimationPlayer` per clip, not by habit. Juicy feel: `/add-juicy`, not a `World.gd` of particles.
 - `enum` + `match` for actor states: `/add-state-machine`.
 - Platformer without coyote/buffer: `/add-platformer-2d`, not a bare `is_on_floor()`.

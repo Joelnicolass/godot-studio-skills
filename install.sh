@@ -27,7 +27,7 @@ SKILL_NAMES=(
   godot-fsm
   godot-platformer-2d
   godot-material-maker
-  godot-reverse-engineering
+  godot-feature-research
   godot-visual-qa
   godot-studio-memory
 )
@@ -458,7 +458,7 @@ install_harness() {
     echo "  fsm:          godot-fsm"
     echo "  platformer:   godot-platformer-2d"
     echo "  materials:    godot-material-maker"
-    echo "  reverse eng.: godot-reverse-engineering"
+    echo "  research:     godot-feature-research"
   fi
 
   if [[ "$DO_COMMANDS" -eq 1 ]]; then
@@ -466,7 +466,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Done (commands). In ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /create-material, /reverse-engineer, /create-prd, …"
+    echo "Done (commands). In ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then
