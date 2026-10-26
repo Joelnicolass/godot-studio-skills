@@ -3,7 +3,7 @@ name: godot-studio-workflow
 description: >-
   Orquesta un juego Godot 4 de la idea a una base simple y escalable:
   entrevista al usuario (Clean vs estándar, tipo de multiplayer, 2D/3D, MCP
-  Aseprite/Blender, Material Maker, REA), corre commands de producto (GDD corto opcional, features,
+  Aseprite/Blender, Material Maker, investigar en la web la feature de un juego similar), corre commands de producto (GDD corto opcional, features,
   rules, RFCs), itera con /implement-feature y delega en tech-lead /
   developer / reviewer (tester, playtester y visual opcionales). Usar al
   arrancar un juego, un proyecto Godot, implementar una feature, PRD, RFC, o
@@ -14,7 +14,7 @@ description: >-
 
 El **agente principal de este chat** es el orquestador. Habla con el usuario. No descarga el producto entero en un solo subagente.
 
-Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows: skill `godot-agent-kit` del módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh` de este kit la trae). Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige. Feel jugoso: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Materiales / texturas procedurales: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. Mecánica “como en X” (ingeniería inversa): [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) + `/reverse-engineer`.
+Cargar: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Memoria entre chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Red: [godot-mp-kit](../godot-mp-kit/SKILL.md) **solo** si hay multiplayer. Capturas / flows: skill `godot-agent-kit` del módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh` de este kit la trae). Tests: [godot-testing](../godot-testing/SKILL.md) **solo** si el usuario los pide o RULES los exige. Feel jugoso: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Materiales / texturas procedurales: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. Mecánica “como en X” (investigarla en la web, deducirla): [godot-feature-research](../godot-feature-research/SKILL.md) + `/research-feature`.
 
 Objetivo: un juego Godot 4 con **base chica y clara**. Prioridades: capas limpias, composición, editor/`@export`, componentes reutilizables.
 
@@ -67,7 +67,7 @@ Orden para un **juego nuevo**:
 
 Investigación (API Godot, un patrón, un addon, un shader): subagente de exploración (`Explore` en Claude Code, `explore` en Cursor) o lectura puntual (Godot Shaders, Shadertoy). Sprites 2D: **preguntá** si quiere MCP/arte y pedí referencias. Si es **3D**: **preguntá** e instalá el MCP de Blender solo con OK + referencias. El orquestador resume al usuario; no pegues dumps.
 
-Si el usuario quiere una mecánica o feature “como en X” (otro juego o app): decí que se puede **deducir** (observar, medir) o **decompilar** con [REA](https://github.com/Joelnicolass/rea) para entender cómo funciona — solo con software propio o autorizado, y extrayendo comportamiento, no código ni assets. La investigación la corrés vos (no un developer) y queda en el `F<n>`; después, `/implement-feature`. Skill [godot-reverse-engineering](../godot-reverse-engineering/SKILL.md) / `/reverse-engineer`.
+Si el usuario quiere una mecánica o feature “como en X” (otro juego): decí que podés investigar en la web cómo funciona (su wiki, devlogs y charlas de sus desarrolladores, frame data, video de gameplay) y deducir el comportamiento de ahí, nunca con ingeniería inversa. La investigación la corrés vos (no un developer) y queda en el `F<n>` con sus fuentes; después, `/implement-feature`, con código propio. Skill [godot-feature-research](../godot-feature-research/SKILL.md) / `/research-feature`.
 
 Cambios de alcance a mitad de un RFC grande: `/manage-changes`. Feature nueva chica: `/implement-feature`.
 
@@ -121,8 +121,8 @@ Sin [árbol](file-tree.md) no hay “OK, implementá”. **Siempre**, incluso pa
 - Meter puntaje, copy o netcode de título en `addons/mp_kit`.
 - Un segundo OK para playtest: el árbol ya incluía `res://debug/` y la acción. El pase visual sí se pregunta, y sin `VISUAL.md` no hay look.
 - Pase visual sin estilo/referencias: no inventar look.
-- Instalar MCP (Aseprite, Blender, Engram, REA), Material Maker, o crear arte sin preguntar.
-- Decompilar software sin autorización del usuario, o pegar pseudocódigo / assets del original en el juego.
+- Instalar MCP (Aseprite, Blender, Engram), Material Maker, o crear arte sin preguntar.
+- Hacer ingeniería inversa de otro juego (abrirlo, decompilarlo o desensamblarlo), o pegar código o assets del original en el juego.
 - Feel hardcodeado. Elegí Tween o `AnimationPlayer` por clip, no por costumbre. Feel jugoso: `/add-juicy`, no un `World.gd` de partículas.
 - `enum` + `match` de estados en el actor: `/add-state-machine`.
 - Platformer sin coyote/buffer: `/add-platformer-2d`, no un `is_on_floor()` pelado.

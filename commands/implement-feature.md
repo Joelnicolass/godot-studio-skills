@@ -11,7 +11,7 @@ Si está cargada `godot-studio-workflow`, el **orquestador** (este chat) no impl
 
 Cuando vuelva el playtester, clasificá: criterio roto → developer, una corrección; la escena de debug ya muestra el resultado → reviewer; cache o CLI → este chat reimporta y relanza; falta la escena → `NEED_SETUP`, no un tech lead nuevo.
 
-Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Materiales / texturas: `/create-material` + `godot-material-maker`. Mecánica “como en X”: `/reverse-engineer` + `godot-reverse-engineering` antes de planificar. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
+Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Materiales / texturas: `/create-material` + `godot-material-maker`. Mecánica “como en X”: `/research-feature` + `godot-feature-research` antes de planificar. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
 
 ## 1. Acotar (antes de código)
 
@@ -21,7 +21,7 @@ Si el pedido es vago, preguntá en un lote (`AskUserQuestion` en Claude Code / `
 2. Dónde vive (escena, actor, HUD). Clean vs estándar **ya elegido**; no lo cambies.
 3. ¿Hay red? Si sí: local/WiFi u online. Si no: cero RPCs.
 4. 2D / 3D. Arte: placeholder salvo OK + referencias. Si hay superficies (piso, pared, terreno): ofrecé Material Maker.
-5. ¿Es “como en X” (otro juego / app)? Ofrecé deducirlo o decompilarlo con REA (`/reverse-engineer`, solo con autorización) y usá el informe para los criterios.
+5. ¿Es “como en X” (otro juego / app)? Ofrecé investigarlo en la web y deducir cómo se comporta (`/research-feature`), y usá el informe para los criterios.
 
 No entrevistas un GDD completo. No corras `/create-prd` ni `/generate-rfcs` “por las dudas”.
 

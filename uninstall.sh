@@ -16,6 +16,7 @@ SKILL_NAMES=(
   godot-fsm
   godot-platformer-2d
   godot-material-maker
+  godot-feature-research
   godot-reverse-engineering
   godot-visual-qa
   godot-studio-memory
@@ -34,6 +35,7 @@ COMMAND_FILES=(
   add-state-machine.md
   add-platformer-2d.md
   create-material.md
+  research-feature.md
   reverse-engineer.md
   manage-changes.md
   new-mp-feature.md
