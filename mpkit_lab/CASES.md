@@ -32,6 +32,7 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | Nodo solo del servidor en `spawn_path`: sin gate, sin romper clientes | `arena.sh` watch `--probe-server-node` **T** |
 | `MpInput.set_value` llega al servidor | `arena.sh` watch (aim) **T** |
 | Predicción: respuesta inmediata y corrección ~0 con lag, jitter y pérdida | `arena.sh` lag **T** |
+| Una red mucho peor (60 ms + 60 ms de jitter, 15 % de pérdida): ninguna corrección (no se pierde ni se saltea ningún frame) y el otro jugador se sigue moviendo parejo | `arena.sh` lossy **T** |
 | Un teletransporte con solo `net.snap()` en el servidor: el propio jugador y otro ven un salto, nunca un deslizamiento; el control sin él lo ve dibujado a mitad de camino | `arena.sh` teleport **T** |
 | Rejoin a un peón que el servidor conservó (despawn_on_leave apagado): sin conexión no tiene teclas apretadas; al volver, el input de la conexión nueva (desde seq 1) lo mueve al instante | `arena.sh` keeppawn **T** |
 | Una corrección que el dueño no puede predecir (el servidor lo empuja) se desvanece en pantalla; también con la physics interpolation del motor; el control sin suavizado ve un salto | `arena.sh` correct **T** |

@@ -227,7 +227,11 @@ func _rejoin(slot: int) -> void:
 	await get_tree().create_timer(0.5).timeout
 	var back_net := MpActor.of(back_pawn)
 	if kept:
-		_check(absf(back_net.net_position.x - left_x) < 60.0, "rejoin: without a connection the kept pawn stopped (it went %.0f px after the leave, not on with the held key)" % absf(back_net.net_position.x - left_x))
+		## Until the server knows the connection is gone it repeats the last frame (MpInputQueue: at most MAX_GUESSES
+		## ticks, then no keys), plus the frames on the way: a few dozen px. With the key held on for the second or
+		## more it was away, it would have gone 220 px or more.
+		var went := absf(back_net.net_position.x - left_x)
+		_check(went < 150.0, "rejoin: without a connection the kept pawn stopped (it went %.0f px after the leave, not on with the held key)" % went)
 	var server_x := back_net.net_position.x
 	Input.action_press(&"ui_right")
 	await get_tree().create_timer(1.0).timeout
@@ -281,7 +285,8 @@ func _measure_own_lag() -> void:
 	await get_tree().create_timer(1.0).timeout
 	var net := MpActor.of(pawn)
 	var start_x: float = pawn.position.x
-	Input.action_press(&"ui_left")
+	## Right: away from the other player (walking into it would push the two apart and spoil the measure).
+	Input.action_press(&"ui_right")
 	## The moment of the key, on the machine's wall clock: an observer on the same PC measures when it sees the move.
 	var press_file := MpBoot.user_value("probe-press-file", "")
 	if not press_file.is_empty():
@@ -296,13 +301,14 @@ func _measure_own_lag() -> void:
 	_check(frames <= 2, "the own player answered the key within 2 ticks (prediction)")
 	var worst := 0.0
 	var t0 := Time.get_ticks_msec()
-	var end := t0 + 2000
+	## Long enough for the observer's 3 s window (a blip a few times a minute shows in it).
+	var end := t0 + 5000
 	while Time.get_ticks_msec() < end:
 		await get_tree().process_frame
 		if not is_instance_valid(net):
 			break
 		worst = maxf(worst, net.last_correction())
-	Input.action_release(&"ui_left")
+	Input.action_release(&"ui_right")
 	await get_tree().create_timer(1.0).timeout
 	print("METRIC max_correction_px=%.2f settled_correction_px=%.2f" % [worst, net.last_correction()])
 	_check(worst < float(MpBoot.user_value("probe-max-correction", "2")), "server corrections stayed small while walking")
@@ -470,7 +476,7 @@ func _measure_proxy_jitter() -> void:
 	sampler.target = pawn
 	sampler.process_priority = 20000
 	add_child(sampler)
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(3.0).timeout
 	sampler.queue_free()
 	var speeds := PackedFloat64Array()
 	for i in range(1, sampler.xs.size()):
@@ -495,7 +501,12 @@ func _measure_proxy_jitter() -> void:
 	var mad: float = deviations[deviations.size() / 2] / maxf(median, 0.001) if not deviations.is_empty() else 1.0
 	## The 95th percentile over the median: how much faster than usual the worst frames move (1 = perfectly even).
 	var p95: float = sorted[mini(int(sorted.size() * 0.95), sorted.size() - 1)] / maxf(median, 0.001) if not sorted.is_empty() else 0.0
-	print("METRIC proxy_speed_px_s=%.1f proxy_speed_median=%.1f proxy_speed_mad=%.3f proxy_speed_cv=%.3f proxy_speed_p95_over_median=%.2f frames=%d" % [mean, median, mad, cv, p95, speeds.size()])
+	## Blips: frames that move more than half again (a hitch forward) or less than half (a stall) of the usual speed.
+	var blips := 0
+	for v in speeds:
+		if v > median * 1.5 or v < median * 0.5:
+			blips += 1
+	print("METRIC proxy_speed_px_s=%.1f proxy_speed_median=%.1f proxy_speed_mad=%.3f proxy_speed_cv=%.3f proxy_speed_p95_over_median=%.2f proxy_blips=%d frames=%d" % [mean, median, mad, cv, p95, blips, speeds.size()])
 	_check(median > 150.0, "P%d moved at about its real speed on screen" % slot)
 	var q := Mp.net_quality()
 	print("METRIC net_rtt_ms=%.0f net_jitter_ms=%.1f net_loss=%.3f grade=%s samples=%d" % [q["rtt_ms"], q["jitter_ms"], q["loss"], q["grade_name"], q["samples"]])
