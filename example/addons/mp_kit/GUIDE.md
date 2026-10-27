@@ -1551,6 +1551,9 @@ Some file of the folder already exists (`[~]`) or the folder does not start with
 6. Does the `MpSlotSpawner` (the `MpWorld`'s `Players`) have `spawn_path` and `pawn_scene`?
 7. Is the match waiting for seats? The world is paused until the seats it expects load (`MpMatch.waiting`, `Mp.gate().is_waiting()`). It starts by itself once `load_timeout_s` passed; in Host LAN press **Start now** (`MpStartButton`), or try `--start-seats=1`.
 
+**A client is turned away right away with `timeout`, only against a remote server or relay.**
+The server's log says `MpKit: the server turned peer N away (timeout)`: its ticket did not arrive in `admission_timeout_s`. The kit's network timeouts count real time, so a far server is fine. If the server runs your own timers for network things, use `MpKit.after_real(seconds, callable)`, not `create_timer`: with `--fixed-fps` (it stops syncing to the clock and can run thousands of frames a second) or `Engine.time_scale`, game time is not real time.
+
 **A second client does not get in: "The match already started" (`match_started`).**
 The gate already started the match: after the start only a seat that left comes back. For several to get in, have them load before the start (`start_seats` = 0 waits for every seat, `--start-seats=N`), or turn on `late_join` (`--late-join`) for a game people drop in and out of. On a dedicated by hand, the next match opens by itself once this one ends and everyone left.
 

@@ -48,6 +48,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | `MpState` and the one coming back: same slot with the seat's credential, score and bell still there, `player_back` | `arena.sh` rejoin (LAN and dedicated) **T** |
 | Start gate: whoever arrives after the start is turned away (`match_started`), with no slot nor world, and the flow shows the reason | `arena.sh` late **T** |
 | `late_join`: a newcomer after the start still sits and plays | `arena.sh` latejoin **T** |
+| Network timeouts on the real clock: a server whose game clock races ahead (`--fixed-fps`) still admits a client 150 ms away | `arena.sh` fastclock **T** |
 | Loading screen (`--world-reports-loaded`): the dedicated, the client and solo hold until their world reports itself loaded, then play | `arena.sh` reports **T** |
 | A dedicated by hand (`--dedicated`, default seats) serves one match after another: a fresh world after a finished match once everyone left, and after everyone dropped past the grace | `arena.sh` survive **T** |
 | The gate's rules (filling, full, `need`, grace, a live seat, ticket, `load_timeout`, `all_gone`, `reset`, `late_join`, a credential or ticket displacing a stale connection, the server's own world: `wait_host`, solo, its timeout) | `tests/test_match_gate.gd` |
