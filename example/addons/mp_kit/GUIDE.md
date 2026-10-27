@@ -469,10 +469,12 @@ func _physics_process(_delta: float) -> void:
 | `net.is_authority()` | Solo, or on the server (LAN host or dedicated) | The game's rules |
 | `net.is_local()` | On the machine of the player that owns this node | Camera, own HUD, reading the mouse |
 | `MpKit.is_networked()` | There is a network (not solo) | Texts like "Solo" / "Online" |
-| `MpKit.is_server()` | This process is a networked server | |
+| `MpKit.is_server()` | This process is a networked server (false solo) | Work that only exists online: snapshots, the matchmaker, the tunnel. For the rules use `is_authority()` |
 | `MpKit.is_listening()` | The server is reachable by clients (through the relay, only once the relay accepted it) | Saying "ready" |
 | `MpKit.is_dedicated()` | A server without a player | No sounds, no waiting for keys |
 | `MpKit.local_slot()` | This machine's slot (0 on a dedicated or before the server assigns one) | "You are P2" |
+
+Inside any node, `is_multiplayer_authority()` (Godot's own) says the same as `net.is_authority()`: the kit keeps every node's authority on the server, so it is true solo, on the LAN host and on the dedicated, and false on a client. `MpKit.is_authority()` (or `Mp.is_server()`) is the same question from a script that is not in the world.
 
 On a LAN host, `is_authority()` **and** `is_local()` are both true for its own player.
 
@@ -662,6 +664,10 @@ What a spawner replicates:
 - A node a script adds by hand under `spawn_path` (`add_child` of something not in the list) is **not** replicated: it stays on the server only. That is useful for a server-only effect.
 - If you use `spawn_function`, set it in a `_ready` of the scene (the spawner's, a sibling's or the parent's): the spawner takes it at the end of that frame, before anything spawns. Set later, a warning shows and the first node counts as added by hand.
 
+`spawner.spawn_here(data)` is `spawn(data)` you may call from any peer: on the server (or solo) it spawns through your `spawn_function`, on a client it does nothing and returns `null`. No `if server` around it.
+
+The player spawner (`MpSlotSpawner`, the `MpWorld`'s `Players`) gives a player to every seat whose world is ready: the ones that report it later, and the ones already ready when the spawner enters (a world loaded again, a spawner in a scene that loads later).
+
 ### 7.3 Removing things
 
 On the bullet, when its life is over:
@@ -692,6 +698,7 @@ For what everyone must see and does not belong to an actor: score, clock, round.
 | `state.get_value(&"key", default)` | Reads it, on any peer |
 | `state.values` | The whole `Dictionary` (to read). Starting values: fill them in the inspector |
 | `changed(key, value)` signal | On every peer, each time a key changes |
+| `state.watch(&"key", callback, default)` | On every peer: `callback(value)` now with the current value, then on each change of that key. Whoever joins or comes back gets the current value first, whatever order things start in. `unwatch(handle)` stops it |
 
 A HUD that shows it (from the example, `hud.gd`):
 
@@ -703,7 +710,23 @@ func _ready() -> void:
 	_refresh()
 ```
 
+Or for one key, `state.watch(&"round", _show_round, 1)`: it shows the current round at once and every new one.
+
 Do not write `state.values["x"] = 3` by hand: it is not synced. Use `set_value`.
+
+### Who looks at this screen: `MpLocalSeat`
+
+The HUD, the sounds, the orders, the pause and the result show one player's side. Put one **MpLocalSeat** in the world and give it to them with `@export var seat: MpLocalSeat` (something made at runtime finds it with `MpLocalSeat.of(self)`):
+
+| | What it says |
+|---|---|
+| `seat.slot` | The seat this PC plays (0 on a dedicated, or a client not seated yet) |
+| `seat.is_mine(slot)` | Whether that seat is the one on this screen |
+| `seat.is_online()` | Whether there is a network |
+| `changed(slot)` signal | The seat on this screen changed (the server gave one) |
+| `preview_slot` (inspector) | Solo only: look at the match as that seat, e.g. player 2's HUD, without a second window |
+
+Who simulates is another question: `is_multiplayer_authority()` / `is_authority()` (6.3).
 
 ### 7.5 Start and end: `MpMatch`
 
@@ -1658,7 +1681,9 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | to go back to a room match after dropping | the **Back to the match** button (`MpLobbyScreen.rejoin_match()`) |
 | to know whether I am the server | `net.is_authority()` / `Mp.is_server()` |
 | to know whether this node is mine | `net.is_local()` |
-| to know which player I am | `Mp.me()` |
+| to know which player I am | `Mp.me()`, or an **MpLocalSeat** handed to the HUD (`seat.slot`, `is_mine`, `preview_slot` solo) |
+| a value of the match from the start and each change | `state.watch(&"key", callback)` |
+| to spawn from any peer without asking who I am | `spawner.spawn_here(data)` |
 | to play on LAN | **Host LAN** + **Join** the IP |
 | a dedicated server | `godot --headless --path . -- --dedicated` |
 | online rooms | `lobby_scene` and `rooms_scene` in `game.tres`: `MpRoomServer` + `MpLobbyConfig` + `MpLobbyScreen` (the `MpMatch` comes in the `MpWorld`) |

@@ -491,7 +491,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 |------|------|
 | `nodes/mp_actor.gd` | `MpActor`: child of whatever the network shares. The server is its authority; the *Sync* list builds, in the editor, a `MultiplayerSynchronizer` (`MpSync`) saved in the scene; smooths proxies; `owner_slot` (set by the spawner, sent at spawn). `to_server(&"x", args)` runs `mp_sv_x(args)` on the server (only the owner may ask; `sender_slot()` says who); `to_all(&"x", args)` runs `mp_all_x(args)` on every peer that already has the node (server only). `is_authority()`, `is_local()`, `MpActor.of(node)` |
 | `nodes/mp_input.gd` | `MpInput`: next to an `MpActor`. The owner sends its InputMap actions (frames with a sequence, press counters a lost packet cannot drop); on the server they are read with the `Input` API (`get_vector`, `is_action_just_pressed`...). `set_value` / `get_value` for custom values (aim, cursor) |
-| `nodes/mp_state.gd` | `MpState`: match values (`set_value`, `add`, `get_value`, `changed` signal). The server writes them; everyone gets them, the one coming back too. `MpState.of(node)` |
+| `nodes/mp_state.gd` | `MpState`: match values (`set_value`, `add`, `get_value`, `changed` signal, `watch(key, cb)`: the current value, then each change; `unwatch`). The server writes them; everyone gets them, the one coming back too. `MpState.of(node)` |
 | `nodes/mp_match.gd` | `MpMatch`: start and end of a match in the world; it re-emits what the gate says (start, absences, comebacks, abandons), and `finish(result)` writes the result for the room |
 | `mp_match_gate.gd` | `MpMatchGate` (`/root/MpKit/Gate`, `Mp.gate()`): the start gate. Phases `IDLE`/`FILLING`/`RUNNING`; admits or turns away with a reason (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`); a credential per seat in open mode, identity by ticket in rooms; counts who loaded, pauses and unpauses (the clients too), `rejoin_grace_s`, `load_timeout_s`, `late_join`, `give_up`, `displaced_by` (a credential back after a drop wins over the stale connection). Signals `waiting_changed`, `seat_admitted`, `seat_loaded`, `started`, `seat_away`, `seat_abandoned`, `all_gone`, `turned_away` |
 | `core/mp_sync_builder.gd` | inspector list → `SceneReplicationConfig` (transforms, stamp and ack ALWAYS, the rest ON_CHANGE, `owner_slot` only at spawn) |
@@ -506,6 +506,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `mp_game.gd` | `MpGame` (`.tres`): an `MpNetConfig` with the game's scenes; in `MpFlow.game` it fills `net_config` and every empty path |
 | `nodes/mp_start_button.gd` | `MpStartButton`: in the HUD; on a listen host whose match waits for seats it starts with the players already loaded (`Mp.gate().start_now()`), showing `loaded/expected`; hidden otherwise |
 | `nodes/mp_waiting_label.gd` | `MpWaitingLabel`: in the HUD; while the match waits for its seats it shows `loaded/expected` on every peer (the gate's counts, valid on clients); hidden otherwise |
+| `nodes/mp_local_seat.gd` | `MpLocalSeat`: who looks at this screen; `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo: show the match as another seat), `MpLocalSeat.of(node)` by group. HUD, audio, orders and the result take it by `@export` |
 | `nodes/mp_invite_label.gd` | `MpInviteLabel`: in the HUD; in a private match of this PC (`MpLocalServer`) it shows what friends type (`ip:port#CODE`); hidden otherwise. It finds the server by group, without loading the rooms scripts |
 | `nodes/mp_world.gd` | `MpWorld`: one node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players` (`MpSlotSpawner`), `State` (`MpState`), `Match` (`MpMatch`) and `Hud/Leave` + `Hud/Invite` + `Hud/Start` + `Hud/Waiting`; `player_scene` is each seat's scene |
 | `core/mp_net_quality.gd` | `MpNetQuality` (a child of the autoload, `MpKit.net_quality`): 4 pings per second; RTT (median), jitter (97th percentile), loss and a grade `GOOD` / `FAIR` / `BAD`; the server keeps every player's. `Mp.net_quality()` |
@@ -543,8 +544,8 @@ Low-level pieces:
 | `mp_flow.gd` | scenes, host/join/1P, world catalog |
 | `mp_world_ref.gd` | one world in the catalog |
 | `mp_replicate.gd` | authority + sync + freeze + proxy lerp |
-| `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready` |
-| `mp_slot_spawner.gd` | one packed pawn per occupied slot |
+| `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready`; `spawn_actor(scene, props, owner_slot)`, `spawn_here(data)` (spawn on the server or solo, `null` on a client) |
+| `mp_slot_spawner.gd` | one packed pawn per occupied slot: on `client_world_ready`, and in `_ready` for peers already world-ready |
 | `mp_boot_menu.gd` / `.tscn` | drop-in lobby |
 | `mp_custom_pipe.gd` | one tunnel channel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |

@@ -69,6 +69,10 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | A networked world | one **`MpWorld`** node with `player_scene` (it builds `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite`, `Hud/Start`, `Hud/Waiting`) | wiring the spawner, state and match by hand |
 | The match's verbs from any script | **`Mp`**: `play_solo`, `host`, `join`, `leave`, `open_rooms`, `is_server`, `me`, `player`, `state`, `finish`, `net_quality` | finding the `MpFlow` or the `MpMatch` by hand |
 | Replicated actor | an **`MpActor`** child (Sync in the inspector; it builds and saves `MpSync`) | a hand-built `MultiplayerSynchronizer`, `MpReplicate` in new code |
+| Who simulates, inside a node | `is_multiplayer_authority()` (the kit keeps authority on the server: true solo, host, dedicated) or `MpKit.is_authority()` / `Mp.is_server()` | `MpKit.is_server()` for rules (false solo: it is for network-only work) |
+| Who looks at this screen | an **`MpLocalSeat`** in the world, handed by `@export` to HUD / audio / orders (`slot`, `is_mine`, `preview_slot` solo) | `local_slot()` spread over every UI script |
+| A match value from the start and each change | `MpState.watch(key, cb)` | `changed` + a manual first read, order-dependent |
+| Spawn from any peer | `MpSpawner.spawn_here(data)` (null on a client) | `if MpKit.is_server(): spawn(...)` everywhere |
 | Player input | an **`MpInput`** child + `input.get_vector(...)` on the server | a `submit_move` per frame |
 | Lag-free movement | `MpActor.predict` + `func mp_move(input, delta)` (movement only; effects behind `not input.is_replaying()`) | your own prediction or rollback |
 | A one-off order from the owner | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |

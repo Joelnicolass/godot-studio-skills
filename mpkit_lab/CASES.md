@@ -71,6 +71,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | `MpWorld` in the real editor: builds its pieces when the scene opens and when it is added; they are saved | `editor.sh` |
 | The wizard running inside the editor | `editor.sh` |
 | `MpGame` fills the flow; `Mp` without a network; `MpWorld` builds, packs and loads back | `tests/test_mp_facade.gd`, `tests/test_mp_world.gd` |
+| `MpState.watch` (current value, then each change), `MpLocalSeat` (the seat on this screen, `preview_slot` solo), `MpSpawner.spawn_here` solo | `tests/test_world_helpers.gd` |
 | A web client (browser) against a WebSocket dedicated | `web.sh` (headless Chrome, or open the URL by hand) |
 | A web client through the relay (the server hosts a relay room) | `TRANSPORT=relay web.sh` |
 | Relay: only whoever has the secret hosts (header or query); without a secret nobody, unless `RELAY_OPEN=1` | `relay.sh` |
