@@ -61,6 +61,7 @@ El tope propio de ENet es `max_players + max_pending_admission` (máximo `MpKit.
 - `join_failed` — el cliente no llegó
 - `admission_rejected(reason)` — cliente: el servidor lo rechazó (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`)
 - `server_lost` — servidor caído; el kit ya hizo `leave()`
+- `host_silent(seconds)` / `host_back` — cliente: el servidor no mandó latido por `host_silent_after_s` (1,5; late 4/s): su juego se congeló, su pestaña pasó a segundo plano en un celular, o se trabó la conexión. `is_host_silent()`
 - `client_world_ready(peer_id)` — el cliente registró spawners
 - `load_world` — hay que abrir la escena de match (el proceso servidor no recibe este RPC)
 - `snapshot_received(data)` — `Dictionary` vuestro
@@ -206,7 +207,7 @@ Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un au
 
 ## MpFlow
 
-Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated al primer cliente. El mundo carga en un hilo (`MpWorldLoader`): `world_load_progressed(ratio, phase)`, `world_loaded`; con `world_reports_loaded` (`--world-reports-loaded`) el mundo llama a `report_world_loaded()` / `report_world_progress(r)` y la puerta lo espera; ganchos `_before_world_load()`, `_extra_world_loads()`.
+Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, salas online que hospedan los jugadores (`host_online(players, name, listed)` → `MpOnline`, `await join_online(code)`, `await online_rooms()`, `online_texts`, `host_silent_status` / `host_silent_timeout_s`; `host_here()` es `host_lan()` sin el chequeo de navegador), advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated al primer cliente. El mundo carga en un hilo (`MpWorldLoader`): `world_load_progressed(ratio, phase)`, `world_loaded`; con `world_reports_loaded` (`--world-reports-loaded`) el mundo llama a `report_world_loaded()` / `report_world_progress(r)` y la puerta lo espera; ganchos `_before_world_load()`, `_extra_world_loads()`.
 
 ## MpMatchGate
 
