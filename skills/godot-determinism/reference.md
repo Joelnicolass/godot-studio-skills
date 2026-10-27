@@ -67,6 +67,7 @@ Archivo shell, cargado con `source`; se busca junto al archivo de casos o en `$D
 | `DET_LIMIT_FIXED` / `_STRESS` / `_WINDOW` | 600 / 900 / 900 segundos |
 | `DET_STRESS_FPS` | 6 |
 | `DET_WINDOW_RES`, `DET_WINDOW_ARGS` | `1280x720`, `--autostart --quit` |
+| `DET_JOBS` | 3 (corridas caso/modo a la vez, como mucho 3; `1` = de a una) |
 | `GODOT_BIN`, `GODOT_RUN_NS` | búsqueda en PATH; namespace de la cola |
 
 `DET_OUT` y `DET_BASELINE` del entorno ganan sobre el cfg.
@@ -103,7 +104,7 @@ El runner mira el proceso hijo de Godot cada segundo:
 - `script_error_kill`: `Parse Error`, `Compile Error` o `Failed to load script` en el log. Se mata al instante.
 - `none`: normal.
 
-`contaminated=1` significa que apareció otro proceso Godot que no es un editor durante la corrida. Cualquier marca rompe el veredicto. Repetí cuando la máquina esté tranquila.
+`contaminated=1` significa que apareció durante la corrida un proceso Godot que no es de este banco (ni un editor); las corridas paralelas del propio banco (su `--out=` está en `DET_OUT`) y el import de la cola sobre el proyecto no cuentan. Es solo un aviso: un digest no depende de la carga, así que nunca rompe el veredicto; el tiempo de pared y la RSS de esa corrida no son comparables. Un corte del watchdog sí rompe el veredicto.
 
 ## Cola godot_run.sh
 

@@ -82,25 +82,48 @@ UI que aparece y desaparece:
 
 Editor experimental: `experimental/agent-flow-editor/` (Vite, **pnpm**). No entra en `./install.sh`.
 
-## Determinismo
-
-Banco de humo para simulaciones: `addons/agent_kit/determinism/`. Un nodo `DetRecorder` registra la partida en un sha256 y `det_run.sh` compara el digest entre relojes (`fixed`, `fixed2`, `stress`, `window`) y contra una base guardada.
-
-```bash
-bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt quick --no-window   # humo en cada corte
-bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt bless               # regrabar la base tras un cambio a propósito
-bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt table               # veredicto de lo que hay en disco
-```
-
-- Casos en `agent/det_cases.txt` (`nombre|args|quick|set`), config en `agent/det.cfg` (`DET_SCENE`, `DET_OUT`, `DET_BASELINE`).
-- Todo Godot pasa por `harness/godot_run.sh` (cola FIFO). Ninguna ventana corre en paralelo con el banco; una corrida marcada `CONTAMINATED` o con `watchdog` no cuenta.
-- Es una prueba de humo, no byte a byte: si un digest cambia por un cambio hecho a propósito, verificá que `fixed` y `fixed2` coincidan y regrabá con `bless`.
-- Autoprueba sin juego: `det_selftest.sh`. Guía completa: skill `godot-determinism`.
-
 ## Qué no es
 
 No es un runner de tests unitarios. No es un MCP. No es un motor de juego. El playtest no pide OK: solo escribe en `res://agent/` y no cambia reglas de negocio.
 
+## Cola de Godot (`determinism/harness/`)
+
+`godot_run.sh <comando godot...>` corre UN Godot bajo un esquema de turnos por máquina, para que varios agentes no se pisen. Genérico: sin nada de ningún juego.
+
+- **headless** (`--headless`, sin `--import`): hasta `HEADLESS_SLOTS` a la vez (3). Se ve en stderr como `headless (<ns>_godot.slot0)`.
+- **ventana**: una a la vez, con tope de `GODOT_WINDOW_MAX_S` (600 s; 0 = sin tope). Se cuenta como carga: su tiempo es informativo.
+- **`--import`**: exclusivo; espera a que no haya otro Godot (`godot_busy.sh`) y nada arranca mientras lo tiene (`import exclusivo` en stderr).
+- Turnos FIFO (tickets en `/tmp/<ns>_godot.queue`), tope global `GODOT_MAX` (4), locks que se limpian si muere el dueño. Nunca `pkill` por patrón.
+- **Preflight**: si un `class_name` de los `.gd` no está en `.godot/global_script_class_cache.cfg`, hace `--import` x2 antes (`clases sin importar`). `GODOT_RUN_NO_PREFLIGHT=1` lo apaga.
+
+Variables: `GODOT_RUN_NS` (espacio de nombres de los locks, `/tmp/<NS>_godot.*`, default `agentkit`; todos los que comparten máquina usan el mismo), `GODOT_BIN` (binario para el preflight), `HEADLESS_SLOTS`, `GODOT_MAX`, `GODOT_WINDOW_MAX_S`, `GODOT_BUSY_SCRIPT`.
+
+Un proyecto lo usa con un shim fino: `GODOT_RUN_NS=mijuego GODOT_BIN=... exec bash addons/agent_kit/determinism/harness/godot_run.sh "$@"`.
+
+Autoprueba sin Godot (comandos falsos `bash -c 'sleep N' --headless`; ~20 s, namespace propio): `bash addons/agent_kit/determinism/harness/selftest_queue.sh` → 4 × `PASS`.
+
+## Determinismo (`determinism/`)
+
+Mide que una misma corrida da el mismo resultado con relojes distintos. Genérico: sin nada de ningún juego.
+
+**En la escena del juego**
+- `DetRecorder` (Node, `class_name`): registro de líneas `"<tick> <tipo> <texto>"` con sha256 en orden. `@export keep_lines` (guarda las líneas, hace falta para `--events`), `@export self_tick` (true: cuenta ticks en su `_physics_process`; false: el dueño llama `advance()` y el orden de física no cambia), `@export position_decimals` (1). Métodos: `start()`, `stop()`, `advance()`, `record(kind, text)`, `sample(bodies)` (posiciones ordenadas por nombre), `digest()` (una vez; las llamadas siguientes repiten el valor), `write_outputs(report)` (agrega `digest`, `events`, `end_tick` y escribe `--out`/`--events`). Señal `finished(digest)`. `tick` y `line_count` son legibles.
+- `DetCli` (estático): `args()` (`--k=v` y `--flag` de `OS.get_cmdline_user_args()`), `out_path()`, `events_path()`, `absolute(path)`.
+- Nada de tiempo de pared en las líneas. Si el juego tiene un reloj propio, el dueño lo mueve con `advance()`.
+
+**Corredor**
+`bash addons/agent_kit/determinism/det_run.sh <casos.txt> CASO|all|quick|table|bless [MODO...] [--no-window]`
+- `casos.txt`: una línea `nombre|args|quick|set` (`quick`: `all` = todos los modos, `fixed` = solo referencia, vacío = fuera de quick; `set`: `all` = entra en `all`).
+- `det.cfg` junto al archivo de casos (shell): `DET_SCENE` (obligatorio), `DET_PROJECT`, `DET_OUT`, `DET_BASELINE` (líneas `caso digest`), `DET_RSS_LIMIT_KB`, `DET_LIMIT_FIXED|STRESS|WINDOW`, `DET_STRESS_FPS`, `DET_WINDOW_RES`, `DET_WINDOW_ARGS`, `DET_JOBS`, `GODOT_BIN`, `GODOT_RUN_NS`.
+- Modos: `fixed` (referencia), `fixed2` (repetición), `stress` (headless con `--max-fps` bajo), `window` (nunca dos ventanas a la vez).
+- **En paralelo**: `DET_JOBS` (por defecto 3, nunca más de 3) corridas caso/modo a la vez, en `all`, en `quick` y con un caso y varios modos. La cola (`harness/godot_run.sh`) hace cumplir la regla de la máquina: hasta 3 headless más 1 ventana, nunca dos ventanas. Los digests no dependen de la carga (headless `--fixed-fps`; `stress` y `window` cambian el reloj a propósito), así que el veredicto es el mismo que corriendo de a uno: `DET_JOBS=1` vuelve al modo en serie.
+- Salidas por caso y modo en `DET_OUT`: `.json`, `.events`, `.log`, `.meta` (`wall_s`, `rss_max_kb`, `contaminated`, `watchdog`). Un `watchdog` distinto de `none` hace fallar el veredicto. `CONTAMINATED` (corrió un Godot que no es del banco ni un editor; las corridas paralelas del propio banco no cuentan) es solo un aviso: no cambia un digest, solo hace que el tiempo de pared y la RSS no sean comparables, y el reporte lo dice.
+- Watchdog: RSS, tiempo, y **corte inmediato** (`script_error_kill`) si el log trae `Parse Error`, `Compile Error` o `Failed to load script`.
+- `quick` borra los resultados viejos de sus casos, compara el digest de `fixed` con la base (`baseline X OK|FAIL`) y exige al menos 2 modos frescos: `QUICK PASS` / `QUICK FAIL`. `bless` escribe la base desde los `fixed` actuales.
+- Tabla y veredicto: `det_report.py` (`DETERMINISM PASS|FAIL`; columnas `case, mode, sha256, end_tick, lines, vs fixed, wall (s), RSS max (MB), warnings, first different line`).
+
+**Autoprueba** (escena propia con 20 cuerpos y semilla): `perl -e 'alarm 900; exec @ARGV' bash addons/agent_kit/determinism/det_selftest.sh` -> `SELFTEST PASS`. Corre `all` en paralelo (`DET_JOBS=3`) y de a uno (`DET_JOBS=1`) y exige los mismos digests; con la máquina sin otros Godot, exige además que ninguna corrida del banco marque CONTAMINATED a otra.
+
 ## Versión
 
-0.1.4
+0.1.6
