@@ -14,7 +14,13 @@ extends Node
 ## lobby screen: `--probe-lobby=host:port --probe-name=X`, `--probe-create=Room` makes the room and scores to win) |
 ## private (MpLocalServer on this PC; writes "port code" to `--probe-code-file`, plays and wins) | invited (joins
 ## with "ip:port#CODE" from that file) | badcode (same address, a wrong code: must be turned away) | flood (sends 500
-## tunnel messages and 500 to_server calls at once) | floodwatch (server: only what the limits allow gets through). `--probe-linger-s=N` keeps a
+## tunnel messages and 500 to_server calls at once) | floodwatch (server: only what the limits allow gets through) |
+## online_host (an online room through the issuer, MpOnline: `--probe-players=N`, `--online-mode=listen|dedicated`;
+## writes its code to `--probe-code-file`, waits for everyone, wins; `--probe-wait-file=F`: not before F exists) |
+## online_join (joins with that code, typed "abc-def"; `--probe-expect-silence`: the host freezes meanwhile and comes
+## back) | online_list (finds the room in the issuer's list, then joins it; `--probe-find-name=X`: the room named X,
+## for a host that cannot write the code file, a browser) | online_refused (tries the code, or
+## `--probe-room=`, and expects the issuer's `--probe-expect=` word). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
 
 ## Seconds each check may wait (`--probe-timeout-s=N` for a person opening a browser by hand).
@@ -125,6 +131,14 @@ func _run() -> void:
 			await _join_private(true)
 		"badcode":
 			await _join_private(false)
+		"online_host":
+			await _host_online()
+		"online_join":
+			await _join_online(false)
+		"online_list":
+			await _join_online(true)
+		"online_refused":
+			await _refused_online()
 		_:
 			_check(false, "known role %s" % _role)
 	print("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -718,6 +732,114 @@ func _host_private() -> void:
 		await get_tree().create_timer(0.2).timeout
 	await _until(func() -> bool: return not MpKit.is_networked(), "after the win the host left the match")
 	await _until(func() -> bool: return get_tree().root.get_node_or_null("MpLocalServer") == null, "the private server cleaned up")
+
+
+## An online room this process hosts through the issuer: the code goes to the code file, every seat fills, the host wins
+## and the room closes.
+func _host_online() -> void:
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var players := int(MpBoot.user_value("probe-players", "2"))
+	var online := flow.host_online(players, MpBoot.user_value("probe-room-name", "Lab room"))
+	_check(online != null, "host_online opened a room")
+	if online == null:
+		return
+	var codes: Array = []
+	online.room_ready.connect(func(c: String) -> void: codes.append(c))
+	online.failed.connect(func(reason: String) -> void: print("online failed: ", reason))
+	if not await _until(func() -> bool: return not codes.is_empty(), "the online room is up (%s)" % online.mode):
+		return
+	var code: String = codes[0]
+	_check(flow.host_online(players) == online, "a second host_online gives the running room back")
+	var f := FileAccess.open(MpBoot.user_value("probe-code-file", "user://probe_code.txt"), FileAccess.WRITE)
+	f.store_string(code)
+	f.close()
+	await _until(func() -> bool: return MpKit.is_networked() and MpKit.has_local_slot(), "the host plays in its own room")
+	await _until(func() -> bool:
+		var labels := get_tree().current_scene.find_children("*", "Label", true, false).filter(func(l: Node) -> bool: return l is MpInviteLabel)
+		return not labels.is_empty() and (labels[0] as Label).visible and (labels[0] as Label).text.contains(code), "the match HUD shows the room code")
+	for slot in range(2, players + 1):
+		if await _pawn(slot) == null:
+			return
+	var wait_file := MpBoot.user_value("probe-wait-file", "")
+	if not wait_file.is_empty():
+		await _until(func() -> bool: return FileAccess.file_exists(wait_file), "the script let the match go on")
+	## Score until the win, as a person would: a press before the match started (the gate waits for the other world
+	## to load) counts for nothing.
+	var taps := 0
+	while MpKit.is_networked() and taps < 80:
+		await _tap(&"ui_accept")
+		await get_tree().create_timer(0.25).timeout
+		taps += 1
+	_check(not MpKit.is_networked(), "the host won and left the match (%d presses)" % taps)
+	await _until(func() -> bool: return MpOnline.running(get_tree()) == null, "the room closed on the issuer once the match ended")
+
+
+## A friend: the code from the host's file (as a person types it: lower case, a dash), or the room found in the list.
+func _join_online(from_list: bool) -> void:
+	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
+	var by_name := MpBoot.user_value("probe-find-name", "")
+	var code := ""
+	if by_name.is_empty():
+		if not await _until(func() -> bool: return FileAccess.file_exists(path), "the host published its code"):
+			return
+		code = FileAccess.get_file_as_string(path).strip_edges()
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var finished: Array = []
+	flow.match_finished.connect(func(result: Dictionary) -> void: finished.append(result))
+	var statuses: Array = []
+	flow.status_changed.connect(func(text: String) -> void: statuses.append(text))
+	var silent: Array = []
+	MpKit.host_silent.connect(func(seconds: float) -> void: silent.append(seconds))
+	MpKit.host_back.connect(func() -> void: silent.append(-1.0))
+	var typed := code
+	if from_list:
+		var rows: Array = []
+		var found: Array = []
+		while found.is_empty() and rows.size() < 160:
+			var listed: Array = await flow.online_rooms()
+			found = listed.filter(func(r: Dictionary) -> bool: return r.get("code", "") == code if by_name.is_empty() else r.get("name", "") == by_name)
+			rows.append(listed.size())
+			if found.is_empty():
+				await get_tree().create_timer(0.25).timeout
+		_check(not found.is_empty(), "the room is in the issuer's list")
+		if found.is_empty():
+			return
+		_check(found[0].get("name", "") == (by_name if not by_name.is_empty() else "Lab room") and int(found[0].get("max_players", 0)) >= 2, "the list shows its name and seats")
+		code = str(found[0].get("code", ""))
+		print("PROBE online_list host %s" % found[0].get("platform", "?"))
+		typed = code
+	else:
+		typed = (code.substr(0, 3) + "-" + code.substr(3)).to_lower()
+	var err: Error = await flow.join_online(typed)
+	_check(err == OK, "join_online(%s) connects" % typed)
+	await _until(_networked_slot, "the friend got a seat in the online room")
+	await _pawn(MpKit.local_slot())
+	if MpBoot.user_flag("probe-expect-silence"):
+		print("PROBE online_join seated")
+		await _until(func() -> bool: return silent.has(-1.0) and silent.any(func(s: float) -> bool: return s > 0.0), "the host froze (host_silent) and came back (host_back)")
+		_check(statuses.has(flow.host_silent_status), "the menu said it waits for the host")
+		_check(MpKit.is_networked(), "the friend stayed in the match through the freeze")
+	await _until(func() -> bool: return not finished.is_empty(), "the friend saw the match end")
+
+
+## The issuer turns this join away with `--probe-expect=` (room_full, no_such_room…), and nothing connects.
+func _refused_online() -> void:
+	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
+	var code := MpBoot.user_value("probe-room", "")
+	if code.is_empty():
+		if not await _until(func() -> bool: return FileAccess.file_exists(path), "the host published its code"):
+			return
+		code = FileAccess.get_file_as_string(path).strip_edges()
+	var word := MpBoot.user_value("probe-expect", "room_full")
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var statuses: Array = []
+	flow.status_changed.connect(func(text: String) -> void: statuses.append(text))
+	var err: Error = await flow.join_online(code)
+	_check(err != OK and not MpKit.is_networked(), "the join of %s was turned away" % code)
+	_check(statuses.has(flow.online_text(word)), "the menu said why: %s" % flow.online_text(word))
 
 
 ## Walks down and up at a steady speed, in legs of LEG_S: the lag shooter's moving target.

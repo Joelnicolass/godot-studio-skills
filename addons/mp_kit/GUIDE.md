@@ -15,7 +15,7 @@ Code names (`MpActor`, `to_server`, `owner_slot`...) are the kit's own. Editor m
 7. [World things: objects, spawning, score, start and end](#7-world-things-objects-spawning-score-start-and-end)
 8. [Testing](#8-testing)
 9. [Online with rooms](#9-online-with-rooms)
-10. [A private match with a code](#10-a-private-match-with-a-code)
+10. [A private match with a code](#10-a-private-match-with-a-code), and [online rooms your players host](#103-online-rooms-your-players-host-no-server-of-yours) (no server of yours)
 11. [Web](#11-web)
 12. [Relay (a tunnel through Railway or another host)](#12-relay-a-tunnel-through-railway-or-another-host)
 13. [Putting it on a VPS](#13-putting-it-on-a-vps)
@@ -1223,6 +1223,91 @@ server.server_failed.connect(func(reason: String) -> void: print("failed: ", rea
 
 It uses the times and ports of a default `MpLobbyConfig` (matches on 7800-7899) and the network of your `game.tres` (transport, relay, TLS). Through the relay it searches for a port from a random one in the range, and if the relay refuses it because another server uses it, it tries the next one.
 
+### 10.3 Online rooms your players host (no server of yours)
+
+The same private match, over the internet, with nothing of yours running the matches: a player's game hosts each one. Two small Node servers make it possible, and both fit on the cheapest machines:
+
+- the **relay** (section 12): the tunnel, so nobody needs a public IP or an open port;
+- the **issuer** (`addons/mp_kit/issuer`): hands out room codes, gives each player a seat, lists the public rooms, keeps limits and versions, and signs the short tokens the relay asks for.
+
+```
+host's game ── create a room ─► issuer ── code K7F3QX + a host token (1 minute, works once)
+             └─ hosts room p-K7F3QX on the relay with that token
+friend's game ── join K7F3QX ─► issuer ── a seat + a client token
+             └─ joins room p-K7F3QX on the relay with that token
+```
+
+The relay's secret never leaves the servers: the issuer signs with its **private** key, the relay only holds the **public** one (it can check tokens, not make them). A token works once and dies within a minute, so a leaked one is useless.
+
+How each build hosts:
+
+| Host | How | If it is minimized or its tab hidden |
+|---|---|---|
+| Desktop | A match process on its PC (`MpLocalServer`, the same code as a VPS); the host joins it like any player | Nothing: the match process has no window |
+| Browser | Its own game hosts and plays (a browser cannot start processes) | It keeps simulating: `MpWebKeepAlive` (10.6) |
+
+When it fits: friends, co-op, casual and private rooms. When it does not: competitive matches between strangers (the host's game is the authority: it could cheat, and if it leaves the match ends). Those want a dedicated server (sections 9 and 13).
+
+### 10.4 Setting it up
+
+1. The relay with the issuer's public key, and the issuer with its private key: [issuer/README.md](issuer/README.md) has both, on your machine and on Fly (`node keys.mjs` makes the pair).
+2. In your `game.tres` (`MpNetConfig`), group **Online rooms (issuer)**: `issuer_url` = `https://<your-issuer>.fly.dev`, `game_id` = the key of your game in the issuer's `ISSUER_GAMES`. The relay URL comes from the issuer.
+3. **Project Settings › Application › Config › Version**: your game's version. Players join only rooms of their own version, and the issuer may refuse versions older than `min_version` ("Update the game").
+4. For the web build: the issuer's `ISSUER_ORIGINS` = where your page is served from (`https://my-game.itch.io`).
+
+Try it all on your machine first: `bash mpkit_lab/run/online.sh` in the kit repo runs an issuer and a relay locally and plays through them with a desktop host, a host in its own game (frozen for 3 s mid-match) and a browser host.
+
+### 10.5 In your game
+
+```gdscript
+var flow := MpFlow.find_in_tree(self)
+
+## Host: a room for 4 (you count), listed for everyone. The status says the code once it is up.
+var online := flow.host_online(4, "Friday night")
+online.room_ready.connect(func(code: String) -> void: code_label.text = code)
+online.failed.connect(func(reason: String) -> void: print("could not open: ", reason))
+
+## A friend with the code (as typed: "k7f-3qx" works).
+var err: Error = await flow.join_online(code_field.text)
+
+## The list of public rooms of this game and version with a free seat.
+for row in await flow.online_rooms():
+	print(row.name, " ", row.players, "/", row.max_players, " ", row.code)
+```
+
+| Piece | What it is |
+|---|---|
+| `flow.host_online(players, name, listed)` | Opens a room (an `MpOnline` under the root). `listed = false`: private, joined by code only. A second call gives the running one back |
+| `MpOnline.room_ready(code)` / `failed(reason)` / `ended` | Players may join / the issuer refused or the match could not start / the room is closed |
+| `MpOnline.code`, `mode` | The code; `dedicated` (desktop) or `listen` (browser). `--online-mode=listen` forces the browser's way on a desktop (tests) |
+| `flow.join_online(code)` | A seat from the issuer, then the relay connection. While the room is still coming up it asks again for a few seconds |
+| `flow.online_rooms()` | `[{code, name, players, max_players, state, platform, age_s}]` |
+| `MpFlow.online_texts` | What the status says for each refusal (`room_full`, `version_mismatch`, `version_too_old`, `too_many_rooms`, `network`…): translate them in the Inspector |
+| `MpInviteLabel` | In the match HUD of the host it shows the code |
+| `MpNetConfig.can_host_online()` | True once `issuer_url` is set (every build may host, a browser too) |
+
+The room lives while the host does: the host tells the issuer every 10 s who is in, and closes the room when the match ends or it leaves. A host whose game closes without a word (a closed tab) is forgotten by the issuer 30 s later.
+
+### 10.6 A browser hosts
+
+A browser stops a hidden tab's frames (another tab in front, the window minimized, or covered in Chrome), and a Godot web build runs on those frames: a browser host would freeze its whole match. While a browser hosts, `MpWebKeepAlive` answers those frames from a Web Worker's timer, which the browser does not throttle, and turns drawing off until the tab is visible again. Measured in Chromium: 60 ticks per second with the tab hidden for more than 8 minutes. You do nothing: `host_online()` turns it on and off.
+
+Mobile browsers freeze background tabs entirely; there nothing keeps the host running. For that, and for any host that freezes or whose link stalls, the clients have a safety net: the server beats 4 times a second, and after 1.5 s without a beat a client emits `MpKit.host_silent(seconds)` (and `host_back` when it beats again); `MpFlow` says "Waiting for the host…" (`host_silent_status`) and gives up after `host_silent_timeout_s` (30). Show your own overlay with those signals if you like.
+
+### 10.7 When something fails
+
+| What you see | What to do |
+|---|---|
+| "This game has no online server (MpNetConfig.issuer_url)" | Set `issuer_url` in your `game.tres` (or `--issuer-url=`) |
+| "Online error (unknown_game)" | `game_id` (or, empty, `relay_room`) is not a key of the issuer's `ISSUER_GAMES` |
+| "That room runs version X of the game" | The host has another version: both need the same **Application › Config › Version** |
+| "Update the game (version X or newer)" | The issuer's `min_version` for your game is newer than this build |
+| "You already host a room" | One room per install (`ISSUER_ROOMS_PER_INSTALL`): close it, or wait 30 s after a crash |
+| "Cannot reach the online server" | The issuer's address, or (web) its `ISSUER_ORIGINS` does not list the page's origin: the browser blocks the call |
+| The room never shows in the list | It is still coming up (the host is not on the relay yet), it is private, or it is full |
+| The relay log says `refused for p-…: no RELAY_TOKEN_KEYS set` | The relay has no public key of the issuer: set `RELAY_TOKEN_KEYS` and redeploy it |
+| The relay log says `… bad token` | The relay's public key is not the issuer's (made by another `keys.mjs` run) |
+
 ## 11. Web
 
 ### 11.1 What changes
@@ -1625,6 +1710,7 @@ For the kit's own repo there is an automatic version of all this: `bash mpkit_la
 | Slots | The server assigns them. The client never says "I am number 2" |
 | Lag compensation | It never rewinds more than a second (as Valve's `sv_maxunlag`): a view time further back, or ahead of now, is clamped |
 | Relay | Only whoever has the secret hosts (`RELAY_HOST_SECRET`); it travels in a header, never in the URL. The secret never goes in the `.tres`. A room with a live host cannot be taken over |
+| Rooms players host (issuer) | Hosting and joining a player's room each need an issuer token for that room and role: signed with the issuer's private key (Ed25519), checked by the relay with the public one, good once and for a minute. The issuer limits rooms per IP and install, requests per minute, game versions and web origins; the IP comes from the connection (on Fly, `Fly-Client-IP`), never from the client |
 
 ### 14.2 What your game must check
 
@@ -1892,6 +1978,8 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | gravity or inertia with prediction | `velocity` in **Sync › sync_extra** |
 | the others to look steady | **MpActor › Smoothing** = `BUFFERED` (with `adaptive_buffer`), and `late_tolerance` or the `buffer_delay_s` cap |
 | to show the ping or the connection's quality | `Mp.net_quality()` |
+| players to host online matches with no server of mine (web too) | `flow.host_online()` / `join_online(code)` / `online_rooms()` with the issuer and the relay ([10.3](#103-online-rooms-your-players-host-no-server-of-yours)) |
+| to know the host froze or its link stalls | `MpKit.host_silent(seconds)` / `MpKit.host_back` |
 | a shot to hit what the shooter saw | `net.rewound(func)`, `net.seen_position_of(node)` or `net.view_lag()` (lag compensation) |
 | to use less bandwidth | **MpActor › Sync › send_hz** (e.g. 20) |
 | to read the player's keys on the server | `input.get_vector`, `input.is_action_just_pressed`… |

@@ -8,7 +8,9 @@ PC player   ─┼── wss://your-relay.up.railway.app ──── Godot serv
 PC player   ─┘          (room game-7777)                connects as the host of the room
 ```
 
-Node 18+ and one dependency, [`ws`](https://github.com/websockets/ws) (the usual WebSocket library for Node): run `npm install` once in this folder. The code is short and split by job:
+Two kinds of room: a **server's** (`<game>-<port>`: a dedicated, a room server, a match; hosting needs `RELAY_HOST_SECRET`) and a **player's** (`p-<code>`: a room a player hosts through the [MpKit issuer](../issuer/README.md); hosting and joining each need one of the issuer's tokens, section 3b).
+
+Node 18+ and two dependencies, [`ws`](https://github.com/websockets/ws) (the usual WebSocket library for Node) and [`jose`](https://github.com/panva/jose) (checks the issuer's tokens): run `npm install` once in this folder. The code is short and split by job:
 
 | File | What it does |
 |---|---|
@@ -17,6 +19,7 @@ Node 18+ and one dependency, [`ws`](https://github.com/websockets/ws) (the usual
 | `lib/protocol.mjs` | The binary messages and close codes (section 4) |
 | `lib/rooms.mjs` | The rules: who hosts a room, who joins, where each message goes, silent hosts |
 | `lib/relay.mjs` | HTTP, `/health`, the host secret, each WebSocket handed to the rules |
+| `lib/tokens.mjs` | The issuer's tokens for player rooms: signature, room, role, expiry, used once |
 | `test/` | `npm test`: the rules with fake peers, and the relay end to end |
 
 ## 1. Put it on Railway
@@ -71,6 +74,15 @@ Equivalent flags: `--transport=relay --relay-url=wss://… --relay-room=my-game 
 - Limits from the environment: `RELAY_MAX_CLIENTS` per room (64), `RELAY_MAX_MESSAGE` in bytes (262144).
 - It stores nothing, never sees the game, never mixes rooms. Latency: the relay's hop in the middle (pick a region near your players).
 
+## 3b. Player rooms (the issuer's tokens)
+
+Rooms named `p-<code>` belong to players: the [MpKit issuer](../issuer/README.md) hands out their codes and signs short tokens with its Ed25519 private key; the relay only holds the **public** key, so it can check tokens but never make them.
+
+- `RELAY_TOKEN_KEYS`: the public key(s) as `keys.mjs` prints them, `{"keys":[…]}`. Without it every `p-` room is refused; a private key there stops the relay before it starts.
+- Hosting and joining a `p-` room each need a token for that room and that role (`?token=…` or the `X-Relay-Token` header; a browser host cannot set headers, and the token dies within a minute). The secret does not open a `p-` room, and a token does not open a server room.
+- A token works for one connection: it is spent once the peer is seated (a host refused with `4009` keeps it for the retry). A host token's `max` caps that room's clients.
+- Refusals are logged with the reason (no token, expired, another room's, already used…), never the token.
+
 ## 4. Protocol (to write another relay)
 
 Binary messages, little-endian:
@@ -80,7 +92,7 @@ Binary messages, little-endian:
 | relay → peer | `0x01 WELCOME u32 your_id` · `0x02 JOIN u32 id` (to the host) · `0x03 LEAVE u32 id` (to the host) · `0x04 DATA u32 from u8 channel u8 mode bytes…` |
 | peer → relay | `0x04 DATA i32 to u8 channel u8 mode bytes…` (host: an id, `0` = everyone, `-id` = everyone but id; client: always to the host) · `0x05 KICK u32 id [reason]` (host only; the relay closes that client with `4007` and the reason, so it learns why it was turned away) |
 
-Connection: `wss://relay/?role=host&room=ROOM` with the header `X-Relay-Secret: KEY` (`&secret=KEY` is accepted too), or `?role=client&room=ROOM`.
+Connection: `wss://relay/?role=host&room=ROOM` with the header `X-Relay-Secret: KEY` (`&secret=KEY` is accepted too), or `?role=client&room=ROOM`. A player room (`p-<code>`): `&token=TOKEN` (or the header `X-Relay-Token: TOKEN`) for both roles.
 
 ## 5. Useful commands
 
@@ -126,7 +138,7 @@ MPKIT_RELAY_SECRET=<key> godot --headless --path . -- --dedicated --transport=re
 MPKIT_RELAY_SECRET=<key> godot --headless --path . -- --room-server   # with relay_url / relay_room in game.tres
 ```
 
-Check the relay's rules from the kit repo: `bash mpkit_lab/run/relay.sh` (host secret, busy room) and `bash mpkit_lab/run/relayfault.sh` (a host that dies, freezes or restarts); the whole game through a local relay: `TRANSPORT=relay bash mpkit_lab/run/arena.sh`.
+Check the relay's rules from the kit repo: `bash mpkit_lab/run/relay.sh` (host secret, busy room) and `bash mpkit_lab/run/relayfault.sh` (a host that dies, freezes or restarts); the whole game through a local relay: `TRANSPORT=relay bash mpkit_lab/run/arena.sh`; player rooms with the issuer (a desktop host, a host in its own game, a browser host): `bash mpkit_lab/run/online.sh`.
 
 ## Verified
 

@@ -71,6 +71,12 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | The `max_matches` cap | `rooms.sh` cap **T** |
 | A client without TLS against a `wss://` lobby | `rooms.sh` public `TLS=1` |
 | A private match on the PC with a code; a wrong code stays out | `private.sh` **T** |
+| A room a desktop player hosts through the issuer (its PC's match process); a friend finds it in the list and joins; the issuer forgets it at the end | `online.sh` |
+| A room a host's own game hosts (the browser's way): a friend joins with the code typed `abc-def`; the host freezes 3 s (SIGSTOP), the friend waits (`host_silent` / `host_back`) and the match ends normally; a third player hears "room full", a made-up code "no such room" | `online.sh` |
+| A browser hosts a room (the web export in headless Chrome: CORS to the issuer, the relay token in the URL); a desktop friend finds it by name and plays it | `online.sh` (SKIP without Chrome) |
+| The issuer's rules (rooms, seats, versions, limits, the list, silent hosts) and HTTP (checks, rate limits, CORS, Fly's IP, the tokens), in Node; the relay taking its tokens | `npm test` in `addons/mp_kit/issuer` |
+| Relay: player rooms need the issuer's token (none, the secret, another room's, a client's, another key's, expired → 403), once, `max` caps the room, a host refused 4009 keeps it | `npm test` in `addons/mp_kit/relay` |
+| A browser host with its tab hidden keeps simulating (`MpWebKeepAlive`): 60 ticks/s for 8+ minutes in Chromium | measured by hand (a hidden tab cannot be driven headless) |
 | Two room servers on one machine (a systemd line) | `instances.sh` |
 | The server image (deploy/fly/Dockerfile) built from the lab: a dedicated and a room server (its matches inside the container) behind a local relay, played through | `docker.sh` (SKIP without Docker) |
 | Wizard: a new 2D and 3D game playable over the network (`game.tres` + `MpWorld`) | `wizard.sh` |

@@ -162,6 +162,10 @@ If your server has no public IP (your PC behind the router) or you want a domain
 
 `MpBootMenu.offer_private_server` shows *Private server*: it starts a dedicated on your PC (`MpLocalServer`, the same code as the VPS, no room server), joins you to it, and the match HUD (an `MpInviteLabel`, already in the `MpWorld`) shows `ip:port#CODE`. Your friends type that in the address field; without the code they cannot get in. A second click gives back the match that already runs. By code: `MpLocalServer.start_on(get_tree(), seats)` and the `server_ready(address, port, codes)` signal.
 
+### Online rooms your players host (no server of yours)
+
+With the relay and the issuer (`issuer/`, a small Node + Express server; both fit on Fly's smallest machines), a player's game hosts each match: `flow.host_online(4, "Friday night")` opens a room and its `room_ready(code)` gives the code, friends call `flow.join_online(code)` or pick one from `flow.online_rooms()`. In `game.tres`: `issuer_url` and `game_id`. A desktop hosts through a match process of its PC; a browser hosts in its own tab and keeps simulating while the tab is hidden. No relay secret in any client: the issuer gives each host and player a one-time token. Steps: GUIDE 10.3, [issuer/README.md](issuer/README.md).
+
 ### Web
 
 A browser can neither open a server nor use UDP, so a web game joins a WebSocket dedicated (`transport = ws` in `game.tres`) or goes through the relay (`transport = relay`). Desktop and web do not mix: a WebSocket server serves WebSocket clients. The menu's address field takes `192.168.1.5`, `game.example.com`, either with `:port`, or a `wss://…` URL. A page served over `https` needs `wss://`: the server carries a certificate and key (in its `game.tres`, or in the `MpLobbyConfig` for rooms, or with `deploy.sh --tls-cert … --tls-key …`) and the client turns on `tls_client` in `game.tres`. A browser pauses a hidden tab: a web player who switches tabs freezes for the others until they come back, and staying away longer than `rejoin_grace_s` counts as abandoning it.
