@@ -71,7 +71,7 @@ MPKIT_RELAY_SECRET=<el secreto del relay> addons/mp_kit/deploy/fly.sh --app mi-s
 
 Escribe `fly.toml` en tu proyecto (a partir de [fly/fly.toml](fly/fly.toml)), crea la app, guarda el secreto como secreto de Fly por stdin y despliega: Fly construye [fly/Dockerfile](fly/Dockerfile), que baja el Godot headless oficial de tu versión (verificado contra las sumas SHA-512 de la release), copia tu proyecto, lo importa una vez y corre `godot --headless --path /app -- --room-server …`. `--dedicated PUERTO` para un dedicado simple, `--region`, `--memory`, `--godot X.Y.Z`, `--dry-run`. El paso a paso completo (qué necesitás, verificar, actualizar, costo, comandos útiles, problemas): [GUIDE 13.6](../GUIDE.md#136-sin-vps-flyio).
 
-Para probar la imagen en tu PC antes (Docker): `mpkit_lab/run/docker.sh` en el repo del kit la construye con el lab y juega a través de un dedicado y un servidor de salas en contenedores.
+Para probar todo en tu PC antes (Docker): el paso a paso con un relay local, el contenedor y dos ventanas está en [GUIDE 13.7](../GUIDE.md#137-tu-servidor-en-docker-en-tu-pc-de-punta-a-punta); en el repo del kit, `mpkit_lab/run/docker.sh` lo hace solo con el lab.
 
 ## Verificado y no verificado
 
