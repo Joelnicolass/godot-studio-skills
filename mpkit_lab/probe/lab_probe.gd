@@ -220,6 +220,7 @@ func _check_watch() -> void:
 	var min_move := float(MpBoot.user_value("probe-min-move", "60"))
 	await _until(func() -> bool: return pawn.position.x > start_x + min_move, "the remote P%d input moved it on the server" % slot)
 	await _until(func() -> bool: return int(_state().get_value(StringName("p%d" % slot), 0)) >= 1, "the remote P%d scored on the server" % slot)
+	_check(MpKit.ready_peers().has(MpKit.peer_id_for(slot)), "P%d, playing, is in MpKit.ready_peers()" % slot)
 	if pawn.has_node("MpInput") and MpBoot.user_value("probe-min-move", "60") == "60":
 		await _until(func() -> bool: return pawn.get_node("MpInput").get_value(&"aim") is Vector2, "the owner's aim (MpInput.set_value) reached the server")
 

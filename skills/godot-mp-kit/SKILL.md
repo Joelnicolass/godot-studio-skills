@@ -71,6 +71,7 @@ El kit tiene que poder usarlo una persona **sin IA**. Por eso, en código nuevo,
 | Actor replicado | hijo **`MpActor`** (Sync en el inspector, arma y guarda `MpSync`) | `MultiplayerSynchronizer` armado a mano, `MpReplicate` en código nuevo |
 | Quién simula, dentro de un nodo | `is_multiplayer_authority()` (el kit deja la autoridad en el servidor: verdadero en solo, host, dedicado) o `MpKit.is_authority()` / `Mp.is_server()` | `MpKit.is_server()` para reglas (falso en solo: es para lo que solo existe en red) |
 | Quién mira esta pantalla | un **`MpLocalSeat`** en el mundo, pasado por `@export` a HUD / audio / órdenes (`slot`, `is_mine`, `preview_slot` en solo) | `local_slot()` repartido en cada script de UI |
+| Algo que tiene que quedar (marcas, puertas, puntaje) vs un efecto de un instante | estado en Sync / `MpState` / un nodo spawneado (le llega al que carga después); efectos por `to_all`, o tu `@rpc` a `MpKit.ready_peers()` | un RPC de un instante para algo que tiene que quedar, o un «donante» que se lo reenvía al que vuelve |
 | Un valor de la partida desde el inicio y en cada cambio | `MpState.watch(key, cb)` | `changed` + una primera lectura a mano, dependiente del orden |
 | Spawnear desde cualquier peer | `MpSpawner.spawn_here(data)` (null en un cliente) | `if MpKit.is_server(): spawn(...)` por todos lados |
 | Input del jugador | hijo **`MpInput`** + `input.get_vector(...)` en el servidor | un `submit_move` por frame |

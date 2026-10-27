@@ -87,8 +87,8 @@ Input de pawn y semántica del dict custom **fuera** del kit.
 - `broadcast_load_world()` / `load_world_to(peer)`
 - `push_snapshot(data)` / `push_snapshot_to(peer, data)`
 - `broadcast_session_ended(data)`
-- `is_peer_world_ready(peer_id)`
-- `send_custom(channel, data)` / `broadcast_custom` / `push_custom_to` / `is_custom_channel_allowed`
+- `is_peer_world_ready(peer_id)`; `ready_peers()` — servidor: peers con slot y world_ready (mandales tus efectos `@rpc` de un instante con `rpc_id`; reproducilo también en el servidor)
+- `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
 
 Editor: [editor.md](editor.md).
 
