@@ -23,7 +23,8 @@ extends Node
 ## the issuer's list, then joins it; `--probe-find-name=X`: the room named X,
 ## for a host that cannot write the code file, a browser) | online_refused (tries the code, or
 ## `--probe-room=`, and expects the issuer's `--probe-expect=` word) | online_stop (opens a room and closes it on
-## purpose: no `failed`, `ended`, the match process gone, the issuer forgot it). `--probe-linger-s=N` keeps a
+## purpose: no `failed`, `ended`, the match process gone, the issuer forgot it; `--probe-stop-early`: before the room is
+## up, from the boot: the scene stays). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
 
 ## Seconds each check may wait (`--probe-timeout-s=N` for a person opening a browser by hand).
@@ -846,10 +847,26 @@ func _stop_online() -> void:
 	online.room_ready.connect(func(c: String) -> void: codes.append(c))
 	online.failed.connect(func(reason: String) -> void: failed.append(reason))
 	online.ended.connect(func() -> void: ended.append(true))
+	if MpBoot.user_flag("probe-stop-early"):
+		## The game's own room screen: Back before the match (here the boot scene stands in for it).
+		await _until(func() -> bool: return not online.code.is_empty(), "the issuer gave the room a code")
+		var early_code := online.code
+		var scene := get_tree().current_scene
+		online.stop()
+		await _until(func() -> bool: return not ended.is_empty(), "stop() ends the room before its match started")
+		await get_tree().create_timer(1.0).timeout
+		_check(get_tree().current_scene == scene and not flow.in_world(), "the scene stays where the game was (no trip to the world or the boot)")
+		_check(failed.is_empty(), "stop() is not a failure (failed: %s)" % [failed])
+		await _until(func() -> bool: return MpLocalServer.running(get_tree()) == null and MpOnline.running(get_tree()) == null, "no private server or online room left")
+		var early: Dictionary = await MpIssuer.join_room(get_tree(), early_code)
+		_check(str(early.get("error", "")) == "no_such_room", "the issuer forgot the room (%s)" % early.get("error", "joined"))
+		return
 	if not await _until(func() -> bool: return not codes.is_empty(), "the room is up (%s)" % online.mode):
 		return
+	await _until(func() -> bool: return flow.in_world() and MpKit.has_local_slot(), "the host is in its match world (MpFlow.in_world)")
 	online.stop()
 	await _until(func() -> bool: return not ended.is_empty(), "stop() ends the room")
+	await _until(func() -> bool: return not MpKit.is_networked() and get_tree().current_scene.name == "Boot" and not flow.in_world(), "from the match world the host is back in the menu, offline")
 	_check(failed.is_empty(), "stop() is not a failure (failed: %s)" % [failed])
 	await _until(func() -> bool: return MpLocalServer.running(get_tree()) == null and MpOnline.running(get_tree()) == null, "no private server or online room left")
 	var gone: Dictionary = await MpIssuer.join_room(get_tree(), str(codes[0]))
