@@ -30,7 +30,7 @@ Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` n
 |---|---|
 | `mp.gd` (`Mp`) | Verbos de la partida desde cualquier script: `play_solo`, `host`, `join(dirección)`, `leave`, `open_rooms`, `is_server`, `is_online`, `me`, `player(slot)`, `state`, `current_match`, `finish(result)`, `net_quality(slot)` |
 | `mp_game.gd` (`MpGame`) | El juego en un `.tres`: es un `MpNetConfig` más `boot_scene`, `world_scene`, `lobby_scene`, `rooms_scene`. En `MpFlow.game` llena `net_config` y cada ruta vacía |
-| `nodes/mp_world.gd` (`MpWorld`) | Un nodo en el mundo; en el editor arma `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite` |
+| `nodes/mp_world.gd` (`MpWorld`) | Un nodo en el mundo; en el editor arma `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite`, `Hud/Start` (`MpStartButton`), `Hud/Waiting` (`MpWaitingLabel`) |
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, dueño, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, predicción (`mp_move`), suavizado adaptativo, compensación de lag (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | Las teclas del dueño con la API de `Input`; buffer del servidor adaptativo y ritmo del dueño |
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Valores de partida; inicio, espera de asientos, ausencias, fin |
@@ -203,11 +203,11 @@ Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un au
 
 ## MpFlow
 
-Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `dedicated_start_seats`; `--start-seats=N`), dedicated al primer cliente.
+Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated al primer cliente.
 
 ## MpMatchGate
 
-`/root/MpKit/Gate` (`MpKit.gate`, `Mp.gate()`). Un solo dueño de quién se sienta y cuándo arranca la partida: `IDLE` (sin armar: solo o un servidor sin flow) → `FILLING` (asientos libres abiertos; el mundo pausado en todos los peers hasta que cargan los asientos esperados o `load_timeout_s`) → `RUNNING` (solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`; el resto se rechaza con `match_started` / `grace_over` / `slot_taken` / `full`). Credencial por asiento en modo abierto (LAN, dedicado a mano), el ticket en salas. `loaded_count()` / `expected_count()` valen también en el cliente (para un HUD de «esperando»). Host LAN: `can_start_now()` / `start_now()`. `MpMatch` reemite sus señales en el mundo.
+`/root/MpKit/Gate` (`MpKit.gate`, `Mp.gate()`). Un solo dueño de quién se sienta y cuándo arranca la partida: `IDLE` (sin armar: solo o un servidor sin flow) → `FILLING` (asientos libres abiertos; el mundo pausado en todos los peers hasta que cargan los asientos esperados o `load_timeout_s`) → `RUNNING` (solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`, y su credencial o ticket gana sobre una conexión vieja; con `late_join` un recién llegado todavía toma un asiento libre; el resto se rechaza con `match_started` / `grace_over` / `slot_taken` / `full`). `start_seats` (MpFlow y MpBootMenu, por defecto 0 = todos los asientos, `--start-seats=N`; `load_timeout_s` 15 s, después arranca con los que cargaron). Credencial por asiento en modo abierto (LAN, dedicado a mano), el ticket en salas. `loaded_count()` / `expected_count()` valen también en el cliente (para un HUD de «esperando»). Host LAN: `can_start_now()` / `start_now()` (`MpStartButton` en el HUD). Un dedicado a mano se vuelve a armar después de cada partida: `MpFlow.next_open_match()` (mundo nuevo), con `MpKit.session_ended_sent` y el servidor vacío, o `all_gone`. `MpMatch` reemite sus señales en el mundo.
 
 Un mundo:
 

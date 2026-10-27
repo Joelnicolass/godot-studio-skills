@@ -47,7 +47,9 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 |---|---|
 | `MpState` y el que vuelve: mismo slot con la credencial del asiento, puntos y campana siguen, `player_back` | `arena.sh` rejoin (LAN y dedicado) **T** |
 | Puerta de arranque: el que llega después del arranque se rechaza (`match_started`), sin slot ni mundo, y el flow muestra el motivo | `arena.sh` late **T** |
-| Reglas de la puerta (llenar, lleno, `need`, gracia, asiento vivo, ticket, `load_timeout`, `all_gone`, `reset`) | `tests/test_match_gate.gd` |
+| `late_join`: un recién llegado después del arranque igual se sienta y juega | `arena.sh` latejoin **T** |
+| Un dedicado a mano (`--dedicated`, asientos por defecto) sirve una partida tras otra: mundo nuevo después de una partida terminada cuando se fueron todos, y después de que todos se cayeron pasada la gracia | `arena.sh` survive **T** |
+| Reglas de la puerta (llenar, lleno, `need`, gracia, asiento vivo, ticket, `load_timeout`, `all_gone`, `reset`, `late_join`, una credencial o ticket que desplaza una conexión vieja) | `tests/test_match_gate.gd` |
 | `MpMatch.finish` llega a todos y a la sala | `rooms.sh` public **T TLS** |
 | Volver a la partida (botón del lobby) dentro de la gracia | `rooms.sh` rejoin **T** |
 | Abandono pasada la gracia: gana el otro | `rooms.sh` abandon **T** |

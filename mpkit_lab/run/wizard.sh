@@ -20,7 +20,7 @@ FLAGS=()
 "$GODOT" --headless --path "$ROOT" --script res://probe/make_game.gd -- "${FLAGS[@]}" > "$OUT/make.log" 2>&1
 "$GODOT" --headless --path "$ROOT" --import > "$OUT/import.log" 2>&1
 grep -E "^\[|WIZARD" "$OUT/make.log"
-gd "$OUT/server.log" res://generated/boot.tscn -- --server --mp-port="$PORT" --probe=watch --probe-min-move=0.5 --probe-linger-s=5
+gd "$OUT/server.log" res://generated/boot.tscn -- --server --mp-port="$PORT" --start-seats=1 --probe=watch --probe-min-move=0.5 --probe-linger-s=5
 SERVER=$LAST_PID
 sleep 0.5
 gd "$OUT/client.log" res://generated/boot.tscn -- --client1 --mp-port="$PORT" --probe=basic --probe-linger-s=3

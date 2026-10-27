@@ -54,7 +54,7 @@ hold_rooms() { # hold_rooms <port…>: one host per relay room, kept open (other
 }
 
 dedicated() { # dedicated <log>: a dedicated through the relay on $PORT; pid in LAST_PID
-  gd "$1" -- --dedicated --transport=relay --mp-port="$PORT"
+  gd "$1" -- --dedicated --transport=relay --mp-port="$PORT" --start-seats=1
 }
 hosted_times() { grep -c "^\[relay\] host $ROOM-$PORT\$" "$OUT/relay.log"; }
 client_plays() { # client_plays <log>: a client that plays on the dedicated; true if its probe passed

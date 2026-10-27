@@ -47,7 +47,7 @@ if transport == "relay":
 args = '"args":' + json.dumps(["--"] + user)
 open(os.path.join(web, "probe.html"), "w").write(s.replace('"args":[]', args))
 PYEOF
-gd "$OUT/server.log" -- --server --transport="$TRANSPORT" --mp-port="$PORT" --probe=watch --probe-timeout-s="$WAIT_S" --probe-linger-s=5
+gd "$OUT/server.log" -- --server --transport="$TRANSPORT" --mp-port="$PORT" --start-seats=1 --probe=watch --probe-timeout-s="$WAIT_S" --probe-linger-s=5
 SERVER=$LAST_PID
 # a refused WebSocket client does not retry: only show the page once the server listens
 if [ "$TRANSPORT" = relay ]; then

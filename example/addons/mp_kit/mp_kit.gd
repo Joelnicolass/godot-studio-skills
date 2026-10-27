@@ -13,6 +13,8 @@ signal client_world_ready(peer_id: int)
 signal load_world
 signal snapshot_received(data: Dictionary)
 signal session_ended(data: Dictionary)
+## Server: it told every peer the session ended (broadcast_session_ended, e.g. MpMatch.finish). Clients get session_ended.
+signal session_ended_sent(data: Dictionary)
 signal slot_assigned(slot: int)
 ## Client side: the server refused the ticket (reason is opaque, chosen by the server).
 signal admission_rejected(reason: String)
@@ -288,6 +290,7 @@ func broadcast_session_ended(data: Dictionary) -> void:
 		return
 	for peer_id in _broadcast_peers():
 		rpc_session_ended.rpc_id(peer_id, data)
+	session_ended_sent.emit(data)
 
 
 func is_custom_channel_allowed(channel: StringName) -> bool:
@@ -508,6 +511,12 @@ func rpc_present_ticket(ticket: String) -> void:
 
 
 func _admit_at_gate(sender: int, credential: String) -> void:
+	## A client back after a drop the server has not noticed yet: its credential wins over the stale connection, which leaves
+	## the way a drop does (the seat is away), so the seat comes back as a rejoin.
+	var stale := gate.displaced_by(sender, credential)
+	if stale != 0:
+		_on_peer_disconnected(stale)
+		multiplayer.multiplayer_peer.disconnect_peer(stale)
 	var seat := gate.admit(sender, credential)
 	if seat.slot <= 0:
 		_reject_peer(sender, seat.reason)
