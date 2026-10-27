@@ -1346,7 +1346,7 @@ Protocolo y detalles: [relay/README.md](relay/README.md).
 
 ## 13. Subir a un VPS
 
-Un solo binario de Linux hace todo: cliente, servidor de salas (`--room-server`) y cada partida (`--dedicated`). Si preferís no abrir puertos, el servidor puede correr en cualquier lado detrás del relay ([12](#12-relay-túnel-por-railway-u-otro-host)).
+Un solo binario de Linux hace todo: cliente, servidor de salas (`--room-server`) y cada partida (`--dedicated`). Si preferís no abrir puertos, el servidor puede correr en cualquier lado detrás del relay ([12](#12-relay-túnel-por-railway-u-otro-host)). Sin ningún VPS, en Fly.io: [13.6](#136-sin-vps-flyio).
 
 ### 13.1 Lo que necesitás
 
@@ -1441,6 +1441,97 @@ Si el servidor de salas se cae, systemd lo levanta. Sus partidas se cierran sola
 En los clientes, poné la dirección del VPS en `public_host` de `game.tres` (por ejemplo `juego.ejemplo.com`): el menú y la pantalla de lobby arrancan con ella. Para dedicados sueltos, los jugadores escriben `juego.ejemplo.com:7777` en el menú.
 
 Más detalle: [deploy/README.md](deploy/README.md).
+
+### 13.6 Sin VPS: Fly.io
+
+Fly.io corre el servidor de tu juego en una máquina chica en la que nunca entrás: sin VPS que mantener, sin plantillas de export, sin puertos que abrir. El servidor se conecta **hacia afuera** a tu relay ([12](#12-relay-túnel-por-railway-u-otro-host)), así que los jugadores llegan a él por el relay como siempre. Tu juego se distribuye sin ninguna clave adentro: solo el servidor tiene el secreto del relay.
+
+```
+jugadores ──── wss://mi-relay.fly.dev ──── el servidor de tu juego en Fly
+                (el relay, sección 12)      (un servidor de salas: lobby + sus partidas)
+```
+
+**Lo que necesitás**
+
+- El relay andando (sección 12), su dirección (`wss://mi-relay.fly.dev`) y su secreto de host (`RELAY_HOST_SECRET`).
+- Una cuenta de Fly.io y `flyctl` instalado: `brew install flyctl` en macOS, o la línea de tu sistema en fly.io/docs/flyctl/install. Después iniciá sesión una vez: `fly auth login`.
+- Tu proyecto con las salas configuradas (sección 9): `game.tres` con `rooms_scene`. Para un dedicado simple, nada más.
+
+**1. Desplegar (un comando, desde la carpeta de tu proyecto)**
+
+```bash
+MPKIT_RELAY_SECRET=<el secreto del relay> addons/mp_kit/deploy/fly.sh --app mi-servidor-de-juego --relay-url wss://mi-relay.fly.dev
+```
+
+Qué hace, en orden:
+
+1. Escribe `fly.toml` en la carpeta de tu proyecto (a partir de `addons/mp_kit/deploy/fly/fly.toml`) con el nombre de tu app, la región (`gru`, São Paulo, salvo `--region`), la versión de Godot (la del `godot` de tu PATH, o `--godot 4.7.2`) y los flags del servidor. Commitealo con tu juego; si querés, después lo editás a mano.
+2. Crea la app en Fly si todavía no existe (los nombres de app son globales en Fly: elegí uno tuyo).
+3. Guarda el secreto como secreto de Fly, `MPKIT_RELAY_SECRET`, por stdin: nunca queda en una línea de comandos, en `fly.toml` ni en la imagen.
+4. Construye la imagen en los builders de Fly (`addons/mp_kit/deploy/fly/Dockerfile`): baja el Godot oficial para Linux de esa versión, lo verifica contra el `SHA512-SUMS.txt` de la release, copia tu proyecto y lo importa una vez.
+5. Arranca una máquina, siempre prendida, que corre `godot --headless --path /app -- --room-server …`.
+
+Probalo primero con `--dry-run`: imprime cada comando y no cambia nada.
+
+| Opción | Qué hace | Por defecto |
+|---|---|---|
+| `--app NOMBRE` | La app de Fly (minúsculas, dígitos, `-`) | obligatoria |
+| `--relay-url URL` | El relay. Sin esto, tu `game.tres` ya tiene que decir `transport = relay` con su `relay_url` | — |
+| `--relay-room NOMBRE` | El prefijo de las salas del relay, si no es el de tu `game.tres` | el del juego |
+| `--region CÓDIGO` | Dónde corre la máquina; la más cercana a tus jugadores y a tu relay (`fly platform regions`) | `gru` |
+| `--rooms PUERTO` | Un servidor de salas (lobby + partidas) en este puerto del kit | `7700` |
+| `--dedicated PUERTO` | En cambio, un dedicado simple (una partida; los jugadores entran con el puerto) | — |
+| `--godot X.Y.Z` | La versión de Godot de la imagen: la que usa tu proyecto | la del `godot` del PATH |
+| `--memory TAMAÑO` | La memoria de la máquina. Un servidor de salas corre un proceso por partida: más partidas a la vez, más memoria | `1gb` |
+| `--dry-run` | Solo imprime los comandos | apagado |
+
+**2. Verificar que anda**
+
+```bash
+fly logs --app mi-servidor-de-juego        # buscá: rooms ready port 7700 (relay)
+fly status --app mi-servidor-de-juego      # una máquina, started, en tu región
+fly logs --app mi-relay                    # el relay muestra: host mi-juego-7700
+```
+
+**3. Los jugadores**
+
+No tienen que hacer nada: con `transport = relay` en `game.tres`, el botón **Online** del juego va al lobby por el relay. Salas, salas privadas con código y partidas funcionan como en la sección 9.
+
+**4. Actualizar**
+
+Corré el mismo comando de nuevo después de cambiar el juego: construye una imagen nueva y reemplaza la máquina (las partidas que corren en ese momento terminan; los jugadores vuelven al lobby). Si no tenés `MPKIT_RELAY_SECRET` puesta, el secreto en Fly queda como estaba.
+
+**Costo**
+
+Una máquina siempre prendida: con `--memory 1gb` unos USD 6 por mes (fly.io/pricing tiene el precio de cada región), más el tráfico saliente (el ejemplo arena mueve unos 0,15 GB por jugador por hora; el tráfico de las partidas sale por el relay, que se cobra aparte).
+
+`512mb` alcanza para un dedicado o un servidor de salas con pocas partidas chicas.
+
+**Comandos útiles**
+
+```bash
+fly logs --app mi-servidor-de-juego                 # log en vivo: salas, partidas, resultados
+fly status --app mi-servidor-de-juego               # la máquina y su estado
+fly apps restart mi-servidor-de-juego               # reiniciarla (las partidas terminan, el lobby vuelve)
+fly secrets set --app mi-servidor-de-juego MPKIT_RELAY_SECRET=<nuevo>   # después de cambiar el secreto del relay
+fly scale memory 2048 --app mi-servidor-de-juego    # más memoria para más partidas a la vez
+fly scale count 0 --app mi-servidor-de-juego        # apagarla (no se cobra la máquina); count 1 la vuelve a prender
+fly apps destroy mi-servidor-de-juego               # borrarla para siempre
+```
+
+**Si algo falla**
+
+- `lobby port 7700 is in use on the relay`: otro servidor de salas del mismo juego tiene esa sala del relay (tu PC, una app vieja). Apagalo, o usá otro puerto `--rooms` u otro `--relay-room`.
+- El log del relay (`fly logs --app mi-relay`) dice `host refused for mi-juego-7700: wrong secret`: el secreto en Fly no es el del relay. Volvé a ponerlo (`fly secrets set …`).
+- La máquina se reinicia con `out of memory`: más `--memory` (o menos `max_matches`).
+- `no godot in PATH`: pasá `--godot 4.7.2` (la versión exacta que usa tu proyecto; Fly baja esa).
+
+**Probar la imagen en tu PC antes** (opcional, con Docker): `mpkit_lab/run/docker.sh` construye esta misma imagen con el lab del kit, corre un dedicado y un servidor de salas en contenedores detrás de un relay local y juega a través de ellos. Para tu propio juego:
+
+```bash
+docker build -f addons/mp_kit/deploy/fly/Dockerfile --build-arg GODOT_VERSION=4.7.2 -t mi-servidor-de-juego .
+docker run --rm -e MPKIT_RELAY_SECRET=<secreto> -e GAME_ARGS="--room-server --transport=relay --relay-url=wss://mi-relay.fly.dev" mi-servidor-de-juego
+```
 
 ## 14. Seguridad y límites
 
