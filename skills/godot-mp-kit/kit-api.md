@@ -34,7 +34,7 @@ These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, owner, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, prediction (`mp_move`), adaptive smoothing, lag compensation (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | The owner's keys with the `Input` API; an adaptive server buffer and the owner's pace |
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Match values (`watch(key, cb)`: current value, then each change); start, waiting for seats, absences, end |
-| `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Who looks at this screen: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`; handed to HUD / audio / orders by `@export` |
+| `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Who looks at this screen: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`, `slot_of(node)` (the local slot when the scene has no seat); handed to HUD / audio / orders by `@export` |
 | `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Leaving (it works while the world is paused); a private match's invite |
 | `core/mp_net_quality.gd` | RTT, jitter (97th percentile), loss and a grade per connection |
 | `core/mp_lag_comp.gd` | A second of poses per actor on the server; `rewind(stamp, callable)` |
