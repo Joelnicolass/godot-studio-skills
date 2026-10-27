@@ -36,6 +36,9 @@ Actor
 - `@export var actor` en el machine (el contenedor).
 - `@export var initial_state`.
 - `transition(&"Hurt")` = nombre de nodo. `transition(&"Hurt", payload)` lleva datos genéricos (`machine.payload`); el mismo estado otra vez solo llama `apply_payload`. Estados o actor agregados después: `notify_actor_ready()`.
+- Arranque: `autostart` (prendido) entra solo a `initial_state`. Apagado: `start(state, payload)` cuando el actor está listo (de un pool, cargado de un save, entró a mitad de partida).
+- Quién lo cambia: el dueño llama `machine.transition()` (directo). El `transition()` de un estado es un **pedido** que decide `FsmMachine._request_transition(next, payload)` (por defecto sí).
+- Orden de avance propio (rollback, turnos, simulación determinista): `run_physics` / `run_process` apagados y `step_physics(delta)` / `step_process(delta)`. Leer: `current_name()`, `is_in(&"Hurt")`.
 - El estado usa `actor` / `machine`, no `get_parent()` como API.
 
 Al overridear `enter` / `exit`, llamá `super.enter()` si querés las señales.
@@ -53,6 +56,10 @@ Un estado nuevo = un nodo nuevo, no un `elif` más.
 ## MP
 
 La simulación (a qué estado pasás) es **autoridad del host**. Los guests interpolan / pintan. No metas FsmKit en `addons/mp_kit`.
+
+Si el estado mismo se replica (un valor del host): un script que `extends FsmMachine` overridea `_request_transition` para escribir el pedido donde decide el host y devolver `false`; el setter del valor replicado llama `transition_to()`. Un peer que entra a mitad de partida: `autostart = false` y `start(<el estado que dice la red>)`.
+
+Tests del addon: `godot --headless --path <proyecto> --script res://addons/fsm_kit/tests/fsm_test_runner.gd`. Si venís de 0.1.0: `addons/fsm_kit/CHANGELOG.md` (primero lo que rompe).
 
 ## Anti-patrones
 

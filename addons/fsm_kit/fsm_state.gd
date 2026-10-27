@@ -40,8 +40,9 @@ func handle_input(_event: InputEvent) -> void:
 	pass
 
 
+## Ask the machine for `state_name`: a request, through FsmMachine._request_transition() (allowed by default).
 func transition(state_name: StringName, next_payload: Variant = null) -> void:
 	if machine == null:
 		push_warning("FsmState '%s' has no machine" % name)
 		return
-	machine.transition(state_name, next_payload)
+	machine.request(state_name, next_payload)
