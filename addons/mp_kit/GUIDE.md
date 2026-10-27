@@ -1524,12 +1524,91 @@ fly apps destroy my-game-server               # remove it for good
 - The machine restarts with `out of memory`: more `--memory` (or fewer `max_matches`).
 - `no godot in PATH`: pass `--godot 4.7.2` (the exact version your project uses; Fly downloads that one).
 
-**Try the image on your PC first** (optional, with Docker): `mpkit_lab/run/docker.sh` builds this same image from the kit's lab, runs a dedicated and a room server in a container behind a local relay, and plays through them. For your own game:
+**Try it all on your PC first** (with Docker): [13.7](#137-your-server-in-docker-on-your-pc-end-to-end), the same image with a local relay and two windows.
+
+### 13.7 Your server in Docker on your PC, end to end
+
+Before putting the server on Fly (13.6), or to reproduce a problem, run the whole path on your own PC: a relay, your game's server in a container (the same image Fly runs), and two windows of the game that play through them. Four terminals, all opened in your project folder.
+
+```
+window 1 ─┐                                       ┌── container: your game's server
+window 2 ─┴── ws://127.0.0.1:8080 (relay, your PC) ┘   (it reaches the relay as ws://host.docker.internal:8080)
+```
+
+**What you need**
+
+- Docker running: Docker Desktop on macOS or Windows (open it once), Docker Engine on Linux. `docker info` must answer without errors.
+- Node 18 or newer (for the relay): `node --version`.
+- Godot on your PC, the same version as your project (`godot --version`; on macOS the binary is `/Applications/Godot.app/Contents/MacOS/Godot`).
+- Your project with rooms (section 9), or a plain dedicated (step 6).
+
+**1. The relay (terminal 1)**
+
+```bash
+npm install --prefix addons/mp_kit/relay      # only the first time
+PORT=8080 RELAY_HOST_SECRET=local-test node addons/mp_kit/relay/server.mjs
+```
+
+You see `[relay] ready port 8080`. Leave it open: it prints every host and player that comes in. `local-test` is the host secret for this test only.
+
+**2. Build the server image (terminal 2)**
 
 ```bash
 docker build -f addons/mp_kit/deploy/fly/Dockerfile --build-arg GODOT_VERSION=4.7.2 -t my-game-server .
-docker run --rm -e MPKIT_RELAY_SECRET=<secret> -e GAME_ARGS="--room-server --transport=relay --relay-url=wss://my-relay.fly.dev" my-game-server
 ```
+
+Use your project's Godot version. The first time takes a minute or two: it downloads the official Godot for Linux, checks it against the release's SHA-512 sums, copies your project and imports it. It ends with `naming to docker.io/library/my-game-server`. Run it again after every change to the game.
+
+**3. Start the server (terminal 2)**
+
+```bash
+docker run --rm --name my-game-server --add-host=host.docker.internal:host-gateway \
+  -e MPKIT_RELAY_SECRET=local-test \
+  -e GAME_ARGS="--room-server --lobby-port=7700 --match-port-min=7800 --match-port-max=7899 --matches-root=/home/game/matches --transport=relay --relay-url=ws://host.docker.internal:8080 --relay-room=my-game" \
+  my-game-server
+```
+
+- `host.docker.internal` is your PC as seen from inside the container; `--add-host` makes it work on Linux too.
+- `MPKIT_RELAY_SECRET` must be the relay's `RELAY_HOST_SECRET`.
+- `GAME_ARGS` are the kit's flags, the same ones `fly.toml` uses.
+
+You see `rooms ready port 7700 (relay)`, and terminal 1 shows `[relay] host my-game-7700`: the server is in.
+
+**4. Two players (terminals 3 and 4)**
+
+```bash
+godot --path . -- --transport=relay --relay-url=ws://127.0.0.1:8080 --relay-room=my-game
+```
+
+Run that line in two terminals: two windows. In each, **Online rooms** opens the lobby screen; connect (the address can stay as it is: through the relay the port, 7700, picks the room). In one window **Create room**; in the other, pick the room in the list and join. Both press **Ready**: the room server starts the match **inside the container** (terminal 2 shows `match for room "…" on port 78xx`) and both windows go into it. When it ends, both come back to the lobby with the result.
+
+From the editor instead: put `transport = relay`, `relay_url = ws://127.0.0.1:8080` and `relay_room = my-game` in `game.tres` (only while you test), **Debug › Run Multiple Instances › 2** and F5.
+
+**5. Stop**
+
+`Ctrl+C` in each terminal. The container removes itself (`--rm`); if you started it in the background (`docker run -d …`), `docker stop my-game-server`. When you are done, quit Docker Desktop (or `docker desktop stop`).
+
+**6. A plain dedicated instead of rooms**
+
+In step 3, `GAME_ARGS="--dedicated --mp-port=7777 --transport=relay --relay-url=ws://host.docker.internal:8080 --relay-room=my-game"`. Terminal 1 shows `[relay] host my-game-7777`. In each window type `127.0.0.1:7777` in the menu's address field and **Join** (through the relay the port picks the room).
+
+**7. Then on Fly**
+
+The same image, built by Fly: `addons/mp_kit/deploy/fly.sh --app … --relay-url wss://…` (13.6). Locally you used `ws://` to the relay on your PC; on Fly it is your relay's `wss://` address.
+
+**If something fails**
+
+| What you see | What to do |
+|---|---|
+| `Cannot connect to the Docker daemon` | Docker is not running: open Docker Desktop (or `sudo systemctl start docker` on Linux) |
+| The build stops at `the project did not import` | The errors above it say why: usually a script error. Your project must run with `godot --headless --path .` on your PC first |
+| Terminal 1 never shows `[relay] host my-game-7700` | The container does not reach your PC: keep `--add-host=host.docker.internal:host-gateway` and the same port (8080) in `--relay-url` |
+| Terminal 1 shows `host refused for my-game-7700: wrong secret` | `MPKIT_RELAY_SECRET` (container) is not `RELAY_HOST_SECRET` (relay) |
+| The windows never reach the lobby | Same `--relay-room` (`my-game`) in the windows and the server; the windows use `ws://127.0.0.1:8080`, the container `ws://host.docker.internal:8080` |
+| `lobby port 7700 is in use on the relay` | Another room server of `my-game` is on that relay (an older container, the editor): stop it, or use another `--relay-room` |
+| The server ran in the background and you want its log | `docker logs -f my-game-server` |
+
+For the kit's own repo there is an automatic version of all this: `bash mpkit_lab/run/docker.sh` builds the image from the lab, runs a dedicated and a room server in containers behind a local relay, plays through both and prints `MPKIT DOCKER PASS` (or `SKIP` without Docker).
 
 ## 14. Security and limits
 
