@@ -71,6 +71,12 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | Tope `max_matches` | `rooms.sh` cap **T** |
 | Cliente sin TLS contra lobby `wss://` | `rooms.sh` public `TLS=1` |
 | Partida privada en la PC con código; código equivocado afuera | `private.sh` **T** |
+| Una sala que hospeda un jugador de escritorio por el emisor (el proceso de partida de su PC); un amigo la encuentra en la lista y entra; el emisor la olvida al terminar | `online.sh` |
+| Una sala que hospeda el propio juego del host (la forma del navegador): un amigo entra con el código escrito `abc-def`; el host se congela 3 s (SIGSTOP), el amigo espera (`host_silent` / `host_back`) y la partida termina normal; un tercero oye "sala llena", un código inventado "no existe" | `online.sh` |
+| Un navegador hospeda una sala (el export web en un Chrome headless: CORS al emisor, el token del relay en la URL); un amigo de escritorio la encuentra por nombre y la juega | `online.sh` (SKIP sin Chrome) |
+| Las reglas del emisor (salas, asientos, versiones, límites, la lista, hosts en silencio) y HTTP (chequeos, rate limits, CORS, la IP de Fly, los tokens), en Node; el relay aceptando sus tokens | `npm test` en `addons/mp_kit/issuer` |
+| Relay: las salas de jugadores piden el token del emisor (ninguno, el secreto, de otra sala, de cliente, de otra clave, vencido → 403), una vez, `max` limita la sala, un host rechazado 4009 lo conserva | `npm test` en `addons/mp_kit/relay` |
+| Un host en el navegador con la pestaña oculta sigue simulando (`MpWebKeepAlive`): 60 ticks/s más de 8 minutos en Chromium | medido a mano (una pestaña oculta no se maneja headless) |
 | Dos servidores de salas en una máquina (línea de systemd) | `instances.sh` |
 | La imagen del servidor (deploy/fly/Dockerfile) construida con el lab: un dedicado y un servidor de salas (sus partidas dentro del contenedor) detrás de un relay local, jugados a través | `docker.sh` (SKIP sin Docker) |
 | Asistente: juego nuevo 2D y 3D jugable en red (`game.tres` + `MpWorld`) | `wizard.sh` |
