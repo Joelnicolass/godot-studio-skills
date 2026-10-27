@@ -1246,6 +1246,8 @@ PORT=8080 RELAY_HOST_SECRET=prueba node addons/mp_kit/relay/server.mjs
 # dirección: ws://127.0.0.1:8080
 ```
 
+O en **Fly.io**, con una región cerca de tus jugadores (`gru` = São Paulo; Railway no tiene ninguna en Sudamérica): los pasos, el `Dockerfile` + `fly.toml` y todos los comandos útiles (desplegar, logs, secretos, apagar) están en [relay/README.md](relay/README.md).
+
 ### 12.2 Configurar el juego
 
 En el `game.tres` del juego (o el `MpNetConfig` que uses):
@@ -1704,6 +1706,6 @@ Cambió de pestaña: el navegador la pausó. Ver [11.5](#115-pestaña-oculta).
 - [QUICKSTART.md](QUICKSTART.md): la versión corta.
 - [README.md](README.md): referencia de cada pieza, transporte, túnel `Dictionary`, salas hub y bajo nivel.
 - [deploy/README.md](deploy/README.md): despliegue en un VPS en detalle.
-- [relay/README.md](relay/README.md): el relay, Railway y su protocolo.
+- [relay/README.md](relay/README.md): el relay, Railway, Fly.io, comandos útiles y su protocolo.
 - [examples/arena_2d/](examples/arena_2d/): el ejemplo completo. Abrí `boot.tscn` y apretá F6.
 - `mpkit_lab/` (en la raíz del repo): `run/play.sh` para jugar o mirar en ventanas, `run/all.sh` para toda la matriz, y `CASES.md` con qué cubre cada prueba.
