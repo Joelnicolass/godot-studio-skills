@@ -14,7 +14,7 @@ Archivos (`res://addons/mp_kit/`):
 | `mp_authority.gd` | `class_name MpAuthority` — authority, freeze 2D/3D, synchronizer, `accept_room_command` |
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — un canal del túnel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / lerp opcional |
-| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que retiene su alcance por peer hasta que el spawner de ese peer está listo |
+| `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que retiene su alcance por peer hasta que el spawner de ese peer está listo; `spawn_here(data)`: spawnea en el servidor o en solo, `null` en un cliente |
 | `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — un pawn packed por slot ocupado |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — lobby drop-in (`mp_boot_menu.tscn`) |
 | `mp_flow.gd` | `class_name MpFlow` — flow opcional (escenas, host/join/1P, catálogo de mundos) |
@@ -33,7 +33,8 @@ Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` n
 | `nodes/mp_world.gd` (`MpWorld`) | Un nodo en el mundo; en el editor arma `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite`, `Hud/Start` (`MpStartButton`), `Hud/Waiting` (`MpWaitingLabel`) |
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, dueño, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, predicción (`mp_move`), suavizado adaptativo, compensación de lag (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | Las teclas del dueño con la API de `Input`; buffer del servidor adaptativo y ritmo del dueño |
-| `nodes/mp_state.gd`, `nodes/mp_match.gd` | Valores de partida; inicio, espera de asientos, ausencias, fin |
+| `nodes/mp_state.gd`, `nodes/mp_match.gd` | Valores de partida (`watch(key, cb)`: valor actual y después cada cambio); inicio, espera de asientos, ausencias, fin |
+| `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Quién mira esta pantalla: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`; se pasa por `@export` a HUD / audio / órdenes |
 | `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Salir (anda con el mundo pausado); la invitación de una partida privada |
 | `core/mp_net_quality.gd` | RTT, jitter (percentil 97), pérdida y nota por conexión |
 | `core/mp_lag_comp.gd` | Un segundo de poses por actor en el servidor; `rewind(stamp, callable)` |
@@ -187,7 +188,7 @@ Default `hold_until_world_ready = true`:
 
 ## MpSlotSpawner
 
-Extiende `MpSpawner`. `@export pawn_scene`, `spawn_points`, `actor_name_prefix` (`Pawn_`). Listen host spawnea el slot local en `_ready`. Joiners en `client_world_ready`. Dedicated no spawnea slot 0. Identidad: nombre `Pawn_<n>` y `player_slot` si el actor lo exporta.
+Extiende `MpSpawner`. `@export pawn_scene`, `spawn_points`, `actor_name_prefix` (`Pawn_`). Listen host spawnea el slot local en `_ready`. Joiners en `client_world_ready`; los peers que ya tenían el mundo listo cuando entra el spawner, en `_ready`. Dedicated no spawnea slot 0. Identidad: nombre `Pawn_<n>` y `player_slot` si el actor lo exporta.
 
 ## MpWorldReady
 

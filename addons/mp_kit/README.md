@@ -493,7 +493,7 @@ Nodos de alto nivel (lo que usa un humano; detalle y ejemplos en [QUICKSTART.md]
 |---------|-----|
 | `nodes/mp_actor.gd` | `MpActor`: hijo de lo que la red comparte. El servidor es su autoridad; la lista *Sync* arma en el editor un `MultiplayerSynchronizer` (`MpSync`) que se guarda en la escena; suaviza proxies; `owner_slot` (lo pone el spawner, viaja al nacer). `to_server(&"x", args)` corre `mp_sv_x(args)` en el servidor (solo el dueño puede pedirlo; `sender_slot()` dice quién); `to_all(&"x", args)` corre `mp_all_x(args)` en todos los peers que ya tienen el nodo (solo el servidor). `is_authority()`, `is_local()`, `MpActor.of(nodo)` |
 | `nodes/mp_input.gd` | `MpInput`: junto a un `MpActor`. El dueño manda sus acciones del InputMap (frames con secuencia, contadores de pulsación que no se pierden con un paquete); en el servidor se leen con la API de `Input` (`get_vector`, `is_action_just_pressed`...). `set_value` / `get_value` para valores propios (mira, cursor) |
-| `nodes/mp_state.gd` | `MpState`: valores de partida (`set_value`, `add`, `get_value`, señal `changed`). Lo escribe el servidor; lo reciben todos, también el que vuelve. `MpState.of(nodo)` |
+| `nodes/mp_state.gd` | `MpState`: valores de partida (`set_value`, `add`, `get_value`, señal `changed`, `watch(key, cb)`: el valor actual y después cada cambio; `unwatch`). Lo escribe el servidor; lo reciben todos, también el que vuelve. `MpState.of(nodo)` |
 | `core/mp_sync_builder.gd` | lista del inspector → `SceneReplicationConfig` (transformaciones, sello y ack ALWAYS, el resto ON_CHANGE, `owner_slot` solo al nacer) |
 | `core/mp_actor_sync.gd` | qué manda el synchronizer de un `MpActor` en cada modo: con suavizado o predicción la pose viaja en `MpActor.net_position` / `net_rotation` + `net_stamp`, nunca en la del nodo, así en el cliente solo `MpActor` mueve el nodo |
 | `core/mp_input_frame.gd` | el frame de input que viaja al servidor; valida tamaño y tipos; contadores de pulsación |
@@ -506,6 +506,7 @@ Nodos de alto nivel (lo que usa un humano; detalle y ejemplos en [QUICKSTART.md]
 | `mp_game.gd` | `MpGame` (`.tres`): un `MpNetConfig` con las escenas del juego; en `MpFlow.game` llena `net_config` y cada ruta vacía |
 | `nodes/mp_start_button.gd` | `MpStartButton`: en el HUD; en un listen host cuya partida espera asientos arranca con los jugadores que ya cargaron (`Mp.gate().start_now()`) y muestra `cargados/esperados`; oculto en otro caso |
 | `nodes/mp_waiting_label.gd` | `MpWaitingLabel`: en el HUD; mientras la partida espera sus asientos muestra `cargados/esperados` en todos los peers (los conteos de la puerta, válidos en el cliente); oculto en otro caso |
+| `nodes/mp_local_seat.gd` | `MpLocalSeat`: quién mira esta pantalla; `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (en solo: mostrar la partida como otro asiento), `MpLocalSeat.of(node)` por grupo. HUD, audio, órdenes y resultado lo reciben por `@export` |
 | `nodes/mp_invite_label.gd` | `MpInviteLabel`: en el HUD; en una partida privada de esta PC (`MpLocalServer`) muestra lo que escriben los amigos (`ip:puerto#CÓDIGO`); oculto en otro caso. Lo busca por grupo, sin cargar los scripts de salas |
 | `nodes/mp_world.gd` | `MpWorld`: un nodo en el mundo; en el editor arma `SpawnPoints`, `Actors`, `Players` (`MpSlotSpawner`), `State` (`MpState`), `Match` (`MpMatch`) y `Hud/Leave` + `Hud/Invite` + `Hud/Start` + `Hud/Waiting`; `player_scene` es la escena de cada asiento |
 | `core/mp_net_quality.gd` | `MpNetQuality` (hijo del autoload, `MpKit.net_quality`): pings 4 por segundo; RTT (mediana), jitter (percentil 97), pérdida y nota `GOOD` / `FAIR` / `BAD`; el servidor guarda la de cada jugador. `Mp.net_quality()` |
@@ -545,8 +546,8 @@ Piezas de bajo nivel:
 | `mp_flow.gd` | escenas, host/join/1P, catálogo de mundos |
 | `mp_world_ref.gd` | un mundo del catálogo |
 | `mp_replicate.gd` | authority + freeze + lerp de proxy (el synchronizer vive en la escena) |
-| `mp_spawner.gd` | MultiplayerSpawner + hold por peer de su alcance + `room_id` |
-| `mp_slot_spawner.gd` | un pawn packed por slot ocupado |
+| `mp_spawner.gd` | MultiplayerSpawner + hold por peer de su alcance + `room_id`; `spawn_actor(scene, props, owner_slot)`, `spawn_here(data)` (spawnea en el servidor o en solo, `null` en un cliente) |
+| `mp_slot_spawner.gd` | un pawn packed por slot ocupado: en `client_world_ready`, y en `_ready` para los peers que ya tenían el mundo listo |
 | `mp_boot_menu.gd` / `.tscn` | lobby drop-in |
 | `mp_custom_pipe.gd` | un canal del túnel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |

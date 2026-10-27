@@ -71,6 +71,7 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | `MpWorld` en el editor real: arma sus piezas al abrir la escena y al agregarlo; se guardan | `editor.sh` |
 | El asistente corriendo dentro del editor | `editor.sh` |
 | `MpGame` llena el flow; `Mp` sin red; `MpWorld` arma, empaqueta y vuelve a cargar | `tests/test_mp_facade.gd`, `tests/test_mp_world.gd` |
+| `MpState.watch` (valor actual y después cada cambio), `MpLocalSeat` (el asiento de esta pantalla, `preview_slot` en solo), `MpSpawner.spawn_here` en solo | `tests/test_world_helpers.gd` |
 | Cliente web (navegador) contra dedicado WebSocket | `web.sh` (Chrome headless, o abrir la URL a mano) |
 | Cliente web por el relay (el servidor hostea una sala del relay) | `TRANSPORT=relay web.sh` |
 | Relay: solo hostea quien tiene el secreto (header o query); sin secreto nadie, salvo `RELAY_OPEN=1` | `relay.sh` |
