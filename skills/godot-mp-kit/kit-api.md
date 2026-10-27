@@ -61,6 +61,7 @@ ENet's own peer cap is `max_players + max_pending_admission` (at most `MpKit.ENE
 - `join_failed` — the client never arrived
 - `admission_rejected(reason)` — client: the server turned it away (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`)
 - `server_lost` — server down; the kit already called `leave()`
+- `host_silent(seconds)` / `host_back` — client: the server sent no beat for `host_silent_after_s` (1.5; it beats 4/s): its game froze, its tab went to the background on a phone, or the link stalls. `is_host_silent()`
 - `client_world_ready(peer_id)` — the client registered spawners
 - `load_world` — open the match scene (the server process does not receive this RPC)
 - `snapshot_received(data)` — your `Dictionary`
@@ -206,7 +207,7 @@ Scene `res://addons/mp_kit/mp_boot_menu.tscn`. Copy via `@export`. If an `MpFlow
 
 ## MpFlow
 
-Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated on first client. The world loads on a thread (`MpWorldLoader`): `world_load_progressed(ratio, phase)`, `world_loaded`; with `world_reports_loaded` (`--world-reports-loaded`) the world calls `report_world_loaded()` / `report_world_progress(r)` and the gate waits for it; hooks `_before_world_load()`, `_extra_world_loads()`.
+Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, online rooms players host (`host_online(players, name, listed)` → `MpOnline`, `await join_online(code)`, `await online_rooms()`, `online_texts`, `host_silent_status` / `host_silent_timeout_s`; `host_here()` is `host_lan()` without the browser check), LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated on first client. The world loads on a thread (`MpWorldLoader`): `world_load_progressed(ratio, phase)`, `world_loaded`; with `world_reports_loaded` (`--world-reports-loaded`) the world calls `report_world_loaded()` / `report_world_progress(r)` and the gate waits for it; hooks `_before_world_load()`, `_extra_world_loads()`.
 
 ## MpMatchGate
 

@@ -5,7 +5,7 @@
 # Chromium; without a browser those two say SKIP; BROWSER=none skips them), instances, the server image in Docker (SKIP without it), the wizard, and MpWorld + the
 # wizard in the real editor (headless).
 #   all.sh            the whole matrix (before a release candidate; about an hour with a shared queue)
-#   all.sh --quick    one of each over ENet: tests, solo, relay rules, arena (dedicated + lag), rooms (public),
+#   all.sh --quick    one of each over ENet: tests, solo, relay rules, arena (dedicated + lag), rooms (public), online (no browser),
 #                     private, wizard 2D (a few minutes, for every change)
 # Prints one line per check with its time, and MPKIT ALL PASS / MPKIT ALL FAIL: n (exit 0 / 1).
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -29,6 +29,7 @@ if [ "$QUICK" = 1 ]; then
   step "arena enet" env SCENARIOS="dedicated lag" bash "$HERE/arena.sh"
   step "rooms enet" env SCENARIOS=public bash "$HERE/rooms.sh"
   step "private enet" bash "$HERE/private.sh"
+  step "online" env ONLINE_WEB=0 bash "$HERE/online.sh"
   step "wizard 2d" bash "$HERE/wizard.sh"
 else
   step session bash "$HERE/session.sh"
@@ -39,6 +40,8 @@ else
   done
   step "rooms wss" env TLS=1 SCENARIOS=public bash "$HERE/rooms.sh"
   step "relay faults" bash "$HERE/relayfault.sh"
+  ## Rooms players host (the issuer + the relay); its browser part needs Chrome / Chromium, else it skips that part.
+  step "online" env PROBE_LIMIT_S=500 bash "$HERE/online.sh"
   ## The web client opens in a headless Chrome / Chromium; without one it says SKIP (a person can run web.sh by hand).
   if [ "${BROWSER:-}" != none ]; then
     step "web ws" env PROBE_LIMIT_S=500 WEB_NEED_BROWSER=1 bash "$HERE/web.sh"

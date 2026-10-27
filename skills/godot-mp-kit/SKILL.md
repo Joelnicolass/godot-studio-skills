@@ -85,6 +85,8 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Match start and end | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | your own ticket and abandon glue |
 | Online rooms | **`MpRoomServer`** + `MpLobbyConfig` + `MpRoomRules`; client **`MpLobbyScreen`** | lobby `Callable`s wired by hand |
 | A private match on the PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; the HUD shows `ip:port#CODE` (`MpInviteLabel`) | your own launcher |
+| Players host online matches, no server of yours (web too) | `flow.host_online()` / `join_online(code)` / `online_rooms()` + the issuer (`addons/mp_kit/issuer`) and the relay; `issuer_url` + `game_id` in `MpNetConfig` (GUIDE 10.3) | shipping the relay secret in clients, a matchmaker of your own |
+| Knowing the host froze or its link stalls | `MpKit.host_silent(seconds)` / `host_back` (`MpFlow.host_silent_status`) | your own pings |
 | Shots with ping | `MpActor.lag_compensate` + `net.rewound(func)` / `net.seen_position_of(node)` / `net.view_lag()` | checking against the present |
 | Showing the connection's quality | `Mp.net_quality()` (RTT, jitter, loss, `grade_name`) | your own pings |
 | No public IP | `transport = relay` + `relay/server.mjs` (Railway or another host), the secret in `MPKIT_RELAY_SECRET` | opening ports or a tunnel of your own |
@@ -92,11 +94,12 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | A server without a VPS | `addons/mp_kit/deploy/fly.sh --app NAME --relay-url wss://…` (Fly.io, behind the relay, no export; GUIDE 13.6) | a Dockerfile of your own |
 | Test with a bad network | `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` on every process | assuming a perfect LAN |
 
-Human guide: `addons/mp_kit/QUICKSTART.md` (the short one), `addons/mp_kit/GUIDE.md` (step by step), `addons/mp_kit/deploy/README.md` and `addons/mp_kit/relay/README.md`. A lab without a game: `mpkit_lab/run/all.sh` and `mpkit_lab/CASES.md`. The kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd`.
+Human guide: `addons/mp_kit/QUICKSTART.md` (the short one), `addons/mp_kit/GUIDE.md` (step by step), `addons/mp_kit/deploy/README.md`, `addons/mp_kit/relay/README.md` and `addons/mp_kit/issuer/README.md`. A lab without a game: `mpkit_lab/run/all.sh` and `mpkit_lab/CASES.md`. The kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd`.
 
 Rules that do not bend:
 
-- Web and desktop do not mix: a web export uses WebSocket (direct, or through the relay) and never hosts; its server is a `ws` dedicated or any server through the relay.
+- Web and desktop do not mix: a web export uses WebSocket (direct, or through the relay); it never hosts a LAN match or a room server. It may host a room players host (`host_online()` through the issuer and the relay; `MpWebKeepAlive` keeps it running with the tab hidden).
+- The relay secret never ships in a client: a player who hosts gets a one-time token from the issuer (`p-<code>` rooms).
 - The network buffers are adaptive (the 97th percentile of the measured network): do not fix them by hand except to bound them (`buffer_delay_s` is the cap).
 - `MpFlow` and world nodes never name lobby classes (`MpMatchAgent`...): group or `load()` by path. Otherwise a game with the lobby as an autoload forms a load cycle.
 - Do not add a member to `MpFlow` / `MpSpawner` with the name of one in a game subclass: grep the subclasses first.
