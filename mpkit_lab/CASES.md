@@ -72,6 +72,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | A client without TLS against a `wss://` lobby | `rooms.sh` public `TLS=1` |
 | A private match on the PC with a code; a wrong code stays out | `private.sh` **T** |
 | Two room servers on one machine (a systemd line) | `instances.sh` |
+| The server image (deploy/fly/Dockerfile) built from the lab: a dedicated and a room server (its matches inside the container) behind a local relay, played through | `docker.sh` (SKIP without Docker) |
 | Wizard: a new 2D and 3D game playable over the network (`game.tres` + `MpWorld`) | `wizard.sh` |
 | Wizard: the new game's rooms (the menu's *Online rooms*, the match, `Mp.leave()` to the lobby, Back to the boot) | `wizard.sh` |
 | `MpWorld` in the real editor: builds its pieces when the scene opens and when it is added; they are saved | `editor.sh` |

@@ -61,6 +61,18 @@ MPKIT_RELAY_SECRET=the-key addons/mp_kit/deploy/deploy.sh user@vps build/server 
 
 `--relay-room NAME` changes the prefix of the relay rooms if you do not want the game's. How to put the relay up: [../relay/README.md](../relay/README.md).
 
+## Without a VPS: Fly.io
+
+The same server on a Fly.io machine you never log into: no VPS, no export templates, no open port (it connects out to the relay). One command from your project folder:
+
+```bash
+MPKIT_RELAY_SECRET=<the relay's secret> addons/mp_kit/deploy/fly.sh --app my-game-server --relay-url wss://my-relay.fly.dev
+```
+
+It writes `fly.toml` in your project (from [fly/fly.toml](fly/fly.toml)), creates the app, stores the secret as a Fly secret through stdin, and deploys: Fly builds [fly/Dockerfile](fly/Dockerfile), which downloads the official headless Godot of your version (checked against the release's SHA-512 sums), copies your project, imports it once and runs `godot --headless --path /app -- --room-server …`. `--dedicated PORT` for a plain dedicated, `--region`, `--memory`, `--godot X.Y.Z`, `--dry-run`. The whole walkthrough (what you need, checking, updating, cost, useful commands, problems): [GUIDE 13.6](../GUIDE.md#136-without-a-vps-flyio).
+
+To try the image on your PC first (Docker): `mpkit_lab/run/docker.sh` in the kit's repo builds it from the lab and plays through a dedicated and a room server in containers.
+
 ## Verified and not verified
 
 Verified on a Mac: several `--room-server` instances side by side with their ranges (the lab e2e `run_mpkit_instances.sh`), rooms, private matches and web. Not verified: the Linux export (that Mac lacks the templates) and a real VPS.

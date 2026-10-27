@@ -1346,7 +1346,7 @@ Protocol and details: [relay/README.md](relay/README.md).
 
 ## 13. Putting it on a VPS
 
-One Linux binary does everything: client, room server (`--room-server`) and every match (`--dedicated`). If you would rather open no ports, the server can run anywhere behind the relay ([12](#12-relay-a-tunnel-through-railway-or-another-host)).
+One Linux binary does everything: client, room server (`--room-server`) and every match (`--dedicated`). If you would rather open no ports, the server can run anywhere behind the relay ([12](#12-relay-a-tunnel-through-railway-or-another-host)). With no VPS at all, on Fly.io: [13.6](#136-without-a-vps-flyio).
 
 ### 13.1 What you need
 
@@ -1441,6 +1441,95 @@ If the room server goes down, systemd brings it back. Its matches close by thems
 On the clients, put the VPS's address in `game.tres`'s `public_host` (e.g. `game.example.com`): the menu and the lobby screen start with it. For plain dedicated servers, players type `game.example.com:7777` in the menu.
 
 More detail: [deploy/README.md](deploy/README.md).
+
+### 13.6 Without a VPS: Fly.io
+
+Fly.io runs your game's server as a small machine you never log into: no VPS to keep up, no export templates, no port to open. The server connects **out** to your relay ([12](#12-relay-a-tunnel-through-railway-or-another-host)), so players reach it through the relay as always. Your game ships with no key in it: only the server holds the relay's secret.
+
+```
+players ──── wss://my-relay.fly.dev ──── your game server on Fly
+              (the relay, section 12)     (a room server: lobby + its matches)
+```
+
+**What you need**
+
+- The relay running (section 12), its address (`wss://my-relay.fly.dev`) and its host secret (`RELAY_HOST_SECRET`).
+- A Fly.io account and `flyctl` installed: `brew install flyctl` on macOS, or the line for your system on fly.io/docs/flyctl/install. Then log in once: `fly auth login`.
+- Your project with the rooms set up (section 9): `game.tres` with `rooms_scene`. For a plain dedicated, nothing more.
+
+**1. Deploy (one command, from your project folder)**
+
+```bash
+MPKIT_RELAY_SECRET=<the relay's secret> addons/mp_kit/deploy/fly.sh --app my-game-server --relay-url wss://my-relay.fly.dev
+```
+
+What it does, in order:
+
+1. Writes `fly.toml` in your project folder (from `addons/mp_kit/deploy/fly/fly.toml`) with your app name, region (`gru`, São Paulo, unless `--region`), Godot version (the `godot` in your PATH, or `--godot 4.7.2`) and the server's flags. Commit it with your game; edit it by hand later if you like.
+2. Creates the app on Fly if it does not exist yet (app names are global on Fly: pick one of your own).
+3. Stores the secret as a Fly secret, `MPKIT_RELAY_SECRET`, through stdin: it never lands on a command line, in `fly.toml` or in the image.
+4. Builds the image on Fly's builders (`addons/mp_kit/deploy/fly/Dockerfile`): it downloads the official Godot for Linux of that version, checks it against the release's `SHA512-SUMS.txt`, copies your project and imports it once.
+5. Starts one machine, always on, that runs `godot --headless --path /app -- --room-server …`.
+
+Try it first with `--dry-run`: it prints every command and changes nothing.
+
+| Option | What it does | Default |
+|---|---|---|
+| `--app NAME` | The Fly app (lower case, digits, `-`) | required |
+| `--relay-url URL` | The relay. Without it, your `game.tres` must already say `transport = relay` with its `relay_url` | — |
+| `--relay-room NAME` | The relay rooms' prefix, if not your `game.tres`'s | the game's |
+| `--region CODE` | Where the machine runs; the one nearest your players and your relay (`fly platform regions`) | `gru` |
+| `--rooms PORT` | A room server (lobby + matches) on this kit port | `7700` |
+| `--dedicated PORT` | A plain dedicated instead (one match, players join with the port) | — |
+| `--godot X.Y.Z` | The Godot version of the image: the one your project uses | the `godot` in PATH |
+| `--memory SIZE` | The machine's memory. A room server runs one process per match: more matches at once, more memory | `1gb` |
+| `--dry-run` | Only prints the commands | off |
+
+**2. Check that it runs**
+
+```bash
+fly logs --app my-game-server        # look for: rooms ready port 7700 (relay)
+fly status --app my-game-server      # one machine, started, in your region
+fly logs --app my-relay              # the relay shows: host my-game-7700
+```
+
+**3. Players**
+
+Nothing to do: with `transport = relay` in `game.tres`, the game's **Online** button goes to the lobby through the relay. Rooms, private rooms with a code and matches work as in section 9.
+
+**4. Update**
+
+Run the same command again after changing the game: it builds a new image and replaces the machine (the matches running then end; players rejoin the lobby). Without `MPKIT_RELAY_SECRET` set, the secret on Fly stays as it was.
+
+**Cost**
+
+One machine always on: with `--memory 1gb` about USD 6 a month (fly.io/pricing has each region's price), plus outbound traffic (the arena example moves about 0.15 GB per player per hour; the matches' traffic goes out through the relay, which bills its own). `512mb` fits a dedicated or a room server with a few small matches.
+
+**Useful commands**
+
+```bash
+fly logs --app my-game-server                 # live log: rooms, matches, results
+fly status --app my-game-server               # the machine and its state
+fly apps restart my-game-server               # restart it (matches end, the lobby comes back)
+fly secrets set --app my-game-server MPKIT_RELAY_SECRET=<new>   # after changing the relay's secret
+fly scale memory 2048 --app my-game-server    # more memory for more matches at once
+fly scale count 0 --app my-game-server        # stop it (no machine billed); count 1 starts it again
+fly apps destroy my-game-server               # remove it for good
+```
+
+**If something fails**
+
+- `lobby port 7700 is in use on the relay`: another room server of the same game holds that relay room (your PC, an older app). Stop it, or use another `--rooms` port or `--relay-room`.
+- The relay's log (`fly logs --app my-relay`) says `host refused for my-game-7700: wrong secret`: the secret on Fly is not the relay's. Set it again (`fly secrets set …`).
+- The machine restarts with `out of memory`: more `--memory` (or fewer `max_matches`).
+- `no godot in PATH`: pass `--godot 4.7.2` (the exact version your project uses; Fly downloads that one).
+
+**Try the image on your PC first** (optional, with Docker): `mpkit_lab/run/docker.sh` builds this same image from the kit's lab, runs a dedicated and a room server in a container behind a local relay, and plays through them. For your own game:
+
+```bash
+docker build -f addons/mp_kit/deploy/fly/Dockerfile --build-arg GODOT_VERSION=4.7.2 -t my-game-server .
+docker run --rm -e MPKIT_RELAY_SECRET=<secret> -e GAME_ARGS="--room-server --transport=relay --relay-url=wss://my-relay.fly.dev" my-game-server
+```
 
 ## 14. Security and limits
 

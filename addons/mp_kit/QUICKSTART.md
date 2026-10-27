@@ -170,4 +170,6 @@ A browser can neither open a server nor use UDP, so a web game joins a WebSocket
 
 Export the Linux preset and run `addons/mp_kit/deploy/deploy.sh user@vps build/server --rooms 7700 --open-firewall`. The full guide, several instances and web over https: [deploy/README.md](deploy/README.md).
 
+No VPS: `addons/mp_kit/deploy/fly.sh --app my-game-server --relay-url wss://my-relay.fly.dev` (with `MPKIT_RELAY_SECRET` set) puts the server on Fly.io behind your relay, with no export: [GUIDE 13.6](GUIDE.md#136-without-a-vps-flyio).
+
 The detail of every piece: [README.md](README.md). Step by step, for a person: [GUIDE.md](GUIDE.md).

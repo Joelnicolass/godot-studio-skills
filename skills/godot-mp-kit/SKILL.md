@@ -89,6 +89,7 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Showing the connection's quality | `Mp.net_quality()` (RTT, jitter, loss, `grade_name`) | your own pings |
 | No public IP | `transport = relay` + `relay/server.mjs` (Railway or another host), the secret in `MPKIT_RELAY_SECRET` | opening ports or a tunnel of your own |
 | Put it on a VPS | `addons/mp_kit/deploy/deploy.sh user@vps build --rooms 7700` | systemd units per game |
+| A server without a VPS | `addons/mp_kit/deploy/fly.sh --app NAME --relay-url wss://…` (Fly.io, behind the relay, no export; GUIDE 13.6) | a Dockerfile of your own |
 | Test with a bad network | `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` on every process | assuming a perfect LAN |
 
 Human guide: `addons/mp_kit/QUICKSTART.md` (the short one), `addons/mp_kit/GUIDE.md` (step by step), `addons/mp_kit/deploy/README.md` and `addons/mp_kit/relay/README.md`. A lab without a game: `mpkit_lab/run/all.sh` and `mpkit_lab/CASES.md`. The kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd`.
