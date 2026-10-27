@@ -67,6 +67,7 @@ Shell file, sourced; looked up next to the cases file or at `$DET_CFG`. Paths re
 | `DET_LIMIT_FIXED` / `_STRESS` / `_WINDOW` | 600 / 900 / 900 seconds |
 | `DET_STRESS_FPS` | 6 |
 | `DET_WINDOW_RES`, `DET_WINDOW_ARGS` | `1280x720`, `--autostart --quit` |
+| `DET_JOBS` | 3 (case/mode runs at once, at most 3; `1` = one at a time) |
 | `GODOT_BIN`, `GODOT_RUN_NS` | PATH lookup; queue namespace |
 
 `DET_OUT` and `DET_BASELINE` from the environment win over the cfg.
@@ -103,7 +104,7 @@ The runner watches the Godot child process each second:
 - `script_error_kill`: `Parse Error`, `Compile Error` or `Failed to load script` in the log. Killed at once.
 - `none`: normal.
 
-`contaminated=1` means another Godot process that is not an editor appeared during the run. Any flag fails the verdict. Rerun when the machine is quiet.
+`contaminated=1` means a Godot process that is not this bench's (nor an editor) appeared during the run; the bench's own parallel runs (their `--out=` is in `DET_OUT`) and the queue's import of the project do not count. It is a warning only: a digest does not depend on the load, so it never fails the verdict; that run's wall time and RSS are not comparable. A watchdog kill fails the verdict.
 
 ## godot_run.sh queue
 

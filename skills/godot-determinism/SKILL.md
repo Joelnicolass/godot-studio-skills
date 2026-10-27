@@ -94,7 +94,7 @@ Wrap it in a project script (`agent/run_determinism.sh`) so people type one shor
 
 - `DETERMINISM PASS`: every mode of every case matched `fixed`, nothing flagged.
 - `!=` in the table: that mode diverged. If an `.events` file exists, the last column shows the first different line.
-- **CONTAMINATED**: another Godot (not an editor) was alive while this run was measured. The digest may still be right, but the run does not count; rerun it alone.
+- **CONTAMINATED**: a Godot that is not the bench's (nor an editor) was alive while this run was measured. A warning only: digests do not depend on the load, so the verdict stands; that run's wall time and RSS are not comparable. The bench's own parallel runs (`DET_JOBS`) never count.
 - **watchdog**: `rss_kill` (memory over the limit), `timeout_kill` (time limit of the mode), `script_error_kill` (parse/compile error in the log: killed at once, fix the script). Any of them fails the verdict.
 - `quick` needs at least two fresh modes per case; stale files from an older run never count.
 
@@ -102,7 +102,7 @@ Wrap it in a project script (`agent/run_determinism.sh`) so people type one shor
 
 Every Godot launched by the bench goes through `harness/godot_run.sh`: a FIFO queue, up to 3 headless at once, one window at a time, an import alone, never more than 4 Godots. Use the same `GODOT_RUN_NS` for everything on the machine that runs Godot so they share the budget.
 
-**No window runs in parallel with the bench.** A window and a headless bench at the same time distort timing and mark runs CONTAMINATED; two windows can hang the machine. Run the headless bench first, the window case alone afterwards (a window case must autostart and quit by itself).
+**The bench runs in parallel by itself**: `DET_JOBS` (default 3, at most 3) case/mode runs at once, and the queue keeps the machine's rule (up to 3 headless + 1 window). `DET_JOBS=1` runs them one at a time. **Never two windows**: two heavy windows can hang the machine (the queue never starts a second one). A window case must autostart and quit by itself.
 
 ## Light policy
 
@@ -142,4 +142,4 @@ The bench is a smoke test:
 - [ ] `fixed` == `fixed2` for every quick case.
 - [ ] Baseline blessed and committed with a one-line reason.
 - [ ] `quick --no-window` prints `QUICK PASS`.
-- [ ] No other Godot or window ran during the bench (no CONTAMINATED).
+- [ ] No watchdog kill (`rss_kill`, `timeout_kill`, `script_error_kill`); CONTAMINATED, if any, is only a note about timing.

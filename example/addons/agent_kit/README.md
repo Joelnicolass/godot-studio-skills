@@ -1,28 +1,28 @@
 # AgentKit
 
-A CLI for agents (and people) over a Godot 4 project: capture, click flows, HTTP, inspect, PNG diff. **Zero gameplay.**
+CLI para agentes (y humanos) sobre un proyecto Godot 4: captura, flows de clic, HTTP, inspect, diff de PNG. **Cero gameplay.**
 
-It is not an MCP. The agent runs the Godot binary. The `godot-agent-kit` and `godot-playtest` skills say when.
+No es un MCP. El agente corre el binario de Godot. Las skills `godot-agent-kit` y `godot-playtest` dicen cuándo.
 
-## Why it exists
+## Por qué existe
 
-`godot -s /tmp` + `extends SceneTree` breaks autoloads: the game's `class_name`s compile **first**. The AgentKit autoload captures from the project and **survives** `change_scene`.
+`godot -s /tmp` + `extends SceneTree` rompe autoloads: los `class_name` del juego se compilan **antes**. El autoload AgentKit captura desde el proyecto y **sobrevive** `change_scene`.
 
-## Install
+## Instalar
 
 ```bash
 ./install.sh --addon /path/to/godot-project
 ```
 
-Enable the **AgentKit** plugin. CI/headless:
+Habilitá el plugin **AgentKit**. CI/headless:
 
 ```
 AgentKit="*res://addons/agent_kit/agent_kit.gd"
 ```
 
-Without `--agent=`, F5 does not change.
+Sin `--agent=`, F5 no cambia.
 
-The **game's** workspace: `res://agent/` (`install.sh` creates it). **Everything** the agent creates for AgentKit (JSON, harness, `.tscn` fixtures, PNG) goes there. Zero test scenes in `scenes/`. Contract: `skills/godot-agent-kit/harness.md`. The installer copies `.cursor/rules/agent-kit-workspace.mdc`.
+Workspace del **juego**: `res://agent/` (lo crea `install.sh`). **Todo** lo que el agente cree para AgentKit (JSON, harness, fixtures `.tscn`, PNG) va ahí. Cero escenas de test en `scenes/`. Contrato: `skills/godot-agent-kit/harness.md`. El instalador copia `.cursor/rules/agent-kit-workspace.mdc`.
 
 ## CLI
 
@@ -30,16 +30,16 @@ The **game's** workspace: `res://agent/` (`install.sh` creates it). **Everything
 addons/agent_kit/cli.sh /path/to/godot-project VERB [flags]
 ```
 
-| Verb | Window | What it does |
+| Verb | Ventana | Qué hace |
 |------|---------|----------|
-| `info` | headless OK | version, main scene, viewport |
-| `capture` | **yes** | PNG (`--scene=`, `--wait=`, `--out=`) |
-| `flow` | **yes** | JSON (`--flow=`, `--out=` dir) |
+| `info` | headless OK | versión, main scene, viewport |
+| `capture` | **sí** | PNG (`--scene=`, `--wait=`, `--out=`) |
+| `flow` | **sí** | JSON (`--flow=`, `--out=` dir) |
 | `fetch` | headless OK | HTTP (`--url=`, `--out=`, `--ua=`) |
-| `inspect` | headless OK | the tree or `%UniqueName` |
-| `diff` | headless OK | two PNGs (`--a=`, `--b=`, `--out=`, `--threshold=`) |
+| `inspect` | headless OK | árbol o `%UniqueName` |
+| `diff` | headless OK | dos PNG (`--a=`, `--b=`, `--out=`, `--threshold=`) |
 
-Lines to grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`, `AGENT_CALL`.
+Líneas para grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CLICK`, `AGENT_PRESS`, `AGENT_STEP`, `AGENT_STEP_ERROR`, `AGENT_ERRORS`, `AGENT_SKIP`, `AGENT_REPEAT`, `AGENT_DIFF`, `AGENT_JSON`, `AGENT_CALL`.
 
 ## Flow JSON
 
@@ -58,11 +58,11 @@ Lines to grep: `AGENT_OK`, `AGENT_FAIL`, `AGENT_SHOT=`, `AGENT_PRINT`, `AGENT_CL
 }
 ```
 
-`click` puts the pointer at the control's center and fails if it does not fire `pressed`. `%Name` is searched in the scene and its children. `press` only accepts an action that is **already** in the InputMap; if it does not exist, it fails with `unmapped input`. `call` on a product node, `seed` and `time_scale` fail. `--fail-on-error` fails if the engine logged ERROR / SCRIPT ERROR. `--flow=boot_smoke.json` looks in `res://agent/flows/`. `--out=` default: `res://agent/out`.
+`click` pone el puntero en el centro del control y falla si no dispara `pressed`. `%Nombre` se busca en la escena y en hijos. `press` solo acepta una acción que **ya** está en el InputMap; si no existe, falla con `unmapped input`. `call` sobre un nodo del producto, `seed` y `time_scale` fallan. `--fail-on-error` falla si el engine logueó ERROR / SCRIPT ERROR. `--flow=boot_smoke.json` busca en `res://agent/flows/`. `--out=` default: `res://agent/out`.
 
-The harness does not move actors. AgentKit mounts it **only** with `--agent=`. A player's F5 does not load it.
+El harness no mueve actores. AgentKit lo monta **solo** con `--agent=`. F5 de un jugador no lo carga.
 
-UI that shows up and goes away:
+UI que aparece y desaparece:
 
 ```json
 {
@@ -78,29 +78,52 @@ UI that shows up and goes away:
 }
 ```
 
-`try_click` does not fail if the node is missing, `disabled` or not visible (`AGENT_SKIP`). Step details: `skills/godot-agent-kit/flows.md`. Demo: `example/agent/flows/`.
+`try_click` no falla si el nodo falta, está `disabled` o no está visible (`AGENT_SKIP`). Detalle de steps: `skills/godot-agent-kit/flows.md`. Demo: `example/agent/flows/`.
 
-Experimental editor: `experimental/agent-flow-editor/` (Vite, **pnpm**). It is not part of `./install.sh`.
+Editor experimental: `experimental/agent-flow-editor/` (Vite, **pnpm**). No entra en `./install.sh`.
 
-## Determinism
+## Qué no es
 
-Smoke bench for simulations: `addons/agent_kit/determinism/`. A `DetRecorder` node records the run into a sha256 and `det_run.sh` compares the digest across clocks (`fixed`, `fixed2`, `stress`, `window`) and against a stored baseline.
+No es un runner de tests unitarios. No es un MCP. No es un motor de juego. El playtest no pide OK: solo escribe en `res://agent/` y no cambia reglas de negocio.
 
-```bash
-bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt quick --no-window   # smoke on every slice
-bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt bless               # re-record the baseline after an intentional change
-bash addons/agent_kit/determinism/det_run.sh agent/det_cases.txt table               # verdict from what is on disk
-```
+## Cola de Godot (`determinism/harness/`)
 
-- Cases in `agent/det_cases.txt` (`name|args|quick|set`), config in `agent/det.cfg` (`DET_SCENE`, `DET_OUT`, `DET_BASELINE`).
-- Every Godot goes through `harness/godot_run.sh` (FIFO queue). No window runs in parallel with the bench; a run flagged `CONTAMINATED` or with a `watchdog` does not count.
-- It is a smoke test, not byte-exact: when a digest moves because of an intentional change, check that `fixed` and `fixed2` agree and re-record with `bless`.
-- Self-test without a game: `det_selftest.sh`. Full guide: skill `godot-determinism`.
+`godot_run.sh <comando godot...>` corre UN Godot bajo un esquema de turnos por máquina, para que varios agentes no se pisen. Genérico: sin nada de ningún juego.
 
-## What it is not
+- **headless** (`--headless`, sin `--import`): hasta `HEADLESS_SLOTS` a la vez (3). Se ve en stderr como `headless (<ns>_godot.slot0)`.
+- **ventana**: una a la vez, con tope de `GODOT_WINDOW_MAX_S` (600 s; 0 = sin tope). Se cuenta como carga: su tiempo es informativo.
+- **`--import`**: exclusivo; espera a que no haya otro Godot (`godot_busy.sh`) y nada arranca mientras lo tiene (`import exclusivo` en stderr).
+- Turnos FIFO (tickets en `/tmp/<ns>_godot.queue`), tope global `GODOT_MAX` (4), locks que se limpian si muere el dueño. Nunca `pkill` por patrón.
+- **Preflight**: si un `class_name` de los `.gd` no está en `.godot/global_script_class_cache.cfg`, hace `--import` x2 antes (`clases sin importar`). `GODOT_RUN_NO_PREFLIGHT=1` lo apaga.
 
-Not a unit test runner. Not an MCP. Not a game engine. The playtest asks for no OK: it only writes in `res://agent/` and does not change business rules.
+Variables: `GODOT_RUN_NS` (espacio de nombres de los locks, `/tmp/<NS>_godot.*`, default `agentkit`; todos los que comparten máquina usan el mismo), `GODOT_BIN` (binario para el preflight), `HEADLESS_SLOTS`, `GODOT_MAX`, `GODOT_WINDOW_MAX_S`, `GODOT_BUSY_SCRIPT`.
 
-## Version
+Un proyecto lo usa con un shim fino: `GODOT_RUN_NS=mijuego GODOT_BIN=... exec bash addons/agent_kit/determinism/harness/godot_run.sh "$@"`.
 
-0.1.4
+Autoprueba sin Godot (comandos falsos `bash -c 'sleep N' --headless`; ~20 s, namespace propio): `bash addons/agent_kit/determinism/harness/selftest_queue.sh` → 4 × `PASS`.
+
+## Determinismo (`determinism/`)
+
+Mide que una misma corrida da el mismo resultado con relojes distintos. Genérico: sin nada de ningún juego.
+
+**En la escena del juego**
+- `DetRecorder` (Node, `class_name`): registro de líneas `"<tick> <tipo> <texto>"` con sha256 en orden. `@export keep_lines` (guarda las líneas, hace falta para `--events`), `@export self_tick` (true: cuenta ticks en su `_physics_process`; false: el dueño llama `advance()` y el orden de física no cambia), `@export position_decimals` (1). Métodos: `start()`, `stop()`, `advance()`, `record(kind, text)`, `sample(bodies)` (posiciones ordenadas por nombre), `digest()` (una vez; las llamadas siguientes repiten el valor), `write_outputs(report)` (agrega `digest`, `events`, `end_tick` y escribe `--out`/`--events`). Señal `finished(digest)`. `tick` y `line_count` son legibles.
+- `DetCli` (estático): `args()` (`--k=v` y `--flag` de `OS.get_cmdline_user_args()`), `out_path()`, `events_path()`, `absolute(path)`.
+- Nada de tiempo de pared en las líneas. Si el juego tiene un reloj propio, el dueño lo mueve con `advance()`.
+
+**Corredor**
+`bash addons/agent_kit/determinism/det_run.sh <casos.txt> CASO|all|quick|table|bless [MODO...] [--no-window]`
+- `casos.txt`: una línea `nombre|args|quick|set` (`quick`: `all` = todos los modos, `fixed` = solo referencia, vacío = fuera de quick; `set`: `all` = entra en `all`).
+- `det.cfg` junto al archivo de casos (shell): `DET_SCENE` (obligatorio), `DET_PROJECT`, `DET_OUT`, `DET_BASELINE` (líneas `caso digest`), `DET_RSS_LIMIT_KB`, `DET_LIMIT_FIXED|STRESS|WINDOW`, `DET_STRESS_FPS`, `DET_WINDOW_RES`, `DET_WINDOW_ARGS`, `DET_JOBS`, `GODOT_BIN`, `GODOT_RUN_NS`.
+- Modos: `fixed` (referencia), `fixed2` (repetición), `stress` (headless con `--max-fps` bajo), `window` (nunca dos ventanas a la vez).
+- **En paralelo**: `DET_JOBS` (por defecto 3, nunca más de 3) corridas caso/modo a la vez, en `all`, en `quick` y con un caso y varios modos. La cola (`harness/godot_run.sh`) hace cumplir la regla de la máquina: hasta 3 headless más 1 ventana, nunca dos ventanas. Los digests no dependen de la carga (headless `--fixed-fps`; `stress` y `window` cambian el reloj a propósito), así que el veredicto es el mismo que corriendo de a uno: `DET_JOBS=1` vuelve al modo en serie.
+- Salidas por caso y modo en `DET_OUT`: `.json`, `.events`, `.log`, `.meta` (`wall_s`, `rss_max_kb`, `contaminated`, `watchdog`). Un `watchdog` distinto de `none` hace fallar el veredicto. `CONTAMINATED` (corrió un Godot que no es del banco ni un editor; las corridas paralelas del propio banco no cuentan) es solo un aviso: no cambia un digest, solo hace que el tiempo de pared y la RSS no sean comparables, y el reporte lo dice.
+- Watchdog: RSS, tiempo, y **corte inmediato** (`script_error_kill`) si el log trae `Parse Error`, `Compile Error` o `Failed to load script`.
+- `quick` borra los resultados viejos de sus casos, compara el digest de `fixed` con la base (`baseline X OK|FAIL`) y exige al menos 2 modos frescos: `QUICK PASS` / `QUICK FAIL`. `bless` escribe la base desde los `fixed` actuales.
+- Tabla y veredicto: `det_report.py` (`DETERMINISM PASS|FAIL`; columnas `case, mode, sha256, end_tick, lines, vs fixed, wall (s), RSS max (MB), warnings, first different line`).
+
+**Autoprueba** (escena propia con 20 cuerpos y semilla): `perl -e 'alarm 900; exec @ARGV' bash addons/agent_kit/determinism/det_selftest.sh` -> `SELFTEST PASS`. Corre `all` en paralelo (`DET_JOBS=3`) y de a uno (`DET_JOBS=1`) y exige los mismos digests; con la máquina sin otros Godot, exige además que ninguna corrida del banco marque CONTAMINATED a otra.
+
+## Versión
+
+0.1.6

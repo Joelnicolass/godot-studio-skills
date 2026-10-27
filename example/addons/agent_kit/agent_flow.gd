@@ -356,6 +356,10 @@ func _assert(scene: Node, spec: Variant, index: int) -> String:
 		var want := str(spec["text_equals"])
 		if text != want:
 			return "assert text_equals want=%s got=%s" % [want, text]
+	if spec.has("prop"):
+		var prop_fail := _assert_prop(node, spec)
+		if not prop_fail.is_empty():
+			return prop_fail
 	if spec.has("texture_path_contains"):
 		var tex_path := ""
 		if node is TextureRect and (node as TextureRect).texture != null:
@@ -367,6 +371,38 @@ func _assert(scene: Node, spec: Variant, index: int) -> String:
 	return ""
 
 
+## Generic property assert: {node, prop, equals|gte|lte|contains}. `prop` may be dotted.
+func _assert_prop(node: Node, spec: Dictionary) -> String:
+	var prop := str(spec["prop"])
+	var value: Variant = Ops.read_prop(node, prop)
+	var checked := false
+	if spec.has("equals"):
+		checked = true
+		var want: Variant = spec["equals"]
+		var same := false
+		if (typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT) and (typeof(want) == TYPE_INT or typeof(want) == TYPE_FLOAT):
+			same = is_equal_approx(float(value), float(want))
+		else:
+			same = str(value) == str(want)
+		if not same:
+			return "assert prop %s equals want=%s got=%s" % [prop, str(want), str(value)]
+	if spec.has("gte"):
+		checked = true
+		if not (typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT) or float(value) < float(spec["gte"]):
+			return "assert prop %s gte want=%s got=%s" % [prop, str(spec["gte"]), str(value)]
+	if spec.has("lte"):
+		checked = true
+		if not (typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT) or float(value) > float(spec["lte"]):
+			return "assert prop %s lte want=%s got=%s" % [prop, str(spec["lte"]), str(value)]
+	if spec.has("contains"):
+		checked = true
+		if not str(value).contains(str(spec["contains"])):
+			return "assert prop %s contains %s not in %s" % [prop, str(spec["contains"]), str(value)]
+	if not checked:
+		return "assert prop %s needs equals, gte, lte or contains" % prop
+	return ""
+
+
 func _wait_until(tree: SceneTree, scene: Node, spec: Variant) -> String:
 	if typeof(spec) != TYPE_DICTIONARY:
 		return "wait_until must be an object"
@@ -375,7 +411,7 @@ func _wait_until(tree: SceneTree, scene: Node, spec: Variant) -> String:
 	var timeout := float(spec.get("timeout", 5.0))
 	var deadline := Time.get_ticks_msec() + int(timeout * 1000.0)
 	var probe: Dictionary = spec.duplicate()
-	if probe.has("contains") and not probe.has("text_contains"):
+	if probe.has("contains") and not probe.has("text_contains") and not probe.has("prop"):
 		probe["text_contains"] = probe["contains"]
 	probe.erase("timeout")
 	var last := ""

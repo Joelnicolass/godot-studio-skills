@@ -36,6 +36,9 @@ Actor
 - `@export var actor` on the machine (the container).
 - `@export var initial_state`.
 - `transition(&"Hurt")` = node name. `transition(&"Hurt", payload)` carries generic data (`machine.payload`); the same state again only calls `apply_payload`. States or actor added later: `notify_actor_ready()`.
+- Start: `autostart` (on) enters `initial_state` by itself. Off: `start(state, payload)` when the actor is ready (pooled, loaded from a save, joined mid-match).
+- Who changes it: the owner calls `machine.transition()` (direct). A state's own `transition()` is a **request** that `FsmMachine._request_transition(next, payload)` decides (yes by default).
+- Own tick order (rollback, turns, deterministic sim): `run_physics` / `run_process` off and `step_physics(delta)` / `step_process(delta)`. Read: `current_name()`, `is_in(&"Hurt")`.
 - The state uses `actor` / `machine`, not `get_parent()` as API.
 
 When overriding `enter` / `exit`, call `super.enter()` if you want the signals.
@@ -53,6 +56,10 @@ A new state = a new node, not another `elif`.
 ## MP
 
 Simulation (which state you enter) is **host-authoritative**. Guests interpolate / paint. Do not put FsmKit in `addons/mp_kit`.
+
+If the state itself replicates (a value the host owns): a script that `extends FsmMachine` overrides `_request_transition` to write the request where the host decides and return `false`; the replicated value's setter calls `transition_to()`. A peer that joins mid-match: `autostart = false` and `start(<the state the network says>)`.
+
+Addon tests: `godot --headless --path <project> --script res://addons/fsm_kit/tests/fsm_test_runner.gd`. Upgrading from 0.1.0: `addons/fsm_kit/CHANGELOG.md` (breaking changes first).
 
 ## Anti-patterns
 
