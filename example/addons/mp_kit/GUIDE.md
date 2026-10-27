@@ -822,6 +822,23 @@ Mp.leave()                                  # to the lobby or the menu
 MpFlow.find_in_tree(self).return_to_boot()  # always to the menu
 ```
 
+### 7.7 Loading screen
+
+The `MpFlow` loads the world on a thread (`MpWorldLoader`, an internal child of the flow and the only owner of the load): first it reads the world scene and the files your game names, then it swaps the scene and, if you asked for it, waits until **the world says it is ready** (for example after warming up shaders behind a screen). Only then does that peer count as loaded at the start gate. So nobody starts the match with the world half compiled.
+
+1. On your flow (or its scene), tick **`world_reports_loaded`** (or start with `--world-reports-loaded`). Off (the default), "loaded" means "the world scene is in", as always.
+2. In the world, once it is ready: `MpFlow.find_in_tree(self).report_world_loaded()`. Meanwhile you can report progress with `report_world_progress(0..1)`. If the world never reports, the loader goes on by itself after `report_timeout_s` (30 s), and the gate starts anyway after `load_timeout_s`.
+3. For the screen, listen to the flow's `world_load_progressed(ratio, phase)`: `phase` is `MpWorldLoader.Phase` (`FILES` reading files, `WORLD` the world getting ready, `READY` done, `IDLE` the load was dropped because the scene changed elsewhere, e.g. the server was lost). `ratio` goes from 0 to 0.5 with the files and from 0.5 to 1 with the world. `world_loaded` tells the end. The screen, and whatever warms the world up, need **Process › Mode = Always**: the gate pauses the tree while it waits.
+4. Two hooks to override in your `MpFlow` subclass: `_before_world_load()` (right before loading, on every peer: pick the map) and `_extra_world_loads() -> PackedStringArray` (files the world will use later, read on the same thread so nothing stalls when they appear).
+
+With `world_reports_loaded` on, who counts changes:
+
+- **Client**: its seat counts on `report_loaded` (an RPC to the server), not on the spawners' `world_ready`. `world_ready` stays the same for the rest (revealing spawns, `client_world_ready`), so the server can send the client what it needs to get ready.
+- **Server** (LAN host, dedicated): the gate also waits for its own world (`wait_host`, `mark_host_loaded`). A dedicated with no screen reports at once.
+- **Solo** ("Play solo" or against the AI): the gate is armed too, with no seats and no network (`arm([], 0)`), and waits only for the host. The tree stays paused until the world reports, so the match clock and the AI do not run behind the screen. Without `world_reports_loaded` it starts at once, as before.
+
+If reading the world on the thread fails (a cold start right after an import, a request the engine refuses), the loader reads it on the main thread instead of staying without a world.
+
 ## 8. Testing
 
 ### 8.1 Solo
@@ -1660,6 +1677,7 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | the whole network and the scenes in one place | an **MpGame** (`game.tres`) in **Flow › Game** |
 | a networked world without wiring nodes | an **MpWorld** with **Player Scene** |
 | to play solo, host, join or leave from my own menu | `Mp.play_solo()`, `Mp.host()`, `Mp.join(text)`, `Mp.leave()` |
+| a loading screen that waits for the world (shaders) | **MpFlow › world_reports_loaded** + `report_world_loaded()` in the world; listen to `world_load_progressed` ([7.7](#77-loading-screen)) |
 | something to look the same everywhere | **MpActor › Sync** (position, rotation, visible, Extra) |
 | to sync a property of my own (`health`) | **MpActor › Sync › sync_extra** = `health` (or `Health:current`) |
 | the player to answer without lag | **MpActor › Prediction › predict** + `func mp_move(keys, delta)` |

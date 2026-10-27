@@ -493,7 +493,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `nodes/mp_input.gd` | `MpInput`: next to an `MpActor`. The owner sends its InputMap actions (frames with a sequence, press counters a lost packet cannot drop); on the server they are read with the `Input` API (`get_vector`, `is_action_just_pressed`...). `set_value` / `get_value` for custom values (aim, cursor) |
 | `nodes/mp_state.gd` | `MpState`: match values (`set_value`, `add`, `get_value`, `changed` signal, `watch(key, cb)`: the current value, then each change; `unwatch`). The server writes them; everyone gets them, the one coming back too. `MpState.of(node)` |
 | `nodes/mp_match.gd` | `MpMatch`: start and end of a match in the world; it re-emits what the gate says (start, absences, comebacks, abandons), and `finish(result)` writes the result for the room |
-| `mp_match_gate.gd` | `MpMatchGate` (`/root/MpKit/Gate`, `Mp.gate()`): the start gate. Phases `IDLE`/`FILLING`/`RUNNING`; admits or turns away with a reason (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`); a credential per seat in open mode, identity by ticket in rooms; counts who loaded, pauses and unpauses (the clients too), `rejoin_grace_s`, `load_timeout_s`, `late_join`, `give_up`, `displaced_by` (a credential back after a drop wins over the stale connection). Signals `waiting_changed`, `seat_admitted`, `seat_loaded`, `started`, `seat_away`, `seat_abandoned`, `all_gone`, `turned_away` |
+| `mp_match_gate.gd` | `MpMatchGate` (`/root/MpKit/Gate`, `Mp.gate()`): the start gate. Phases `IDLE`/`FILLING`/`RUNNING`; admits or turns away with a reason (`match_started`, `full`, `grace_over`, `slot_taken`, `rejected`); a credential per seat in open mode, identity by ticket in rooms; counts who loaded, pauses and unpauses (the clients too), `rejoin_grace_s`, `load_timeout_s`, `late_join`, `give_up`, `displaced_by` (a credential back after a drop wins over the stale connection); with `wait_host` it also waits for the server's own world (`mark_host_loaded`, and solo `arm([], 0)`); with `loaded_on_world_ready` off a seat counts on `report_loaded`, not on `world_ready`. Signals `waiting_changed`, `seat_admitted`, `seat_loaded`, `started`, `seat_away`, `seat_abandoned`, `all_gone`, `turned_away` |
 | `core/mp_sync_builder.gd` | inspector list → `SceneReplicationConfig` (transforms, stamp and ack ALWAYS, the rest ON_CHANGE, `owner_slot` only at spawn) |
 | `core/mp_actor_sync.gd` | what an `MpActor`'s synchronizer sends in each mode: with smoothing or prediction the pose travels in `MpActor.net_position` / `net_rotation` + `net_stamp`, never in the node's own, so on a client only `MpActor` moves the node |
 | `core/mp_input_frame.gd` | the input frame that travels to the server; checks size and types; press counters |
@@ -540,8 +540,9 @@ Low-level pieces:
 | `mp_ids.gd` | slot ↔ peer |
 | `mp_room_directory.gd` | hub rooms (opt-in); room seat ≠ hub slot |
 | `mp_matchmaker.gd` | FIFO queue; opens a room when `party_size` is reached |
-| `mp_boot.gd` | detect dedicated process |
+| `mp_boot.gd` | detect dedicated process, command-line flags, the ticket's seats (`ticket_seats`) |
 | `mp_flow.gd` | scenes, host/join/1P, world catalog |
+| `mp_world_loader.gd` | `MpWorldLoader`: the only owner of the world load (thread, progress, "the world says it is ready", a main-thread read if the thread fails); an internal child of `MpFlow` |
 | `mp_world_ref.gd` | one world in the catalog |
 | `mp_replicate.gd` | authority + sync + freeze + proxy lerp |
 | `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready`; `spawn_actor(scene, props, owner_slot)`, `spawn_here(data)` (spawn on the server or solo, `null` on a client) |

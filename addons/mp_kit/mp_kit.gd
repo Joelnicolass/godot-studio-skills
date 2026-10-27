@@ -256,6 +256,16 @@ func request_world_ready() -> void:
 	rpc_world_ready.rpc_id(1)
 
 
+## The local world finished loading (MpFlow.world_loaded, when the world reports it). A client tells the server, and its seat
+## counts as loaded at the gate; the server itself (a listen host, a dedicated, solo) tells the gate it is in.
+func report_loaded() -> void:
+	if is_networked() and not multiplayer.is_server():
+		rpc_seat_loaded.rpc_id(1)
+		return
+	if gate:
+		gate.mark_host_loaded()
+
+
 func push_snapshot(data: Dictionary) -> void:
 	if not is_server():
 		return
@@ -583,8 +593,18 @@ func rpc_world_ready() -> void:
 		return
 	_world_ready[sender] = true
 	client_world_ready.emit(sender)
-	if gate.is_armed():
+	if gate.is_armed() and gate.loaded_on_world_ready:
 		gate.mark_loaded(ids.slot_for_peer(sender))
+
+
+## A seated client's world reported itself loaded (report_loaded): its seat counts at the gate.
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_seat_loaded() -> void:
+	if not multiplayer.is_server():
+		return
+	var slot := ids.slot_for_peer(multiplayer.get_remote_sender_id())
+	if slot != 0 and gate.is_armed():
+		gate.mark_loaded(slot)
 
 
 @rpc("authority", "call_remote", "reliable")
