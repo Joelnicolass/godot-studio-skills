@@ -76,3 +76,5 @@ To try the image on your PC first (Docker): `mpkit_lab/run/docker.sh` in the kit
 ## Verified and not verified
 
 Verified on a Mac: several `--room-server` instances side by side with their ranges (the lab e2e `run_mpkit_instances.sh`), rooms, private matches and web. Not verified: the Linux export (that Mac lacks the templates) and a real VPS.
+
+Verified for Fly.io (`fly.sh`): the image in Docker on that Mac (`mpkit_lab/run/docker.sh`: a dedicated and a room server, its matches inside the container, played through a local relay), and a real deploy in `gru` behind a relay on Fly: two players from Argentina met in the room server's lobby, the match started on the Fly machine, they played it and came back to the lobby with the result.
