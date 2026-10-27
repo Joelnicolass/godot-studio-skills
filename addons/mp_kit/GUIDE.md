@@ -1263,7 +1263,9 @@ Try it all on your machine first: `bash mpkit_lab/run/online.sh` in the kit repo
 var flow := MpFlow.find_in_tree(self)
 
 ## Host: a room for 4 (you count), listed for everyone. The status says the code once it is up.
-var online := flow.host_online(4, "Friday night")
+## The last argument is your match ticket, as for a private match (world, mode, options, seed, each seat's meta).
+var online := flow.host_online(4, "Friday night", true, {"mode": "2v2", "options": {"map": "forest"},
+	"seats": [{"slot": 1, "meta": {"pick": "mage"}}]})
 online.room_ready.connect(func(code: String) -> void: code_label.text = code)
 online.failed.connect(func(reason: String) -> void: print("could not open: ", reason))
 
@@ -1277,7 +1279,7 @@ for row in await flow.online_rooms():
 
 | Piece | What it is |
 |---|---|
-| `flow.host_online(players, name, listed)` | Opens a room (an `MpOnline` under the root). `listed = false`: private, joined by code only. A second call gives the running one back |
+| `flow.host_online(players, name, listed, ticket)` | Opens a room (an `MpOnline` under the root). `listed = false`: private, joined by code only. A second call gives the running one back. `ticket`: your match ticket (world, mode, options, seed, picks…, `seats: [{slot, meta}]` with the host's meta in slot 1): a desktop's match process gets it as its ticket (the kit only adds each seat's token and the relay room: `MpLocalServer.merge_ticket`); in a browser your game is the match and reads it from `MpOnline.ticket` |
 | `MpOnline.room_ready(code)` / `failed(reason)` / `ended` | Players may join / the issuer refused or the match could not start / the room is closed |
 | `MpOnline.code`, `mode` | The code; `dedicated` (desktop) or `listen` (browser). `--online-mode=listen` forces the browser's way on a desktop (tests) |
 | `flow.join_online(code)` | A seat from the issuer, then the relay connection. While the room is still coming up it asks again for a few seconds |
@@ -1287,6 +1289,8 @@ for row in await flow.online_rooms():
 | `MpNetConfig.can_host_online()` | True once `issuer_url` is set (every build may host, a browser too) |
 
 The room lives while the host does: the host tells the issuer every 10 s who is in, and closes the room when the match ends or it leaves. A host whose game closes without a word (a closed tab) is forgotten by the issuer 30 s later.
+
+Your game's transport does not change: the online room's own connection goes through the relay (`MpTransport.use_relay_room`), so a LAN match or a private server afterwards uses ENet (or whatever your `game.tres` says) as before.
 
 ### 10.6 A browser hosts
 
