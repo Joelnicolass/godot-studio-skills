@@ -359,6 +359,8 @@ Transforms (and `velocity`) always travel, in the same packet as the pose; the r
 |---|---|---|
 | `predict` | The owner moves at once. It needs an `MpInput` next to it and `func mp_move(input, delta)` on the parent | off |
 | `max_resim_ticks` | The most one correction replays. A high ping leaves more unconfirmed ticks; past the cap it corrects less often, to save CPU | 32 |
+| `correction_smoothing_s` | How long a correction of the owner takes to fade on screen (its physics is corrected at once). 0 = drawn at once | 0.1 |
+| `correction_snap_distance` | A correction longer than this (px in 2D, m in 3D) is drawn at once, as a teleport. 0 = every one fades | 0 |
 
 **Owner group**:
 
@@ -373,7 +375,7 @@ Transforms (and `velocity`) always travel, in the same packet as the pose; the r
 |---|---|---|
 | `lag_compensate` | The server keeps this node's last second of poses, so a shot is checked against where the shooter saw it (see 6.8) | on |
 
-With `smoothing` other than `NONE`, or with `predict`, the position does not travel in `position` but in `MpActor:net_position` (and `net_rotation`, `net_stamp`). If you look at the `MpSync`'s Replication panel, you will see that: it is normal. On a client, only `MpActor` moves the node.
+With `smoothing` other than `NONE`, or with `predict`, the position does not travel in `position` but in `MpActor:net_position` (and `net_rotation`, `net_stamp`, `net_teleports`). If you look at the `MpSync`'s Replication panel, you will see that: it is normal. On a client, only `MpActor` moves the node.
 
 #### MpInput
 
@@ -461,6 +463,32 @@ func _physics_process(_delta: float) -> void:
 	velocity = input.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down") * SPEED
 	move_and_slide()
 ```
+
+**What the server decides** (a stun, a slow, a knockback, a warp): the owner cannot predict it, so the server's state brings it and reconciliation replays from there. For that, write it on the server (in `_physics_process` behind `is_authority()`, or in an `mp_sv_*`) into a value that `mp_move` reads, and put that value in **Sync › sync_extra**:
+
+```gdscript
+var stun_ticks := 0          # sync_extra: stun_ticks, speed_mult, knock
+var speed_mult := 1.0
+var knock := Vector2.ZERO
+
+func mp_move(keys: MpInput, delta: float) -> void:
+	if stun_ticks > 0:
+		stun_ticks -= 1      # counted inside mp_move: the server and the replay count the same
+		velocity = Vector2.ZERO
+	else:
+		velocity = keys.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down") * SPEED * speed_mult
+	velocity += knock
+	knock = knock.move_toward(Vector2.ZERO, KNOCK_DECAY * delta)
+	move_and_slide()
+
+func hit(from: Vector2) -> void:   # on the server
+	knock = (position - from).normalized() * 600.0
+	stun_ticks = 20
+```
+
+**Corrections on screen**: when the server decided something the owner did not predict, its node moves to the corrected pose at once (physics, `mp_move`), and what is drawn fades from where it was over `correction_smoothing_s` (0.1 s, as Source's `cl_smoothtime`; Photon Fusion and Unity Netcode do the same: only the visual pose is smoothed). A warp the server makes is not a correction to smooth: call `net.snap()` on the server right after moving the node (see 6.8), or set `correction_snap_distance`. `net.correction_offset()` says how much is still fading.
+
+**Smooth between physics ticks**: the owner's predicted node moves in physics ticks (60 per second). On a screen at 120 Hz or more, turn on **Project Settings › Physics › Common › Physics Interpolation**: the engine draws each node between its last two ticks (Fusion's default for the local player). The kit is ready for it: proxies turn it off for themselves (the kit draws them every frame) and the correction fades per tick.
 
 ### 6.3 Where am I? `is_authority` and `is_local`
 
@@ -555,7 +583,8 @@ func mp_all_flash() -> void:
 | Call | What it does |
 |---|---|
 | `net.despawn()` | Server only, and only on nodes a spawner made: removes it everywhere (see [7.3](#73-removing-things)) |
-| `net.snap()` | After a teleport: on the client it jumps to the server's pose instead of sliding there |
+| `net.snap()` | After a teleport or respawn, **on the server**, right after moving the node: every client jumps there instead of sliding (the others when their drawn time gets there, the owner with prediction with no fade). It travels with the pose, so no `to_all` is needed |
+| `net.correction_offset()` | With prediction, on the owner: how far what is drawn still is from the real pose while a correction fades (0 = none) |
 | `net.last_correction()` | With prediction, on the owner: how much the server corrected it in the last state (0 = the prediction was right) |
 | `net.owner_slot` | The owning slot (to show "P1", pick a color...) |
 | `MpActor.of(node)` | The `MpActor` child of a node, or `null` |
@@ -570,11 +599,10 @@ An example of `snap` after a respawn:
 ```gdscript
 func respawn(at: Vector2) -> void:   # on the server
 	position = at
-	net.to_all(&"respawned")
-
-func mp_all_respawned() -> void:
 	net.snap()
 ```
+
+The teleport rides in the same packet as the new pose (as Source's `EF_NOINTERP` or Photon Fusion's `Teleport()`), so no client slides across it, whatever order packets arrive in. Lag compensation knows it too: a shot is never checked against a point in between.
 
 ### 6.9 The match from any script: `Mp`
 
@@ -737,6 +765,7 @@ An `MpMatch` in the world says when the match starts, who left and who came back
 - **Before the start** the free seats are open. The world stays **paused on every peer** until the seats it expects have loaded: every seat by default (`start_seats` = 0, in Host LAN and in a dedicated by hand alike; in a room match, every seat of the ticket). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` (15 s) has passed since the first one came in, it starts with those who loaded; meanwhile the HUD says it waits (`MpWaitingLabel`, `Hud/Waiting`: "Waiting for players (1/4)"). In Host LAN the host does not have to wait: the HUD's **Start now** button (`MpStartButton`, in the `MpWorld`'s `Hud/Start`) starts with those already loaded.
 - **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a free seat, and a seat abandoned past the grace is free again. A room match never has late join (the ticket names every seat). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started`, `full`, `grace_over`, `slot_taken`. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
 - A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`.
+- **While a seat is away** its pawn stays if the spawner keeps it (`MpSlotSpawner.despawn_on_leave` off; on by default it is removed and spawned again on the rejoin): it holds no keys and, with prediction, the server goes on simulating it with none (gravity, a knockback still run). Back, the new connection's keys move it at once.
 - **A dedicated by hand serves one match after another** (a VPS started with `--dedicated`): when its match ends (`Mp.finish()`) and the last player leaves, or everyone stayed away past the grace (`all_gone`), it loads a fresh world (score and actors from zero) and opens every seat again. A game with a rematch screen can call `MpFlow.next_open_match()` itself once its players left. **If your game ends the match its own way** (not with `Mp.finish()`), tell the kit on the server with `MpKit.broadcast_session_ended(result)`, or call `MpFlow.next_open_match()` when it is over and empty; otherwise the next match only opens once everyone's grace passed, and whoever arrives before is turned away (`match_started`). Clients get the gate's state when they are admitted and pause as soon as their world loads, so their `MatchClock` starts at 0.
 
 The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). In a room match, the grace and the load time come from the `MpLobbyConfig`. In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. In Host LAN the host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button.
@@ -960,6 +989,7 @@ The whole matrix of automatic cases: `mpkit_lab/run/all.sh` (an hour with a shar
 | `--world=id` | The world, if you use the `MpFlow.worlds` catalog |
 | `--keep-match-files` | Room server: does not delete each match's folder |
 | `--lag-comp=off` | Server: no lag compensation (to compare) |
+| `--correction-smoothing-s=0` | Client: corrections of the own player drawn at once (to compare; or another time in seconds) |
 | `--relay-refused-grace-s=N` | How long a host the relay refused retries before giving up (3 s; a room server's matches use 0.5 s) |
 | `--no-flow` | The `MpFlow` does nothing (tools and tests) |
 
@@ -1699,7 +1729,7 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | to spawn bullets or pickups | **MpSpawner** with the scene in **Extra Scenes** + `spawn_actor(scene, props, owner_slot)` |
 | to remove something everywhere | `net.despawn()` (server, nodes a spawner made) |
 | to hide a world object | `sync_visible` + `visible = false` on the server |
-| to teleport without sliding | `net.snap()` on the clients |
+| to teleport without sliding | `net.snap()` on the server, right after moving it |
 | score, clock, round | `Mp.state().set_value` / `.add`, `changed` signal |
 | to end the match | `Mp.finish({"winner": ...})`, `finished` signal everywhere |
 | to show "waiting for players" | `MpMatch.waiting_changed` + a node with Process Mode = Always |

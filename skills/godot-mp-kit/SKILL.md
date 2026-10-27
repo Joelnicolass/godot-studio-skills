@@ -77,6 +77,8 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Spawn from any peer | `MpSpawner.spawn_here(data)` (null on a client) | `if MpKit.is_server(): spawn(...)` everywhere |
 | Player input | an **`MpInput`** child + `input.get_vector(...)` on the server | a `submit_move` per frame |
 | Lag-free movement | `MpActor.predict` + `func mp_move(input, delta)` (movement only; effects behind `not input.is_replaying()`) | your own prediction or rollback |
+| Stun, slow, knockback on a predicted player | the server writes values `mp_move` reads (`stun_ticks`, `knock`) listed in `sync_extra`; corrections fade by themselves (`correction_smoothing_s`), a warp: `net.snap()` on the server after moving it | moving the owner's node from the server by hand, smoothing corrections yourself |
+| Smooth objects (creatures, other players) | `MpActor` with `smoothing = BUFFERED` (default) | a `MultiplayerSynchronizer` on `position` + your own lerp |
 | A one-off order from the owner | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
 | An effect on everyone | `net.to_all(&"x", args)` → `func mp_all_x(args)` (server only) | your own `@rpc("authority")` |
 | Score, clock, round | **`MpState`** (`set_value`, `add`, `changed` signal) | `push_snapshot` + `snapshot_for_joiner` by hand |

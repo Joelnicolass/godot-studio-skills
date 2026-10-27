@@ -7,6 +7,9 @@
 # press keys and check: remote input moves the pawn on the server and it syncs back, MpState score, a to_all event, a to_server
 # call; the first client leaves and joins again: the same slot, its score and the bell still there, the comeback counted; the late
 # client, which joins after the start, is turned away (match_started), never gets a slot nor the world.
+#   keeppawn:  as dedicated, but the server keeps a dropped player's pawn for its rejoin (despawn_on_leave off): the
+#              player leaves holding a key and the kept pawn stops (no keys without a connection); back, the new
+#              connection's keys (counted from 1 again) move it at once.
 #   lag:       dedicated (--start-seats=2) + an observer + a predicted player, every process with MpLagPeer (LAG_MS one way, JITTER_MS,
 #              LOSS of unreliable packets): the player answers its keys at once and is barely corrected; the observer
 #              sees it move steadily. Prints METRIC lines.
@@ -14,6 +17,12 @@
 #              MAX_REMOTE_DELAY_MS sets a cap) and checks MpNetQuality against the simulated network (RTT, loss, jitter).
 #   lagshot:   dedicated (--start-seats=2) + a target walking past + a shooter that leads it, every process at SHOT_LAG_MS: with lag
 #              compensation the shots hit; the same with the server's --lag-comp=off, most miss (the control).
+#   correct:   dedicated that pushes its one predicted player sideways every 0.5 s (a move the owner cannot predict), 40 ms
+#              away: the corrections fade on screen (no frame jumps much more than a walking step); the control with
+#              --correction-smoothing-s=0 sees the same pushes as jumps. Also with the engine's physics interpolation on.
+#   teleport:  dedicated that teleports a walking predicted player (150 px, 4 times) with only net.snap() after moving
+#              it: the player itself and an observer each see 4 one-frame jumps and no frame partway; the control
+#              without net.snap() sees them drawn partway.
 #   flood:     a client sends 500 tunnel messages and 500 to_server calls at once: only the burst gets through.
 #   latejoin:  dedicated with --late-join: the first client starts the match, a newcomer after the start still sits and plays.
 #   reports:   --world-reports-loaded (a loading screen): the dedicated and the client each report their world loaded 1.5 s
@@ -23,7 +32,7 @@
 #   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
 #              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
 #              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood latejoin reports fastclock survive" (default all).
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lagshot correct teleport flood latejoin reports fastclock survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
@@ -32,7 +41,7 @@ LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood latejoin reports fastclock survive}"
+SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lagshot correct teleport flood latejoin reports fastclock survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -48,14 +57,15 @@ verdict() { # verdict <log> <role>
   if grep -q "^PROBE $2 PASS" "$1"; then echo "PASS $3"; else echo "FAIL $3"; FAILS=$((FAILS + 1)); fi
 }
 
-run_scenario() { # run_scenario <name> <server flag>
+run_scenario() { # run_scenario <name> <server flag> [more server flags…]
   local name="$1" flag="$2" dir="$OUT/$1"
+  shift 2
   mkdir -p "$dir"
   local common=(--transport="$TRANSPORT" --mp-port="$PORT")
-  gd "$dir/server.log" -- "$flag" "${common[@]}" --start-seats=1 --probe=watch --probe-server-node --probe-linger-s=60
+  gd "$dir/server.log" -- "$flag" "${common[@]}" --start-seats=1 --probe=watch --probe-server-node --probe-linger-s=60 "$@"
   local server=$LAST_PID
   sleep 0.5
-  gd "$dir/client.log" -- --client1 "${common[@]}" --probe=client --probe-rejoin --probe-linger-s=60
+  gd "$dir/client.log" -- --client1 "${common[@]}" --probe=client --probe-rejoin --probe-linger-s=60 ${CLIENT_FLAGS:-}
   local client=$LAST_PID
   wait_line "$dir/client.log" "^PROBE client (PASS|FAIL)" "$client" 60
   # the late client joins the way a person types it: "host:port" in the address field (MpFlow.join_address)
@@ -126,6 +136,63 @@ run_lag() { # dedicated server + an observer (slot 1) + a predicted player (slot
   verdict "$dir/player.log" lag "lag: the predicted player answers at once and is barely corrected"
   verdict "$dir/observer.log" observe "lag: another player moves steadily on screen (buffered interpolation)"
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL lag: script errors"; FAILS=$((FAILS + 1)); fi
+}
+
+run_correct() { # dedicated that pushes its one player sideways (a move the owner cannot predict), with and without smoothing
+  local dir="$OUT/correct" mode
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT" --net-lag-ms=40 --net-jitter-ms=10)
+  for mode in smooth interpolated off; do
+    gd "$dir/server_$mode.log" --max-fps 120 -- --server "${common[@]}" --start-seats=1 --probe=pusher --probe-linger-s=10
+    local server=$LAST_PID
+    sleep 0.5
+    if [ "$mode" = smooth ]; then
+      gd "$dir/player_$mode.log" --max-fps 120 -- --client1 "${common[@]}" --probe=correct
+    elif [ "$mode" = interpolated ]; then
+      gd "$dir/player_$mode.log" --max-fps 120 -- --client1 "${common[@]}" --probe=correct --probe-physics-interpolation
+    else
+      gd "$dir/player_$mode.log" --max-fps 120 -- --client1 "${common[@]}" --probe=correct --correction-smoothing-s=0 --probe-expect-jump
+    fi
+    local player=$LAST_PID
+    wait_line "$dir/player_$mode.log" "^PROBE correct (PASS|FAIL)" "$player" 40
+    for p in $player $server; do kill_tree "$p"; done
+    echo "--- correct ($TRANSPORT, 40 ms + 10 ms jitter, server pushes, correction smoothing $mode) ---"
+    grep -hE "^(PASS|FAIL|METRIC|SCRIPT ERROR)" "$dir/player_$mode.log" | sed "s/^/player: /"
+  done
+  verdict "$dir/player_smooth.log" correct "correct: a server correction of the own player fades instead of jumping"
+  verdict "$dir/player_interpolated.log" correct "correct: the same with the engine's physics interpolation on (faded per tick)"
+  verdict "$dir/player_off.log" correct "correct: control, without smoothing the same correction is a jump"
+  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL correct: script errors"; FAILS=$((FAILS + 1)); fi
+}
+
+run_teleport() { # dedicated that teleports a walking predicted player with only net.snap(); it and an observer check it
+  local dir="$OUT/teleport" mode
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT" --net-lag-ms=40 --net-jitter-ms=10)
+  for mode in snap nosnap; do
+    local server_flags=() client_flags=()
+    [ "$mode" = nosnap ] && server_flags=(--probe-no-snap) && client_flags=(--probe-expect-slide)
+    gd "$dir/server_$mode.log" --max-fps 120 -- --server "${common[@]}" --start-seats=2 --probe=teleporter --probe-linger-s=10 "${server_flags[@]}"
+    local server=$LAST_PID
+    sleep 0.5
+    gd "$dir/observer_$mode.log" --max-fps 120 -- --client1 "${common[@]}" --probe=seeteleport --probe-watch-slot=2 --probe-linger-s=5 "${client_flags[@]}"
+    local observer=$LAST_PID
+    wait_line "$dir/observer_$mode.log" "^PASS this client got a slot" "$observer" 20
+    gd "$dir/player_$mode.log" --max-fps 120 -- --client2 "${common[@]}" --probe=teleported --probe-linger-s=5 "${client_flags[@]}"
+    local player=$LAST_PID
+    wait_line "$dir/player_$mode.log" "^PROBE teleported (PASS|FAIL)" "$player" 40
+    wait_line "$dir/observer_$mode.log" "^PROBE seeteleport (PASS|FAIL)" "$observer" 15
+    for p in $player $observer $server; do kill_tree "$p"; done
+    echo "--- teleport ($TRANSPORT, 40 ms + 10 ms jitter, the server teleports P2, $([ "$mode" = snap ] && echo "then net.snap()" || echo "control: no net.snap()")) ---"
+    for r in player observer; do
+      grep -E "^(PASS|FAIL|METRIC|SCRIPT ERROR)" "$dir/${r}_$mode.log" | sed "s/^/$r: /" | head -n 12
+    done
+  done
+  verdict "$dir/player_snap.log" teleported "teleport: the teleported player itself jumps at once (no fade, no slide)"
+  verdict "$dir/observer_snap.log" seeteleport "teleport: another player sees it jump, never slide"
+  verdict "$dir/player_nosnap.log" teleported "teleport: control, without net.snap() the player fades there"
+  verdict "$dir/observer_nosnap.log" seeteleport "teleport: control, without net.snap() another player sees it slide"
+  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL teleport: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
 run_flood() { # dedicated server + one client that floods the tunnel and to_server
@@ -234,8 +301,11 @@ for s in $SCENARIOS; do
   case "$s" in
     dedicated) run_scenario dedicated --server ;;
     listen) run_scenario listen --listen-host ;;
+    keeppawn) CLIENT_FLAGS=--probe-pawn-kept run_scenario keeppawn --server --probe-keep-pawns ;;
     lag) run_lag ;;
     lagshot) run_lagshot ;;
+    correct) run_correct ;;
+    teleport) run_teleport ;;
     flood) run_flood ;;
     latejoin) run_latejoin ;;
     reports) run_reports ;;
