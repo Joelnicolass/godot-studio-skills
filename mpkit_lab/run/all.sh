@@ -2,7 +2,7 @@
 # Every MpKit lab check in a row (mpkit_lab/CASES.md lists them): the kit's own tests, solo, the session cases, and
 # the relay's host rules, arena, rooms and private over ENet, WebSocket and the relay (rooms also over wss://), the
 # relay's faults, a browser client over WebSocket and over the relay (Web export templates + a headless Chrome /
-# Chromium; without a browser those two say SKIP; BROWSER=none skips them), instances, the wizard, and MpWorld + the
+# Chromium; without a browser those two say SKIP; BROWSER=none skips them), instances, the server image in Docker (SKIP without it), the wizard, and MpWorld + the
 # wizard in the real editor (headless).
 #   all.sh            the whole matrix (before a release candidate; about an hour with a shared queue)
 #   all.sh --quick    one of each over ENet: tests, solo, relay rules, arena (dedicated + lag), rooms (public),
@@ -45,6 +45,8 @@ else
     step "web relay" env PROBE_LIMIT_S=500 WEB_NEED_BROWSER=1 TRANSPORT=relay bash "$HERE/web.sh"
   fi
   step instances bash "$HERE/instances.sh"
+  ## The server image (deploy/fly) in Docker; without Docker running it says SKIP.
+  step docker bash "$HERE/docker.sh"
   step "wizard 2d" bash "$HERE/wizard.sh"
   step "wizard 3d" env WIZARD_3D=1 bash "$HERE/wizard.sh"
   step editor bash "$HERE/editor.sh"
