@@ -15,6 +15,8 @@
 #              sees it move steadily. Prints METRIC lines.
 #              The observer also measures how late the other player's move shows (remote_delay_ms;
 #              MAX_REMOTE_DELAY_MS sets a cap) and checks MpNetQuality against the simulated network (RTT, loss, jitter).
+#   lossy:     lag on a much worse network (60 ms + 60 ms jitter, 15 % loss): still no correction (every unconfirmed
+#              frame is sent again until the server has it; a late one is guessed) and the other player moves steadily.
 #   lagshot:   dedicated (--start-seats=2) + a target walking past + a shooter that leads it, every process at SHOT_LAG_MS: with lag
 #              compensation the shots hit; the same with the server's --lag-comp=off, most miss (the control).
 #   correct:   dedicated that pushes its one predicted player sideways every 0.5 s (a move the owner cannot predict), 40 ms
@@ -32,7 +34,7 @@
 #   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
 #              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
 #              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lagshot correct teleport flood latejoin reports fastclock survive" (default all).
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports fastclock survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
@@ -41,7 +43,7 @@ LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lagshot correct teleport flood latejoin reports fastclock survive}"
+SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports fastclock survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -111,8 +113,9 @@ run_lagshot() { # dedicated + a walking target + a shooter that leads it; with a
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL lagshot: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
-run_lag() { # dedicated server + an observer (slot 1) + a predicted player (slot 2), every process on a bad network
-  local dir="$OUT/lag"
+run_lag() { # run_lag [name]: dedicated + an observer (slot 1) + a predicted player (slot 2), every process on a bad network
+  local name="${1:-lag}"
+  local dir="$OUT/$name"
   mkdir -p "$dir"
   local common=(--transport="$TRANSPORT" --mp-port="$PORT" --net-lag-ms="$LAG_MS" --net-jitter-ms="$JITTER_MS" --net-loss="$LOSS")
   gd "$dir/server.log" --max-fps 120 -- --server "${common[@]}" --start-seats=2
@@ -129,13 +132,13 @@ run_lag() { # dedicated server + an observer (slot 1) + a predicted player (slot
   wait_line "$dir/player.log" "^PROBE lag (PASS|FAIL)" "$player" 40
   wait_line "$dir/observer.log" "^PROBE observe (PASS|FAIL)" "$observer" 10
   for p in $player $observer $server; do kill_tree "$p"; done
-  echo "--- lag ($TRANSPORT, ${LAG_MS} ms + ${JITTER_MS} ms jitter, loss $LOSS, every process) ---"
+  echo "--- $name ($TRANSPORT, ${LAG_MS} ms + ${JITTER_MS} ms jitter, loss $LOSS, every process) ---"
   for r in observer player; do
     grep -E "^(PASS|FAIL|METRIC|SCRIPT ERROR|ERROR)" "$dir/$r.log" | sed "s/^/$r: /" | head -n 20
   done
-  verdict "$dir/player.log" lag "lag: the predicted player answers at once and is barely corrected"
-  verdict "$dir/observer.log" observe "lag: another player moves steadily on screen (buffered interpolation)"
-  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL lag: script errors"; FAILS=$((FAILS + 1)); fi
+  verdict "$dir/player.log" lag "$name: the predicted player answers at once and is barely corrected"
+  verdict "$dir/observer.log" observe "$name: another player moves steadily on screen (buffered interpolation)"
+  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL $name: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
 run_correct() { # dedicated that pushes its one player sideways (a move the owner cannot predict), with and without smoothing
@@ -303,6 +306,7 @@ for s in $SCENARIOS; do
     listen) run_scenario listen --listen-host ;;
     keeppawn) CLIENT_FLAGS=--probe-pawn-kept run_scenario keeppawn --server --probe-keep-pawns ;;
     lag) run_lag ;;
+    lossy) LAG_MS=60 JITTER_MS=60 LOSS=0.15 run_lag lossy ;;
     lagshot) run_lagshot ;;
     correct) run_correct ;;
     teleport) run_teleport ;;
