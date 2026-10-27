@@ -153,7 +153,12 @@ function attachHost(conn, name) {
   conn.send(u32(WELCOME, 1));
   log(`host ${name}`);
   conn.onMessage = (msg) => {
-    if (msg.length >= 5 && msg[0] === KICK) { room.clients.get(msg.readUInt32LE(1))?.close(4007, "kicked by the host"); return; }
+    if (msg.length >= 5 && msg[0] === KICK) {
+      const id = msg.readUInt32LE(1);
+      if (room.clients.has(id)) log(`host ${name} kicked client ${id}`);
+      room.clients.get(id)?.close(4007, "kicked by the host");
+      return;
+    }
     if (msg.length < 7 || msg[0] !== DATA) return;
     const to = msg.readInt32LE(1);
     const out = forward(1, msg);
