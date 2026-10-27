@@ -22,7 +22,8 @@ extends Node
 ## back; after the end, back in the menu, the game's transport is untouched) | online_list (finds the room in
 ## the issuer's list, then joins it; `--probe-find-name=X`: the room named X,
 ## for a host that cannot write the code file, a browser) | online_refused (tries the code, or
-## `--probe-room=`, and expects the issuer's `--probe-expect=` word). `--probe-linger-s=N` keeps a
+## `--probe-room=`, and expects the issuer's `--probe-expect=` word) | online_stop (opens a room and closes it on
+## purpose: no `failed`, `ended`, the match process gone, the issuer forgot it). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
 
 ## Seconds each check may wait (`--probe-timeout-s=N` for a person opening a browser by hand).
@@ -141,6 +142,8 @@ func _run() -> void:
 			await _join_online(true)
 		"online_refused":
 			await _refused_online()
+		"online_stop":
+			await _stop_online()
 		_:
 			_check(false, "known role %s" % _role)
 	print("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -830,6 +833,27 @@ func _join_online(from_list: bool) -> void:
 	await _until(func() -> bool: return not finished.is_empty(), "the friend saw the match end")
 	flow.return_to_boot()
 	await _until(func() -> bool: return MpKit.transport == transport_before, "back in the menu the game's transport is still %s (the online room used the relay for its own connection)" % transport_before)
+
+
+## A host opens a room and stops it on purpose (a Close button): it ends, never fails, and leaves nothing behind.
+func _stop_online() -> void:
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var online := flow.host_online(2, "Closing room")
+	var codes: Array = []
+	var failed: Array = []
+	var ended: Array = []
+	online.room_ready.connect(func(c: String) -> void: codes.append(c))
+	online.failed.connect(func(reason: String) -> void: failed.append(reason))
+	online.ended.connect(func() -> void: ended.append(true))
+	if not await _until(func() -> bool: return not codes.is_empty(), "the room is up (%s)" % online.mode):
+		return
+	online.stop()
+	await _until(func() -> bool: return not ended.is_empty(), "stop() ends the room")
+	_check(failed.is_empty(), "stop() is not a failure (failed: %s)" % [failed])
+	await _until(func() -> bool: return MpLocalServer.running(get_tree()) == null and MpOnline.running(get_tree()) == null, "no private server or online room left")
+	var gone: Dictionary = await MpIssuer.join_room(get_tree(), str(codes[0]))
+	_check(str(gone.get("error", "")) == "no_such_room", "the issuer forgot the room (%s)" % gone.get("error", "joined"))
 
 
 ## The issuer turns this join away with `--probe-expect=` (room_full, no_such_room…), and nothing connects.

@@ -1281,6 +1281,7 @@ for row in await flow.online_rooms():
 |---|---|
 | `flow.host_online(players, name, listed, ticket)` | Opens a room (an `MpOnline` under the root). `listed = false`: private, joined by code only. A second call gives the running one back. `ticket`: your match ticket (world, mode, options, seed, picks…, `seats: [{slot, meta}]` with the host's meta in slot 1): a desktop's match process gets it as its ticket (the kit only adds each seat's token and the relay room: `MpLocalServer.merge_ticket`); in a browser your game is the match and reads it from `MpOnline.ticket` |
 | `MpOnline.room_ready(code)` / `failed(reason)` / `ended` | Players may join / the issuer refused or the match could not start / the room is closed |
+| `MpOnline.stop()` | Closes the room on purpose (a Close button): stops the match, tells the issuer; `ended` fires, never `failed` |
 | `MpOnline.code`, `mode` | The code; `dedicated` (desktop) or `listen` (browser). `--online-mode=listen` forces the browser's way on a desktop (tests) |
 | `flow.join_online(code)` | A seat from the issuer, then the relay connection. While the room is still coming up it asks again for a few seconds |
 | `flow.online_rooms()` | `[{code, name, players, max_players, state, platform, age_s}]` |
