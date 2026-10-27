@@ -34,6 +34,10 @@ func _ready() -> void:
 	MpKit.server_lost.connect(func() -> void: _server_lost = true)
 	MpKit.admission_rejected.connect(func(reason: String) -> void: _rejected = reason)
 	MpKit.slot_assigned.connect(func(slot: int) -> void: _ever_slot = slot)
+	## `--probe-report-after=S` (with `--world-reports-loaded`): every world reports itself loaded S seconds after it enters, like
+	## a loading screen warming shaders up; until then the start gate must hold this peer's world.
+	if not MpBoot.user_value("probe-report-after", "").is_empty():
+		get_tree().scene_changed.connect(_report_world_later)
 	if _role.is_empty():
 		return
 	print("probe %s start" % _role)
@@ -751,6 +755,19 @@ func _scene_has_button(text: String) -> bool:
 	if scene == null:
 		return false
 	return not scene.find_children("*", "Button", true, false).filter(func(b: Node) -> bool: return (b as Button).text == text).is_empty()
+
+
+func _report_world_later() -> void:
+	if _in_world("Actors") == null:
+		return
+	await get_tree().create_timer(float(MpBoot.user_value("probe-report-after", "1"))).timeout
+	var flow := MpFlow.find_in_tree(self)
+	if flow == null or _in_world("Actors") == null:
+		return
+	_check(get_tree().paused, "the world held (paused) until it reported itself loaded")
+	flow.report_world_loaded()
+	await get_tree().process_frame
+	_check(not get_tree().paused or MpKit.gate.is_waiting(), "after its report the world runs, or waits only for others")
 
 
 ## A node of the world by its path: under the MpWorld when the world has one, under the scene otherwise.

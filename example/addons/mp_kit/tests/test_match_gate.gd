@@ -1,14 +1,16 @@
 extends "res://addons/mp_kit/tests/mp_test.gd"
 
 ## MpMatchGate rules with an injected clock, no network: filling, full, need, the start, a newcomer after the start, a seat back
-## within the grace or past it, a seat held by a live peer, identity (ticket) mode, the load timeout, all_gone and reset.
+## within the grace or past it, a seat held by a live peer, identity (ticket) mode, the load timeout, all_gone and reset; and the
+## server's own world (wait_host): a host that loads late, a client that reports late, solo (no seats) and the host's timeout.
 
 var _clock: Array[int] = [1000]
 var _events: Array[String] = []
 
 
-func _gate(seats: Array[int], need: int = 0, identity: Callable = Callable(), hold: bool = true) -> MpMatchGate:
+func _gate(seats: Array[int], need: int = 0, identity: Callable = Callable(), hold: bool = true, wait_host: bool = false) -> MpMatchGate:
 	var gate := MpMatchGate.new()
+	gate.wait_host = wait_host
 	gate.name = "GateUnderTest"
 	tree.root.add_child(gate)
 	gate.now_ms = func() -> int: return _clock[0]
@@ -292,4 +294,50 @@ func test_ticket_displaces_a_stale_connection() -> void:
 	var gate := _gate([2], 0, identity)
 	gate.admit(10, "t2")
 	check(gate.displaced_by(20, "t2") == 10, "the same ticket from another peer names the stale holder")
+	_done(gate)
+
+
+func test_host_loads_late() -> void:
+	var gate := _gate([2], 0, Callable(), true, true)
+	gate.admit(10, "")
+	gate.mark_loaded(2)
+	check(gate.phase == MpMatchGate.Phase.FILLING and tree.paused, "the seat loaded but the host's world did not: still waiting")
+	gate.mark_host_loaded()
+	check(gate.phase == MpMatchGate.Phase.RUNNING and not tree.paused and _events.back() == "started all_loaded",
+		"the host's world loaded: it runs (all_loaded): %s" % [_events])
+	_done(gate)
+
+
+func test_client_reports_late() -> void:
+	var gate := _gate([2], 0, Callable(), true, true)
+	gate.mark_host_loaded()
+	gate.admit(10, "")
+	_advance_s(5.0, gate)
+	check(gate.phase == MpMatchGate.Phase.FILLING and gate.is_waiting(), "the host is in, the seat still warms up: waiting")
+	gate.mark_loaded(2)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and _events.find("loaded 2 1/1") < _events.find("started all_loaded"),
+		"the seat reported: loaded 1/1, then the start: %s" % [_events])
+	_done(gate)
+
+
+func test_solo_holds_until_the_host_loads() -> void:
+	var solo := _gate([], 0, Callable(), true, true)
+	check(solo.phase == MpMatchGate.Phase.FILLING and solo.is_waiting() and tree.paused, "solo with wait_host: no seats, but it holds")
+	check(solo.expected_count() == 0 and not solo.can_start_now(), "nobody to wait for but the local world; no «start now»")
+	solo.mark_host_loaded()
+	check(solo.phase == MpMatchGate.Phase.RUNNING and not tree.paused and _events == ["started all_loaded"],
+		"the local world loaded: it runs: %s" % [_events])
+	_done(solo)
+	var at_once := _gate([])
+	check(at_once.phase == MpMatchGate.Phase.RUNNING and not tree.paused, "solo without wait_host: it runs at once")
+	_done(at_once)
+
+
+func test_host_load_timeout() -> void:
+	var gate := _gate([], 0, Callable(), true, true)
+	_advance_s(9.0, gate)
+	check(gate.phase == MpMatchGate.Phase.FILLING, "the host's world is still loading within load_timeout_s: waiting")
+	_advance_s(2.0, gate)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and not tree.paused and _events.back() == "started load_timeout",
+		"the host's world never said it loaded: past load_timeout_s it runs anyway: %s" % [_events])
 	_done(gate)

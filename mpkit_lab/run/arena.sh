@@ -16,10 +16,12 @@
 #              compensation the shots hit; the same with the server's --lag-comp=off, most miss (the control).
 #   flood:     a client sends 500 tunnel messages and 500 to_server calls at once: only the burst gets through.
 #   latejoin:  dedicated with --late-join: the first client starts the match, a newcomer after the start still sits and plays.
+#   reports:   --world-reports-loaded (a loading screen): the dedicated and the client each report their world loaded 1.5 s
+#              after it enters; the gate holds until both did, then they play. Solo too: play_solo holds until the report.
 #   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
 #              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
 #              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood latejoin survive" (default all).
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood latejoin reports survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
@@ -28,7 +30,7 @@ LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood latejoin survive}"
+SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood latejoin reports survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -159,6 +161,29 @@ run_latejoin() { # --late-join: the match started with one client, a newcomer st
   verdict "$dir/late.log" basic "latejoin: a newcomer after the start sat in a free seat and played"
 }
 
+run_reports() { # --world-reports-loaded: the gate counts a world once it reports itself loaded (a loading screen), solo too
+  local dir="$OUT/reports"
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT" --world-reports-loaded --probe-report-after=1.5)
+  gd "$dir/server.log" -- --dedicated "${common[@]}" --start-seats=1 --probe=watch --probe-min-move=0.5 --probe-linger-s=3
+  local server=$LAST_PID
+  sleep 0.5
+  gd "$dir/client.log" -- "${common[@]}" --probe-join="127.0.0.1:$PORT" --probe=basic --probe-timeout-s=30
+  wait_line "$dir/client.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 60
+  wait_line "$dir/server.log" "^PROBE watch (PASS|FAIL)" "$server" 10
+  kill_tree "$server"; wait "$server" 2>/dev/null
+  gd "$dir/solo.log" -- --world-reports-loaded --probe-report-after=1.5 --probe=solo --probe-timeout-s=30
+  wait_line "$dir/solo.log" "^PROBE solo (PASS|FAIL)" "$LAST_PID" 60
+  echo "--- reports ($TRANSPORT) ---"
+  for r in server client solo; do
+    grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$dir/$r.log" | grep -E "FAIL|reported|SCRIPT" | sed "s/^/$r: /" | head -n 8
+  done
+  verdict "$dir/server.log" watch "reports: the dedicated held until its world and the client's reported, then saw the player"
+  verdict "$dir/client.log" basic "reports: the client held until it reported its world, then played"
+  verdict "$dir/solo.log" solo "reports: solo held until its world reported, then played"
+  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL reports: script errors"; FAILS=$((FAILS + 1)); fi
+}
+
 run_survive() { # a dedicated with its default seats: three matches in a row, each from a fresh world
   local dir="$OUT/survive"
   mkdir -p "$dir"
@@ -196,6 +221,7 @@ for s in $SCENARIOS; do
     lagshot) run_lagshot ;;
     flood) run_flood ;;
     latejoin) run_latejoin ;;
+    reports) run_reports ;;
     survive) run_survive ;;
   esac
 done
