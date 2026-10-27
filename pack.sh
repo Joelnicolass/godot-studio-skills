@@ -21,6 +21,7 @@ cp -R "${ROOT}/skills" "$STAGE/"
 cp -R "${ROOT}/commands" "$STAGE/"
 cp -R "${ROOT}/agents" "$STAGE/"
 cp -R "${ROOT}/addons" "$STAGE/"
+find "$STAGE/addons" -name node_modules -type d -prune -exec rm -rf {} +
 cp -R "${ROOT}/docs" "$STAGE/"
 cp "${ROOT}/install.sh" "${ROOT}/uninstall.sh" "${ROOT}/pack.sh" \
   "${ROOT}/README.md" "${ROOT}/publish.env.example" "$STAGE/"

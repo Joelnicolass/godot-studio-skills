@@ -6,8 +6,11 @@
 #   without a secret         every host is refused (a public relay nobody can take over)
 #   RELAY_OPEN=1             anyone may host (local tests only)
 #   a host's KICK with a reason closes that client with 4007 and the reason (the client learns why it was turned away)
+#   npm test                 the relay's own tests (its rules with fake peers, and end to end with ws clients)
 HERE="$(cd "$(dirname "$0")" && pwd)"
-SERVER="$HERE/../addons/mp_kit/relay/server.mjs"
+. "$HERE/lib.sh"
+RELAY_DIR="$LAB/addons/mp_kit/relay"
+SERVER="$RELAY_DIR/server.mjs"
 PORT="${RELAY_TEST_PORT:-8795}"
 FAILS=0
 PID=""
@@ -86,6 +89,8 @@ try() { # try <query> [header]: the HTTP status of the upgrade (101 = accepted)
     req.on("error", () => console.log("error"));
     req.end();' "$PORT" "$1" "${2:-}"
 }
+relay_deps || { echo "FAIL npm ci for the relay"; FAILS=$((FAILS + 1)); }
+check "$(npm test --prefix "$RELAY_DIR" --silent > /dev/null 2>&1 && echo pass)" pass "the relay's own tests (npm test)"
 up RELAY_HOST_SECRET=s3cret
 check "$(try '?role=host&room=a' 'X-Relay-Secret: s3cret')" 101 "with a secret: the secret in the header hosts"
 check "$(try '?role=host&room=b&secret=s3cret')" 101 "with a secret: the secret in the query hosts"

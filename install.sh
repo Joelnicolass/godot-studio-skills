@@ -321,6 +321,8 @@ copy_one_addon() {
   mkdir -p "${project}/addons"
   rm -rf "$dest"
   cp -R "$src" "$dest"
+  # A dev checkout may have installed the relay's dependency: the game gets the sources, not node_modules.
+  find "$dest" -name node_modules -type d -prune -exec rm -rf {} +
   if [[ -f "${dest}/cli.sh" ]]; then
     chmod +x "${dest}/cli.sh"
   fi

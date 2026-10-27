@@ -78,6 +78,7 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | Cliente web por el relay (el servidor hostea una sala del relay) | `TRANSPORT=relay web.sh` |
 | Relay: solo hostea quien tiene el secreto (header o query); sin secreto nadie, salvo `RELAY_OPEN=1` | `relay.sh` |
 | Relay: una sala con host vivo rechaza a un segundo host (4009, como un puerto en uso) | `relay.sh` |
+| Relay: sus reglas (peers falsos) y de punta a punta con clientes ws, en Node (`npm test` en `addons/mp_kit/relay`) | `relay.sh` |
 | Relay: una partida rechazada vuelve a lanzarse en otro puerto y solo se anuncia la que escucha | `tests/test_launcher_relay_retry.gd` |
 | Relay de punta a punta: con todos los puertos menos uno tomados, la partida privada arranca en el libre y se juega | `relayfault.sh` clash |
 | Relay: un dedicado muerto (kill -9) y arrancado otra vez enseguida vuelve a tener su sala | `relayfault.sh` restart |
