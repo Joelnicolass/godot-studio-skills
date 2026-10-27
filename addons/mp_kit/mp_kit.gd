@@ -64,6 +64,8 @@ var _pending_ticket: String = ""
 var _awaiting_ticket: Dictionary = {}
 ## Client: "host:port" of the server it joins, and the seat credential each server gave (memory only; kept across leave()).
 var _endpoint: String = ""
+## [due msec, Callable] for after_real.
+var _real_due: Array = []
 var _seat_credentials: Dictionary = {}
 
 
@@ -82,6 +84,26 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
+
+
+## Runs `callable` once `seconds` of REAL time passed. For network timeouts: packets arrive in real time, while game time
+## runs faster or slower with `--fixed-fps` (it stops syncing to the clock) or `Engine.time_scale`.
+func after_real(seconds: float, callable: Callable) -> void:
+	_real_due.append([Time.get_ticks_msec() + int(maxf(seconds, 0.0) * 1000.0), callable])
+
+
+func _process(_delta: float) -> void:
+	if _real_due.is_empty():
+		return
+	var now := Time.get_ticks_msec()
+	var due: Array = []
+	var later: Array = []
+	for item in _real_due:
+		(due if now >= int(item[0]) else later).append(item)
+	_real_due = later
+	for item in due:
+		if (item[1] as Callable).is_valid():
+			(item[1] as Callable).call()
 
 
 func configure(
@@ -256,6 +278,16 @@ func request_world_ready() -> void:
 	rpc_world_ready.rpc_id(1)
 
 
+## The local world finished loading (MpFlow.world_loaded, when the world reports it). A client tells the server, and its seat
+## counts as loaded at the gate; the server itself (a listen host, a dedicated, solo) tells the gate it is in.
+func report_loaded() -> void:
+	if is_networked() and not multiplayer.is_server():
+		rpc_seat_loaded.rpc_id(1)
+		return
+	if gate:
+		gate.mark_host_loaded()
+
+
 func push_snapshot(data: Dictionary) -> void:
 	if not is_server():
 		return
@@ -411,10 +443,10 @@ func _on_peer_connected(id: int) -> void:
 		return
 	if _admitting():
 		if _awaiting_ticket.size() >= max_pending_admission:
-			multiplayer.multiplayer_peer.disconnect_peer(id)
+			_cut_peer(multiplayer.multiplayer_peer, id, "too_many_pending")
 			return
 		_awaiting_ticket[id] = true
-		get_tree().create_timer(admission_timeout_s).timeout.connect(_on_admission_timeout.bind(id))
+		after_real(admission_timeout_s, _on_admission_timeout.bind(id))
 		return
 	if exceeds_max_players(_connected_player_count()):
 		_reject_peer(id, MpMatchGate.FULL)
@@ -459,9 +491,18 @@ func _reject_peer(id: int, reason: String) -> void:
 	rpc_admission_rejected.rpc_id(id, reason)
 	## Let the reliable RPC leave before the disconnect command.
 	var closing := multiplayer.multiplayer_peer
-	get_tree().create_timer(REJECT_FLUSH_S).timeout.connect(func() -> void:
+	after_real(REJECT_FLUSH_S, func() -> void:
 		if closing != null and multiplayer.multiplayer_peer == closing and multiplayer.get_peers().has(id):
-			closing.disconnect_peer(id))
+			_cut_peer(closing, id, reason))
+
+
+## Server: disconnects `id`, saying why in the log (every path that turns a peer away goes through here). Through the relay the
+## reason also travels in the close, so the client knows it even if the admission_rejected RPC was lost.
+func _cut_peer(peer: MultiplayerPeer, id: int, reason: String) -> void:
+	push_warning("MpKit: the server turned peer %d away (%s)" % [id, reason])
+	if peer.has_method(&"set_kick_reason"):
+		peer.call(&"set_kick_reason", id, reason)
+	peer.disconnect_peer(id)
 
 
 ## Always presents (a ticket, a stored credential or ""): a server that admits nobody ignores it.
@@ -532,7 +573,7 @@ func _admit_at_gate(sender: int, credential: String) -> void:
 	var stale := gate.displaced_by(sender, credential)
 	if stale != 0:
 		_on_peer_disconnected(stale)
-		multiplayer.multiplayer_peer.disconnect_peer(stale)
+		_cut_peer(multiplayer.multiplayer_peer, stale, "replaced_by_rejoin")
 	var seat := gate.admit(sender, credential)
 	if seat.slot <= 0:
 		_reject_peer(sender, seat.reason)
@@ -583,8 +624,18 @@ func rpc_world_ready() -> void:
 		return
 	_world_ready[sender] = true
 	client_world_ready.emit(sender)
-	if gate.is_armed():
+	if gate.is_armed() and gate.loaded_on_world_ready:
 		gate.mark_loaded(ids.slot_for_peer(sender))
+
+
+## A seated client's world reported itself loaded (report_loaded): its seat counts at the gate.
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_seat_loaded() -> void:
+	if not multiplayer.is_server():
+		return
+	var slot := ids.slot_for_peer(multiplayer.get_remote_sender_id())
+	if slot != 0 and gate.is_armed():
+		gate.mark_loaded(slot)
 
 
 @rpc("authority", "call_remote", "reliable")

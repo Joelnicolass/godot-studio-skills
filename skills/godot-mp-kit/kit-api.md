@@ -87,6 +87,8 @@ Pawn input and custom-dict meaning **outside** the kit.
 - `broadcast_load_world()` / `load_world_to(peer)`
 - `push_snapshot(data)` / `push_snapshot_to(peer, data)`
 - `broadcast_session_ended(data)`
+- `after_real(seconds, callable)` — run it after REAL time (network timeouts; game time differs with `--fixed-fps` or `Engine.time_scale`). The kit's admission timeout and rejection flush use it
+- `report_loaded()` — the local world finished loading (MpFlow calls it with `world_reports_loaded`): a client tells the server (its seat counts at the gate), the server or solo tells the gate its own world is in
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — server: peers with a slot and world_ready (send your own one-off `@rpc` effects to these with `rpc_id`; play it on the server too)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
 
@@ -204,7 +206,7 @@ Scene `res://addons/mp_kit/mp_boot_menu.tscn`. Copy via `@export`. If an `MpFlow
 
 ## MpFlow
 
-Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated on first client.
+Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated on first client. The world loads on a thread (`MpWorldLoader`): `world_load_progressed(ratio, phase)`, `world_loaded`; with `world_reports_loaded` (`--world-reports-loaded`) the world calls `report_world_loaded()` / `report_world_progress(r)` and the gate waits for it; hooks `_before_world_load()`, `_extra_world_loads()`.
 
 ## MpMatchGate
 

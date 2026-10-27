@@ -4,7 +4,9 @@ extends Node
 ## The door of a match: who may sit and when it starts. Before the start every free seat is open; the match starts (the tree unpauses)
 ## once the seats it waits for have loaded their world. After the start only a seat that is away comes back, within rejoin_grace_s;
 ## anybody else is turned away with a reason, unless late_join keeps the free seats open. Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent).
-## MpKit owns it (`/root/MpKit/Gate`) and feeds it: admit() on each presentation, mark_loaded() on world_ready, mark_left() on a drop.
+## MpKit owns it (`/root/MpKit/Gate`) and feeds it: admit() on each presentation, mark_loaded() when a seat loaded (on world_ready,
+## or on MpKit.report_loaded with `loaded_on_world_ready` off), mark_host_loaded() for the server's own world, mark_left() on a drop.
+## Solo arms it too, with no seats (`arm([], 0)`): with `wait_host` it holds only until the local world loaded.
 ## Two ways to name a seat: open (LAN, a dedicated by hand: the first free seat gets a fresh credential that brings it back) or
 ## identity (a room's ticket: `identity.call(peer_id, credential) -> slot`). In Remote: phase, expected, loaded, away.
 
@@ -42,6 +44,11 @@ var rejoin_grace_s := 60.0
 var load_timeout_s := 15.0
 ## The clients pause their world too while the match waits (nobody walks ahead).
 var pause_clients := true
+## True (the default): a seat counts as loaded when its world is ready (MpKit's world_ready). False: when its world says so
+## (MpKit.report_loaded, e.g. after a loading screen). MpFlow sets it from `world_reports_loaded`.
+var loaded_on_world_ready := true
+## True: the match also waits for the server's own world (mark_host_loaded): a listen host, a dedicated, solo. MpFlow sets it.
+var wait_host := false
 ## True on a listen host: the host may start with whoever loaded (can_start_now). MpFlow sets it before arm().
 var host_present := false
 ## Open seats only (LAN, a dedicated by hand): after the start a newcomer still takes a free seat, and a seat abandoned past the
@@ -68,6 +75,8 @@ var _hold: bool = true
 var _waiting: bool = false
 var _paused_by_me: bool = false
 var _first_admit_ms: int = -1
+var _armed_ms: int = -1
+var _host_loaded: bool = false
 var _all_gone_sent: bool = false
 ## Client: this peer's world reported ready (MpKit.request_world_ready); the pause the server asks for applies from then on.
 var _local_world_ready: bool = false
@@ -108,6 +117,7 @@ func arm(seats: Array[int], need: int = 0, identity: Callable = Callable(), hold
 	_need = maxi(0, need)
 	_identity = identity
 	_hold = hold
+	_armed_ms = _now()
 	if not hold:
 		phase = Phase.RUNNING
 		started.emit("no_hold")
@@ -155,6 +165,14 @@ func mark_loaded(slot: int) -> void:
 	_send_state_to(int(_peer_of.get(slot, 0)))
 
 
+## MpKit only: the server's own world loaded (report_loaded on a listen host, a dedicated or solo). Counts with `wait_host`.
+func mark_host_loaded() -> void:
+	if _host_loaded:
+		return
+	_host_loaded = true
+	_check_start()
+
+
 ## MpKit only: the seat's peer dropped.
 func mark_left(slot: int) -> void:
 	_peer_of.erase(slot)
@@ -192,7 +210,7 @@ func start_now() -> bool:
 
 ## True on a listen host whose open match waits and has at least one client loaded.
 func can_start_now() -> bool:
-	return phase == Phase.FILLING and host_present and not _identity.is_valid() and _loaded_count() > 0
+	return phase == Phase.FILLING and host_present and not _identity.is_valid() and _loaded_count() > 0 and _host_in()
 
 
 ## The game gives up on `slot` (e.g. it never sent its pick): the match stops waiting for it, and it is abandoned (`why`) as soon
@@ -253,6 +271,8 @@ func reset() -> void:
 	_identity = Callable()
 	_hold = true
 	_first_admit_ms = -1
+	_armed_ms = -1
+	_host_loaded = false
 	_all_gone_sent = false
 	_credentials.clear()
 	_peer_of.clear()
@@ -289,7 +309,11 @@ func poll() -> void:
 	if phase == Phase.IDLE or not _is_server():
 		return
 	var now := _now()
-	if phase == Phase.FILLING and _first_admit_ms >= 0 and now - _first_admit_ms > int(load_timeout_s * 1000.0):
+	var timeout_ms := int(load_timeout_s * 1000.0)
+	if phase == Phase.FILLING and _first_admit_ms >= 0 and now - _first_admit_ms > timeout_ms:
+		_start("load_timeout")
+	## The server's own world never said it loaded: the match does not wait for it forever either.
+	if phase == Phase.FILLING and not _host_in() and _armed_ms >= 0 and now - _armed_ms > timeout_ms:
 		_start("load_timeout")
 	var gone: Array[int] = []
 	for slot in _away_ms.keys():
@@ -354,7 +378,7 @@ func _judge_known(peer_id: int, slot: int) -> String:
 
 
 func _check_start() -> void:
-	if phase != Phase.FILLING:
+	if phase != Phase.FILLING or not _host_in():
 		return
 	var count := _loaded_count()
 	if count >= _target() and (count > 0 or _required().is_empty()):
@@ -444,6 +468,11 @@ func _apply_client_pause() -> void:
 	elif not hold and _paused_by_me:
 		_paused_by_me = false
 		get_tree().paused = false
+
+
+## The server's own world is in, or the match does not wait for it.
+func _host_in() -> bool:
+	return _host_loaded or not wait_host
 
 
 ## The seats the match still waits for (not given up, not abandoned).

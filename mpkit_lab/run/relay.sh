@@ -5,6 +5,7 @@
 #                            a room with a live host refuses a second host (4009, a port in use)
 #   without a secret         every host is refused (a public relay nobody can take over)
 #   RELAY_OPEN=1             anyone may host (local tests only)
+#   a host's KICK with a reason closes that client with 4007 and the reason (the client learns why it was turned away)
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SERVER="$HERE/../addons/mp_kit/relay/server.mjs"
 PORT="${RELAY_TEST_PORT:-8795}"
@@ -40,6 +41,40 @@ hold_then_second() { # one host holds the room open, a second host with the secr
       setTimeout(() => { console.log("no close"); process.exit(0); }, 2000);
     }), 200));' "$PORT" "$1"
 }
+kick_reason() { # a host kicks its client with a reason: the client's close code and reason ("4007 full")
+  node -e '
+    const http = require("http");
+    const port = process.argv[1];
+    const ws = (path, headers, onSocket) => {
+      const req = http.request({ host: "127.0.0.1", port, path, headers: Object.assign({ Connection: "Upgrade", Upgrade: "websocket",
+        "Sec-WebSocket-Version": "13", "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==" }, headers) });
+      req.on("upgrade", (res, socket) => onSocket(socket));
+      req.on("error", () => { console.log("error"); process.exit(0); });
+      req.end();
+    };
+    const frame = (payload) => { // a masked binary frame from a client (host and client are both clients of the relay)
+      const mask = Buffer.from([1, 2, 3, 4]);
+      const out = Buffer.alloc(6 + payload.length);
+      out[0] = 0x82; out[1] = 0x80 | payload.length; mask.copy(out, 2);
+      for (let i = 0; i < payload.length; i++) out[6 + i] = payload[i] ^ mask[i % 4];
+      return out;
+    };
+    ws("/?role=host&room=kick", { "X-Relay-Secret": "s3cret" }, (host) => setTimeout(() => ws("/?role=client&room=kick", {}, (client) => {
+      let buf = Buffer.alloc(0);
+      client.on("data", (d) => {
+        buf = Buffer.concat([buf, d]);
+        for (let i = 0; i + 3 < buf.length; i++) if (buf[i] === 0x88) {
+          const len = buf[i + 1] & 0x7f;
+          console.log(buf.readUInt16BE(i + 2) + " " + buf.subarray(i + 4, i + 2 + len).toString()); process.exit(0);
+        }
+      });
+      setTimeout(() => {
+        const kick = Buffer.concat([Buffer.from([5, 2, 0, 0, 0]), Buffer.from("full")]);
+        host.write(frame(kick));
+      }, 200);
+      setTimeout(() => { console.log("no close"); process.exit(0); }, 3000);
+    }), 200));' "$PORT"
+}
 try() { # try <query> [header]: the HTTP status of the upgrade (101 = accepted)
   node -e '
     const http = require("http");
@@ -58,6 +93,7 @@ check "$(try '?role=host&room=c')" 403 "with a secret: a host without it is refu
 check "$(try '?role=host&room=a' 'X-Relay-Secret: wrong')" 403 "with a secret: a wrong secret cannot take a room over"
 check "$(hold_then_second 'room=busy')" 4009 "a room with a live host refuses a second host with the secret (4009)"
 check "$(try '?role=client&room=nobody')" 101 "a client is let in (and closed with 4004 when the room has no host)"
+check "$(kick_reason)" "4007 full" "a host's KICK with a reason closes the client with 4007 and that reason"
 up
 check "$(try '?role=host&room=a' 'X-Relay-Secret: anything')" 403 "without a secret: every host is refused"
 up RELAY_OPEN=1
