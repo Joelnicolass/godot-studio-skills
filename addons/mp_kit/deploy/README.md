@@ -76,3 +76,5 @@ Para probar la imagen en tu PC antes (Docker): `mpkit_lab/run/docker.sh` en el r
 ## Verificado y no verificado
 
 Verificado en una Mac: varias instancias de `--room-server` lado a lado con sus rangos (e2e `run_mpkit_instances.sh` del laboratorio), salas, partidas privadas y web. No verificado: el export de Linux (faltan las plantillas en esa Mac) y un VPS real.
+
+Verificado para Fly.io (`fly.sh`): la imagen en Docker en esa Mac (`mpkit_lab/run/docker.sh`: un dedicado y un servidor de salas, con sus partidas dentro del contenedor, jugados a través de un relay local), y un despliegue real en `gru` detrás de un relay en Fly: dos jugadores desde Argentina se encontraron en el lobby del servidor de salas, la partida arrancó en la máquina de Fly, la jugaron y volvieron al lobby con el resultado.
