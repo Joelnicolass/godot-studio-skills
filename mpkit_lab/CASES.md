@@ -78,6 +78,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | A web client through the relay (the server hosts a relay room) | `TRANSPORT=relay web.sh` |
 | Relay: only whoever has the secret hosts (header or query); without a secret nobody, unless `RELAY_OPEN=1` | `relay.sh` |
 | Relay: a room with a live host refuses a second host (4009, like a port in use) | `relay.sh` |
+| Relay: its own rules (fake peers) and end to end with ws clients, in Node (`npm test` in `addons/mp_kit/relay`) | `relay.sh` |
 | Relay: a refused match is launched again on another port and only the one that listens is announced | `tests/test_launcher_relay_retry.gd` |
 | Relay end to end: with every port but one taken, the private match starts on the free one and is played | `relayfault.sh` clash |
 | Relay: a dedicated killed (kill -9) and started again at once gets its room back | `relayfault.sh` restart |
