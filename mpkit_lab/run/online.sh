@@ -60,16 +60,30 @@ for _ in range(100):
 sys.exit(1)
 PYEOF
 
-COMMON=(--transport=relay --issuer-url="$ISSUER" --probe-timeout-s=45 --matches-root="$MATCHES" --result-quit-delay-s=1)
+## No --transport: every process stays on ENet, as a game does; an issuer room's connection goes through the relay by
+## itself (MpTransport.use_relay_room), and LAN afterwards is ENet still.
+COMMON=(--issuer-url="$ISSUER" --probe-timeout-s=45 --matches-root="$MATCHES" --result-quit-delay-s=1)
+TICKET='{"mode":"duel","options":{"map":"lab-map"},"seats":[{"slot":1,"meta":{"pick":"red"}},{"slot":2,"meta":{"pick":"blue"}}]}'
 CODE1="$OUT/code1.txt"
 CODE2="$OUT/code2.txt"
 
 ## At most 3 headless Godot at once on this machine (a match process counts).
 echo "--- part 1: a desktop host (a match process on its PC); a friend finds the room in the issuer's list"
 gd "$OUT/host.log" -- "${COMMON[@]}" --probe=online_host --online-mode=dedicated --probe-players=2 \
-  --probe-code-file="$CODE1" --issuer-install=lab-host-install-0001
+  --probe-code-file="$CODE1" --probe-ticket="$TICKET" --issuer-install=lab-host-install-0001
 HOST=$LAST_PID
 wait_line "$OUT/host.log" "^PASS the online room is up" "$HOST" 60
+## The match process's ticket: the game's keys and seat meta, the kit's tokens and relay block.
+python3 - "$MATCHES" > "$OUT/ticket_check.txt" <<'PYEOF'
+import glob, json, sys
+found = glob.glob(sys.argv[1] + "/**/ticket.json", recursive=True)
+t = json.load(open(found[0])) if found else {}
+seats = {s.get("slot"): s for s in t.get("seats", [])}
+ok = (t.get("mode") == "duel" and t.get("options") == {"map": "lab-map"}
+      and seats.get(1, {}).get("meta") == {"pick": "red"} and seats.get(2, {}).get("meta") == {"pick": "blue"}
+      and all("token_sha256" in s for s in seats.values()) and str(t.get("relay", {}).get("room", "")).startswith("p-"))
+print("ticket ok" if ok else "ticket wrong: %s" % json.dumps(t)[:400])
+PYEOF
 gd "$OUT/lister.log" -- "${COMMON[@]}" --probe=online_list --probe-code-file="$CODE1" --issuer-install=lab-lister-install-01
 LISTER=$LAST_PID
 for p in $LISTER $HOST; do wait_pid "$p" 90; done
@@ -138,9 +152,10 @@ FAILS=0
 check() { if eval "$1"; then echo "PASS $2"; else echo "FAIL $2"; FAILS=$((FAILS + 1)); fi; }
 check 'grep -q "^PROBE online_host PASS" "$OUT/host.log"' "a desktop host opened a room through the issuer (a match process on its PC), played it and won"
 check 'grep -q "^PROBE online_list PASS" "$OUT/lister.log"' "a friend found the room in the issuer's list and joined it"
+check 'grep -qx "ticket ok" "$OUT/ticket_check.txt"' "the match process got the game's ticket (mode, options, each seat's pick) with the kit's tokens and relay room"
 check 'grep -qx "gone" "$OUT/gone.txt"' "the issuer forgot the room once its match ended"
 check 'grep -q "^PROBE online_host PASS" "$OUT/lhost.log"' "a host in its own game opened a room, froze 3 s and still finished the match"
-check 'grep -q "^PROBE online_join PASS" "$OUT/lfriend.log"' "a friend joined with the code (typed abc-def), waited for the frozen host and saw the match end"
+check 'grep -q "^PROBE online_join PASS" "$OUT/lfriend.log"' "a friend joined with the code (typed abc-def), waited for the frozen host, saw the match end, and its game's transport was still ENet"
 check 'grep -q "^PROBE online_refused PASS" "$OUT/full.log"' "a third player was told the room is full"
 check 'grep -q "^PROBE online_refused PASS" "$OUT/nocode.log"' "a made-up code was told there is no such room"
 if [ -z "${WEB_SKIP:-}" ]; then

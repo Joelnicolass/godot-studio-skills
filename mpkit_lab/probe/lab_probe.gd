@@ -16,9 +16,11 @@ extends Node
 ## with "ip:port#CODE" from that file) | badcode (same address, a wrong code: must be turned away) | flood (sends 500
 ## tunnel messages and 500 to_server calls at once) | floodwatch (server: only what the limits allow gets through) |
 ## online_host (an online room through the issuer, MpOnline: `--probe-players=N`, `--online-mode=listen|dedicated`;
-## writes its code to `--probe-code-file`, waits for everyone, wins; `--probe-wait-file=F`: not before F exists) |
+## writes its code to `--probe-code-file`, waits for everyone, wins; `--probe-wait-file=F`: not before F exists;
+## `--probe-ticket=JSON`: the game's match ticket for host_online) |
 ## online_join (joins with that code, typed "abc-def"; `--probe-expect-silence`: the host freezes meanwhile and comes
-## back) | online_list (finds the room in the issuer's list, then joins it; `--probe-find-name=X`: the room named X,
+## back; after the end, back in the menu, the game's transport is untouched) | online_list (finds the room in
+## the issuer's list, then joins it; `--probe-find-name=X`: the room named X,
 ## for a host that cannot write the code file, a browser) | online_refused (tries the code, or
 ## `--probe-room=`, and expects the issuer's `--probe-expect=` word). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
@@ -740,10 +742,13 @@ func _host_online() -> void:
 	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
 	var flow := MpFlow.find_in_tree(self)
 	var players := int(MpBoot.user_value("probe-players", "2"))
-	var online := flow.host_online(players, MpBoot.user_value("probe-room-name", "Lab room"))
+	var ticket: Variant = JSON.parse_string(MpBoot.user_value("probe-ticket", "{}"))
+	var online := flow.host_online(players, MpBoot.user_value("probe-room-name", "Lab room"), true, ticket if ticket is Dictionary else {})
 	_check(online != null, "host_online opened a room")
 	if online == null:
 		return
+	if ticket is Dictionary and not (ticket as Dictionary).is_empty():
+		_check(online.ticket == ticket, "the room keeps the game's ticket (MpOnline.ticket)")
 	var codes: Array = []
 	online.room_ready.connect(func(c: String) -> void: codes.append(c))
 	online.failed.connect(func(reason: String) -> void: print("online failed: ", reason))
@@ -777,6 +782,7 @@ func _host_online() -> void:
 
 ## A friend: the code from the host's file (as a person types it: lower case, a dash), or the room found in the list.
 func _join_online(from_list: bool) -> void:
+	var transport_before := MpKit.transport
 	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
 	var by_name := MpBoot.user_value("probe-find-name", "")
 	var code := ""
@@ -822,6 +828,8 @@ func _join_online(from_list: bool) -> void:
 		_check(statuses.has(flow.host_silent_status), "the menu said it waits for the host")
 		_check(MpKit.is_networked(), "the friend stayed in the match through the freeze")
 	await _until(func() -> bool: return not finished.is_empty(), "the friend saw the match end")
+	flow.return_to_boot()
+	await _until(func() -> bool: return MpKit.transport == transport_before, "back in the menu the game's transport is still %s (the online room used the relay for its own connection)" % transport_before)
 
 
 ## The issuer turns this join away with `--probe-expect=` (room_full, no_such_room…), and nothing connects.
