@@ -34,7 +34,7 @@ Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` n
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, dueño, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, predicción (`mp_move`), suavizado adaptativo, compensación de lag (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | Las teclas del dueño con la API de `Input`; buffer del servidor adaptativo y ritmo del dueño |
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Valores de partida (`watch(key, cb)`: valor actual y después cada cambio); inicio, espera de asientos, ausencias, fin |
-| `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Quién mira esta pantalla: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`; se pasa por `@export` a HUD / audio / órdenes |
+| `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Quién mira esta pantalla: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`, `slot_of(node)` (el slot local si la escena no tiene asiento); se pasa por `@export` a HUD / audio / órdenes |
 | `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Salir (anda con el mundo pausado); la invitación de una partida privada |
 | `core/mp_net_quality.gd` | RTT, jitter (percentil 97), pérdida y nota por conexión |
 | `core/mp_lag_comp.gd` | Un segundo de poses por actor en el servidor; `rewind(stamp, callable)` |
