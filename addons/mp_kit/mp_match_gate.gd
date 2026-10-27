@@ -3,7 +3,7 @@ extends Node
 
 ## The door of a match: who may sit and when it starts. Before the start every free seat is open; the match starts (the tree unpauses)
 ## once the seats it waits for have loaded their world. After the start only a seat that is away comes back, within rejoin_grace_s;
-## anybody else is turned away with a reason. Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent).
+## anybody else is turned away with a reason, unless late_join keeps the free seats open. Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent).
 ## MpKit owns it (`/root/MpKit/Gate`) and feeds it: admit() on each presentation, mark_loaded() on world_ready, mark_left() on a drop.
 ## Two ways to name a seat: open (LAN, a dedicated by hand: the first free seat gets a fresh credential that brings it back) or
 ## identity (a room's ticket: `identity.call(peer_id, credential) -> slot`). In Remote: phase, expected, loaded, away.
@@ -37,12 +37,16 @@ const NOT_LOADED := "not_loaded"
 
 ## Seconds a seat that dropped keeps its place.
 var rejoin_grace_s := 60.0
-## Seconds after the first admission the match waits for the rest to load before it starts with whoever loaded.
-var load_timeout_s := 60.0
+## Seconds after the first admission the match waits for the rest to load before it starts with whoever loaded (MpFlow sets it;
+## a room's match, its MpLobbyConfig).
+var load_timeout_s := 15.0
 ## The clients pause their world too while the match waits (nobody walks ahead).
 var pause_clients := true
 ## True on a listen host: the host may start with whoever loaded (can_start_now). MpFlow sets it before arm().
 var host_present := false
+## Open seats only (LAN, a dedicated by hand): after the start a newcomer still takes a free seat, and a seat abandoned past the
+## grace is free again. Off: after the start only a seat that left comes back. MpFlow sets it before arm().
+var late_join := false
 ## Milliseconds now. Tests inject a clock.
 var now_ms: Callable = Time.get_ticks_msec
 
@@ -158,6 +162,24 @@ func mark_left(slot: int) -> void:
 		return
 	_away_ms[slot] = _now()
 	seat_away.emit(slot)
+
+
+## MpKit only: the live peer that still holds the seat `credential` names, when it is another one: a client back after a drop
+## the server has not noticed yet. MpKit drops that stale peer first, so the seat comes back as a rejoin. 0 = none.
+func displaced_by(peer_id: int, credential: String) -> int:
+	if phase == Phase.IDLE or credential.is_empty():
+		return 0
+	var slot := 0
+	if _identity.is_valid():
+		slot = int(_identity.call(peer_id, credential))
+	else:
+		for known in _credentials.keys():
+			if _credentials[known] == credential:
+				slot = int(known)
+	if slot <= 0 or not _seats.has(slot) or _abandoned.has(slot) or _given_up.has(slot):
+		return 0
+	var holder := int(_peer_of.get(slot, 0))
+	return holder if holder != peer_id else 0
 
 
 ## The listen host starts with whoever loaded. False when it may not (see can_start_now).
@@ -289,6 +311,10 @@ func poll() -> void:
 		var why := str(_given_up.get(slot, GRACE_OVER))
 		_abandoned[slot] = why
 		seat_abandoned.emit(slot, why)
+		## With late join a seat out for good is a free seat again (the game heard it was abandoned).
+		if late_join and not _identity.is_valid():
+			_abandoned.erase(slot)
+			_free_seat(slot)
 
 
 func _judge(peer_id: int, credential: String, out: Admission) -> String:
@@ -304,7 +330,7 @@ func _judge(peer_id: int, credential: String, out: Admission) -> String:
 			out.slot = int(slot)
 			out.credential = credential
 			return _judge_known(peer_id, out.slot)
-	if phase == Phase.RUNNING:
+	if phase == Phase.RUNNING and not late_join:
 		return MATCH_STARTED
 	for slot in _seats:
 		if not _credentials.has(slot) and not _given_up.has(slot):
@@ -339,8 +365,8 @@ func _start(why: String) -> void:
 	if phase != Phase.FILLING:
 		return
 	phase = Phase.RUNNING
-	## Open seats nobody took close; a seat still loading after the timeout is out ("not_loaded").
-	if not _identity.is_valid():
+	## Open seats nobody took close (late join keeps them open); a seat still loading after the timeout is out ("not_loaded").
+	if not _identity.is_valid() and not late_join:
 		_seats = _slots_where(func(slot: int) -> bool: return _admitted.has(slot))
 	if why == "load_timeout":
 		for slot in _required():
@@ -357,7 +383,8 @@ func _check_all_gone(gone: Array[int]) -> void:
 	if _all_gone_sent or _seats.is_empty():
 		return
 	for slot in _seats:
-		if not _abandoned.has(slot) and not gone.has(slot):
+		## A seat nobody ever took (late join keeps them) has nobody to wait for.
+		if _admitted.has(slot) and not _abandoned.has(slot) and not gone.has(slot):
 			return
 	_all_gone_sent = true
 	all_gone.emit()

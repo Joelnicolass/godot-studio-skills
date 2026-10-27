@@ -168,7 +168,9 @@ World (Node2D or Node3D)
     ├── Match            (MpMatch)
     └── Hud
         ├── Leave        (MpLeaveButton: leaves the match)
-        └── Invite       (MpInviteLabel: in a private match, the code for your friends)
+        ├── Invite       (MpInviteLabel: in a private match, the code for your friends)
+        ├── Start        (MpStartButton: the host starts with the players already in)
+        └── Waiting      (MpWaitingLabel: "Waiting for players (1/4)" while the match waits)
 ```
 
 **`boot.tscn`**:
@@ -278,6 +280,8 @@ What the `MpFlow` does: it starts the network with the config, arms the start ga
 | `seats` | How many markers it builds in `SpawnPoints` (more players start over from the first) | 4 |
 | `leave_button` | Builds `Hud/Leave` | on |
 | `invite_label` | Builds `Hud/Invite`: in a private match of this PC it shows the code for your friends | on |
+| `start_button` | Builds `Hud/Start`: in Host LAN, while the match waits for seats, the host starts with those already loaded | on |
+| `waiting_label` | Builds `Hud/Waiting`: while the match waits for its seats, it says so on every peer | on |
 
 4. Move the markers of `MpWorld/SpawnPoints` where each player should start.
 5. **Save the scene** (Ctrl+S).
@@ -306,7 +310,7 @@ The `MpWorld` only builds nodes you can also add yourself. That helps when your 
 
 6. Optional, for the score: add an **MpState** child named `Score`.
 7. Optional, for start and end: add an **MpMatch** child named `Match`.
-8. To leave: add a `CanvasLayer` named `Hud` and, inside it, an **MpLeaveButton** named `Leave` (see [7.6](#76-leaving-the-match)), and an **MpInviteLabel** for private matches.
+8. To leave: add a `CanvasLayer` named `Hud` and, inside it, an **MpLeaveButton** named `Leave` (see [7.6](#76-leaving-the-match)), an **MpInviteLabel** for private matches, an **MpStartButton** so the LAN host can start without waiting for every seat, and an **MpWaitingLabel** that says the match waits.
 9. **Save the scene** (Ctrl+S). On save, the `MpState` builds its `MpSync` child and it is saved.
 
 What the `MpSlotSpawner` does: it creates one player per occupied slot. Solo, yours. On LAN, the host's at start and each client's when it finishes loading the world. Dedicated, none for the server. It names them `Pawn_1`, `Pawn_2`... and sets `MpActor.owner_slot` before they enter the tree.
@@ -705,11 +709,12 @@ Do not write `state.values["x"] = 3` by hand: it is not synced. Use `set_value`.
 
 An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone. What counts is decided by the **start gate** (`MpMatchGate`, at `/root/MpKit/Gate`, `Mp.gate()`), which the `MpFlow` arms on every path that hosts (Host LAN, a dedicated by hand, a room's dedicated):
 
-- **Before the start** the free seats are open. The world stays **paused on every peer** until the seats it expects have loaded: all of them in a room match or in Host LAN (`start_seats` = 0), and one in a dedicated by hand (`dedicated_start_seats` = 1). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` has passed since the first one came in, it starts with those who loaded.
-- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. Any other peer is turned away with a reason: `match_started`, `full`, `grace_over`, `slot_taken`. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
-- A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`. Clients get the gate's state when they are admitted and pause as soon as their world loads, so their `MatchClock` starts at 0.
+- **Before the start** the free seats are open. The world stays **paused on every peer** until the seats it expects have loaded: every seat by default (`start_seats` = 0, in Host LAN and in a dedicated by hand alike; in a room match, every seat of the ticket). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` (15 s) has passed since the first one came in, it starts with those who loaded; meanwhile the HUD says it waits (`MpWaitingLabel`, `Hud/Waiting`: "Waiting for players (1/4)"). In Host LAN the host does not have to wait: the HUD's **Start now** button (`MpStartButton`, in the `MpWorld`'s `Hud/Start`) starts with those already loaded.
+- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a free seat, and a seat abandoned past the grace is free again. A room match never has late join (the ticket names every seat). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started`, `full`, `grace_over`, `slot_taken`. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
+- A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`.
+- **A dedicated by hand serves one match after another** (a VPS started with `--dedicated`): when its match ends (`Mp.finish()`) and the last player leaves, or everyone stayed away past the grace (`all_gone`), it loads a fresh world (score and actors from zero) and opens every seat again. A game with a rematch screen can call `MpFlow.next_open_match()` itself once its players left. Clients get the gate's state when they are admitted and pause as soon as their world loads, so their `MatchClock` starts at 0.
 
-The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_seats`, `dedicated_start_seats`, `pause_clients`, `match_started_status`). In a room match, the grace and the load time come from the `MpLobbyConfig`. In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. In Host LAN the host can start with those already loaded: `Mp.gate().can_start_now()` / `Mp.gate().start_now()` (for a "Start now" button).
+The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). In a room match, the grace and the load time come from the `MpLobbyConfig`. In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. In Host LAN the host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button.
 
 Signals:
 
@@ -1498,10 +1503,10 @@ Some file of the folder already exists (`[~]`) or the folder does not start with
 4. Without `predict`, do you move behind `is_authority()`? If you move behind `is_local()`, the client moves on its screen but the server puts it back.
 5. Is `sync_position` ticked? Did you save the player scene after ticking it?
 6. Does the `MpSlotSpawner` (the `MpWorld`'s `Players`) have `spawn_path` and `pawn_scene`?
-7. Is the match waiting for seats? The world is paused until the seats it expects load (`MpMatch.waiting`, `Mp.gate().is_waiting()`). With a single client in Host LAN or in a dedicated for several, try `--start-seats=1`.
+7. Is the match waiting for seats? The world is paused until the seats it expects load (`MpMatch.waiting`, `Mp.gate().is_waiting()`). It starts by itself once `load_timeout_s` passed; in Host LAN press **Start now** (`MpStartButton`), or try `--start-seats=1`.
 
 **A second client does not get in: "The match already started" (`match_started`).**
-The gate already started the match: after the start only a seat that left comes back. For several to get in, have them load before the start: `--start-seats=N` on the server (or `dedicated_start_seats` / `start_seats` in the `MpFlow` inspector).
+The gate already started the match: after the start only a seat that left comes back. For several to get in, have them load before the start (`start_seats` = 0 waits for every seat, `--start-seats=N`), or turn on `late_join` (`--late-join`) for a game people drop in and out of. On a dedicated by hand, the next match opens by itself once this one ends and everyone left.
 
 **It moves, but the other players stutter.**
 Use `smoothing = BUFFERED` with `adaptive_buffer` on; if it stays, lower `late_tolerance` (0.01) or raise the `buffer_delay_s` cap (0.15, 0.2). If you lowered `send_hz`, raise it or leave it at 0.
@@ -1579,8 +1584,10 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | `MpFlow` | The node that handles scenes and modes (solo, LAN, join, dedicated). It owns the session |
 | `Mp` | The class with the verbs of the match: `play_solo`, `host`, `join`, `leave`, `is_server`, `me`, `state`, `finish`, `net_quality` |
 | `MpGame` | The game in one `.tres`: the network (it is an `MpNetConfig`) and the scenes (boot, world, lobby, rooms) |
-| `MpWorld` | A node in the world that builds spawn points, actors, the spawner, the state, the match, the Leave button and the invite |
+| `MpWorld` | A node in the world that builds spawn points, actors, the spawner, the state, the match, the Leave button, the invite, the Start now button and the waiting line |
 | `MpInviteLabel` | In the HUD: in a private match of this PC, what friends type to get in |
+| `MpStartButton` | In the HUD: in Host LAN, while the match waits for seats, the host starts with those already in |
+| `MpWaitingLabel` | In the HUD: while the match waits for its seats, "Waiting for players (1/4)" on every peer |
 | `MpNetQuality` | The connection's quality (RTT, jitter, loss, grade); read it with `Mp.net_quality()` |
 | `MpLagComp` | Lag compensation: a second of poses on the server, to check a shot against what the shooter saw |
 | `MpNetConfig` | A `.tres` with the game's network: transport, port, players, public address, relay, TLS |

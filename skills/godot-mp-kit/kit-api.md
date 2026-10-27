@@ -30,7 +30,7 @@ These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or
 |---|---|
 | `mp.gd` (`Mp`) | The match's verbs from any script: `play_solo`, `host`, `join(address)`, `leave`, `open_rooms`, `is_server`, `is_online`, `me`, `player(slot)`, `state`, `current_match`, `finish(result)`, `net_quality(slot)` |
 | `mp_game.gd` (`MpGame`) | The game in one `.tres`: an `MpNetConfig` plus `boot_scene`, `world_scene`, `lobby_scene`, `rooms_scene`. In `MpFlow.game` it fills `net_config` and every empty path |
-| `nodes/mp_world.gd` (`MpWorld`) | One node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite` |
+| `nodes/mp_world.gd` (`MpWorld`) | One node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players`, `State`, `Match`, `Hud/Leave`, `Hud/Invite`, `Hud/Start` (`MpStartButton`), `Hud/Waiting` (`MpWaitingLabel`) |
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, owner, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, prediction (`mp_move`), adaptive smoothing, lag compensation (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | The owner's keys with the `Input` API; an adaptive server buffer and the owner's pace |
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Match values; start, waiting for seats, absences, end |
@@ -203,11 +203,11 @@ Scene `res://addons/mp_kit/mp_boot_menu.tscn`. Copy via `@export`. If an `MpFlow
 
 ## MpFlow
 
-Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `dedicated_start_seats`; `--start-seats=N`), dedicated on first client.
+Autoload **after** `MpKit` (Tools → **New session flow...**, or `extends MpFlow`). Not score or rules: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, LAN advertise, the start gate on every path that hosts (**Match start** group: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated on first client.
 
 ## MpMatchGate
 
-`/root/MpKit/Gate` (`MpKit.gate`, `Mp.gate()`). One owner for who sits and when the match starts: `IDLE` (not armed: solo or a server without a flow) → `FILLING` (free seats open; the world paused on every peer until the expected seats load or `load_timeout_s`) → `RUNNING` (only a seat that left comes back within `rejoin_grace_s`; anyone else is turned away with `match_started` / `grace_over` / `slot_taken` / `full`). A seat credential per seat in open mode (LAN, dedicated by hand), the ticket in rooms. `loaded_count()` / `expected_count()` are valid on the client too (for a "waiting" HUD). Host LAN: `can_start_now()` / `start_now()`. `MpMatch` re-emits its signals in the world.
+`/root/MpKit/Gate` (`MpKit.gate`, `Mp.gate()`). One owner for who sits and when the match starts: `IDLE` (not armed: solo or a server without a flow) → `FILLING` (free seats open; the world paused on every peer until the expected seats load or `load_timeout_s`) → `RUNNING` (only a seat that left comes back within `rejoin_grace_s`, its credential or ticket winning over a stale connection; with `late_join` a newcomer still takes a free seat; anyone else is turned away with `match_started` / `grace_over` / `slot_taken` / `full`). `start_seats` (MpFlow and MpBootMenu, default 0 = every seat, `--start-seats=N`; `load_timeout_s` 15 s, then it starts with whoever loaded). A seat credential per seat in open mode (LAN, dedicated by hand), the ticket in rooms. `loaded_count()` / `expected_count()` are valid on the client too (for a "waiting" HUD). Host LAN: `can_start_now()` / `start_now()` (`MpStartButton` in the HUD). A dedicated by hand re-arms after each match: `MpFlow.next_open_match()` (fresh world), on `MpKit.session_ended_sent` + empty server, or `all_gone`. `MpMatch` re-emits its signals in the world.
 
 One world:
 

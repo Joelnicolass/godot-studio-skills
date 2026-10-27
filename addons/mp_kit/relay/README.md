@@ -64,4 +64,4 @@ Connection: `wss://relay/?role=host&room=ROOM` with the header `X-Relay-Secret: 
 
 ## Verified
 
-On a Mac, with the relay running locally: arena (dedicated, LAN, late joiner, lag, flood), rooms (seven scenarios) and the private match through the relay. Railway itself was not tested from here: the relay is the same file.
+On a Mac, with the relay running locally: arena (dedicated, LAN, rejoin, lag, flood), rooms (seven scenarios) and the private match through the relay. Railway itself was not tested from here: the relay is the same file.

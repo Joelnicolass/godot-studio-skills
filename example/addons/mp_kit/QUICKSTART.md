@@ -31,11 +31,13 @@ A scene with a `Node2D` or `Node3D` root (your level) and an **MpWorld** node wi
 |---|---|
 | `SpawnPoints` | one marker per seat: move them where each player starts |
 | `Actors` | where the players appear (and anything a spawner makes) |
-| `Players` | one player per seat, on every peer, late joiners too |
+| `Players` | one player per seat, on every peer, a seat that comes back too |
 | `State` | score, clock, round: everyone sees them (`Mp.state()`) |
 | `Match` | waits for everyone to load, who leaves and who comes back, the end (`Mp.finish()`) |
 | `Hud/Leave` | a button to leave the match |
 | `Hud/Invite` | in a private match on this PC, what friends type to join |
+| `Hud/Start` | in Host LAN, while the match waits for seats: start with the players already in |
+| `Hud/Waiting` | while the match waits for its seats: "Waiting for players (1/4)" |
 
 A piece you delete is built again when the scene opens. Do not rename them.
 

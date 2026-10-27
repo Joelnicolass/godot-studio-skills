@@ -15,16 +15,20 @@
 #   lagshot:   dedicated (--start-seats=2) + a target walking past + a shooter that leads it, every process at SHOT_LAG_MS: with lag
 #              compensation the shots hit; the same with the server's --lag-comp=off, most miss (the control).
 #   flood:     a client sends 500 tunnel messages and 500 to_server calls at once: only the burst gets through.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood" (default all).
+#   latejoin:  dedicated with --late-join: the first client starts the match, a newcomer after the start still sits and plays.
+#   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
+#              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
+#              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood latejoin survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
 TAG="MPKIT ARENA"
-LIMIT_S="${PROBE_LIMIT_S:-240}"
+LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood}"
+SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood latejoin survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -136,6 +140,54 @@ run_flood() { # dedicated server + one client that floods the tunnel and to_serv
   verdict "$dir/server.log" floodwatch "flood: the server only lets in what the limits allow"
 }
 
+run_latejoin() { # --late-join: the match started with one client, a newcomer still gets a free seat and plays
+  local dir="$OUT/latejoin"
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT")
+  gd "$dir/server.log" -- --server "${common[@]}" --start-seats=1 --late-join
+  local server=$LAST_PID
+  sleep 0.5
+  gd "$dir/first.log" -- --client1 "${common[@]}" --probe=basic --probe-linger-s=20
+  local first=$LAST_PID
+  wait_line "$dir/first.log" "^PROBE basic (PASS|FAIL)" "$first" 40
+  gd "$dir/late.log" -- "${common[@]}" --probe-join="127.0.0.1:$PORT" --probe=basic --probe-timeout-s=30
+  wait_line "$dir/late.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 40
+  for p in $first $server; do kill_tree "$p"; wait "$p" 2>/dev/null; done
+  echo "--- latejoin ($TRANSPORT) ---"
+  grep -hE "^(PASS|FAIL|SCRIPT ERROR)" "$dir/late.log" | sed "s/^/late: /" | head -n 12
+  verdict "$dir/first.log" basic "latejoin: the first client started the match and played"
+  verdict "$dir/late.log" basic "latejoin: a newcomer after the start sat in a free seat and played"
+}
+
+run_survive() { # a dedicated with its default seats: three matches in a row, each from a fresh world
+  local dir="$OUT/survive"
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT")
+  gd "$dir/server.log" -- --dedicated "${common[@]}" --rejoin-grace-s=2 --load-timeout-s=2
+  local server=$LAST_PID
+  sleep 0.5
+  local join=(--probe-join="127.0.0.1:$PORT" --probe=basic --probe-timeout-s=30)
+  gd "$dir/winner.log" -- "${common[@]}" "${join[@]}" --probe-win
+  wait_line "$dir/winner.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 60
+  sleep 1
+  gd "$dir/second.log" -- "${common[@]}" "${join[@]}"
+  wait_line "$dir/second.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 60
+  ## It quit mid-match: past the 2 s grace nobody is left and the next match opens.
+  sleep 4
+  gd "$dir/third.log" -- "${common[@]}" "${join[@]}"
+  wait_line "$dir/third.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 60
+  kill_tree "$server"
+  wait "$server" 2>/dev/null
+  echo "--- survive ($TRANSPORT) ---"
+  for r in winner second third; do
+    grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$dir/$r.log" | sed "s/^/$r: /" | head -n 12
+  done
+  verdict "$dir/winner.log" basic "survive: the first player won the match and left"
+  verdict "$dir/second.log" basic "survive: after a finished match a new player sat in a fresh world"
+  verdict "$dir/third.log" basic "survive: after a match everybody dropped, past the grace, a new player sat in a fresh world"
+  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL survive: script errors"; FAILS=$((FAILS + 1)); fi
+}
+
 for s in $SCENARIOS; do
   case "$s" in
     dedicated) run_scenario dedicated --server ;;
@@ -143,6 +195,8 @@ for s in $SCENARIOS; do
     lag) run_lag ;;
     lagshot) run_lagshot ;;
     flood) run_flood ;;
+    latejoin) run_latejoin ;;
+    survive) run_survive ;;
   esac
 done
 net_stop

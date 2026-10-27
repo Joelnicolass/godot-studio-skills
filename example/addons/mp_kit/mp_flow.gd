@@ -5,7 +5,9 @@ extends Node
 ## Add as autoload (after MpKit) or instance in the boot scene.
 ## Override `snapshot_for_joiner()` in a subclass for game state.
 ## Every path that hosts (Host LAN, a dedicated by hand, a room's dedicated) arms the match's start gate (MpKit.gate): free seats
-## are open until the match starts; after it only a seat that left comes back (rejoin). Knobs: the "Match start" group.
+## are open until the match starts; after it only a seat that left comes back (rejoin), unless late_join. A dedicated by hand
+## serves one match after another: when its match is over and the server is empty, it loads a fresh world and opens the
+## seats again. Knobs: the "Match start" group.
 
 signal status_changed(text: String)
 signal world_loading
@@ -57,12 +59,15 @@ enum StartWhen {
 @export_group("Match start")
 ## Seconds a seat that dropped keeps its place (`--rejoin-grace-s=`). A room's match takes its MpLobbyConfig instead.
 @export var rejoin_grace_s: float = 60.0
-## Seconds after the first player sat that the match waits for the rest to load (`--load-timeout-s=`).
-@export var load_timeout_s: float = 60.0
-## Host LAN: clients that must load before the match starts; 0 = every seat (`--start-seats=`).
+## Seconds after the first player sat that the match waits for the rest to load (`--load-timeout-s=`); then it starts with
+## whoever loaded. The HUD says it waits (MpWaitingLabel). A room's match takes its MpLobbyConfig instead.
+@export var load_timeout_s: float = 15.0
+## Clients that must load before the match starts, in Host LAN and a dedicated by hand; 0 = every seat, or whoever loaded
+## once load_timeout_s passed (`--start-seats=`). A listen host may start sooner (MpStartButton, `Mp.gate().start_now()`).
 @export var start_seats: int = 0
-## A dedicated started by hand (no ticket): clients that must load before it starts (`--start-seats=`).
-@export var dedicated_start_seats: int = 1
+## After the start a newcomer still takes a free seat (`--late-join`). Off: only a seat that left comes back. Not for a room's
+## match (its ticket names every seat).
+@export var late_join: bool = false
 ## The clients' world pauses too while the match waits for seats.
 @export var pause_clients: bool = true
 ## Shown on a client the server turned away because the match already started.
@@ -80,6 +85,9 @@ const GROUP := &"mp_flow"
 var match_running: bool = false
 
 var _match_from_lobby: bool = false
+## A dedicated by hand: it loads the world at once (not with its first client), and its match ended (MpMatch.finish).
+var _dedicated_at_once: bool = false
+var _open_match_over: bool = false
 var _tree: SceneTree
 ## Where this flow came from (its scene, or an autoload): two flows of different origins is a setup mistake.
 var _origin: String = ""
@@ -133,6 +141,9 @@ func _ready() -> void:
 	MpKit.snapshot_received.connect(_on_flow_snapshot)
 	MpKit.session_ended.connect(_on_session_ended)
 	MpKit.admission_rejected.connect(_on_admission_rejected)
+	MpKit.peer_left.connect(_on_peer_left)
+	MpKit.session_ended_sent.connect(_on_session_ended_sent)
+	MpKit.gate.all_gone.connect(_on_all_gone)
 	## A dedicated started by the room server: the ticket says who may join (unless the game armed its own agent),
 	## and how many seats the match has, before the port opens.
 	if not MpBoot.user_value("match-ticket-file", "").is_empty():
@@ -153,6 +164,7 @@ func _ready() -> void:
 			return
 		_arm_gate()
 		match_running = true
+		_dedicated_at_once = true
 		_set_status(dedicated_status % MpKit.port)
 		call_deferred("goto_world")
 		_quit_if_refused()
@@ -178,6 +190,7 @@ func _ready() -> void:
 		_set_status(dedicated_status % MpKit.port)
 		if start_when == StartWhen.LISTEN_IMMEDIATE:
 			match_running = true
+			_dedicated_at_once = true
 			call_deferred("goto_world")
 
 
@@ -247,6 +260,12 @@ func _exit_tree() -> void:
 		MpKit.session_ended.disconnect(_on_session_ended)
 	if MpKit.admission_rejected.is_connected(_on_admission_rejected):
 		MpKit.admission_rejected.disconnect(_on_admission_rejected)
+	if MpKit.peer_left.is_connected(_on_peer_left):
+		MpKit.peer_left.disconnect(_on_peer_left)
+	if MpKit.session_ended_sent.is_connected(_on_session_ended_sent):
+		MpKit.session_ended_sent.disconnect(_on_session_ended_sent)
+	if MpKit.gate and MpKit.gate.all_gone.is_connected(_on_all_gone):
+		MpKit.gate.all_gone.disconnect(_on_all_gone)
 
 
 func play_solo() -> void:
@@ -416,8 +435,41 @@ func _arm_gate() -> void:
 	gate.rejoin_grace_s = float(MpBoot.user_value("rejoin-grace-s", str(rejoin_grace_s)))
 	gate.load_timeout_s = float(MpBoot.user_value("load-timeout-s", str(load_timeout_s)))
 	gate.host_present = MpKit.is_listen_host()
-	var need := start_seats if MpKit.is_listen_host() else dedicated_start_seats
-	gate.arm(MpKit.open_seats(), int(MpBoot.user_value("start-seats", str(need))))
+	gate.late_join = late_join or MpBoot.user_flag("late-join")
+	gate.arm(MpKit.open_seats(), int(MpBoot.user_value("start-seats", str(start_seats))))
+
+
+## A dedicated by hand (no ticket): it serves one match after another, so there is a next one when a match ends.
+func _serves_open_matches() -> bool:
+	return MpKit.is_dedicated() and MpBoot.user_value("match-ticket-file", "").is_empty() \
+		and get_tree().get_nodes_in_group(&"mp_match_agent").is_empty()
+
+
+## Server, a dedicated by hand: the match is over and nobody is left. A fresh world (score and actors from zero) and every
+## seat open again. Public: a game with a rematch screen may call it once its players left.
+func next_open_match() -> void:
+	if not _serves_open_matches():
+		return
+	_open_match_over = false
+	MpKit.gate.reset()
+	_arm_gate()
+	if _dedicated_at_once:
+		match_running = true
+		goto_world.call_deferred()
+	else:
+		## Started without --dedicated (StartWhen): the world loads again with the next first client.
+		match_running = false
+
+
+## Server: every seat of the match is past the grace (the gate gave up on all of them).
+func _on_all_gone() -> void:
+	next_open_match()
+
+
+## Server: after a finished match, the last player that leaves opens the next one (no grace to wait for).
+func _on_peer_left(_peer_id: int, _slot: int) -> void:
+	if _open_match_over and MpKit.occupied_slots().is_empty():
+		next_open_match()
 
 
 ## Sent to every seat the gate let in (a first time or a rejoin): the world, and what the joiner must know first.
@@ -477,6 +529,15 @@ func _on_server_lost() -> void:
 func _on_session_ended(result: Dictionary) -> void:
 	match_running = false
 	match_finished.emit(result)
+
+
+## Server: the match ended (MpMatch.finish). A dedicated by hand opens the next one once its players left.
+func _on_session_ended_sent(_result: Dictionary) -> void:
+	if not _serves_open_matches():
+		return
+	_open_match_over = true
+	if MpKit.occupied_slots().is_empty():
+		next_open_match()
 
 
 ## A match from the lobby is over: the lobby screen again (it shows the result). False when there is none.

@@ -71,7 +71,7 @@ for c in $CASES; do
       verdict "$d/enet.log" refused "mismatch: an ENet client never gets into a WebSocket server"
       verdict "$d/ws.log" refused "mismatch: a WebSocket client never gets into an ENet server" ;;
     hostname)
-      server "$d/server.log" --server --probe=watch --probe-min-move=0.5 --probe-linger-s=3
+      server "$d/server.log" --server --start-seats=1 --probe=watch --probe-min-move=0.5 --probe-linger-s=3
       gd "$d/client.log" -- --probe-join="localhost:$PORT" --probe=basic --probe-linger-s=2
       wait "$LAST_PID"; stop $SERVER
       verdict "$d/client.log" basic "hostname: joining localhost:port works" ;;

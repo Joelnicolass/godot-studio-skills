@@ -144,6 +144,14 @@ func _play_basic(slot: int) -> void:
 	Input.action_release(&"ui_right")
 	await _tap(&"ui_accept")
 	await _until(func() -> bool: return int(_state().get_value(StringName("p%d" % slot), 0)) == 1, "the score reached 1")
+	## `--probe-win`: play to the end (the arena's first to 3), then the flow leaves after the result.
+	if MpBoot.user_flag("probe-win"):
+		var finished: Array[Dictionary] = []
+		MpFlow.find_in_tree(self).match_finished.connect(func(result: Dictionary) -> void: finished.append(result))
+		await _tap(&"ui_accept")
+		await _tap(&"ui_accept")
+		await _until(func() -> bool: return not finished.is_empty(), "the match finished (first to 3)")
+		await _until(func() -> bool: return not MpKit.is_networked(), "the player left after the result")
 
 
 ## The slot that rang the bell: the player, or 1 in solo / for the host (local_slot of the authority).
