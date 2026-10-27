@@ -87,6 +87,8 @@ Input de pawn y semántica del dict custom **fuera** del kit.
 - `broadcast_load_world()` / `load_world_to(peer)`
 - `push_snapshot(data)` / `push_snapshot_to(peer, data)`
 - `broadcast_session_ended(data)`
+- `after_real(seconds, callable)` — lo corre pasado tiempo REAL (timeouts de red; el tiempo de juego cambia con `--fixed-fps` o `Engine.time_scale`). El timeout de admisión y la espera antes de cortar del kit lo usan
+- `report_loaded()` — el mundo local terminó de cargar (MpFlow la llama con `world_reports_loaded`): un cliente avisa al servidor (su asiento cuenta en la puerta), el servidor o solo le avisan a la puerta que su propio mundo entró
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — servidor: peers con slot y world_ready (mandales tus efectos `@rpc` de un instante con `rpc_id`; reproducilo también en el servidor)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
 
@@ -204,7 +206,7 @@ Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un au
 
 ## MpFlow
 
-Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated al primer cliente.
+Autoload **después** de `MpKit` (Tools → **New session flow...**, o `extends MpFlow`). No es puntaje ni reglas: boot/world, `play_solo` / `host_lan` / `join_lan` / `return_to_boot`, advertise LAN, la puerta de arranque en cada camino que hostea (grupo **Match start**: `rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`; `--start-seats=N`, `--late-join`), dedicated al primer cliente. El mundo carga en un hilo (`MpWorldLoader`): `world_load_progressed(ratio, phase)`, `world_loaded`; con `world_reports_loaded` (`--world-reports-loaded`) el mundo llama a `report_world_loaded()` / `report_world_progress(r)` y la puerta lo espera; ganchos `_before_world_load()`, `_extra_world_loads()`.
 
 ## MpMatchGate
 
