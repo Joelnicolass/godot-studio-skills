@@ -39,8 +39,14 @@ kill_pids() { local p; for p in $(cat "$OUT/pids" 2>/dev/null); do [ -n "$p" ] &
 RELAY_PORT="${RELAY_PORT:-8790}"
 RELAY_SECRET="${RELAY_SECRET:-lab-secret}"
 RELAY_FLAGS=()
+## The relay's one dependency (ws), installed from its package-lock.json the first time (needs npm).
+relay_deps() {
+  local dir="$LAB/addons/mp_kit/relay"
+  [ -d "$dir/node_modules/ws" ] || npm ci --prefix "$dir" --silent --no-fund --no-audit
+}
 relay_up() {
   [ "${TRANSPORT:-}" = relay ] || return 0
+  relay_deps || echo "FAIL npm ci for the relay"
   PORT="$RELAY_PORT" RELAY_HOST_SECRET="$RELAY_SECRET" RELAY_QUIET="${RELAY_QUIET:-1}" \
     node "$LAB/addons/mp_kit/relay/server.mjs" > "$OUT/relay.log" 2>&1 &
   RELAY_PID=$!
