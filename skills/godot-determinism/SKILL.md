@@ -94,7 +94,7 @@ Después `quick` imprime `baseline CASO OK|FAIL` por caso y `QUICK PASS` o `QUIC
 
 - `DETERMINISM PASS`: todos los modos de todos los casos igualaron a `fixed`, sin marcas.
 - `!=` en la tabla: ese modo divergió. Si hay `.events`, la última columna muestra la primera línea distinta.
-- **CONTAMINATED**: otro Godot (que no es un editor) estaba vivo mientras se medía la corrida. El digest puede estar bien, pero la corrida no cuenta; repetila sola.
+- **CONTAMINATED**: un Godot que no es del banco (ni un editor) estaba vivo mientras se medía la corrida. Es solo un aviso: los digests no dependen de la carga, así que el veredicto vale; el tiempo de pared y la RSS de esa corrida no son comparables. Las corridas paralelas del propio banco (`DET_JOBS`) nunca cuentan.
 - **watchdog**: `rss_kill` (memoria sobre el límite), `timeout_kill` (tiempo límite del modo), `script_error_kill` (error de parseo/compilación en el log: se mata al instante, arreglá el script). Cualquiera rompe el veredicto.
 - `quick` exige al menos dos modos frescos por caso; archivos viejos de una corrida anterior nunca cuentan.
 
@@ -102,7 +102,7 @@ Después `quick` imprime `baseline CASO OK|FAIL` por caso y `QUICK PASS` o `QUIC
 
 Todo Godot que lanza el banco pasa por `harness/godot_run.sh`: cola FIFO, hasta 3 headless a la vez, una ventana a la vez, un import solo, nunca más de 4 Godots. Usá el mismo `GODOT_RUN_NS` para todo lo que lance Godot en la máquina, así comparten el presupuesto.
 
-**Ninguna ventana corre en paralelo con el banco.** Una ventana y un banco headless a la vez distorsionan los tiempos y marcan las corridas CONTAMINATED; dos ventanas pueden colgar la máquina. Corré primero el banco headless y el caso con ventana solo después (un caso con ventana debe autoarrancar y cerrarse solo).
+**El banco corre en paralelo solo**: `DET_JOBS` (por defecto 3, como mucho 3) corridas caso/modo a la vez, y la cola cuida la regla de la máquina (hasta 3 headless + 1 ventana). `DET_JOBS=1` las corre de a una. **Nunca dos ventanas**: dos ventanas pesadas pueden colgar la máquina (la cola nunca arranca una segunda). Un caso con ventana debe autoarrancar y cerrarse solo.
 
 ## Política liviana
 
@@ -142,4 +142,4 @@ El banco es una prueba de humo:
 - [ ] `fixed` == `fixed2` en cada caso quick.
 - [ ] Base grabada y commiteada con una línea de motivo.
 - [ ] `quick --no-window` imprime `QUICK PASS`.
-- [ ] Ningún otro Godot ni ventana corrió durante el banco (sin CONTAMINATED).
+- [ ] Ningún corte del watchdog (`rss_kill`, `timeout_kill`, `script_error_kill`); CONTAMINATED, si aparece, es solo una nota sobre los tiempos.

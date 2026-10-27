@@ -402,28 +402,34 @@ static func drag_control(scene: Node, spec: Dictionary) -> String:
 	)
 	var g0 := control.get_global_transform_with_canvas() * from
 	var g1 := control.get_global_transform_with_canvas() * to
-	_mouse_button(g0, true)
-	_mouse_motion(g0, g1)
-	_mouse_button(g1, false)
+	var shift := bool(spec.get("shift", false))
+	var ctrl := bool(spec.get("ctrl", false))
+	_mouse_button(g0, true, shift, ctrl)
+	_mouse_motion(g0, g1, shift, ctrl)
+	_mouse_button(g1, false, shift, ctrl)
 	print("AGENT_DRAG ", spec.get("node", ""))
 	return ""
 
 
-static func _mouse_button(pos: Vector2, pressed: bool) -> void:
+static func _mouse_button(pos: Vector2, pressed: bool, shift := false, ctrl := false) -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_LEFT
 	ev.pressed = pressed
+	ev.shift_pressed = shift
+	ev.ctrl_pressed = ctrl
 	ev.position = pos
 	ev.global_position = pos
 	Input.parse_input_event(ev)
 
 
-static func _mouse_motion(from: Vector2, to: Vector2) -> void:
+static func _mouse_motion(from: Vector2, to: Vector2, shift := false, ctrl := false) -> void:
 	var steps := 6
 	for i in range(1, steps + 1):
 		var t := float(i) / float(steps)
 		var pos := from.lerp(to, t)
 		var ev := InputEventMouseMotion.new()
+		ev.shift_pressed = shift
+		ev.ctrl_pressed = ctrl
 		ev.position = pos
 		ev.global_position = pos
 		ev.relative = (to - from) / float(steps)
