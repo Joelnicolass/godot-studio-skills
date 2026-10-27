@@ -4,7 +4,8 @@
 # Part 1, a desktop host (a match process on its PC, MpLocalServer): a friend finds its room in the issuer's list and
 # joins; the host wins and the issuer forgets the room. Part 2, a host in its own game (the way a browser hosts): a
 # friend joins with the code (typed "abc-def"), the host process freezes for 3 s (SIGSTOP), the friend waits for it
-# (host_silent / host_back) and the match goes on; a third player is told the room is full, a made-up code is unknown.
+# (host_silent / host_back) and the match goes on; a third player is told the room is full, a made-up code is unknown;
+# a desktop host closes its room on purpose (no failure, nothing left).
 # Part 3, a browser hosts: the lab's web export in a headless Chrome opens a room (CORS to the issuer, the relay token
 # in the URL) and a desktop friend finds it in the list by name and plays it (ONLINE_WEB=0, or no Chrome/Chromium:
 # skipped; BROWSER=/path picks one). Never more than 3 headless Godot at once (a match process counts). Needs npm (the issuer's and relay's packages, installed from their lockfiles once).
@@ -118,6 +119,9 @@ gd "$OUT/nocode.log" -- "${COMMON[@]}" --probe=online_refused --probe-room=ZZZZZ
 wait_pid "$LAST_PID" 60
 touch "$OUT/go2"
 for p in $LFRIEND $LHOST; do wait_pid "$p" 90; done
+gd "$OUT/stop.log" -- "${COMMON[@]}" --probe=online_stop --online-mode=dedicated --issuer-install=lab-stop-install-0001
+wait_pid "$LAST_PID" 60
+wait_gone "match-ticket-file=$MATCHES" 15
 
 BROWSER_BIN="$(find_browser)"
 if [ "${ONLINE_WEB:-1}" = 0 ] || [ -z "$BROWSER_BIN" ]; then
@@ -147,7 +151,7 @@ PYEOF
   wait_pid "$LAST_PID" 150
 fi
 
-for r in host lister lhost lfriend full nocode wfriend; do [ -f "$OUT/$r.log" ] || continue; grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$OUT/$r.log" | sed "s/^/$r: /"; done
+for r in host lister lhost lfriend full nocode stop wfriend; do [ -f "$OUT/$r.log" ] || continue; grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$OUT/$r.log" | sed "s/^/$r: /"; done
 FAILS=0
 check() { if eval "$1"; then echo "PASS $2"; else echo "FAIL $2"; FAILS=$((FAILS + 1)); fi; }
 check 'grep -q "^PROBE online_host PASS" "$OUT/host.log"' "a desktop host opened a room through the issuer (a match process on its PC), played it and won"
@@ -158,6 +162,7 @@ check 'grep -q "^PROBE online_host PASS" "$OUT/lhost.log"' "a host in its own ga
 check 'grep -q "^PROBE online_join PASS" "$OUT/lfriend.log"' "a friend joined with the code (typed abc-def), waited for the frozen host, saw the match end, and its game's transport was still ENet"
 check 'grep -q "^PROBE online_refused PASS" "$OUT/full.log"' "a third player was told the room is full"
 check 'grep -q "^PROBE online_refused PASS" "$OUT/nocode.log"' "a made-up code was told there is no such room"
+check 'grep -q "^PROBE online_stop PASS" "$OUT/stop.log"' "a host closing its room on purpose: it ends, never fails, and the issuer forgets it"
 if [ -z "${WEB_SKIP:-}" ]; then
   check 'grep -q "listen, 2 players, listed) by Web" "$OUT/issuer.log"' "a browser opened a room on the issuer (CORS, its own game hosting)"
   check 'grep -q "^PROBE online_list host Web" "$OUT/wfriend.log" && grep -q "^PROBE online_list PASS" "$OUT/wfriend.log"' "a desktop friend found the browser's room by name, joined it and saw the match end"
