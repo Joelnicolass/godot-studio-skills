@@ -87,6 +87,7 @@ Input de pawn y semántica del dict custom **fuera** del kit.
 - `broadcast_load_world()` / `load_world_to(peer)`
 - `push_snapshot(data)` / `push_snapshot_to(peer, data)`
 - `broadcast_session_ended(data)`
+- `after_real(seconds, callable)` — lo corre pasado tiempo REAL (timeouts de red; el tiempo de juego cambia con `--fixed-fps` o `Engine.time_scale`). El timeout de admisión y la espera antes de cortar del kit lo usan
 - `report_loaded()` — el mundo local terminó de cargar (MpFlow la llama con `world_reports_loaded`): un cliente avisa al servidor (su asiento cuenta en la puerta), el servidor o solo le avisan a la puerta que su propio mundo entró
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — servidor: peers con slot y world_ready (mandales tus efectos `@rpc` de un instante con `rpc_id`; reproducilo también en el servidor)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`

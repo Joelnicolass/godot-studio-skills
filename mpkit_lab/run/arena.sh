@@ -18,10 +18,12 @@
 #   latejoin:  dedicated with --late-join: the first client starts the match, a newcomer after the start still sits and plays.
 #   reports:   --world-reports-loaded (a loading screen): the dedicated and the client each report their world loaded 1.5 s
 #              after it enters; the gate holds until both did, then they play. Solo too: play_solo holds until the report.
+#   fastclock: a dedicated whose game clock runs far ahead of real time (`--fixed-fps 60` stops syncing to the clock) and a
+#              client 150 ms away: the admission timeout is real time, so the client still gets in and plays.
 #   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
 #              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
 #              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood latejoin reports survive" (default all).
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen lag flood latejoin reports fastclock survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
@@ -30,7 +32,7 @@ LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood latejoin reports survive}"
+SCENARIOS="${SCENARIOS:-dedicated listen lag lagshot flood latejoin reports fastclock survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -184,6 +186,21 @@ run_reports() { # --world-reports-loaded: the gate counts a world once it report
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL reports: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
+run_fastclock() { # network timeouts run on the real clock: a server whose game time races ahead still admits a far client
+  local dir="$OUT/fastclock"
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT")
+  gd "$dir/server.log" --fixed-fps 60 -- --dedicated "${common[@]}" --start-seats=1
+  local server=$LAST_PID
+  sleep 2
+  gd "$dir/client.log" -- "${common[@]}" --net-lag-ms=150 --probe-join="127.0.0.1:$PORT" --probe=basic --probe-timeout-s=30
+  wait_line "$dir/client.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 60
+  kill_tree "$server"; wait "$server" 2>/dev/null
+  echo "--- fastclock ($TRANSPORT) ---"
+  grep -hE "^(FAIL|SCRIPT ERROR)|turned peer" "$dir"/*.log | head -n 8
+  verdict "$dir/client.log" basic "fastclock: a client 150 ms away got into a server whose game clock races ahead, and played"
+}
+
 run_survive() { # a dedicated with its default seats: three matches in a row, each from a fresh world
   local dir="$OUT/survive"
   mkdir -p "$dir"
@@ -222,6 +239,7 @@ for s in $SCENARIOS; do
     flood) run_flood ;;
     latejoin) run_latejoin ;;
     reports) run_reports ;;
+    fastclock) run_fastclock ;;
     survive) run_survive ;;
   esac
 done
