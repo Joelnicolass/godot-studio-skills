@@ -32,6 +32,9 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | A server-only node under `spawn_path`: no gate, clients unbroken | `arena.sh` watch `--probe-server-node` **T** |
 | `MpInput.set_value` reaches the server | `arena.sh` watch (aim) **T** |
 | Prediction: an immediate answer and a ~0 correction with lag, jitter and loss | `arena.sh` lag **T** |
+| A teleport with only `net.snap()` on the server: the player itself and another one see one jump, never a slide; the control without it sees it drawn partway | `arena.sh` teleport **T** |
+| Rejoin onto a pawn the server kept (despawn_on_leave off): without a connection it holds no keys; back, the new connection's input (from seq 1) moves it at once | `arena.sh` keeppawn **T** |
+| A correction the owner cannot predict (the server pushes it) fades on screen; with the engine's physics interpolation too; the control without smoothing sees a jump | `arena.sh` correct **T** |
 | How late another player's move shows (`remote_delay_ms`; a cap with `MAX_REMOTE_DELAY_MS`) | `arena.sh` lag **T** |
 | `Mp.net_quality()` measures the simulated network's RTT, loss and jitter | `arena.sh` lag **T** |
 | Lag compensation: led shots at a walking target hit; with `--lag-comp=off`, most miss | `arena.sh` lagshot **T** |

@@ -5,7 +5,12 @@ extends Node
 ## Roles: solo | client (the first player; `--probe-rejoin`: then it leaves and joins again, same slot) | basic (any game: move and score
 ## only, e.g. one the wizard wrote) | late (joins after the match started: the start gate turns it away, `--probe-reason=`) | watch (server or host:
 ## waits for a remote player to move and score) | lag (own player under a bad network: response and corrections) |
-## observe (another player, `--probe-watch-slot=N`: how evenly it moves on screen) | lobby (online rooms through the
+## observe (another player, `--probe-watch-slot=N`: how evenly it moves on screen) | pusher (server: pushes P1 sideways
+## every half second, a move its owner cannot predict) | correct (own player, pushed by the server: the corrections
+## must not show as jumps; `--probe-expect-jump` for the control with `--correction-smoothing-s=0`) | teleporter (server:
+## teleports P2 every 0.8 s with only `net.snap()` after it; `--probe-no-snap`: without it, the control) | teleported /
+## seeteleport (the owner / another player: each teleport is one jump on screen, never a slide; `--probe-expect-slide`
+## for the control) | lobby (online rooms through the
 ## lobby screen: `--probe-lobby=host:port --probe-name=X`, `--probe-create=Room` makes the room and scores to win) |
 ## private (MpLocalServer on this PC; writes "port code" to `--probe-code-file`, plays and wins) | invited (joins
 ## with "ip:port#CODE" from that file) | badcode (same address, a wrong code: must be turned away) | flood (sends 500
@@ -38,6 +43,13 @@ func _ready() -> void:
 	## a loading screen warming shaders up; until then the start gate must hold this peer's world.
 	if not MpBoot.user_value("probe-report-after", "").is_empty():
 		get_tree().scene_changed.connect(_report_world_later)
+	## `--probe-keep-pawns` (server): a player who drops keeps its pawn for its rejoin (despawn_on_leave off), as a game
+	## whose avatar waits in the world during the grace.
+	if MpBoot.user_flag("probe-keep-pawns"):
+		get_tree().scene_changed.connect(_keep_pawns)
+	## `--probe-physics-interpolation`: the engine's physics interpolation on, as a game with it in Project Settings.
+	if MpBoot.user_flag("probe-physics-interpolation"):
+		get_tree().physics_interpolation = true
 	if _role.is_empty():
 		return
 	print("probe %s start" % _role)
@@ -73,6 +85,16 @@ func _run() -> void:
 			await _measure_own_lag()
 		"observe":
 			await _measure_proxy_jitter()
+		"pusher":
+			await _push_player()
+		"correct":
+			await _measure_correction()
+		"teleporter":
+			await _teleport_player()
+		"teleported":
+			await _measure_teleports(0, true)
+		"seeteleport":
+			await _measure_teleports(int(MpBoot.user_value("probe-watch-slot", "2")), false)
 		"lobby":
 			await _play_online()
 		"private":
@@ -182,15 +204,35 @@ func _check_late() -> void:
 func _rejoin(slot: int) -> void:
 	var flow := MpFlow.find_in_tree(self)
 	var address := "127.0.0.1:%d" % MpKit.port
+	## `--probe-pawn-kept` (the server keeps the pawn): leave while walking, holding the key.
+	var kept := MpBoot.user_flag("probe-pawn-kept")
+	var left_x := 0.0
+	if kept:
+		var walking := await _pawn(slot)
+		Input.action_press(&"ui_left")
+		await get_tree().create_timer(0.4).timeout
+		left_x = MpActor.of(walking).net_position.x
 	flow.return_to_boot()
+	Input.action_release(&"ui_left")
 	await _until(func() -> bool: return get_tree().current_scene.name == "Boot" and not MpKit.is_networked(), "rejoin: left to the menu, offline")
 	await get_tree().create_timer(1.0).timeout
 	_ever_slot = 0
 	_check(flow.join_address(address) == OK, "rejoin: join_address(%s) started" % address)
 	await _until(func() -> bool: return _networked_slot() and _ever_slot != 0, "rejoin: the server let the seat back in")
 	_check(MpKit.local_slot() == slot, "rejoin: the same slot (%d, got %d)" % [slot, MpKit.local_slot()])
-	if await _pawn(slot) == null:
+	var back_pawn := await _pawn(slot)
+	if back_pawn == null:
 		return
+	## The new connection's input counts from 1 again: the server must take it (it moves the pawn it kept).
+	await get_tree().create_timer(0.5).timeout
+	var back_net := MpActor.of(back_pawn)
+	if kept:
+		_check(absf(back_net.net_position.x - left_x) < 60.0, "rejoin: without a connection the kept pawn stopped (it went %.0f px after the leave, not on with the held key)" % absf(back_net.net_position.x - left_x))
+	var server_x := back_net.net_position.x
+	Input.action_press(&"ui_right")
+	await get_tree().create_timer(1.0).timeout
+	Input.action_release(&"ui_right")
+	_check(back_net.net_position.x - server_x > 100.0, "rejoin: the server moves the pawn with the new connection's keys (%.0f px)" % (back_net.net_position.x - server_x))
 	await _until(func() -> bool: return int(_state().get_value(StringName("p%d" % slot), 0)) == 1, "rejoin: the score made before leaving is still there")
 	await _until(func() -> bool: return int(_state().get_value(StringName("back_%d" % slot), 0)) == 1, "rejoin: the server counted the comeback (MpMatch.player_back)")
 	var bell := get_tree().get_first_node_in_group(&"bell")
@@ -257,12 +299,149 @@ func _measure_own_lag() -> void:
 	var end := t0 + 2000
 	while Time.get_ticks_msec() < end:
 		await get_tree().process_frame
+		if not is_instance_valid(net):
+			break
 		worst = maxf(worst, net.last_correction())
 	Input.action_release(&"ui_left")
 	await get_tree().create_timer(1.0).timeout
 	print("METRIC max_correction_px=%.2f settled_correction_px=%.2f" % [worst, net.last_correction()])
 	_check(worst < float(MpBoot.user_value("probe-max-correction", "2")), "server corrections stayed small while walking")
 	_check(net.last_correction() < 0.5, "once stopped, the prediction and the server agree")
+
+
+## Server: pushes slot 1's player sideways by --probe-push-px (40) every 0.5 s, `--probe-pushes` (6) times, from the
+## moment it walks. Its owner cannot predict that: each push reaches it as a correction.
+func _push_player() -> void:
+	await _until(func() -> bool: return MpKit.is_server(), "this process is the server")
+	var pawn := await _pawn(1)
+	if pawn == null:
+		return
+	var start_x: float = pawn.position.x
+	await _until(func() -> bool: return absf(pawn.position.x - start_x) > 20.0, "P1 started walking")
+	var push := float(MpBoot.user_value("probe-push-px", "40"))
+	var pushes := int(MpBoot.user_value("probe-pushes", "6"))
+	for i in pushes:
+		await get_tree().create_timer(0.5).timeout
+		pawn.position.y += push if i % 2 == 0 else -push
+	_check(true, "pushed P1 %d times by %.0f px" % [pushes, push])
+
+
+## Server: teleports P2 by TELEPORT_PX (up, then down) TELEPORTS times, 0.8 s apart, from the moment it walks; the
+## only network call is `net.snap()` right after moving it, as a game does.
+const TELEPORT_PX := 150.0
+const TELEPORTS := 4
+
+
+func _teleport_player() -> void:
+	await _until(func() -> bool: return MpKit.is_server(), "this process is the server")
+	var pawn := await _pawn(2)
+	if pawn == null:
+		return
+	var start_x: float = pawn.position.x
+	await _until(func() -> bool: return absf(pawn.position.x - start_x) > 60.0, "P2 is walking")
+	for i in TELEPORTS:
+		await get_tree().create_timer(0.8).timeout
+		pawn.position.y += TELEPORT_PX if i % 2 == 0 else -TELEPORT_PX
+		if not MpBoot.user_flag("probe-no-snap"):
+			MpActor.of(pawn).snap()
+		print("METRIC teleport_%d_y=%d stamp=%.3f" % [i, roundi(pawn.position.y), MpNetClock.stamp()])
+	_check(true, "teleported P2 %d times by %.0f px" % [TELEPORTS, TELEPORT_PX])
+
+
+## Each of the server's teleports (teleporter) shows here as ONE frame that jumps the whole way: no frame in between
+## (a slide, or a correction fading). `own`: this is the teleported player itself (predicted), walking; its slot is
+## read once the server gave it one.
+func _measure_teleports(slot: int, own: bool) -> void:
+	await _until(_networked_slot, "this client got a slot")
+	if own:
+		slot = MpKit.local_slot()
+	var pawn := await _pawn(slot)
+	if pawn == null:
+		return
+	if own:
+		await get_tree().create_timer(1.0).timeout
+		Input.action_press(&"ui_left")
+	else:
+		var start_x: float = pawn.position.x
+		await _until(func() -> bool: return absf(pawn.position.x - start_x) > 20.0, "P%d started walking" % slot)
+	var sampler := _Sampler.new()
+	sampler.target = pawn
+	sampler.process_priority = 20000
+	add_child(sampler)
+	## Until every teleport showed (a jump of nearly TELEPORT_PX in one frame), plus a margin; at most the whole run.
+	var slide := MpBoot.user_flag("probe-expect-slide")
+	var end := Time.get_ticks_msec() + int((0.8 * TELEPORTS + 4.0) * 1000.0)
+	while Time.get_ticks_msec() < end and (slide or _jumps_in(sampler.ys) < TELEPORTS):
+		await get_tree().process_frame
+	await get_tree().create_timer(0.3).timeout
+	if own:
+		Input.action_release(&"ui_left")
+	sampler.queue_free()
+	var jumps := 0
+	var partial := 0
+	var levels: Array[int] = []
+	if not sampler.ys.is_empty():
+		levels.append(roundi(sampler.ys[0]))
+	for i in range(1, sampler.ys.size()):
+		var dy := absf(sampler.ys[i] - sampler.ys[i - 1])
+		if dy > TELEPORT_PX * 0.8:
+			jumps += 1
+			levels.append(roundi(sampler.ys[i]))
+		elif dy > 10.0:
+			partial += 1
+	print("METRIC teleport_jumps=%d teleport_partial_frames=%d frames=%d y_levels=%s" % [jumps, partial, sampler.ys.size(), levels])
+	if slide:
+		_check(partial >= TELEPORTS, "control: without net.snap() the moves are drawn partway (%d frames)" % partial)
+		return
+	_check(jumps == TELEPORTS, "each teleport showed as one jump (%d of %d)" % [jumps, TELEPORTS])
+	_check(partial == 0, "no frame drew it partway (%d frames did)" % partial)
+
+
+func _jumps_in(ys: PackedFloat64Array) -> int:
+	var jumps := 0
+	for i in range(1, ys.size()):
+		if absf(ys[i] - ys[i - 1]) > TELEPORT_PX * 0.8:
+			jumps += 1
+	return jumps
+
+
+## Own player pushed by the server (pusher): the corrections it gets are as big as the pushes, and on screen no frame
+## jumps by much more than a walking step (they fade, MpCorrectionSmoother). With --probe-expect-jump (the control,
+## --correction-smoothing-s=0) the same pushes must show as jumps: the measure sees what it is meant to.
+func _measure_correction() -> void:
+	await _until(_networked_slot, "the pushed client got a slot")
+	var pawn := await _pawn(MpKit.local_slot())
+	if pawn == null:
+		return
+	await get_tree().create_timer(1.0).timeout
+	var net := MpActor.of(pawn)
+	var push := float(MpBoot.user_value("probe-push-px", "40"))
+	var sampler := _Sampler.new()
+	sampler.target = pawn
+	sampler.process_priority = 20000
+	add_child(sampler)
+	Input.action_press(&"ui_left")
+	var worst := 0.0
+	var end := Time.get_ticks_msec() + 3500
+	while Time.get_ticks_msec() < end:
+		await get_tree().process_frame
+		if not is_instance_valid(net):
+			break
+		worst = maxf(worst, net.last_correction())
+	Input.action_release(&"ui_left")
+	sampler.queue_free()
+	var steps: Array = []
+	for i in range(1, sampler.xs.size()):
+		steps.append(Vector2(sampler.xs[i] - sampler.xs[i - 1], sampler.ys[i] - sampler.ys[i - 1]).length())
+	steps.sort()
+	var median: float = steps[steps.size() / 2] if not steps.is_empty() else 0.0
+	var biggest: float = steps.back() if not steps.is_empty() else 0.0
+	print("METRIC max_correction_px=%.1f max_step_px=%.1f median_step_px=%.2f frames=%d" % [worst, biggest, median, steps.size()])
+	_check(worst > push * 0.5, "the server's pushes reached the owner as corrections (%.1f px)" % worst)
+	if MpBoot.user_flag("probe-expect-jump"):
+		_check(biggest > push * 0.6, "control: without smoothing a correction shows as one jump (%.1f px)" % biggest)
+	else:
+		_check(biggest < median + push * 0.25, "no frame jumps much more than a walking step (%.1f px, a step %.1f)" % [biggest, median])
 
 
 ## Another player walking at a steady speed must look steady here: low spread of its on-screen speed.
@@ -314,7 +493,9 @@ func _measure_proxy_jitter() -> void:
 	var deviations := sorted.map(func(v: float) -> float: return absf(v - median))
 	deviations.sort()
 	var mad: float = deviations[deviations.size() / 2] / maxf(median, 0.001) if not deviations.is_empty() else 1.0
-	print("METRIC proxy_speed_px_s=%.1f proxy_speed_median=%.1f proxy_speed_mad=%.3f proxy_speed_cv=%.3f frames=%d" % [mean, median, mad, cv, speeds.size()])
+	## The 95th percentile over the median: how much faster than usual the worst frames move (1 = perfectly even).
+	var p95: float = sorted[mini(int(sorted.size() * 0.95), sorted.size() - 1)] / maxf(median, 0.001) if not sorted.is_empty() else 0.0
+	print("METRIC proxy_speed_px_s=%.1f proxy_speed_median=%.1f proxy_speed_mad=%.3f proxy_speed_cv=%.3f proxy_speed_p95_over_median=%.2f frames=%d" % [mean, median, mad, cv, p95, speeds.size()])
 	_check(median > 150.0, "P%d moved at about its real speed on screen" % slot)
 	var q := Mp.net_quality()
 	print("METRIC net_rtt_ms=%.0f net_jitter_ms=%.1f net_loss=%.3f grade=%s samples=%d" % [q["rtt_ms"], q["jitter_ms"], q["loss"], q["grade_name"], q["samples"]])
@@ -757,6 +938,13 @@ func _scene_has_button(text: String) -> bool:
 	return not scene.find_children("*", "Button", true, false).filter(func(b: Node) -> bool: return (b as Button).text == text).is_empty()
 
 
+func _keep_pawns() -> void:
+	for spawner in get_tree().current_scene.find_children("*", "MpSlotSpawner", true, false):
+		spawner.despawn_on_leave = false
+		if MpKit.peer_left.is_connected(spawner._on_slot_peer_left):
+			MpKit.peer_left.disconnect(spawner._on_slot_peer_left)
+
+
 func _report_world_later() -> void:
 	if _in_world("Actors") == null:
 		return
@@ -827,8 +1015,12 @@ class _Aimer extends Node:
 class _Sampler extends Node:
 	var target: Node2D
 	var xs := PackedFloat64Array()
+	var ys := PackedFloat64Array()
 	var ts := PackedInt64Array()
 
 	func _process(_delta: float) -> void:
+		if not is_instance_valid(target):
+			return
 		xs.append(target.position.x)
+		ys.append(target.position.y)
 		ts.append(Time.get_ticks_usec())

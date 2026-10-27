@@ -498,6 +498,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `core/mp_actor_sync.gd` | what an `MpActor`'s synchronizer sends in each mode: with smoothing or prediction the pose travels in `MpActor.net_position` / `net_rotation` + `net_stamp`, never in the node's own, so on a client only `MpActor` moves the node |
 | `core/mp_input_frame.gd` | the input frame that travels to the server; checks size and types; press counters |
 | `core/mp_input_queue.gd` | server with prediction: the owner's frames in order, each once; jitter buffer (`depth`), gentle catch-up and a budget (a client cannot go faster by sending more frames) |
+| `core/mp_correction_smoother.gd` | `MpCorrectionSmoother`: the owner's correction drawn fading out (only the drawn pose; the real one is put back before each physics frame) |
 | `core/mp_prediction.gd` | owner prediction and reconciliation: the server runs `mp_move` for each of the owner's frames; the owner goes back to the server's state and replays the unacked frames, inside the physics tick |
 | `core/mp_proxy_motion.gd` / `mp_interpolator.gd` | drawing proxies: `BUFFERED` (in the past, between two real states) or `FOLLOW` |
 | `core/mp_net_clock.gd` | the server's simulation time (ticks / tps, even) and its estimate on clients (follows the least-delayed packet) |
