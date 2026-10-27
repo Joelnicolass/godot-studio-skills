@@ -1242,7 +1242,7 @@ A browser pauses a hidden tab. A web player who switches tabs freezes for the ot
 
 ## 12. Relay (a tunnel through Railway or another host)
 
-The relay is a small Node server (`relay/server.mjs`, no dependencies, Node 18+) that works as a tunnel. Your Godot server connects **out** to the relay, so it needs no public IP nor open ports: it can run on your PC behind the router. The players connect to the same relay.
+The relay is a small Node server (`relay/server.mjs`, Node 18+ and the `ws` library: `npm install` once) that works as a tunnel. Your Godot server connects **out** to the relay, so it needs no public IP nor open ports: it can run on your PC behind the router. The players connect to the same relay.
 
 ```
 player ─┐
@@ -1254,8 +1254,8 @@ Every kit "port" is a relay room: `<relay_room>-<port>`. So the lobby (7700) and
 
 ### 12.1 Putting the relay on Railway
 
-1. Make a repo (or a folder in yours) with `server.mjs` and `package.json` from `addons/mp_kit/relay/`.
-2. On Railway: **New Project › Deploy from GitHub repo** and pick that repo. Railway runs `npm start`.
+1. Make a repo (or a folder in yours) with `server.mjs`, `lib/`, `package.json` and `package-lock.json` from `addons/mp_kit/relay/`.
+2. On Railway: **New Project › Deploy from GitHub repo** and pick that repo. Railway installs the dependency and runs `npm start`.
 3. Under **Variables**: `RELAY_HOST_SECRET` = a long random key. Without it the relay lets nobody host (`RELAY_OPEN=1` opens it, for local tests only).
 4. Under **Settings › Networking**: **Generate Domain**. You get `your-relay.up.railway.app`, with TLS: the address is `wss://your-relay.up.railway.app`.
 5. Optional: a healthcheck on the `/health` path.
@@ -1263,6 +1263,7 @@ Every kit "port" is a relay room: `<relay_room>-<port>`. So the lobby (7700) and
 Try it locally first:
 
 ```bash
+npm install --prefix addons/mp_kit/relay   # once
 PORT=8080 RELAY_HOST_SECRET=test node addons/mp_kit/relay/server.mjs
 # address: ws://127.0.0.1:8080
 ```
