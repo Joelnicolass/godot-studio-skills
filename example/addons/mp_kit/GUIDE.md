@@ -488,7 +488,7 @@ func hit(from: Vector2) -> void:   # on the server
 
 **Corrections on screen**: when the server decided something the owner did not predict, its node moves to the corrected pose at once (physics, `mp_move`), and what is drawn fades from where it was over `correction_smoothing_s` (0.1 s, as Source's `cl_smoothtime`; Photon Fusion and Unity Netcode do the same: only the visual pose is smoothed). A warp the server makes is not a correction to smooth: call `net.snap()` on the server right after moving the node (see 6.8), or set `correction_snap_distance`. `net.correction_offset()` says how much is still fading.
 
-**Smooth between physics ticks**: the owner's predicted node moves in physics ticks (60 per second). On a screen at 120 Hz or more, turn on **Project Settings › Physics › Common › Physics Interpolation**: the engine draws each node between its last two ticks (Fusion's default for the local player). The kit is ready for it: proxies turn it off for themselves (the kit draws them every frame) and the correction fades per tick.
+**Smooth between physics ticks**: the owner's predicted node moves in physics ticks (60 per second). On a screen at 120 Hz or more, turn on **Project Settings › Physics › Common › Physics Interpolation**: the engine draws each node between its last two ticks (Fusion's default for the local player). The kit is ready for it: proxies turn it off for themselves (`MpActor` and `MpReplicate` draw them every frame) and the correction fades per tick. Whatever follows a networked node in `_process` (a camera, a health bar) must run **after** the kit draws it: `process_priority` above 10000 (with physics interpolation, read `get_global_transform_interpolated()` in 3D).
 
 ### 6.3 Where am I? `is_authority` and `is_local`
 
@@ -520,7 +520,13 @@ On a LAN host, `is_authority()` **and** `is_local()` are both true for its own p
 | `input.get_vector(&"l", &"r", &"u", &"d")` | `Input.get_vector` (length at most 1, deadzone 0.2) |
 | `input.is_replaying()` | True while old frames are replayed |
 
-An action that is not in `MpInput.actions` always gives 0 / false on the server.
+An action that is not in `MpInput.actions` always gives 0 / false on the server. Strengths travel in 1/255 steps; the owner predicts with that same value, so the server agrees.
+
+**How the keys travel** (with `predict`), nothing to set up:
+
+- Every tick the owner sends every frame the server has not confirmed yet (as Overwatch does), delta-coded: a frame that keeps the same keys costs 5 bytes. A burst of lost packets loses no frame.
+- The server takes one frame per tick and never stops a player: if the next frame is late, it repeats the last one (as Overwatch, Unity Netcode and Photon Fusion do) and drops that frame when it comes. The owner kept the same keys most of the time, so the guess is usually right; when it is not, the owner gets a correction, which fades. After 0.25 s with no frames the keys are let go.
+- The server's buffer follows how late this owner's frames arrive. To resize it the server never hurries or holds the player (the others would see it hitch): the owner samples one frame more or one less now and then, and that step is smoothed on its screen too.
 
 ### 6.5 Values of your own: `set_value` / `get_value`
 
@@ -537,7 +543,7 @@ var aim: Variant = input.get_value(&"aim", Vector2.RIGHT)
 var direction: Vector2 = (aim as Vector2).normalized() if aim is Vector2 and (aim as Vector2).length() > 0.01 else Vector2.RIGHT
 ```
 
-`set_value` anywhere but on the owner does nothing. Up to 16 values per frame. More in [14](#14-security-and-limits).
+`set_value` anywhere but on the owner does nothing. Up to 16 values per frame. A value travels exactly as it was set (a float, a `Vector2`, an angle in radians: no rounding), and with prediction `mp_move` reads the same value on the owner and on the server, so an aim or a facing angle is a value, not an action. More in [14](#14-security-and-limits).
 
 ### 6.6 Requests to the server: `to_server` → `mp_sv_*`
 
