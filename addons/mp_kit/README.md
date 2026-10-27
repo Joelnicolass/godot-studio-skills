@@ -357,7 +357,7 @@ The kit **does not read** the dict. It **does not auto-forward**. If the server 
 | Who | Method | What happens |
 |-----|--------|----------------|
 | Client, 1P, or the server itself | `MpKit.send_custom(channel, data)` | Client → RPC to the server. 1P / server: emits `custom_received` **locally** (`from_peer` 1 or your unique id). |
-| Server only | `MpKit.broadcast_custom(channel, data)` | Emits on the server (`from_peer` = 1) **and** sends to every client. |
+| Server only | `MpKit.broadcast_custom(channel, data)` | Emits on the server (`from_peer` = 1) **and** sends to every client. `broadcast_custom(channel, data, true)`: only to the peers whose world is loaded (`MpKit.ready_peers()`), for a one-off effect a peer still loading would lose. |
 | Server only | `MpKit.push_custom_to(peer_id, channel, data)` | One client. The server does **not** emit locally. |
 | Everyone | signal `MpKit.custom_received(channel, data, from_peer)` | That is where you receive. |
 

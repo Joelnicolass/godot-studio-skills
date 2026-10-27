@@ -71,6 +71,7 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Replicated actor | an **`MpActor`** child (Sync in the inspector; it builds and saves `MpSync`) | a hand-built `MultiplayerSynchronizer`, `MpReplicate` in new code |
 | Who simulates, inside a node | `is_multiplayer_authority()` (the kit keeps authority on the server: true solo, host, dedicated) or `MpKit.is_authority()` / `Mp.is_server()` | `MpKit.is_server()` for rules (false solo: it is for network-only work) |
 | Who looks at this screen | an **`MpLocalSeat`** in the world, handed by `@export` to HUD / audio / orders (`slot`, `is_mine`, `preview_slot` solo) | `local_slot()` spread over every UI script |
+| Something that must last (marks, doors, score) vs a one-off effect | state in Sync / `MpState` / a spawned node (it reaches whoever loads later); effects by `to_all`, or your `@rpc` to `MpKit.ready_peers()` | a one-off RPC for something that must stay, or a "donor" that resends it to whoever comes back |
 | A match value from the start and each change | `MpState.watch(key, cb)` | `changed` + a manual first read, order-dependent |
 | Spawn from any peer | `MpSpawner.spawn_here(data)` (null on a client) | `if MpKit.is_server(): spawn(...)` everywhere |
 | Player input | an **`MpInput`** child + `input.get_vector(...)` on the server | a `submit_move` per frame |
