@@ -22,18 +22,19 @@ With the kit:
 - Standard Godot code: proven patterns (signals, `Events` bus, FSM, components…), real typing, `gdformat` / `gdlint`, and GUT + CI when there are tests (skill `godot-code-quality`).
 - One RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across sessions in Engram or `.studio/MEMORY.md` if needed.
-- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orchestrator        | `skills/godot-studio-workflow/`                                                | The chat agent: interview + `/implement-feature` (PRD/RFC optional)                              |
-| How to write Godot  | `skills/`                                                                      | Layers, composition, code quality, MpKit, FSM, 2D platformer, juicy, materials, feature research, visual, memory, tests and CI |
+| How to write Godot  | `skills/`                                                                      | Layers, composition, code quality, MpKit, FSM, 2D platformer, RTS controls, juicy, materials, feature research, visual, memory, tests and CI |
 | Subagents           | `agents/`                                                                      | Tech lead, developer, reviewer; optional tester and visual. Playtester: playtest module         |
-| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
+| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer with nodes and no hand-written RPCs: the game in one `.tres` (`MpGame`), the world in one node (`MpWorld`), the match's verbs in `Mp`, plus `MpActor`, `MpInput`, `MpState`, `MpMatch`. Prediction, adaptive buffers, lag compensation and network quality; LAN, dedicated, online rooms, private matches, web, a relay for servers without a public IP (Railway), VPS deploy and a *Setup game* wizard. **Zero** gameplay. Start with `addons/mp_kit/QUICKSTART.md` (step by step: `GUIDE.md`); game-free checks in `mpkit_lab/run/all.sh`. |
 | AgentKit            | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | Agent CLI + harness. This kit installs it; it is not maintained here.                            |
 | FsmKit              | `addons/fsm_kit/`                                                              | `FsmMachine` + `FsmState`. No autoload.                                                          |
 | PlatKit             | `addons/plat_kit/`                                                             | 2D motor: coyote, buffer, apex, corner, lift. No levels or score.                                |
+| RtsKit              | `addons/rts_kit/`                                                              | RTS controls for 2D and 3D: units, selection and groups, typed orders in formations, command input (command panel and radial menu optional), RTS cameras. No network inside; no movement or combat. Tests in `rtskit_lab/`. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -85,14 +86,15 @@ Short path (default):
 2. `/add-juicy` — juicy feel (shake, VFX, post, impact) on an event that already exists
 3. `/add-state-machine` — `FsmMachine` + child states (FsmKit addon)
 4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (PlatKit addon)
-5. `/new-mp-feature` — MpKit actor scaffold only
-6. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
-7. `/research-feature` — understand a mechanic of a similar game (web research, and decompiling it when it can be opened) before implementing it
-8. `/workflow-status`
+5. `/add-rts-controls` — units, selection, groups, orders in formations, RTS camera (RtsKit addon)
+6. `/new-mp-feature` — MpKit actor scaffold only
+7. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
+8. `/research-feature` — understand a mechanic of a similar game (web research, and decompiling it when it can be opened) before implementing it
+9. `/workflow-status`
 
 Written contract, if you ask:
 
-9. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
+10. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
 10. `/verify-prd` → `PRD-REVIEW.md`
 11. `/extract-features` → `FEATURES.md`
 12. `/generate-rules` → `RULES.md`
@@ -109,10 +111,11 @@ Written contract, if you ask:
 ./install.sh --addon /path/to/godot-project            # MpKit
 ./install.sh --addon /path/to/godot-project fsm_kit    # FsmKit
 ./install.sh --addon /path/to/godot-project plat_kit   # PlatKit
+./install.sh --addon /path/to/godot-project rts_kit    # RtsKit
 ./install.sh --addon /path/to/godot-project agent_kit  # AgentKit (fetched from the playtest repo)
 ```
 
-Enable each plugin in Project → Plugins. MpKit also needs the autoload (`MpKit="*res://addons/mp_kit/mp_kit.gd"`); first steps in `addons/mp_kit/QUICKSTART.md`, reference in `addons/mp_kit/README.md`, editor in `skills/godot-mp-kit/editor.md`, online/VPS in `skills/godot-mp-kit/dedicated.md`. AgentKit lives in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest): JSON/harness live in the game’s `res://agent/`; details in that repo’s README. PlatKit is not a Celeste clone: dash/stamina stay in the game.
+Enable each plugin in Project → Plugins. MpKit also needs the autoload (`MpKit="*res://addons/mp_kit/mp_kit.gd"`); first steps in `addons/mp_kit/QUICKSTART.md`, reference in `addons/mp_kit/README.md`, editor in `skills/godot-mp-kit/editor.md`, online/VPS in `skills/godot-mp-kit/dedicated.md`. AgentKit lives in [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest): JSON/harness live in the game’s `res://agent/`; details in that repo’s README. PlatKit is not a Celeste clone: dash/stamina stay in the game. RtsKit commands, the game acts: it hands each unit its order and the game walks and fights (`addons/rts_kit/README.md`).
 
 External tools the flow **offers** when needed (never installed without asking): [Material Maker](https://github.com/RodZill4/material-maker) for procedural materials and textures (skill `godot-material-maker`), and a decompiler (gdsdecomp, ILSpy, …) to open a similar game when researching a mechanic (skill `godot-feature-research`). Same as the Aseprite and Blender MCPs.
 
@@ -126,6 +129,8 @@ example/                       # Godot 4.7 demo (1P + LAN + dedicated, 2D and 3D
 addons/mp_kit/
 addons/fsm_kit/
 addons/plat_kit/
+addons/rts_kit/
+rtskit_lab/                    # RtsKit's tests and examples, no game
 skills/
   godot-studio-workflow/
   godot-studio-memory/
@@ -139,6 +144,7 @@ skills/
   godot-juicy/
   godot-fsm/
   godot-platformer-2d/
+  godot-rts-kit/
   godot-material-maker/
   godot-feature-research/
 agents/                        # studio-tech-lead, studio-developer, …
