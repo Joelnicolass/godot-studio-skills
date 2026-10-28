@@ -58,6 +58,7 @@ Arrancá desde `addons/prop_kit/examples/forest_3d/forest_3d.tscn` o `grove_2d/g
 - «Scatter» llena el área: ninguno dentro de una zona prohibida, ninguno sobre una máscara prohibida, el mismo resultado dos veces.
 - «Bake» guarda `<escena>_nav.res`; F6 lo carga sin hornear (`stats.zones_baked` 0) y un camino rodea los props.
 - Liberar un prop y llamar a `rebake([area], false)` rehornea solo sus zonas (`stats.zones_baked` < `zones_total`, `parse_ms` 0).
+- En CI, `tools/bake_scene.gd -- --scene=… --check` sale con 0: el horneado commiteado coincide con uno nuevo.
 - `godot --headless --path propkit_lab --script res://addons/prop_kit/tests/prop_test_runner.gd` da `PROPKIT TESTS PASS` (en el repo del kit).
 
 ## Anti-patrones

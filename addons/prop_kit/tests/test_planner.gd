@@ -135,6 +135,37 @@ func test_a_mask_forbids_and_thins() -> void:
 	check(right == 0, "a density of 0 thins to nothing")
 
 
+func test_a_mask_thins_part_way_and_inverted() -> void:
+	var image := Image.create(2, 1, false, Image.FORMAT_RGBA8)
+	image.set_pixel(0, 0, Color(0.0, 0.0, 0.0, 1.0))
+	image.set_pixel(1, 0, Color(0.0, 0.0, 1.0, 1.0))
+	var mask := PropMask.new()
+	mask.texture = ImageTexture.create_from_image(image)
+	mask.area = Rect2(0.0, 0.0, 100.0, 100.0)
+	mask.density_channel = PropMask.Channel.BLUE
+	mask.density_strength = 0.6
+	mask.density_invert = true
+	check(mask.begin(Rect2(0.0, 0.0, 100.0, 100.0)), "the mask reads")
+	check(near(mask.weight_at(Vector2(25.0, 50.0)), 1.0), "black, inverted: no thinning")
+	check(near(mask.weight_at(Vector2(75.0, 50.0)), 0.4, 0.01), "white rock, inverted, 60 %%: 0.4")
+	mask.density_invert = false
+	check(near(mask.weight_at(Vector2(25.0, 50.0)), 0.4, 0.01), "black, not inverted: 0.4")
+	mask.density_strength = 1.0
+	check(near(mask.weight_at(Vector2(25.0, 50.0)), 0.0), "strength 1: all the way (as before)")
+	var rules := _rules()
+	rules.cover = 1.0
+	mask.density_strength = 0.6
+	mask.density_invert = true
+	var left := 0
+	var right := 0
+	for spot in _plan(rules, _ground(), mask):
+		if spot.at.x < 50.0:
+			left += 1
+		else:
+			right += 1
+	check(right > 0 and right < left, "fewer props on the rock, but some (%d vs %d)" % [right, left])
+
+
 func test_weights_pick_the_variants() -> void:
 	var rules := _rules()
 	rules.cover = 1.0

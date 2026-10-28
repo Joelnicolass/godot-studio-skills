@@ -69,7 +69,10 @@ Las `rules`:
 
 **Zonas prohibidas** (`PropKeepOut`): `{group, radius, soft}`. No hay ningún prop a menos de `radius` de un nodo de ese grupo, y hay menos y más chicos hasta `radius * (1 + soft)`. El kit nunca conoce las clases del juego: el juego pone en un grupo sus puntos de inicio, edificios o marcadores.
 
-**Máscara** (`PropMask`): una textura sobre un área. Un canal ralea props (su valor multiplica la chance) y otro los prohíbe (por encima de `forbid_above`).
+**Máscara** (`PropMask`): una textura sobre un área. Un canal ralea props y otro los prohíbe (por encima de `forbid_above`).
+
+- `density_strength` dice cuánto ralea el canal de densidad: 1 baja la chance hasta el valor del canal, 0,6 ralea como mucho un 60 %.
+- `density_invert` lee el canal al revés, así blanco = menos props (la roca pintada de blanco).
 
 ## 2. Dibujo en lotes (3D)
 
@@ -99,11 +102,19 @@ Game
    - en 2D: Circle, Rectangle, Capsule, ConvexPolygon y CollisionPolygon2D.
 2. Poné los props en una **capa de colisión que el navmesh no parsea**: sacala de la máscara de colisión de la plantilla y parseá colliders estáticos. Si no, el horneado los paga dos veces, y el kit avisa una vez.
 3. Agregá un **PropNavZones3D** con una plantilla `navigation_mesh`: agente, celdas, geometría parseada y máscara. Poné `source_root` y `zone_size` (un múltiplo del tamaño de celda).
-4. Apretá **Bake** en el inspector. Hornea todas las zonas y las guarda junto a la escena en un `.res`, que es el `saved` del nodo.
+4. Apretá **Bake** en el inspector. Hornea todas las zonas y las guarda junto a la escena en un `.res`, que es el `saved` del nodo. Desde CI o un paso de build:
+
+   ```bash
+   godot --headless --path . --script res://addons/prop_kit/tools/bake_scene.gd -- --scene=res://maps/forest.tscn [--check]
+   ```
+
+   - Sin `--check`, hornea todas las zonas de cada nodo de zonas y guarda los resultados. Si un nodo no tenía `saved`, el archivo de la escena se actualiza desde una copia limpia, así no queda nada de lo que hicieron sus scripts mientras horneaba.
+   - Con `--check` no escribe nada. Imprime el hash del contenido de cada horneado (dos corridas tienen que dar el mismo) y sale con 1 si un horneado no coincide con el guardado.
 
 En el juego:
 
 - **Al arrancar** carga el horneado guardado de una. Si los props no son los mismos (por ejemplo, una partida sin su bosque), emite `stale` y rehornea todas las zonas en hilos de trabajo. Con `rebake_when_stale` apagado, solo emite `stale`.
+- **`extra_fingerprint`** (`func() -> int`, que se pone en el `_ready` del juego): un número del juego que cambia cuando cambia algo de lo que se hornea el navmesh además de los props, como las alturas del terreno. Se combina con el fingerprint de los props, así el horneado guardado queda vencido cuando cambia cualquiera de los dos.
 - **`rebake(areas, reparse)`** después de que algo que bloquea cambió ahí. Las áreas son Rect2 en el plano del suelo. `PropObstructions.area_of(prop, true)` da el área de un prop, así que leela antes de liberarlo. `reparse = false` cuando solo cambiaron props: se reusa la geometría parseada y solo se leen las obstrucciones cerca de las zonas tocadas (un índice por zona, así no recorre el grupo entero).
 - **Los pedidos que llegan mientras hornea** esperan y se juntan en el siguiente.
 - **`apply_mode` MANUAL**: el resultado espera (`bake_ready`, `has_result()`) a `apply()`. Un juego en lockstep lo aplica en el tick que elige; `is_done()` dice sin bloquear si ya puede. Las piezas entran siempre en orden de zona, así el resultado depende solo de las entradas y nunca de qué zona terminó primero.
@@ -164,11 +175,12 @@ godot --headless --path propkit_lab --script res://addons/prop_kit/tests/prop_te
 
 El resultado es `PROPKIT TESTS PASS (n)`. Los tests cubren:
 
-- **el planner**: determinismo, espacio, zonas prohibidas, máscaras, contornos, variantes y el tope;
+- **el planner**: determinismo, espacio, zonas prohibidas, máscaras (raleo parcial, invertidas), contornos, variantes y el tope;
 - **el scatter**: hijos guardados, suelo por rayos, pendientes, normales, 2D, guardar una escena;
+- **las herramientas de línea de comandos**: `scatter_scene` guarda los props, `bake_scene --check` da el mismo hash dos veces;
 - **cada forma de obstrucción**, el merge y el fingerprint;
 - **la grilla de zonas**;
-- **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, parcial = completo, props agregados, aplicar en MANUAL, pedidos que se juntan, horneados guardados y vencidos, merge, componentes;
+- **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, parcial = completo, props agregados, aplicar en MANUAL, pedidos que se juntan, horneados guardados y vencidos (por los props o por el fingerprint del juego), merge, componentes;
 - **los lotes**;
 - **los dos ejemplos, de punta a punta.**
 
