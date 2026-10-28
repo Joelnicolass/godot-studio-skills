@@ -57,4 +57,4 @@ The weapon exports `ProjectileData`. It spawns `data.scene` (or the single scene
 - Multiplayer authority.
 - **Round** values identical on host and guest.
 
-Types: Resource. Instance look: scene. Runtime: node.
+Shared types: Resource. A value of a single scene: node `@export`. Runtime: node. Communication (signals, `Events` bus, command, pool, spawner): [godot-code-quality](../godot-code-quality/SKILL.md).

@@ -7,7 +7,7 @@ Target RFC: the ID provided after this command in my message — substitute it f
 
 If skill `godot-studio-workflow` is loaded, the **orchestrator** (this chat) does not implement alone: `studio-tech-lead` (plan **with a file tree** and `res://debug/` when needed) → the user approves the cut **once** → `studio-developer` → `studio-reviewer` (one pass) → `studio-playtester` on the scene named by the RFC. Do not ask again whether to play. If UI changed, a visual pass is still asked (`studio-visual`; without `VISUAL.md`/refs, ask for them first). When the playtester returns, classify the FAIL (developer / reviewer / this chat). GUT tester only if the user or RULES.md asks. One RFC at a time. A typo or 1–3 file bug: this chat, no new RFC.
 
-Load `godot-layered-architecture` and `godot-composition-first` (shaders/sprites: `assets.md`; animation: `godot-animation`; 3D: Blender MCP only with OK). If there is MP: `godot-mp-kit` (local = listen; online = dedicated, see `dedicated.md`). If no MP: do not load the kit. If tests: `godot-testing`.
+Load `godot-layered-architecture`, `godot-composition-first`, and `godot-code-quality` (shaders/sprites: `assets.md`; animation: `godot-animation`; 3D: Blender MCP only with OK). If there is MP: `godot-mp-kit` (local = listen; online = dedicated, see `dedicated.md`). If no MP: do not load the kit. If tests: `godot-testing`.
 
 # Implementation Prompt for RFC-[ID]: [Title]
 
@@ -37,7 +37,7 @@ Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
 2. Present a comprehensive implementation plan covering:
    - File tree with `[+]` new / `[~]` modified / `[-]` deleted + responsibility map (one job per piece; why it is not merged)
    - Files to create or modify
-   - What is a Resource `.tres`, what is a node, what is `@export`
+   - Where each number lives (rule 0: an `@export` on the node that uses it; a `.tres` only if it is shared or edited as a type) and how many files you open to change it
    - Proposed implementation sequence
    - Technical decisions and trade-offs
    - Potential impacts on existing functionality
@@ -59,7 +59,7 @@ Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
    d. Flag workarounds with `WORKAROUND: [explanation]` in comments
    e. Never implement a workaround without user approval
 3. Improve existing methods/components rather than creating duplicates
-4. Apply SOLID principles and established design patterns where appropriate
+4. Apply established design patterns where appropriate. In a Godot game, only the ones in `godot-code-quality` (signals, signal up / call down, `Events`, FSM, component, command, pool, spawner); do not invent registries, service locators, or managers
 
 ## Problem Solving
 When making design decisions on complex problems:

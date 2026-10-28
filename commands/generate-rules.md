@@ -20,6 +20,8 @@ State which product type you classified and which checks you skipped. Skipping m
 
 If a reference implementation, prototype, or existing codebase is available, READ IT and derive naming, structural, and idiom rules from it. Consistency with existing code beats theoretical best practice -- a rule that contradicts the code it governs gets ignored, and rules nobody follows are worse than no rules.
 
+Exception for a Godot game: if a convention in the existing code contradicts the official Godot docs or their standard tools (see `godot-code-quality`), do not turn it into a rule. List it in a "Conventions being retired" section with the standard that replaces it and why.
+
 Generate the RULES.md by:
 
 1. TECHNOLOGY STACK DEFINITION:
@@ -38,7 +40,13 @@ Generate the RULES.md by:
 3. DEVELOPMENT STANDARDS:
    - Testing requirements and coverage expectations (for a game: optional unless the user asks; if tests exist, bind to the real runner)
    - Error handling and logging requirements
-   - For a Godot game: composition, `@export`/inspector, Resource `.tres` types, UI in the product language and IDs in English. Cite `godot-layered-architecture` and `godot-composition-first`. Look: if `VISUAL.md` exists, cite it (authority below RULES). Shaders: Godot Shaders and Shadertoy (see composition `assets.md`). 2D sprites: ask; references; `godot-animation`; Aseprite MCP only with OK. If 3D: ask; Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) only with OK + references; export glTF. Cite `godot-mp-kit` **only** if there is MP: local/Wi-Fi = listen-server; online = dedicated (`host_dedicated`, same project, VPS, do not fake LAN). If no MP, do not cite the kit. Playtest in the binary (`godot-playtest`, module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) ≠ GUT. Automated tests: `godot-testing` (GUT for GDScript, GdUnit4 for C#) **only** if the user asks. Architecture Clean **or** standard, whichever was chosen.
+   - For a Godot game, the code conventions are the **standard** ones, not home-made. Cite the `godot-code-quality` skill instead of rewriting it, and put in RULES only what the project decides on top of it:
+     - rule 0: the value on the node that uses it; a `.tres` only if it is shared or edited as a type; nothing through tags or strings; changing a number opens 2 files at most;
+     - proven patterns: signals, signal up / call down, `Events` with signals only, FSM, component, command, pool, spawner. No registries, locators, or managers;
+     - real typing with the `UNSAFE_*` warnings on *warn*, `##` only for the API, code and logs in English, and player text through `tr()`;
+     - tools: `gdformat` and `gdlint` with their defaults, and GUT + CI (skill `godot-testing`) if there are tests.
+   - **Do not** invent home-made rules that the standard already covers or contradicts: script line caps, a grep-based lint, source citations in `##`, a data folder separate from the scenes by default, long per-folder READMEs. A home-made rule only for what the standard does not cover, and it says why it exists.
+   - Composition, `@export`/inspector, UI in the product language and IDs in English. Cite `godot-layered-architecture` and `godot-composition-first`. Look: if `VISUAL.md` exists, cite it (authority below RULES). Shaders: Godot Shaders and Shadertoy (see composition `assets.md`). 2D sprites: ask; references; `godot-animation`; Aseprite MCP only with OK. If 3D: ask; Blender MCP ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) only with OK + references; export glTF. Cite `godot-mp-kit` **only** if there is MP: local/Wi-Fi = listen-server; online = dedicated (`host_dedicated`, same project, VPS, do not fake LAN). If no MP, do not cite the kit. Playtest in the binary (`godot-playtest`, module [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) ≠ GUT. Automated tests: `godot-testing` (GUT for GDScript, GdUnit4 for C#) **only** if the user asks. Architecture Clean **or** standard, whichever was chosen.
    - Do not copy a web checklist (responsive, auth, SQL) onto a game that has none of those
 
 4. IMPLEMENTATION PRIORITIES:

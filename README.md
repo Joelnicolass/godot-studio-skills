@@ -18,7 +18,8 @@ With the kit:
 
 - **You** choose Clean or standard Godot **before** scaffolding. That gives you a clear structure for development.
 - **You** choose whether there is multiplayer and which type (none · local/Wi-Fi · online)
-- Decoupled structure comes first: each feature is scene(s) with priority to `@export`s, Resource `.tres` files, not a `match kind`. The editor exposes the knobs for convenience.
+- Simple and predictable comes first: each feature is scene(s) with its numbers as `@export`s on the node that uses them, Resource `.tres` files only for shared types, not a `match kind`. If changing a number means opening more than 2 files, the design is wrong.
+- Standard Godot code: proven patterns (signals, `Events` bus, FSM, components…), real typing, `gdformat` / `gdlint`, and GUT + CI when there are tests (skill `godot-code-quality`).
 - One RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across sessions in Engram or `.studio/MEMORY.md` if needed.
 - The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
@@ -26,7 +27,7 @@ With the kit:
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orchestrator        | `skills/godot-studio-workflow/`                                                | The chat agent: interview + `/implement-feature` (PRD/RFC optional)                              |
-| How to write Godot  | `skills/`                                                                      | Layers, composition, MpKit, FSM, 2D platformer, juicy, materials, feature research, visual, memory, tests                 |
+| How to write Godot  | `skills/`                                                                      | Layers, composition, code quality, MpKit, FSM, 2D platformer, juicy, materials, feature research, visual, memory, tests and CI |
 | Subagents           | `agents/`                                                                      | Tech lead, developer, reviewer; optional tester and visual. Playtester: playtest module         |
 | Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer with nodes and no hand-written RPCs: the game in one `.tres` (`MpGame`), the world in one node (`MpWorld`), the match's verbs in `Mp`, plus `MpActor`, `MpInput`, `MpState`, `MpMatch`. Prediction, adaptive buffers, lag compensation and network quality; LAN, dedicated, online rooms, private matches, web, a relay for servers without a public IP (Railway), VPS deploy and a *Setup game* wizard. **Zero** gameplay. Start with `addons/mp_kit/QUICKSTART.md` (step by step: `GUIDE.md`); game-free checks in `mpkit_lab/run/all.sh`. |
@@ -130,6 +131,7 @@ skills/
   godot-studio-memory/
   godot-layered-architecture/
   godot-composition-first/
+  godot-code-quality/
   godot-mp-kit/
   godot-visual-qa/
   godot-testing/

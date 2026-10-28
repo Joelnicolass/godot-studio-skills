@@ -10,15 +10,15 @@ features (Nodes, .tscn, physics, RPCs, spawners)
 
 ```
 src/
-  core/autoload/     # MatchRules.tres, GameEvents, GameSession, SceneDirector
+  core/autoload/     # MatchRules.tres, Events, GameSession, SceneDirector
   domain/            # pure trackers and resolvers (round state, not catalogs)
   features/<name>/   # scripts + scenes together
   shared/            # StateMachine, PostFx, Health
-  resources/         # class_name + .tres (content types)
+  resources/         # class_name + .tres of types several features share
 addons/              # MpKit and framework plugins (zero gameplay)
 ```
 
-Facade names: `GameSession`, `GameEvents`, `SceneDirector`. Do not reuse names from a previous title.
+Facade names: `GameSession`, `Events`, `SceneDirector`. Do not reuse names from a previous title.
 
 `GameSession` as an autoload **only** if it must survive scene change; otherwise a node under `Main`. Tests: [godot-testing](../godot-testing/SKILL.md).
 
@@ -32,9 +32,9 @@ Facade names: `GameSession`, `GameEvents`, `SceneDirector`. Do not reuse names f
 ### Core
 
 - **GameSession**: trackers per slot, `start` / `abort`, `submit_*`, `to_snapshot` / `apply_snapshot`. The client turns off the tick when applying a snapshot.
-- **GameEvents**: HUD/FX listen; the actor does not store the score.
+- **Events**: event bus, typed `signal` declarations only (no state, no methods). HUD/FX listen; the actor does not store the score.
 - **SceneDirector**: changes scenes. Prefer swapping `World` children and leaving `GUI` alive. Does not score.
-- **`MatchRules.tres`**: **round** tunables (duration, lives, layers). Not 80 floats per enemy.
+- **`MatchRules.tres`**: **round** tunables (duration, lives, layers) that the session and the features read. Not 80 floats per enemy: those go on the node's `@export` or on its type's `.tres`.
 
 1P = local host. Same rules as 2P.
 
@@ -44,4 +44,4 @@ Nodes. `@rpc`, physics, spawners. `@export var data: EnemyData`. No `match kind`
 
 ### Shared + resources
 
-Scene components in `shared/`. `.tres` templates in `resources/<family>/`.
+Scene components in `shared/`. A `.tres` that a single feature uses lives in `features/<name>/`; `resources/<family>/` is for shared types.

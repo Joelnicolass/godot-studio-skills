@@ -7,8 +7,8 @@ If an item does not apply, write “N/A”. Do not skip it silently.
 ## 1P (always)
 
 1. [ ] Explicit product scope. If this is a studio RFC: the tech lead showed a tree + responsibilities **before** OK.
-2. [ ] Is it a **type** (another projectile, enemy, item)? → Resource `.tres` + the same scene. Not a script per stats skin.
-3. [ ] **Round** rules (lives, duration, layers): `MatchRules.tres`. Instance look: `@export`.
+2. [ ] Is it a **type** with variants (another projectile, enemy, item)? → Resource `.tres` + the same scene. Not a script per stats skin. Does a single scene use it? → an `@export` on the node, no `.tres`.
+3. [ ] **Round** rules (lives, duration, layers): `@export` on the `Match` node (or `MatchRules.tres` if several pieces read it). Instance look: `@export`. Changing any number of the feature opens 2 files at most.
 4. [ ] InputMap: semantic actions (`move_left`, `attack`), not `KEY_*`. Hold in `_physics_process`; gameplay one-shot in `_unhandled_input`.
 5. [ ] `@export` / `%UniqueName` sockets for own nodes. Scene playable with F6. FSM: addon `fsm_kit` if there are states. 2D platformer: `plat_kit` (coyote/buffer), not a bare `is_on_floor()`.
 6. [ ] Clean: testable rule with no scene? → `src/domain/` + test. Standard: is World bloating? → component, not invented domain.

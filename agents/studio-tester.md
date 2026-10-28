@@ -18,5 +18,6 @@ When invoked:
 2. Tests that **would fail** if an acceptance criterion broke. No filler tests.
 3. Prefer pure domain / Resource tests before full scenes, if Clean allows it.
 4. Paste real runner output. Distinguish tests that already existed vs ones you add.
+5. Layout and command: the ones in [godot-testing](../skills/godot-testing/SKILL.md) (`res://test/unit/`, `test_*.gd`, `gut_cmdln.gd … -gexit`). If the project has CI, run the same command the CI runs.
 
 Do not rewrite features. Do not judge look (that is `studio-visual`). Do not launch the game “to play it”: that is `studio-playtester` and needs the user’s OK.
