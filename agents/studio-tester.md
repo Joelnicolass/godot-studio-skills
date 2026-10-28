@@ -18,5 +18,6 @@ Al invocarte:
 2. Tests que **fallarían** si el criterio de aceptación se rompe. No tests de relleno.
 3. Preferí reglas de dominio / Resources puros antes que escenas enteras, si el estilo Clean lo permite.
 4. Pegá salida real del runner. Distinguí tests que ya existían vs los que proponés o agregás.
+5. Layout y comando: los de [godot-testing](../skills/godot-testing/SKILL.md) (`res://test/unit/`, `test_*.gd`, `gut_cmdln.gd … -gexit`). Si el proyecto tiene CI, corré el mismo comando que el CI.
 
 No reescribas features. No evalúes look (eso es `studio-visual`). No lances el juego “a jugarse”: eso es `studio-playtester` y requiere OK del usuario.

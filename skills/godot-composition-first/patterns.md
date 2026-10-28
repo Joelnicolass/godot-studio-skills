@@ -57,4 +57,4 @@ El arma exporta `ProjectileData`. Spawnea `data.scene` (o la escena única) y as
 - Autoridad multiplayer.
 - Valores de **ronda** idénticos en host y guest.
 
-Tipos: Resource. Look de instancia: escena. Runtime: nodo.
+Tipos compartidos: Resource. Valor de una sola escena: `@export` del nodo. Runtime: nodo. Comunicación (señales, bus `Events`, command, pool, spawner): [godot-code-quality](../godot-code-quality/SKILL.md).

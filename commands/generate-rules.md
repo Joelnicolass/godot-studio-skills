@@ -20,6 +20,8 @@ Indicá qué tipo de producto clasificaste y qué controles omitiste. Omitir deb
 
 Si hay una implementación de referencia, un prototipo o un codebase existente, LEELA y derivá reglas de naming, estructura e idioma a partir de ella. La consistencia con el código existente gana a la mejor práctica teórica — una regla que contradice el código que gobierna se ignora, y las reglas que nadie sigue son peores que no tener reglas.
 
+Excepción en un juego Godot: si una convención del código existente contradice la documentación oficial de Godot o sus herramientas estándar (ver `godot-code-quality`), no la conviertas en regla. Listala en una sección «Convenciones que se retiran» con el estándar que la reemplaza y por qué.
+
 Generá el RULES.md así:
 
 1. DEFINICIÓN DEL STACK TECNOLÓGICO:
@@ -38,7 +40,13 @@ Generá el RULES.md así:
 3. ESTÁNDARES DE DESARROLLO:
    - Requisitos de testing y expectativas de cobertura (en un juego: opcional salvo que el usuario los pida; si existen, anclar al runner real)
    - Requisitos de manejo de errores y logging
-   - En un juego Godot: composición, `@export`/inspector, Resources `.tres` para tipos, UI en idioma del producto e IDs en inglés. Citar `godot-layered-architecture` y `godot-composition-first`. Look: si existe `VISUAL.md`, citarlo (autoridad debajo de RULES). Shaders: Godot Shaders y Shadertoy (ver `assets.md` de composición). Sprites 2D: preguntar; referencias; `godot-animation`; MCP Aseprite solo con OK. Si es 3D: preguntar; MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) solo con OK + referencias; export glTF. Citar `godot-mp-kit` **solo** si hay MP: local/WiFi = listen-server; online = dedicated (`host_dedicated`, mismo proyecto, VPS, no fingir LAN). Si no hay MP, no cites el kit. Playtest en el binario (`godot-playtest`, módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) ≠ GUT. Tests automáticos: `godot-testing` (GUT para GDScript, GdUnit4 para C#) **solo** si el usuario los pide. Arquitectura Clean **o** estándar, la ya elegida.
+   - En un juego Godot, las convenciones de código son las **estándar**, no propias. Citá la skill `godot-code-quality` en vez de reescribirla, y bajá a RULES solo lo que el proyecto decide encima:
+     - regla 0: el valor en el nodo que lo usa; un `.tres` solo si se comparte o se edita como tipo; nada por tag o texto; cambiar un número abre como mucho 2 archivos;
+     - patrones probados: señales, signal up / call down, `Events` solo con señales, FSM, componente, command, pool, spawner. Sin registries, locators ni managers;
+     - tipado real con los avisos `UNSAFE_*` en *warn*, `##` solo para la API, código y logs en inglés y textos del jugador con `tr()`;
+     - herramientas: `gdformat` y `gdlint` con sus defaults, y GUT + CI (skill `godot-testing`) si hay tests.
+   - **No** inventes reglas propias que el estándar ya cubre o contradice: topes de líneas por script, un lint con grep, citas a fuentes en `##`, una carpeta de datos separada de las escenas por defecto, READMEs largos por carpeta. Una regla propia solo para lo que el estándar no cubre, y dice por qué existe.
+   - Composición, `@export`/inspector, UI en el idioma del producto e IDs en inglés. Citar `godot-layered-architecture` y `godot-composition-first`. Look: si existe `VISUAL.md`, citarlo (autoridad debajo de RULES). Shaders: Godot Shaders y Shadertoy (ver `assets.md` de composición). Sprites 2D: preguntar; referencias; `godot-animation`; MCP Aseprite solo con OK. Si es 3D: preguntar; MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) solo con OK + referencias; export glTF. Citar `godot-mp-kit` **solo** si hay MP: local/WiFi = listen-server; online = dedicated (`host_dedicated`, mismo proyecto, VPS, no fingir LAN). Si no hay MP, no cites el kit. Playtest en el binario (`godot-playtest`, módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) ≠ GUT. Tests automáticos: `godot-testing` (GUT para GDScript, GdUnit4 para C#) **solo** si el usuario los pide. Arquitectura Clean **o** estándar, la ya elegida.
    - No copiar checklist web (responsive, auth, SQL) a un juego que no los tiene
 
 4. PRIORIDADES DE IMPLEMENTACIÓN:

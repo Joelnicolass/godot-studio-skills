@@ -57,7 +57,7 @@ Los subagentes **no** ven este chat. El prompt les pasa repo, RFC, estilo de arq
 
 ## Arquitecturas Godot (siempre se pregunta)
 
-Hay **dos** estilos válidos. El agente no asume Clean. En ambos mandan composición, editor y Resources.
+Hay **dos** estilos válidos. El agente no asume Clean. En ambos mandan lo simple y predecible, la composición, el editor y los patrones probados de Godot (skill `godot-code-quality`).
 
 ```mermaid
 flowchart TB
@@ -77,7 +77,7 @@ flowchart TB
   std --> shared
 
   shared --> packed[Packed scenes + @export]
-  packed --> tres[Tipos = Resource .tres]
+  packed --> tres[Tipos compartidos = Resource .tres]
   tres --> f6[Cada escena corre con F6]
 ```
 
@@ -86,7 +86,7 @@ flowchart TB
 | **Clean** | `src/domain` + `core` + `features` | `GameSession` autoload **solo** si sobrevive el cambio de escena |
 | **Estándar** | Escena + script juntos; sin `src/domain/` | Nodo `Match` hijo del mundo |
 
-Dato de tipo → Resource. Helpers puros → `class_name` + `static func`. Comportamiento de actor → nodo hijo. Autoload solo para servicios globales (MpKit **si hay MP**, bus de eventos).
+Valor de una sola escena → `@export` del nodo que lo usa. Dato de tipo que se comparte → Resource. Helpers puros → `class_name` + `static func`. Comportamiento de actor → nodo hijo. Autoload solo para servicios globales (MpKit **si hay MP**, bus `Events` solo con señales).
 
 ## Multiplayer (siempre se pregunta)
 
@@ -107,7 +107,7 @@ flowchart TB
 | **Local / WiFi** | `host()` — el proceso host es un jugador |
 | **Online** (internet / VPS) | `host_dedicated()` — mismo proyecto, peer 1 no es jugador. Desarrollá dedicated + clientes; la VPS es el mismo binario |
 
-Tests: skill `godot-testing` (GUT / GdUnit4) **solo** si los pedís.
+Tests: skill `godot-testing` (GUT / GdUnit4 y el workflow de CI) **solo** si los pedís. El formato y el lint estándar (`gdformat`, `gdlint`, avisos `UNSAFE_*`) están en `godot-code-quality`.
 
 ## Flujo general de desarrollo
 
@@ -141,12 +141,13 @@ Listo cuando: el proyecto parsea headless, el slice se juega, cada criterio tien
 
 ## Prioridades (siempre)
 
+- lo simple y predecible: cambiar un número abre como mucho 2 archivos
 - arquitectura fácil de escalar y limpia en capas
 - siempre tienen prioridad las estructuras de composición
-- siempre tienen prioridad los nodos y las configuraciones sobre el editor
+- siempre tienen prioridad los nodos y las configuraciones en el editor: el valor vive en el nodo que lo usa
 - siempre se debe dar prioridad a la reusabilidad de los componentes
 
-En **estándar**, “capas” no significa carpetas `domain/core/features`. Significa scripts chicos y composición.
+En **estándar**, “capas” no significa carpetas `domain/core/features`. Significa una responsabilidad por pieza y composición (sin tope de líneas: se parte por responsabilidad).
 
 ## Shaders, sprites 2D y 3D
 

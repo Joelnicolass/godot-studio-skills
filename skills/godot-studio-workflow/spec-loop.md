@@ -24,9 +24,10 @@ Autoridad: `PRD.md` > `FEATURES.md` > `RULES.md` > `VISUAL.md` > RFC > plan gene
 | `godot-studio-workflow` | Orquestar (este chat) |
 | `godot-studio-memory` | Notas entre chats (gotchas, decisiones, próximo paso) |
 | `godot-layered-architecture` / `godot-composition-first` | Escribir Godot |
+| `godot-code-quality` | Convenciones de código, patrones y review (regla 0, tipado, lint) |
 | `godot-playtest` | Lanzar el binario y ejercer la feature (módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) |
 | `godot-visual-qa` | Captura vs `VISUAL.md` |
-| `godot-testing` | GUT/GdUnit4 **solo** si el usuario o RULES lo piden |
+| `godot-testing` | GUT/GdUnit4 y CI **solo** si el usuario o RULES lo piden |
 | `godot-mp-kit` | Solo si hay MP |
 
 Quien **escribe** no se auto-valida. Developer ≠ reviewer ≠ playtester ≠ visual.
