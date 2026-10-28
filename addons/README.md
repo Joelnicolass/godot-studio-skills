@@ -8,6 +8,7 @@ Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **ca
 | `fsm_kit` | `FsmMachine` + `FsmState` (sin autoload) |
 | `plat_kit` | Motor 2D: coyote, jump buffer, apex, corner, lift (sin niveles) |
 | `rts_kit` | La capa de mando de un RTS, 2D y 3D: unidades, selección y grupos, órdenes en formación, entrada de comandos (panel de comandos / menú radial opcionales), cámaras de RTS. Sin red, sin movimiento ni combate |
+| `prop_kit` | Props, 2D y 3D: scatter sobre cualquier suelo (grupos, zonas prohibidas, máscaras, variantes), dibujo en lotes (3D), el navmesh por zonas con los props como obstrucciones baratas y rehorneados parciales en hilos de trabajo. Sin red, sin el comportamiento del prop |
 
 **AgentKit** no vive acá: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest). `./install.sh --addon … agent_kit` lo trae de ese repo (AgentKit 0.2.0 con el módulo `determinism` en `rc/v0.10.0`). `example/addons/agent_kit/` de acá es una copia de referencia de ese módulo.
 
@@ -21,4 +22,5 @@ Instalar en un proyecto:
 ./install.sh --addon /path/to/godot-project fsm_kit
 ./install.sh --addon /path/to/godot-project plat_kit
 ./install.sh --addon /path/to/godot-project rts_kit
+./install.sh --addon /path/to/godot-project prop_kit
 ```
