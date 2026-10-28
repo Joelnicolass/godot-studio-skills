@@ -10,6 +10,8 @@ extends Node
 ## it when the match ends or this player leaves. One per process.
 ##   var online := MpOnline.start_on(get_tree(), 4, "Friday night")
 ##   online.room_ready.connect(func(code): show(code))
+## `ticket`: the game's match ticket (world, mode, options, seed, picks…, `seats: [{slot, meta}]`). Desktop: it goes to
+## the match process (MpLocalServer.merge_ticket). Browser: this game is the match, so it reads `ticket` here.
 ## Not: the HTTP calls (MpIssuer), the relay connection (MpTransport), the match rules (the game).
 
 ## Players may join: `code` is what they type.
@@ -29,6 +31,8 @@ var code: String = ""
 ## LISTEN (this game hosts) or DEDICATED (a match process of this PC hosts).
 var mode: String = ""
 var max_players: int = 0
+## The game's match ticket this room was opened with ({} = none).
+var ticket: Dictionary = {}
 var _key: String = ""
 var _relay_room: String = ""
 var _heartbeat_s: float = 10.0
@@ -38,6 +42,8 @@ var _hosting: bool = false
 var _next_beat_ms: int = 0
 var _beating: bool = false
 var _closed: bool = false
+## stop() was called: what it stops (the match process) is not a failure.
+var _stopping: bool = false
 
 
 ## The online room this process hosts, or null.
@@ -50,14 +56,14 @@ static func running(tree: SceneTree) -> MpOnline:
 
 ## Creates the node under the root and opens a room for `players` players (this one counts). One already running is
 ## given back as it is.
-static func start_on(tree: SceneTree, players: int, room_name: String, listed: bool = true) -> MpOnline:
+static func start_on(tree: SceneTree, players: int, room_name: String, listed: bool = true, match_ticket: Dictionary = {}) -> MpOnline:
 	var already := MpOnline.running(tree)
 	if already:
 		return already
 	var online := MpOnline.new()
 	online.name = "MpOnline"
 	tree.root.add_child(online)
-	online.start(players, room_name, listed)
+	online.start(players, room_name, listed, match_ticket)
 	return online
 
 
@@ -84,10 +90,10 @@ func invite_text() -> String:
 	return code
 
 
-func start(players: int, room_name: String, listed: bool = true) -> void:
+func start(players: int, room_name: String, listed: bool = true, match_ticket: Dictionary = {}) -> void:
 	max_players = players
+	ticket = match_ticket.duplicate(true)
 	mode = default_mode()
-	MpKit.transport = MpTransport.RELAY
 	var seats := PackedStringArray()
 	var host_seat := ""
 	if mode == DEDICATED:
@@ -110,13 +116,20 @@ func start(players: int, room_name: String, listed: bool = true) -> void:
 		_start_listen(data)
 
 
-## Closes the room on the issuer and stops hosting it (the match process, or this game's server).
+## Closes the room on purpose (a Close button): this player leaves the match first, then the match process stops and
+## the issuer forgets the room. In the match world (MpFlow.in_world) the flow takes it back to the menu
+## (return_to_boot); from a screen of the game's (the room's own screen, before the match) the scene stays where the
+## game puts it. Deliberate: `ended` fires, never `failed`, and nothing warns that the host left.
 func stop() -> void:
-	await _close()
+	_stopping = true
+	var flow := MpFlow.find_in_tree(self)
+	if flow and flow.in_world():
+		flow.return_to_boot()
+	elif MpKit.is_networked():
+		MpKit.leave()
 	if _local and is_instance_valid(_local):
 		_local.stop()
-	elif mode == LISTEN and MpKit.is_server():
-		MpKit.leave()
+	await _close()
 
 
 func _start_dedicated(players: int, data: Dictionary, host_seat: String, seats: PackedStringArray) -> void:
@@ -128,7 +141,7 @@ func _start_dedicated(players: int, data: Dictionary, host_seat: String, seats: 
 	_local.server_ended.connect(func(_result: Dictionary) -> void: _close())
 	var online := {"code": code, "room": _relay_room, "token": str(data.get("host_token", "")),
 		"url": MpTransport.relay_url, "host_seat": host_seat, "seats": seats}
-	_local.start(players, {}, false, online)
+	_local.start(players, {}, false, online, ticket)
 
 
 ## The match process hosts the relay room; this player joins it with a client token of its own.
@@ -218,6 +231,8 @@ func _close() -> void:
 
 
 func _fail(reason: String) -> void:
+	if _closed or _stopping:
+		return
 	push_warning("MpOnline: %s" % reason)
 	failed.emit(reason)
 	if _local and is_instance_valid(_local):
