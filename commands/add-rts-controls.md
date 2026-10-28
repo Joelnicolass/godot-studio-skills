@@ -4,7 +4,7 @@ description: "Add RTS controls (RtsKit addon): units, selection and groups, orde
 
 Add **RTS controls** to the **game's Godot project** with the RtsKit addon: `RtsUnit` on the units, the command rig (selection, orders, input), a camera, and a command UI if the game wants one.
 
-This is **not** pathfinding, combat or AI: the kit hands each unit its order and the game executes it. **Not** multiplayer: if the game is networked, the order transport is glue in the game (`addons/rts_kit/README.md` › Network). **Does not** invent units, costs or rules.
+This is **not** pathfinding, combat or AI: the kit hands each unit its order and the game executes it. **Not** multiplayer: if the game is networked, the order transport is glue in the game (`addons/rts_kit/GUIDE.md` › 6, MpKit's custom channel). **Does not** invent units, costs or rules.
 
 Load: `godot-rts-kit`, `godot-composition-first`.
 
@@ -37,7 +37,7 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` rem
 [~] project.godot                      # RtsKit plugin; input actions (Tools > RtsKit: Add default input actions)
 ```
 
-Start from `addons/rts_kit/examples/skirmish_3d` or `skirmish_2d`: copy the rig nodes, not the example's walker. In 2D, distances in pixels (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
+Follow `addons/rts_kit/GUIDE.md` (sections 2–6). Start from `addons/rts_kit/examples/skirmish_3d` or `skirmish_2d`: copy the rig nodes, not the example's walker. In 2D, distances in pixels (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
 
 ## 3. Implement
 

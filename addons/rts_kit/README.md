@@ -4,6 +4,8 @@ The command layer of a real-time strategy game, for **2D and 3D**: units, select
 
 It depends on no other kit. A multiplayer game connects it to MpKit (or any transport) through two calls of its own (see [Network](#network)); a single-player RTS connects nothing.
 
+**New to the kit?** Start with [GUIDE.md](GUIDE.md): a unit, the rig, the ways to give orders, making every part your own, and multiplayer with MpKit, step by step.
+
 ## Install
 
 ```bash
@@ -74,20 +76,21 @@ The kinds of order are data (`RtsCommandType` in an `RtsCommandCatalog`: what th
 
 ### Network
 
-The kit sends nothing. `RtsOrder.to_array()` / `RtsOrder.from_array(data, root)` turn an order into plain data and back (units by NodePath, or by your ids with `id_of` / `node_of`); `from_array` refuses malformed data (layout, types, sizes, NaN). A networked game writes the glue in its own code, for instance with MpKit:
+The kit sends nothing. `RtsOrder.to_array()` / `RtsOrder.from_array(data, root)` turn an order into plain data and back (units by NodePath, or by your ids with `id_of` / `node_of`); `from_array` refuses malformed data (layout, types, sizes, NaN). A networked game writes the glue in its own code. With MpKit, through its custom channel (no RPC by hand; it also works offline):
 
 ```gdscript
-# Client: send the order instead of applying it.
-orders.send = func(order: RtsOrder) -> void: submit_order.rpc_id(1, order.to_array())
+# Every peer: the local player's orders go to the server.
+orders.send = func(order: RtsOrder) -> void:
+	MpKit.send_custom(&"rts_order", {"order": order.to_array(func(body: Node) -> String: return String(body.name))})
 
-# Server: apply it as the player who sent it.
-@rpc("any_peer", "call_remote", "reliable")
-func submit_order(data: Array) -> void:
-	var slot := MpKit.slot_for_peer(multiplayer.get_remote_sender_id())
-	orders.apply(RtsOrder.from_array(data, self), slot)
+# The server applies them as the player who sent them.
+MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_peer: int) -> void:
+	if channel == &"rts_order" and MpKit.is_authority():
+		var slot := MpKit.slot_for_peer(from_peer) if MpKit.is_networked() else MpKit.local_slot()
+		orders.apply(RtsOrder.from_array(data.get("order"), self, func(id: String) -> Node: return units_root.get_node_or_null(NodePath(id))), slot))
 ```
 
-`apply` checks every unit against the sender's slot, so a client can only order what that player owns.
+`apply` checks every unit against the sender's slot, so a client can only order what that player owns. The whole path (units spawned by MpKit, their owner, who is "me", a dedicated server): [GUIDE.md › 6](GUIDE.md#6-multiplayer-with-mpkit).
 
 ## Input
 

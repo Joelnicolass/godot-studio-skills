@@ -34,7 +34,7 @@ With the kit:
 | AgentKit            | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | Agent CLI + harness. This kit installs it; it is not maintained here.                            |
 | FsmKit              | `addons/fsm_kit/`                                                              | `FsmMachine` + `FsmState`. No autoload.                                                          |
 | PlatKit             | `addons/plat_kit/`                                                             | 2D motor: coyote, buffer, apex, corner, lift. No levels or score.                                |
-| RtsKit              | `addons/rts_kit/`                                                              | RTS controls for 2D and 3D: units, selection and groups, typed orders in formations, command input (command panel and radial menu optional), RTS cameras. No network inside; no movement or combat. Tests in `rtskit_lab/`. |
+| RtsKit              | `addons/rts_kit/`                                                              | RTS controls for 2D and 3D: units, selection and groups, typed orders in formations, command input (command panel and radial menu optional), RTS cameras. No network inside; no movement or combat. Start with `addons/rts_kit/GUIDE.md` (includes MpKit); tests in `rtskit_lab/`. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 

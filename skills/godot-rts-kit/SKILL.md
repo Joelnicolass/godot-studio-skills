@@ -12,7 +12,7 @@ description: >-
 
 # Godot — RTS controls (RtsKit)
 
-Addon `addons/rts_kit/` in the **game** project. Reference: `addons/rts_kit/README.md`; API by piece: [api.md](api.md).
+Addon `addons/rts_kit/` in the **game** project. Step by step (a unit, the rig, making it the game's own, MpKit): `addons/rts_kit/GUIDE.md`. Reference: `addons/rts_kit/README.md`; API by piece: [api.md](api.md).
 
 If the addon is missing:
 
@@ -25,7 +25,7 @@ Enable plugin **RtsKit**. Bounded request: `/add-rts-controls`. Composition: [go
 ## Rules
 
 - **The kit commands, the game acts.** RtsKit decides who obeys, the formation and each unit's slot; the game moves the body and fights (listen to `RtsUnit.order_started`, call `complete()` / `fail()`). Do not put movement, damage or AI inside the kit's nodes.
-- **No kit depends on another.** RtsKit has no network and never names MpKit or FsmKit. Multiplayer is glue in the game: `orders.send` sends `order.to_array()`; the server calls `orders.apply(RtsOrder.from_array(data, self), sender_slot)` (README › Network). A unit's behavior may be an FsmKit machine the game wires to `order_started`.
+- **No kit depends on another.** RtsKit has no network and never names MpKit or FsmKit. Multiplayer is glue in the game: `orders.send` sends `order.to_array()`; the server calls `orders.apply(RtsOrder.from_array(data, self), sender_slot)`. With MpKit: its custom channel, units named by node name (GUIDE › 6). A unit's behavior may be an FsmKit machine the game wires to `order_started`.
 - **One ground for 2D and 3D.** Kit points are 3D (`Vector3`, ground XZ). A 2D point `(x, y)` is `(x, 0, y)`: `RtsSpace.from_2d` / `to_2d`, `order.spot_2d()`. In 2D, world units are pixels: set `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius` and `RtsUnit.size` in pixels.
 - **Data, not code, for kinds of order and formations.** A new order = an `RtsCommandType` in a catalog `.tres`; a new shape = a script that `extends RtsFormation`. A rule of a unit (pacifist, a foe that is not "another team") = a script that `extends RtsUnit` and overrides `accepts` / `is_foe`.
 - **Menus are optional.** The right button (`RtsOrderButton`) works with no menu. Command UIs show `RtsMenuEntry` and call `RtsOrderInput.run_entry(entry, screen)`: `RtsCommandCard` (buttons), `RtsRadialMenu` (rings), or the game's own (`extends RtsOrderMenu`).
