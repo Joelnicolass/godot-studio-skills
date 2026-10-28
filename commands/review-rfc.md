@@ -27,7 +27,7 @@ Before assessing anything, run the project's build, typecheck, and test suite. P
 
 If you cannot execute commands in this environment, say so explicitly and mark every verdict below as unverified rather than assessing by reading alone.
 
-For a **Godot game**: parsing/importing the project counts as build; the test suite only if a runner exists. Window playtest and fidelity vs `VISUAL.md` are not this review (`studio-playtester` / `studio-visual`). One pass: blockers vs nits; do not ask to iterate until green.
+For a **Godot game**: parsing/importing the project counts as build; `gdformat --check` and `gdlint` count as typecheck if the project uses them; the test suite (GUT) only if a runner exists. Window playtest and fidelity vs `VISUAL.md` are not this review (`studio-playtester` / `studio-visual`). One pass: blockers vs nits; do not ask to iterate until green.
 
 ## SCOPE THE CHECKLIST TO THE PRODUCT TYPE
 
@@ -69,6 +69,7 @@ Mark an inapplicable dimension N/A with one line of reasoning. Do not fill it wi
 - Appropriate test coverage
 - Proper separation of concerns
 - Dead code or unused imports
+- For a **Godot game**: the §8 questions of the `godot-code-quality` skill. First, **how many files you open to change a number** in the feature (count them; more than 2 = NEEDS WORK). Then: each `.tres` justified (shared or edited as a type), no pointers through tags or strings, communication through proven patterns (no new registries, locators, or managers), real typing, `##` only on the API, and logs in English. A home-made convention that contradicts the standard gets flagged, even if RULES.md asks for it
 
 ## Output Format
 

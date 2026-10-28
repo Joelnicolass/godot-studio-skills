@@ -15,9 +15,9 @@ description: >-
 
 The **main agent in this chat** is the orchestrator. It talks to the user. It does not dump the whole product into one subagent.
 
-Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Procedural materials / textures: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. A mechanic “like in X” (research it on the web, deduce it): [godot-feature-research](../godot-feature-research/SKILL.md) + `/research-feature`.
+Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md), [godot-code-quality](../godot-code-quality/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Procedural materials / textures: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. A mechanic “like in X” (research it on the web, deduce it): [godot-feature-research](../godot-feature-research/SKILL.md) + `/research-feature`.
 
-Goal: a Godot 4 game with a **small, clear base**. Priorities: clean layers, composition, editor/`@export`, reusable components.
+Goal: a Godot 4 game with a **small, clear base**. Priorities: simple and predictable (changing a number opens 2 files at most), clean layers, composition, the value on the node that uses it (`@export`), reusable components, proven Godot patterns.
 
 Roles (subagent tool — `Agent` in Claude Code, `Task` in Cursor — with `subagent_type` = their `name`):
 
@@ -132,6 +132,7 @@ Without the [file tree](file-tree.md) there is no “OK, implement”. **Always*
 Do not close an iteration “by feel”. Verify:
 
 - [ ] The project parses headless: `godot --headless --path . --quit` with no `SCRIPT ERROR` / `ERROR`.
+- [ ] If the project has `gdformat` / `gdlint` / GUT (or their CI), green on what the cut touched.
 - [ ] The feature scene runs with F5/F6 and the slice action is exercised.
 - [ ] The `F<n>` names the scene (`res://debug/…` or the player scene), the InputMap action, and the observable. An RFC only if the cut is large.
 - [ ] Every criterion has review evidence and, if there was a playtest, the flow under `res://agent/`.

@@ -57,7 +57,7 @@ Subagents **do not** see this chat. The prompt passes repo, RFC, architecture st
 
 ## Godot architectures (always ask)
 
-Two styles are valid. The agent does not assume Clean. Both require composition, the editor, and Resources.
+Two styles are valid. The agent does not assume Clean. Both require simple and predictable code, composition, the editor, and the proven Godot patterns (skill `godot-code-quality`).
 
 ```mermaid
 flowchart TB
@@ -77,7 +77,7 @@ flowchart TB
   std --> shared
 
   shared --> packed[Packed scenes + @export]
-  packed --> tres[Types = Resource .tres]
+  packed --> tres[Shared types = Resource .tres]
   tres --> f6[Each scene runs with F6]
 ```
 
@@ -86,7 +86,7 @@ flowchart TB
 | **Clean** | `src/domain` + `core` + `features` | `GameSession` autoload **only** if it survives scene change |
 | **Standard** | Scene + script together; no `src/domain/` | `Match` node, child of the world |
 
-Type data → Resource. Pure helpers → `class_name` + `static func`. Actor behavior → child node. Autoload only for global services (MpKit **if there is MP**, event bus).
+A value of a single scene → `@export` on the node that uses it. Shared type data → Resource. Pure helpers → `class_name` + `static func`. Actor behavior → child node. Autoload only for global services (MpKit **if there is MP**, the `Events` bus with signals only).
 
 ## Multiplayer (always ask)
 
@@ -107,7 +107,7 @@ flowchart TB
 | **Local / Wi-Fi** | `host()` — the host process is a player |
 | **Online** (internet / VPS) | `host_dedicated()` — same project, peer 1 is not a player. Develop dedicated + clients; the VPS is the same binary |
 
-Tests: skill `godot-testing` (GUT / GdUnit4) **only** if you ask.
+Tests: skill `godot-testing` (GUT / GdUnit4 and the CI workflow) **only** if you ask. Standard formatting and lint (`gdformat`, `gdlint`, `UNSAFE_*` warnings) live in `godot-code-quality`.
 
 ## Development flow
 
@@ -141,12 +141,13 @@ Done when: the project parses headless, the slice plays, every criterion has rev
 
 ## Priorities (always)
 
+- simple and predictable: changing a number opens 2 files at most
 - architecture that is easy to scale and clean in layers
 - composition structures always take priority
-- nodes and editor configuration always take priority
+- nodes and editor configuration always take priority: the value lives on the node that uses it
 - component reusability always takes priority
 
-On **standard**, “layers” does not mean `domain/core/features` folders. It means small scripts and composition.
+On **standard**, “layers” does not mean `domain/core/features` folders. It means one responsibility per piece and composition (no line cap: split by responsibility).
 
 ## Shaders, 2D sprites, and 3D
 

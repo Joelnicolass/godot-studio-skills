@@ -23,9 +23,8 @@ It shows at a glance whether the feature is a god-node or a set of pieces.
 ├── [+] foo.tscn              # container: physics/layout + orchestrates children
 ├── [+] foo.gd                # thin: signals up, @export sockets
 ├── [+] bar.tscn              # reusable packed (2nd caller or F6 alone)
-├── [+] bar.gd
-└── data/
-    └── [+] foo_stats.tres    # type; do not mutate at runtime
+├── [+] bar.gd                # its numbers as @export, visible in the inspector
+└── [+] foo_fast.tres         # only for a type with shared variants; do not mutate at runtime
 scenes/world/
 └── [~] world.tscn            # instances foo.tscn under %Actors
 scenes/actors/
@@ -44,7 +43,9 @@ Plus a **responsibility map** (one row per file or node):
 |-------|----------------------|------|----------------------|
 | `foo.gd` | Orchestrates input → `apply_*` | Node | If it also painted HUD, split |
 | `bar.tscn` | FX / HUD / hitbox | Packed | Second caller or F6 |
-| `foo_stats.tres` | Type stats | Resource | Another skin = another `.tres` |
+| `foo_fast.tres` | Stats of one variant | Resource | Several scenes share it; another variant = another `.tres` |
+
+For each new tunable number, the plan says which node it lives on. If changing it means opening more than 2 files, the cut is redesigned before the OK.
 
 Clean: `src/features/<n>/`, `src/core/`, `src/domain/` per [clean.md](../godot-layered-architecture/clean.md).  
 Standard: next to the scene; do not invent `src/domain/`.
@@ -55,15 +56,15 @@ It belongs in the same tree, under `res://debug/`, and on the RFC or the `F<n>`.
 
 ```text
 debug/
-└── goal_ready.tscn     # actor + goal + stats_debug.tres (same script, other numbers)
+└── goal_ready.tscn     # actor + goal, with other @export values on the instance (same script, other numbers)
 ```
 
-The initial state makes the criterion **easy** (do not play the whole game to reach it). It does not leave the criterion **already true** (the goal is not already done, the notice does not start visible). A debug `.tres` changes numbers; not a parallel script. `res://debug/` stays out of the release export.
+The initial state makes the criterion **easy** (do not play the whole game to reach it). It does not leave the criterion **already true** (the goal is not already done, the notice does not start visible). The debug scene changes numbers (an `@export` on the instance, or a debug `.tres` if the feature already uses one); not a parallel script. `res://debug/` stays out of the release export.
 
 ## Signals to compose more
 
 - One `.gd` paints, spawns, scores, and changes scene.
-- Hardcoded copy or round numbers (belong in a module / `MatchRules.tres`).
+- Hardcoded copy or numbers (copy goes through `tr()`; numbers, to an `@export` on the node that uses them).
 - The same block copied in two features → `shared/` or packed.
 - HUD mixed with match rules.
 
@@ -72,6 +73,8 @@ The initial state makes the criterion **easy** (do not play the whole game to re
 - A packed scene of a ColorRect nobody reuses.
 - An autoload for *this* round’s score.
 - `src/domain/` in a project that chose **standard**.
+- A `.tres` that a single scene uses, or one that points at another through a tag or a string.
+- A new autoload, registry, locator, or manager for something a signal, an `@export`, or the `Events` bus solves.
 
 ## What to ask the user
 

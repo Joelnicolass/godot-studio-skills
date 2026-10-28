@@ -24,9 +24,10 @@ Authority: `PRD.md` > `FEATURES.md` > `RULES.md` > `VISUAL.md` > RFC > generated
 | `godot-studio-workflow` | Orchestrate (this chat) |
 | `godot-studio-memory` | Notes across chats (gotchas, decisions, next step) |
 | `godot-layered-architecture` / `godot-composition-first` | Write Godot |
+| `godot-code-quality` | Code conventions, patterns, and review (rule 0, typing, lint) |
 | `godot-playtest` | Launch the binary and exercise the feature ([godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module) |
 | `godot-visual-qa` | Screenshot vs `VISUAL.md` |
-| `godot-testing` | GUT/GdUnit4 **only** if the user or RULES asks |
+| `godot-testing` | GUT/GdUnit4 and CI **only** if the user or RULES asks |
 | `godot-mp-kit` | Only if there is MP |
 
 Whoever **writes** does not self-validate. Developer ≠ reviewer ≠ playtester ≠ visual.
