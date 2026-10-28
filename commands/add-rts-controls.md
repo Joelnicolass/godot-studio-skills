@@ -4,7 +4,7 @@ description: "Agrega controles de RTS (addon RtsKit): unidades, selección y gru
 
 Agregá **controles de RTS** al **proyecto Godot del juego** con el addon RtsKit: `RtsUnit` en las unidades, el equipo de mando (selección, órdenes, entrada), una cámara, y una interfaz de comandos si el juego la quiere.
 
-Esto **no** es pathfinding, combate ni IA: el kit le da a cada unidad su orden y el juego la cumple. **No** es multijugador: si el juego es en red, el transporte de las órdenes es pegamento del juego (`addons/rts_kit/README.md` › Red). **No** inventa unidades, costos ni reglas.
+Esto **no** es pathfinding, combate ni IA: el kit le da a cada unidad su orden y el juego la cumple. **No** es multijugador: si el juego es en red, el transporte de las órdenes es pegamento del juego (`addons/rts_kit/GUIDE.md` › 6, el canal propio de MpKit). **No** inventa unidades, costos ni reglas.
 
 Cargar: `godot-rts-kit`, `godot-composition-first`.
 
@@ -37,7 +37,7 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 [~] project.godot                      # plugin RtsKit; acciones de entrada (Herramientas > RtsKit: Add default input actions)
 ```
 
-Arrancá desde `addons/rts_kit/examples/skirmish_3d` o `skirmish_2d`: copiá los nodos del equipo, no el caminante del ejemplo. En 2D, distancias en píxeles (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
+Seguí `addons/rts_kit/GUIDE.md` (secciones 2–6). Arrancá desde `addons/rts_kit/examples/skirmish_3d` o `skirmish_2d`: copiá los nodos del equipo, no el caminante del ejemplo. En 2D, distancias en píxeles (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
 
 ## 3. Implementar
 

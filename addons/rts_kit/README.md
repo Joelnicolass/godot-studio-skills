@@ -4,6 +4,8 @@ La capa de mando de un juego de estrategia en tiempo real, para **2D y 3D**: uni
 
 No depende de ningún otro kit. Un juego en red lo conecta con MpKit (o con cualquier transporte) con dos llamadas propias (ver [Red](#red)); un RTS de un jugador no conecta nada.
 
+**¿Nunca usaste el kit?** Empezá por [GUIDE.md](GUIDE.md): una unidad, el equipo, las formas de dar órdenes, cómo hacer tuya cada parte y el multijugador con MpKit, paso a paso.
+
 ## Instalar
 
 ```bash
@@ -74,20 +76,21 @@ Los tipos de orden son datos (`RtsCommandType` en un `RtsCommandCatalog`: a qué
 
 ### Red
 
-El kit no manda nada. `RtsOrder.to_array()` / `RtsOrder.from_array(data, root)` convierten una orden en datos simples y de vuelta (las unidades por NodePath, o por tus ids con `id_of` / `node_of`); `from_array` rechaza datos mal formados (forma, tipos, tamaños, NaN). Un juego en red escribe el pegamento en su propio código, por ejemplo con MpKit:
+El kit no manda nada. `RtsOrder.to_array()` / `RtsOrder.from_array(data, root)` convierten una orden en datos simples y de vuelta (las unidades por NodePath, o por tus ids con `id_of` / `node_of`); `from_array` rechaza datos mal formados (forma, tipos, tamaños, NaN). Un juego en red escribe el pegamento en su propio código. Con MpKit, por su canal propio (sin RPC a mano; también anda sin red):
 
 ```gdscript
-# Cliente: manda la orden en vez de aplicarla.
-orders.send = func(order: RtsOrder) -> void: submit_order.rpc_id(1, order.to_array())
+# Todos los peers: las órdenes del jugador local van al servidor.
+orders.send = func(order: RtsOrder) -> void:
+	MpKit.send_custom(&"rts_order", {"order": order.to_array(func(body: Node) -> String: return String(body.name))})
 
-# Servidor: la aplica como el jugador que la mandó.
-@rpc("any_peer", "call_remote", "reliable")
-func submit_order(data: Array) -> void:
-	var slot := MpKit.slot_for_peer(multiplayer.get_remote_sender_id())
-	orders.apply(RtsOrder.from_array(data, self), slot)
+# El servidor las aplica como el jugador que las mandó.
+MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_peer: int) -> void:
+	if channel == &"rts_order" and MpKit.is_authority():
+		var slot := MpKit.slot_for_peer(from_peer) if MpKit.is_networked() else MpKit.local_slot()
+		orders.apply(RtsOrder.from_array(data.get("order"), self, func(id: String) -> Node: return units_root.get_node_or_null(NodePath(id))), slot))
 ```
 
-`apply` revisa cada unidad contra el slot del que mandó, así que un cliente solo puede ordenar lo que es de ese jugador.
+`apply` revisa cada unidad contra el slot del que mandó, así que un cliente solo puede ordenar lo que es de ese jugador. El camino completo (unidades que hace aparecer MpKit, su dueño, quién soy «yo», un servidor dedicado): [GUIDE.md › 6](GUIDE.md#6-multijugador-con-mpkit).
 
 ## Entrada
 

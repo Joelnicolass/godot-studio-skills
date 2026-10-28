@@ -12,7 +12,7 @@ description: >-
 
 # Godot — controles de RTS (RtsKit)
 
-Addon `addons/rts_kit/` en el **proyecto del juego**. Referencia: `addons/rts_kit/README.md`; API por pieza: [api.md](api.md).
+Addon `addons/rts_kit/` en el **proyecto del juego**. Paso a paso (una unidad, el equipo, hacerlo del juego, MpKit): `addons/rts_kit/GUIDE.md`. Referencia: `addons/rts_kit/README.md`; API por pieza: [api.md](api.md).
 
 Si el addon no está:
 
@@ -25,7 +25,7 @@ Habilitá el plugin **RtsKit**. Pedido acotado: `/add-rts-controls`. Composició
 ## Reglas
 
 - **El kit manda, el juego actúa.** RtsKit decide quién obedece, la formación y el lugar de cada unidad; el juego mueve el cuerpo y pelea (escucha `RtsUnit.order_started` y llama a `complete()` / `fail()`). No pongas movimiento, daño ni IA dentro de los nodos del kit.
-- **Ningún kit depende de otro.** RtsKit no tiene red y nunca nombra a MpKit ni a FsmKit. El multijugador es pegamento en el juego: `orders.send` manda `order.to_array()`; el servidor llama a `orders.apply(RtsOrder.from_array(data, self), sender_slot)` (README › Red). El comportamiento de una unidad puede ser una máquina de FsmKit que el juego conecta a `order_started`.
+- **Ningún kit depende de otro.** RtsKit no tiene red y nunca nombra a MpKit ni a FsmKit. El multijugador es pegamento en el juego: `orders.send` manda `order.to_array()`; el servidor llama a `orders.apply(RtsOrder.from_array(data, self), sender_slot)`. Con MpKit: su canal propio, las unidades por el nombre de su nodo (GUIDE › 6). El comportamiento de una unidad puede ser una máquina de FsmKit que el juego conecta a `order_started`.
 - **Un mismo suelo para 2D y 3D.** Los puntos del kit son 3D (`Vector3`, suelo en XZ). Un punto 2D `(x, y)` es `(x, 0, y)`: `RtsSpace.from_2d` / `to_2d`, `order.spot_2d()`. En 2D las unidades del mundo son píxeles: poné `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius` y `RtsUnit.size` en píxeles.
 - **Datos, no código, para tipos de orden y formaciones.** Una orden nueva = un `RtsCommandType` en un catálogo `.tres`; una forma nueva = un script que `extends RtsFormation`. Una regla de una unidad (pacifista, un enemigo que no es «otro equipo») = un script que `extends RtsUnit` y redefine `accepts` / `is_foe`.
 - **Los menús son opcionales.** El botón derecho (`RtsOrderButton`) anda sin menú. Las interfaces de comandos muestran `RtsMenuEntry` y llaman a `RtsOrderInput.run_entry(entry, screen)`: `RtsCommandCard` (botones), `RtsRadialMenu` (anillos), o la del juego (`extends RtsOrderMenu`).
