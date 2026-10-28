@@ -4,7 +4,8 @@
 # Part 1, a desktop host (a match process on its PC, MpLocalServer): a friend finds its room in the issuer's list and
 # joins; the host wins and the issuer forgets the room. Part 2, a host in its own game (the way a browser hosts): a
 # friend joins with the code (typed "abc-def"), the host process freezes for 3 s (SIGSTOP), the friend waits for it
-# (host_silent / host_back) and the match goes on; a third player is told the room is full, a made-up code is unknown.
+# (host_silent / host_back) and the match goes on; a third player is told the room is full, a made-up code is unknown;
+# a desktop host closes its room on purpose (no failure, nothing left).
 # Part 3, a browser hosts: the lab's web export in a headless Chrome opens a room (CORS to the issuer, the relay token
 # in the URL) and a desktop friend finds it in the list by name and plays it (ONLINE_WEB=0, or no Chrome/Chromium:
 # skipped; BROWSER=/path picks one). Never more than 3 headless Godot at once (a match process counts). Needs npm (the issuer's and relay's packages, installed from their lockfiles once).
@@ -60,16 +61,30 @@ for _ in range(100):
 sys.exit(1)
 PYEOF
 
-COMMON=(--transport=relay --issuer-url="$ISSUER" --probe-timeout-s=45 --matches-root="$MATCHES" --result-quit-delay-s=1)
+## No --transport: every process stays on ENet, as a game does; an issuer room's connection goes through the relay by
+## itself (MpTransport.use_relay_room), and LAN afterwards is ENet still.
+COMMON=(--issuer-url="$ISSUER" --probe-timeout-s=45 --matches-root="$MATCHES" --result-quit-delay-s=1)
+TICKET='{"mode":"duel","options":{"map":"lab-map"},"seats":[{"slot":1,"meta":{"pick":"red"}},{"slot":2,"meta":{"pick":"blue"}}]}'
 CODE1="$OUT/code1.txt"
 CODE2="$OUT/code2.txt"
 
 ## At most 3 headless Godot at once on this machine (a match process counts).
 echo "--- part 1: a desktop host (a match process on its PC); a friend finds the room in the issuer's list"
 gd "$OUT/host.log" -- "${COMMON[@]}" --probe=online_host --online-mode=dedicated --probe-players=2 \
-  --probe-code-file="$CODE1" --issuer-install=lab-host-install-0001
+  --probe-code-file="$CODE1" --probe-ticket="$TICKET" --issuer-install=lab-host-install-0001
 HOST=$LAST_PID
 wait_line "$OUT/host.log" "^PASS the online room is up" "$HOST" 60
+## The match process's ticket: the game's keys and seat meta, the kit's tokens and relay block.
+python3 - "$MATCHES" > "$OUT/ticket_check.txt" <<'PYEOF'
+import glob, json, sys
+found = glob.glob(sys.argv[1] + "/**/ticket.json", recursive=True)
+t = json.load(open(found[0])) if found else {}
+seats = {s.get("slot"): s for s in t.get("seats", [])}
+ok = (t.get("mode") == "duel" and t.get("options") == {"map": "lab-map"}
+      and seats.get(1, {}).get("meta") == {"pick": "red"} and seats.get(2, {}).get("meta") == {"pick": "blue"}
+      and all("token_sha256" in s for s in seats.values()) and str(t.get("relay", {}).get("room", "")).startswith("p-"))
+print("ticket ok" if ok else "ticket wrong: %s" % json.dumps(t)[:400])
+PYEOF
 gd "$OUT/lister.log" -- "${COMMON[@]}" --probe=online_list --probe-code-file="$CODE1" --issuer-install=lab-lister-install-01
 LISTER=$LAST_PID
 for p in $LISTER $HOST; do wait_pid "$p" 90; done
@@ -104,6 +119,12 @@ gd "$OUT/nocode.log" -- "${COMMON[@]}" --probe=online_refused --probe-room=ZZZZZ
 wait_pid "$LAST_PID" 60
 touch "$OUT/go2"
 for p in $LFRIEND $LHOST; do wait_pid "$p" 90; done
+gd "$OUT/stop.log" -- "${COMMON[@]}" --probe=online_stop --online-mode=dedicated --issuer-install=lab-stop-install-0001
+wait_pid "$LAST_PID" 60
+wait_gone "match-ticket-file=$MATCHES" 15
+gd "$OUT/stopearly.log" -- "${COMMON[@]}" --probe=online_stop --probe-stop-early --online-mode=dedicated --issuer-install=lab-stop-install-0002
+wait_pid "$LAST_PID" 60
+wait_gone "match-ticket-file=$MATCHES" 15
 
 BROWSER_BIN="$(find_browser)"
 if [ "${ONLINE_WEB:-1}" = 0 ] || [ -z "$BROWSER_BIN" ]; then
@@ -133,16 +154,19 @@ PYEOF
   wait_pid "$LAST_PID" 150
 fi
 
-for r in host lister lhost lfriend full nocode wfriend; do [ -f "$OUT/$r.log" ] || continue; grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$OUT/$r.log" | sed "s/^/$r: /"; done
+for r in host lister lhost lfriend full nocode stop stopearly wfriend; do [ -f "$OUT/$r.log" ] || continue; grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$OUT/$r.log" | sed "s/^/$r: /"; done
 FAILS=0
 check() { if eval "$1"; then echo "PASS $2"; else echo "FAIL $2"; FAILS=$((FAILS + 1)); fi; }
 check 'grep -q "^PROBE online_host PASS" "$OUT/host.log"' "a desktop host opened a room through the issuer (a match process on its PC), played it and won"
 check 'grep -q "^PROBE online_list PASS" "$OUT/lister.log"' "a friend found the room in the issuer's list and joined it"
+check 'grep -qx "ticket ok" "$OUT/ticket_check.txt"' "the match process got the game's ticket (mode, options, each seat's pick) with the kit's tokens and relay room"
 check 'grep -qx "gone" "$OUT/gone.txt"' "the issuer forgot the room once its match ended"
 check 'grep -q "^PROBE online_host PASS" "$OUT/lhost.log"' "a host in its own game opened a room, froze 3 s and still finished the match"
-check 'grep -q "^PROBE online_join PASS" "$OUT/lfriend.log"' "a friend joined with the code (typed abc-def), waited for the frozen host and saw the match end"
+check 'grep -q "^PROBE online_join PASS" "$OUT/lfriend.log"' "a friend joined with the code (typed abc-def), waited for the frozen host, saw the match end, and its game's transport was still ENet"
 check 'grep -q "^PROBE online_refused PASS" "$OUT/full.log"' "a third player was told the room is full"
 check 'grep -q "^PROBE online_refused PASS" "$OUT/nocode.log"' "a made-up code was told there is no such room"
+check 'grep -q "^PROBE online_stop PASS" "$OUT/stop.log" && ! grep -q "relay closed this client" "$OUT/stop.log"' "a host closing its room on purpose: back to the menu, it ends, never fails or warns, and the issuer forgets it"
+check 'grep -q "^PROBE online_stop PASS" "$OUT/stopearly.log" && ! grep -q "relay closed this client" "$OUT/stopearly.log"' "a host closing its room from the game's own screen, before the match: the scene stays, nothing fails or is left"
 if [ -z "${WEB_SKIP:-}" ]; then
   check 'grep -q "listen, 2 players, listed) by Web" "$OUT/issuer.log"' "a browser opened a room on the issuer (CORS, its own game hosting)"
   check 'grep -q "^PROBE online_list host Web" "$OUT/wfriend.log" && grep -q "^PROBE online_list PASS" "$OUT/wfriend.log"' "a desktop friend found the browser's room by name, joined it and saw the match end"
