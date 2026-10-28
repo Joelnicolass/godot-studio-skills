@@ -2,28 +2,26 @@
 
 Usar **solo** si el usuario eligió estándar (o el repo ya lo declara). No crear `src/domain/` ni una fachada de sesión “por las dudas”.
 
-Siguen valiendo: composición, editor, Resources, reuso, scripts chicos, señales arriba / llamadas abajo.
+Siguen valiendo: simple y predecible, composición, editor, Resources compartidos, reuso, una responsabilidad por script, señales arriba / llamadas abajo ([godot-code-quality](../godot-code-quality/SKILL.md)).
 
 ## Forma del proyecto
 
-Escena + script **juntos**.
+Escena + script **juntos**, y sus `.tres` y su arte en la misma carpeta de la entidad cuando ayuda.
 
 ```
 scenes/
   actors/
-    projectile.tscn + .gd
-    enemy.tscn + .gd
-    actor.tscn + .gd
+    projectile/         # projectile.tscn + .gd + projectile_data.gd + projectile_fast.tres + projectile_slow.tres
+    enemy/              # enemy.tscn + .gd + sprites
+    actor/
   components/           # Health, Hitbox, Hurtbox (packed scenes)
   world/
   ui/
-resources/
-  projectiles/          # projectile_data.gd + projectile_fast.tres + projectile_slow.tres
-  enemies/
+events.gd               # autoload Events (solo señales), si hace falta
 addons/mp_kit/
 ```
 
-Variante válida: carpetas por feature. Inválido: un `Player.gd` de mil líneas y `match weapon`.
+Una carpeta de datos aparte (`resources/<familia>/`) solo para tipos que comparten varias escenas. Variante válida: carpetas por feature. Inválido: un `Player.gd` de mil líneas y `match weapon`.
 
 ## Escenas autónomas
 
@@ -36,12 +34,13 @@ Cada `.tscn` debe poder abrirse con **F6** y funcionar (o advertir). Docs: [orga
 - Relacional, no espacial: ¿al borrar el padre debe borrarse el hijo? Si no, sibling. Posición relativa: `RemoteTransform2D` / `RemoteTransform3D`.
 - `Main` (entrada) → `World` (se reemplazan niveles) + `GUI` (hermana; no muere con el nivel).
 
-## Scripts pequeños
+## Una responsabilidad por script
 
 - Un nodo = un trabajo. Movimiento ≠ HP ≠ disparo ≠ HUD.
 - Extraer packed scene hija cuando el script implementa dos sistemas.
 - Herencia rasa: `State extends Node`. No `EliteFlyingEnemy extends FlyingEnemy extends Enemy`.
 - El mundo **compone** spawners, cámara, FX. No puntúa en el mismo archivo que spawnea.
+- Sin tope de líneas: un script cohesivo de 400 líneas está bien; dos sistemas en 120 líneas, no.
 
 ## Estado de partida sin domain
 
@@ -51,12 +50,12 @@ Cada `.tscn` debe poder abrirse con **F6** y funcionar (o advertir). Docs: [orga
 
 ## Autoloads
 
-Ver tabla en `SKILL.md`. Sí: bus de eventos, `MpKit`.  
+Ver tabla en `SKILL.md`. Sí: el bus `Events` (solo señales tipadas), `MpKit`.  
 No: `EnemyManager`, fábrica global de proyectiles, inventario del run si puede vivir en el árbol. Audio: `AudioStreamPlayer` / componente `class_name` en escena; autoload de sonido solo si es un bus aislado.
 
 ## Checklist extra
 
 - [ ] ¿La escena corre con F6? ¿Deps por `@export`? ¿Warning si falta el socket?
-- [ ] ¿Variantes = `.tres` (o packed scene si cambia la **estructura**)?
-- [ ] ¿El script cabe en una lectura corta?
+- [ ] ¿Variantes que se comparten = `.tres` (o packed scene si cambia la **estructura**)? ¿Un valor de una sola escena = `@export`?
+- [ ] ¿Cambiar un número abre como mucho 2 archivos?
 - [ ] ¿No se introdujo `src/domain/` sin pedir Clean?

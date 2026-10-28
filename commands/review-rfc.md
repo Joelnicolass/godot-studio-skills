@@ -27,7 +27,7 @@ Antes de evaluar cualquier cosa, ejecutá el build, typecheck y la suite de test
 
 Si no podés ejecutar comandos en este entorno, decilo de forma explícita y marcá cada veredicto de abajo como unverified en lugar de evaluar solo leyendo.
 
-En un **juego Godot**: parse/import del proyecto cuenta como build; la suite de tests solo si existe runner. Playtest en ventana y fidelidad vs `VISUAL.md` no son esta review (`studio-playtester` / `studio-visual`). Un pase: bloqueantes vs nits; no pidas iterar hasta verde.
+En un **juego Godot**: parse/import del proyecto cuenta como build; `gdformat --check` y `gdlint` cuentan como typecheck si el proyecto los usa; la suite de tests (GUT) solo si existe runner. Playtest en ventana y fidelidad vs `VISUAL.md` no son esta review (`studio-playtester` / `studio-visual`). Un pase: bloqueantes vs nits; no pidas iterar hasta verde.
 
 ## AJUSTAR EL CHECKLIST AL TIPO DE PRODUCTO
 
@@ -69,6 +69,7 @@ Marcá una dimensión inaplicable N/A con una línea de razonamiento. No la rell
 - Cobertura de tests adecuada
 - Separación de responsabilidades correcta
 - Código muerto o imports no usados
+- En un **juego Godot**: las preguntas de §8 de la skill `godot-code-quality`. Primero, **cuántos archivos hay que abrir para cambiar un número** de la feature (contalos; más de 2 = NEEDS WORK). Después: cada `.tres` justificado (compartido o editado como tipo), sin punteros por tag o texto, comunicación con patrones probados (sin registries, locators ni managers nuevos), tipado real, `##` solo en la API y logs en inglés. Una convención propia que contradice el estándar se marca, aunque RULES.md la pida
 
 ## Formato de salida
 

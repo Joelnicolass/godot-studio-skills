@@ -2,9 +2,9 @@
 name: godot-composition-first
 description: >-
   Diseña escenas Godot 4 por composición: nodos hijos, packed scenes,
-  FsmMachine, pases de FX, Resources (.tres) como plantillas de tipo,
-  sockets @export tipados, %UniqueName, InputMap y valores del editor por
-  encima de hardcode. Prioriza reutilizar componentes en shared/addons.
+  FsmMachine, pases de FX, sockets @export tipados, %UniqueName, InputMap y
+  el valor en el nodo que lo usa; Resources (.tres) solo para tipos que se
+  comparten. Prioriza reutilizar componentes en shared/addons.
   Usar al crear o editar .tscn, GDScript, shaders (Godot Shaders / Shadertoy),
   sprites 2D (Aseprite MCP), modelos 3D (Blender MCP), materiales
   procedurales (Material Maker), FSM, HUD, o al decidir
@@ -15,7 +15,7 @@ description: >-
 
 Acompañante de [godot-layered-architecture](../godot-layered-architecture/SKILL.md). Esta skill decide **cómo se arma el árbol y los datos**.
 
-Prioridad: composición, nodos/editor, reuso. Tests: [godot-testing](../godot-testing/SKILL.md).
+Prioridad: simple y predecible, composición, nodos/editor, reuso. Convenciones de código, patrones y review: [godot-code-quality](../godot-code-quality/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md).
 
 ## 1. Composición gana a herencia
 
@@ -55,19 +55,19 @@ Si el socket es obligatorio y está vacío: `@tool` + `_get_configuration_warnin
 
 ## 3. Nodos y editor ganan al código
 
-El `.tscn` y el inspector son la fuente de verdad del **look, layout y tunables de instancia**.
+El `.tscn` y el inspector son la fuente de verdad del **look, layout y tunables de instancia**. «Editor first» = el valor vive **en el nodo que lo usa**, a la vista en el inspector; no un `.tres` ni un puntero intermedio para cada cosa (regla 0 de [godot-code-quality](../godot-code-quality/SKILL.md)). Si cambiar un número exige abrir más de 2 archivos, el diseño está mal.
 
 Hacer: `@export` / `@export_group` / `@export_range`; default en la escena; el script **no** pisa el valor guardado.
 
-No hacer: `_ready` que copie reglas de ronda sobre un `@export` de apariencia; un dump de 80 floats de shader en un autoload.
+No hacer: `_ready` que copie reglas de ronda sobre un `@export` de apariencia; un dump de 80 floats de shader en un autoload; un tag o texto que apunta a otro recurso.
 
-`MatchRules.tres` = **reglas de ronda**. Si tweakeás el look en play y lo perdés al recargar, el knob estaba mal.
+Reglas de ronda: `@export` en el nodo `Match`. Si tweakeás el look en play y lo perdés al recargar, el knob estaba mal.
 
 Motion / juicy: [godot-animation](../godot-animation/SKILL.md) y [godot-juicy](../godot-juicy/SKILL.md). Tween **o** `AnimationPlayer` según el clip; knobs en el inspector. Los 12 principios aplican igual. FSM: [godot-fsm](../godot-fsm/SKILL.md). Plataformas 2D: [godot-platformer-2d](../godot-platformer-2d/SKILL.md).
 
-## 3.1 Resources = plantillas de tipo
+## 3.1 Resources = tipos que se comparten
 
-Tipos de contenido: `class_name XData extends Resource` + un `.tres` por tipo. Una escena `projectile.tscn`; `projectile_fast.tres` / `projectile_slow.tres` en `@export var data`.
+Un `.tres` existe si **varias cosas lo comparten** o si **se edita como tipo**: `class_name XData extends Resource` + un `.tres` por variante. Una escena `projectile.tscn`; `projectile_fast.tres` / `projectile_slow.tres` en `@export var data`. Un valor que usa una sola escena es un `@export` del nodo, no un `.tres`.
 
 HP actual en el nodo. No mutar el `.tres` (`duplicate()` si hace falta copia). Guía: [resources.md](resources.md).
 
@@ -97,7 +97,7 @@ Antes de escribir un script en `features/` o `scenes/`:
 | Post-proceso | stack CanvasLayer; **un pass = una packed scene** |
 | Autoridad / sync | `MpAuthority` (addon) |
 | Copy de UI | módulo de strings |
-| Tipos | Resource + `.tres` |
+| Tipos compartidos | Resource + `.tres` |
 
 Un pass (bloom, grain, distorsión) = `BackBufferCopy` + `ColorRect` + shader propio. El stack no conoce el juego. Un pickup no mete lógica dentro del shader de otro pass: tweenea **ese** pass.
 
@@ -114,7 +114,7 @@ Materiales / texturas (piso, pared, terreno, tile 2D): **preguntá** si quiere c
 1. Packed scene chica + `class_name`.
 2. Knobs `@export`. Warnings si falta un socket.
 3. El feature **instancia** el componente en la escena. No `load` shaders a mano desde el mundo.
-4. Señales del propio nodo (o bus si no hay ancestro común). El pass FX no llama a la sesión.
+4. Señales del propio nodo; el padre conecta. El bus `Events` solo para sistemas que no se conocen. El pass FX no llama a la sesión.
 5. Variante por jugador (tint): método público, no lee IDs internos.
 
 ## Anti-patrones
@@ -125,14 +125,15 @@ Materiales / texturas (piso, pared, terreno, tile 2D): **preguntá** si quiere c
 - Collision layers distintos en código y en el inspector.
 - Hijos 100% en código cuando una packed scene los haría editables.
 - Mutar el `.tres` de tipo en runtime.
+- Un `.tres` que usa una sola escena, o que apunta a otro por tag o texto.
 
 ## Checklist
 
 - [ ] ¿Se apaga el comportamiento sacando un hijo?
-- [ ] ¿Se tunnea en el inspector (nodo o `.tres`)?
+- [ ] ¿Se tunnea en el inspector, en el nodo que usa el valor? ¿Cambiar un número abre como mucho 2 archivos?
 - [ ] ¿Sockets `@export` / `%UniqueName` en vez de paths `../..`?
 - [ ] ¿InputMap, no scancodes?
-- [ ] ¿Variantes = Resources?
+- [ ] ¿Variantes que se comparten = Resources; un valor de una sola escena = `@export`?
 - [ ] ¿La escena corre con F6?
 - [ ] ¿Shader de catálogo o port documentado? ¿Sprite 2D: OK del usuario + referencias + Aseprite, o placeholder? ¿3D: OK + Blender MCP + `.glb`, o placeholder?
 

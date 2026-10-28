@@ -9,8 +9,8 @@ Si un ítem no aplica, escribir “N/A”. No saltearlo en silencio.
 ## 1P (siempre)
 
 1. [ ] Alcance de producto explícito. Si es un RFC del studio: el tech-lead mostró árbol + responsabilidades **antes** del OK.
-2. [ ] ¿Es un **tipo** (otro proyectil, enemigo, item)? → Resource `.tres` + la misma escena. No un script por skin de stats.
-3. [ ] Reglas de **ronda** (vidas, duración, layers): `MatchRules.tres`. Look de instancia: `@export`.
+2. [ ] ¿Es un **tipo** con variantes (otro proyectil, enemigo, item)? → Resource `.tres` + la misma escena. No un script por skin de stats. ¿Lo usa una sola escena? → `@export` en el nodo, sin `.tres`.
+3. [ ] Reglas de **ronda** (vidas, duración, layers): `@export` del nodo `Match` (o `MatchRules.tres` si lo leen varias piezas). Look de instancia: `@export`. Cambiar cualquier número de la feature abre como mucho 2 archivos.
 4. [ ] InputMap: acciones semánticas (`move_left`, `attack`), no `KEY_*`. Hold en `_physics_process`; one-shot de gameplay en `_unhandled_input`.
 5. [ ] Sockets `@export` / `%UniqueName` para nodos propios. Escena jugable con F6. FSM: addon `fsm_kit` si hay estados. Platformer 2D: `plat_kit` (coyote/buffer), no `is_on_floor()` pelado.
 6. [ ] Clean: ¿regla testeable sin escena? → `src/domain/` + test. Estándar: ¿el World se hincha? → componente, no domain inventado.

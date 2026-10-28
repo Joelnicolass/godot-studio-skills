@@ -19,6 +19,7 @@ PLAYTEST_REF="${GODOT_STUDIO_PLAYTEST_REF:-main}"
 SKILL_NAMES=(
   godot-layered-architecture
   godot-composition-first
+  godot-code-quality
   godot-mp-kit
   godot-studio-workflow
   godot-testing
@@ -450,6 +451,7 @@ install_harness() {
     echo "Listo (skills). Sesión nueva en ${label} para recargar."
     echo "  capas:        godot-layered-architecture"
     echo "  composición:  godot-composition-first"
+    echo "  calidad:      godot-code-quality"
     echo "  multiplayer:  godot-mp-kit"
     echo "  orquestador:  godot-studio-workflow"
     echo "  memoria:      godot-studio-memory"

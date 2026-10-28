@@ -3,9 +3,9 @@ name: godot-layered-architecture
 description: >-
   Elige y aplica arquitectura Godot 4 (GDScript): Clean en capas (domain
   RefCounted, core autoloads, features) o estándar por escenas y scripts
-  pequeños. Siempre pregunta al usuario cuál usar. Prioriza composición,
-  Resources (.tres) como plantillas de tipo, editor y componentes
-  reutilizables. Usar al crear o modificar un proyecto Godot, GDScript,
+  pequeños. Siempre pregunta al usuario cuál usar. Prioriza lo simple y
+  predecible, composición, el valor en el nodo que lo usa (Resources .tres
+  solo para tipos compartidos), editor y componentes reutilizables. Usar al crear o modificar un proyecto Godot, GDScript,
   escenas, reglas de partida, features, HUD o al arrancar un juego nuevo.
 ---
 
@@ -13,18 +13,19 @@ description: >-
 
 Base para juegos Godot 4 (GDScript). Hay **dos estilos** válidos. El agente **no asume Clean**.
 
-Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md). Tests: [godot-testing](../godot-testing/SKILL.md). Multiplayer: **preguntar** (ninguno / local-WiFi / online) — [godot-mp-kit](../godot-mp-kit/SKILL.md) solo si hay MP. 2D/3D: **preguntar**; si es 3D, MCP Blender solo con OK. Un título nuevo o un RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
+Siempre cargar también [godot-composition-first](../godot-composition-first/SKILL.md) y [godot-code-quality](../godot-code-quality/SKILL.md) (regla 0, patrones, tipado, lint). Tests: [godot-testing](../godot-testing/SKILL.md). Multiplayer: **preguntar** (ninguno / local-WiFi / online) — [godot-mp-kit](../godot-mp-kit/SKILL.md) solo si hay MP. 2D/3D: **preguntar**; si es 3D, MCP Blender solo con OK. Un título nuevo o un RFC: [godot-studio-workflow](../godot-studio-workflow/SKILL.md).
 
 ## Prioridades (siempre)
 
 Siempre se priorice:
 
-- arquitectura facil de escalar y limpia en capas
-- siempre tienen prioridad las estructuras de composicion
-- siempre tienen prioirdad los nodos y las configuraciones sobre el editor
-- siempre se debe dar prioridad a la reusabilidad de los componenetes
+- lo simple y predecible: cada cosa donde un dev la adivina, y cambiar un número abre como mucho 2 archivos
+- arquitectura fácil de escalar y limpia en capas
+- siempre tienen prioridad las estructuras de composición
+- siempre tienen prioridad los nodos y las configuraciones en el editor: el valor vive en el nodo que lo usa
+- siempre se debe dar prioridad a la reusabilidad de los componentes
 
-En el camino **estándar**, “capas” **no** significa carpetas `domain/core/features` ni scaffoldear Clean. Significa scripts chicos, una responsabilidad por pieza, y composición de nodos/Resources. El bullet de capas de arriba aplica al camino Clean; en estándar no se inventa `src/domain/`.
+En el camino **estándar**, “capas” **no** significa carpetas `domain/core/features` ni scaffoldear Clean. Significa una responsabilidad por pieza y composición de nodos/Resources. El bullet de capas de arriba aplica al camino Clean; en estándar no se inventa `src/domain/`.
 
 ## 1. Elegir estilo (obligatorio)
 
@@ -43,10 +44,10 @@ Si no hay respuesta, **no** scaffoldear `src/domain/` ni un `scripts/` gigante.
 |-----------|-----------|
 | Composición | Árbol + packed scenes. No superclase de 800 líneas. |
 | Editor | Knobs en `@export` y `.tscn`. No pisar el inspector en `_init`/`_ready`. |
-| Resources | Tipos de contenido = `class_name` + `.tres`. Una escena, muchos datos. |
+| Resources | Tipos que se comparten = `class_name` + `.tres`. Una escena, muchos datos. Un valor de una sola escena = `@export`. |
 | Reuso | Extraer a `shared/` o `addons/` al segundo caller. |
-| Scripts chicos | Una responsabilidad. Si crece, hijo o componente. |
-| Señales | Nombre en **pasado**, tipadas (`signal died(who: Node)`). El padre conecta; el hijo no nombra al padre. |
+| Una responsabilidad | Un script, un trabajo. Se parte por responsabilidad (hijo o componente), no por cantidad de líneas. |
+| Señales | Nombre en **pasado**, tipadas (`signal died(who: Node)`). El padre conecta; el hijo no nombra al padre. Entre sistemas que no se conocen, el bus `Events`. |
 
 ### Escenas autónomas (docs Godot)
 
@@ -59,7 +60,7 @@ Diseñá cada packed scene para correr **sola** (F6). Sin deps externas. Si nece
 | Dato de tipo / catálogo | `class_name` `Resource` + `.tres` | Autoload con stats |
 | Helpers puros | `class_name` + `static func` | Singleton vacío |
 | Comportamiento de un actor | Nodo `class_name` hijo / packed scene | Manager global |
-| Servicio global, aislado, sobrevive `change_scene` | Autoload (MpKit, bus de eventos) | Autoload que guarda nodos visuales o el puntaje de *esta* ronda |
+| Servicio global, aislado, sobrevive `change_scene` | Autoload (MpKit, bus `Events` solo con señales) | Autoload que guarda nodos visuales o el puntaje de *esta* ronda; registry, locator o manager |
 | Puntaje / vidas de *esta* partida | Nodo `Match` (o sesión Clean si sobrevive el cambio de escena) | `ScoreManager` eterno |
 
 UI en el idioma del producto; identificadores de código en inglés.
@@ -70,7 +71,7 @@ UI en el idioma del producto; identificadores de código en inglés.
 |------|--------|
 | Catálogo de tipos (proyectil A vs B, enemigo scout vs tank) | **Resource** `.tres` |
 | Look de *esta* instancia | `@export` en el nodo / material |
-| Reglas de ronda (duración, vidas, layers) | `MatchRules.tres` (o constantes únicas). No literales copiados. |
+| Reglas de ronda (duración, vidas, layers) | `@export` en el nodo `Match`. Un `MatchRules.tres` solo si lo leen varias piezas (la sesión Clean y los features) o hay varios modos para elegir. No literales copiados. |
 | HP actual, cooldown en curso | Runtime en el nodo; **no** mutar el `.tres` |
 
 ## 4. Cómo agregar una feature
@@ -97,5 +98,6 @@ Slot lógico = HUD/vidas. Peer ENet = solo RPC. HUD: `MpKit.local_slot()` (0 = p
 - Mutar un Resource compartido (`data.damage = 3`).
 - Feature nueva por herencia profunda.
 - Autoload para algo que es un nodo o un Resource.
+- Patrones inventados (registry, service locator, manager de managers) o punteros por tag / texto.
 
 Ejemplos: [examples.md](examples.md).

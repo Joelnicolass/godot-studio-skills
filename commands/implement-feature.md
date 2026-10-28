@@ -11,7 +11,7 @@ Si está cargada `godot-studio-workflow`, el **orquestador** (este chat) no impl
 
 Cuando vuelva el playtester, clasificá: criterio roto → developer, una corrección; la escena de debug ya muestra el resultado → reviewer; cache o CLI → este chat reimporta y relanza; falta la escena → `NEED_SETUP`, no un tech lead nuevo.
 
-Cargar `godot-layered-architecture` y `godot-composition-first`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Materiales / texturas: `/create-material` + `godot-material-maker`. Mecánica “como en X”: `/research-feature` + `godot-feature-research` antes de planificar. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
+Cargar `godot-layered-architecture`, `godot-composition-first` y `godot-code-quality`. Motion: `godot-animation`. Feel jugoso de un evento ya existente: `/add-juicy` + `godot-juicy`. FSM: `/add-state-machine` + `godot-fsm`. Plataformas 2D: `/add-platformer-2d` + `godot-platformer-2d`. Materiales / texturas: `/create-material` + `godot-material-maker`. Mecánica “como en X”: `/research-feature` + `godot-feature-research` antes de planificar. Si hay MP: `godot-mp-kit`. Si no hay MP: no cargues el kit.
 
 ## 1. Acotar (antes de código)
 
@@ -46,7 +46,7 @@ Autoridad si hay conflicto: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > 
 
 - Árbol con `[+]` / `[~]` / `[-]` + mapa de responsabilidades ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
 - Escena de prueba en `res://debug/`: estado inicial fácil, resultado todavía no ocurrido, acción de InputMap. Queda escrita en el `F<n>` (o en el RFC si hay contrato).
-- Qué es `.tres`, qué es nodo, qué es `@export`
+- Dónde vive cada número (regla 0: `@export` del nodo que lo usa; `.tres` solo si se comparte o se edita como tipo) y qué patrón usa cada comunicación
 - Motion: evaluar Tween vs `AnimationPlayer` (skill `godot-animation`); knobs en inspector o timeline
 - Checklist de [adding-features.md](../skills/godot-layered-architecture/adding-features.md)
 
@@ -62,7 +62,7 @@ Mostrar el árbol. **Esperar OK** (¿más/menos piezas?).
 
 ## 4. Listo cuando
 
-- El proyecto parsea headless (`godot --headless --path . --quit` sin `SCRIPT ERROR`).
+- El proyecto parsea headless (`godot --headless --path . --quit` sin `SCRIPT ERROR`). Si tiene `gdformat` / `gdlint` / GUT, en verde.
 - La feature se ejerce en el editor (F5/F6, una acción).
 - Cada criterio del `F<n>` tiene evidencia en el review.
 - Timing / squash / feel se tunnea en el inspector si hay animación.

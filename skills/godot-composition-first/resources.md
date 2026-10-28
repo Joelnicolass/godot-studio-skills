@@ -6,9 +6,15 @@ Los nodos hacen. Los Resources **son datos**. Godot carga cada archivo una vez y
 
 ## Cuándo usar Resource
 
-Varios tipos, misma escena, cambian números / refs / PackedScenes: proyectiles, enemigos, items, armas, tablas de spawn.
+Varios tipos, misma escena, cambian números / refs / PackedScenes: proyectiles, enemigos, items, armas, tablas de spawn. O un dato que **comparten varias** escenas.
 
 Una escena `projectile.tscn`. Diez `.tres`. Cero `if kind ==`.
+
+## Cuándo no
+
+- El valor lo usa **una sola** escena: `@export` en el nodo que lo usa. Un `.tres` intermedio solo agrega un archivo que abrir.
+- Un `.tres` que apunta a otro por tag, por texto o por una ruta armada: referenciá el recurso directo (`@export var passive: FuryPassive`).
+- Si cambiar un número exige abrir más de 2 archivos, sobra una capa (regla 0 de [godot-code-quality](../godot-code-quality/SKILL.md)).
 
 Si cambia la **estructura** del árbol: packed scene distinta, no un Resource con 40 flags.
 
@@ -56,13 +62,14 @@ func _get_configuration_warnings() -> PackedStringArray:
 
 ## Dónde viven
 
-Clean: `src/resources/<familia>/`. Estándar: `resources/<familia>/`.
+Junto a la escena que los usa, en una carpeta por entidad cuando ayuda (`projectiles/projectile.tscn`, `projectile_data.gd`, `projectile_fast.tres`). Una carpeta de familia aparte (`resources/<familia>/`, o `src/resources/` en Clean) solo para tipos que comparten varias escenas o features.
 
-`MatchRules.tres`: pocos valores de **ronda**. Catálogo: Resources. Look de instancia: `@export` del nodo.
+Reglas de ronda: `@export` del nodo `Match`; un `MatchRules.tres` solo si lo leen varias piezas o hay varios modos para elegir. Catálogo: Resources. Look de instancia: `@export` del nodo.
 
 ## Anti-patrones
 
 - `enum Kind` + `match` de stats en el proyectil.
 - Un `.tres` por instancia viva.
+- Un `.tres` que usa una sola escena, o una cadena `.tres` → `.tres` → nodo para encontrar un número.
 - Inner class `class Foo extends Resource`.
 - Pisar `@export var data` en `_ready` para forzar un número de diseño.

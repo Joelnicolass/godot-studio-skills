@@ -10,15 +10,15 @@ features (Nodes, .tscn, física, RPCs, spawners)
 
 ```
 src/
-  core/autoload/     # MatchRules.tres, GameEvents, GameSession, SceneDirector
+  core/autoload/     # MatchRules.tres, Events, GameSession, SceneDirector
   domain/            # trackers y resolvers puros (estado de ronda, no catálogos)
   features/<name>/   # scripts + escenas juntas
   shared/            # StateMachine, PostFx, Health
-  resources/         # class_name + .tres (tipos de contenido)
+  resources/         # class_name + .tres de tipos que comparten varias features
 addons/              # MpKit y plugins del framework (cero gameplay)
 ```
 
-Nombres de fachada: `GameSession`, `GameEvents`, `SceneDirector`. No uses nombres de un título anterior.
+Nombres de fachada: `GameSession`, `Events`, `SceneDirector`. No uses nombres de un título anterior.
 
 `GameSession` autoload **solo** si tiene que sobrevivir el cambio de escena; si no, nodo bajo `Main`. Tests: [godot-testing](../godot-testing/SKILL.md).
 
@@ -32,9 +32,9 @@ Nombres de fachada: `GameSession`, `GameEvents`, `SceneDirector`. No uses nombre
 ### Core
 
 - **GameSession**: trackers por slot, `start` / `abort`, `submit_*`, `to_snapshot` / `apply_snapshot`. El cliente apaga el tick al aplicar snapshot.
-- **GameEvents**: HUD/FX escuchan; el actor no guarda el score.
+- **Events**: bus de eventos, solo declaraciones `signal` tipadas (sin estado ni métodos). HUD/FX escuchan; el actor no guarda el score.
 - **SceneDirector**: cambia de escena. Preferí swap de hijos de `World` y dejar `GUI` viva. No puntúa.
-- **`MatchRules.tres`**: tunables de **ronda** (duración, vidas, layers). No 80 floats de cada enemigo.
+- **`MatchRules.tres`**: tunables de **ronda** (duración, vidas, layers) que leen la sesión y los features. No 80 floats de cada enemigo: esos van en el `@export` del nodo o en el `.tres` de su tipo.
 
 1P = host local. Mismas reglas que 2P.
 
@@ -44,4 +44,4 @@ Nodos. `@rpc`, física, spawners. `@export var data: EnemyData`. No `match kind`
 
 ### Shared + resources
 
-Componentes de escena en `shared/`. Plantillas `.tres` en `resources/<familia>/`.
+Componentes de escena en `shared/`. Un `.tres` que usa una sola feature vive en `features/<name>/`; `resources/<familia>/` es para tipos compartidos.

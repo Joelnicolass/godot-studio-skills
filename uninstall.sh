@@ -8,6 +8,7 @@ set -euo pipefail
 SKILL_NAMES=(
   godot-layered-architecture
   godot-composition-first
+  godot-code-quality
   godot-mp-kit
   godot-studio-workflow
   godot-testing
