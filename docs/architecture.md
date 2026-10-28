@@ -20,6 +20,7 @@ flowchart TB
     mpkit[MpKit addon]
     fsmkit[FsmKit addon]
     platkit[PlatKit addon]
+    rtskit[RtsKit addon]
   end
 
   subgraph playtest [godot-studio-playtest]
