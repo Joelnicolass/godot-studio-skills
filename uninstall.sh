@@ -16,6 +16,7 @@ SKILL_NAMES=(
   godot-juicy
   godot-fsm
   godot-platformer-2d
+  godot-rts-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -34,6 +35,7 @@ COMMAND_FILES=(
   add-juicy.md
   add-state-machine.md
   add-platformer-2d.md
+  add-rts-controls.md
   create-material.md
   research-feature.md
   manage-changes.md
