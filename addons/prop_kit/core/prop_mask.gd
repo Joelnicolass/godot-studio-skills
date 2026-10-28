@@ -14,6 +14,11 @@ enum Channel { NONE, RED, GREEN, BLUE, ALPHA }
 @export var area := Rect2()
 ## The channel that thins props: 1 keeps the chance, 0 takes it away. NONE = no thinning.
 @export var density_channel := Channel.RED
+## How much the density channel thins: 1 = all the way (0 in the channel = no prop), 0.6 = at most
+## 60 % fewer props, 0 = no thinning.
+@export_range(0.0, 1.0, 0.01) var density_strength := 1.0
+## Read the density channel the other way round: white = fewer props (rock painted white).
+@export var density_invert := false
 ## The channel that forbids props where it is above `forbid_above`. NONE = forbids nothing.
 @export var forbid_channel := Channel.NONE
 @export_range(0.0, 1.0, 0.01) var forbid_above := 0.5
@@ -49,7 +54,12 @@ func weight_at(at: Vector2) -> float:
 	var color := _image.get_pixelv(px)
 	if forbid_channel != Channel.NONE and _channel(color, forbid_channel) > forbid_above:
 		return 0.0
-	return _channel(color, density_channel) if density_channel != Channel.NONE else 1.0
+	if density_channel == Channel.NONE:
+		return 1.0
+	var value := _channel(color, density_channel)
+	if density_invert:
+		value = 1.0 - value
+	return 1.0 - density_strength * (1.0 - value)
 
 
 func _channel(color: Color, channel: Channel) -> float:

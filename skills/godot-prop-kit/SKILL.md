@@ -58,6 +58,7 @@ Start from `addons/prop_kit/examples/forest_3d/forest_3d.tscn` or `grove_2d/grov
 - «Scatter» fills the area: none within a keep-out, none on a forbidden mask, the same result twice.
 - «Bake» saves `<scene>_nav.res`; F6 loads it without baking (`stats.zones_baked` 0) and a path goes around the props.
 - Freeing a prop and `rebake([area], false)` re-bakes only its zones (`stats.zones_baked` < `zones_total`, `parse_ms` 0).
+- In CI, `tools/bake_scene.gd -- --scene=… --check` exits 0: the committed bake matches a fresh one.
 - `godot --headless --path propkit_lab --script res://addons/prop_kit/tests/prop_test_runner.gd` gives `PROPKIT TESTS PASS` (in the kit repo).
 
 ## Anti-patterns

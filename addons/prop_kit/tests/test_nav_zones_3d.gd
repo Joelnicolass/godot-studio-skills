@@ -189,6 +189,36 @@ func test_a_saved_bake_loads_and_goes_stale() -> void:
 	check(_walkable(Vector3(8, 0, 8)), "and baked again without it")
 
 
+func test_the_game_fingerprint_makes_a_bake_stale() -> void:
+	var zones := _world([Vector3(8, 0, 8)])
+	zones.extra_fingerprint = func() -> int: return 1
+	await _settled(zones)
+	var saved := zones.to_saved()
+	var same := PropNavZones3D.new()
+	same.navigation_mesh = zones.navigation_mesh
+	same.zone_size = 16.0
+	same.saved = saved
+	same.rebake_when_stale = false
+	same.extra_fingerprint = func() -> int: return 1
+	var stale := [0]
+	same.stale.connect(func() -> void: stale[0] += 1)
+	zones.queue_free()
+	root.add_child(same)
+	await _settled(same)
+	check(stale[0] == 0, "the same terrain: not stale")
+	var other := PropNavZones3D.new()
+	other.navigation_mesh = same.navigation_mesh
+	other.zone_size = 16.0
+	other.saved = saved
+	other.rebake_when_stale = false
+	other.extra_fingerprint = func() -> int: return 2
+	other.stale.connect(func() -> void: stale[0] += 1)
+	same.queue_free()
+	root.add_child(other)
+	await _settled(other)
+	check(stale[0] == 1, "the terrain changed: stale, with the props as they were")
+
+
 func test_merging_lowers_the_polygon_count() -> void:
 	var grove: Array[Vector3] = []
 	for x in range(6):

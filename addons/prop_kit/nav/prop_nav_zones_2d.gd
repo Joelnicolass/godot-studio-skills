@@ -68,6 +68,11 @@ enum Apply { AUTO, MANUAL }
 var stats: PropNavStats:
 	get:
 		return _baker.stats if _baker != null else PropNavStats.new()
+## Optional: `func() -> int`, a number from the game that changes when what the navmesh is baked
+## from changes besides the props (the terrain's heights, where the buildings stand). It joins the
+## props' fingerprint, so `saved` goes stale when either changes. Set it before this node starts
+## (in the game's `_ready`): the saved bake is checked one frame after the scene is ready.
+var extra_fingerprint := Callable()
 ## The PropNavIndex of the pieces in force (null before the first bake, or without build_index).
 var index: PropNavIndex:
 	get:
@@ -212,6 +217,7 @@ func _configure() -> bool:
 		_baker.carve = carve
 		_baker.manual_apply = apply_mode == Apply.MANUAL and not Engine.is_editor_hint()
 		_baker.with_index = build_index
+		_baker.extra_fingerprint = extra_fingerprint
 	return true
 
 

@@ -66,7 +66,10 @@ The `rules`:
 
 **Keep-outs** (`PropKeepOut`): `{group, radius, soft}`. There is no prop within `radius` of any node of that group, and fewer, smaller ones up to `radius * (1 + soft)`. The kit never knows the game's classes; the game puts its spawn points, buildings or markers in a group.
 
-**Mask** (`PropMask`): a texture over an area. One channel thins props (its value multiplies the chance) and one forbids them (above `forbid_above`).
+**Mask** (`PropMask`): a texture over an area. One channel thins props and one forbids them (above `forbid_above`).
+
+- `density_strength` says how far the density channel thins: 1 takes the chance down to the channel's value, 0.6 thins by at most 60 %.
+- `density_invert` reads the channel the other way round, so white = fewer props (rock painted white).
 
 ## 2. Batch drawing (3D)
 
@@ -96,11 +99,19 @@ Game
    - in 2D: Circle, Rectangle, Capsule, ConvexPolygon and CollisionPolygon2D.
 2. Put the props on a **collision layer the navmesh does not parse**: take it out of the template's collision mask, and parse static colliders. Otherwise the bake pays for them twice, and the kit warns once.
 3. Add a **PropNavZones3D** with a `navigation_mesh` template: agent, cells, parsed geometry and collision mask. Set `source_root` and `zone_size` (a multiple of the cell size).
-4. Press **Bake** in the inspector. It bakes every zone and saves them next to the scene in a `.res`, which is the node's `saved`.
+4. Press **Bake** in the inspector. It bakes every zone and saves them next to the scene in a `.res`, which is the node's `saved`. From CI or a build step:
+
+   ```bash
+   godot --headless --path . --script res://addons/prop_kit/tools/bake_scene.gd -- --scene=res://maps/forest.tscn [--check]
+   ```
+
+   - Without `--check`, it bakes every zone of every zones node and saves the results. When a node had no `saved`, the scene file is updated from a fresh copy, so nothing its scripts did while baking is kept.
+   - With `--check`, nothing is written. It prints each bake's content hash (two runs must print the same) and exits with 1 when a bake differs from the saved one.
 
 In the game:
 
 - **On start** the saved bake loads at once. If the props differ from the saved ones (for example, a match played without its forest), it emits `stale` and bakes every zone again on worker threads. `rebake_when_stale` off: only `stale`.
+- **`extra_fingerprint`** (`func() -> int`, set in the game's `_ready`): a number from the game that changes when what the navmesh is baked from changes besides the props, such as the terrain's heights. It joins the props' fingerprint, so the saved bake goes stale when either changes.
 - **`rebake(areas, reparse)`** after something that blocks changed there. Areas are Rect2 on the ground plane. `PropObstructions.area_of(prop, true)` gives a prop's area, so read it before freeing the prop. `reparse = false` when only props changed: the parsed geometry is reused and only the obstructions near the touched zones are read (an index by zone, so the whole group is not walked).
 - **Requests while a bake runs** wait and are joined into the next one.
 - **`apply_mode` MANUAL**: the result waits (`bake_ready`, `has_result()`) for `apply()`. A lockstep game swaps it in at a tick it chooses; `is_done()` says without blocking whether it can. Pieces always go in in zone order, so the result depends only on the inputs, never on which zone finished first.
@@ -161,11 +172,12 @@ godot --headless --path propkit_lab --script res://addons/prop_kit/tests/prop_te
 
 The result is `PROPKIT TESTS PASS (n)`. The tests cover:
 
-- **the planner**: determinism, room, keep-outs, masks, outlines, variants and the cap;
+- **the planner**: determinism, room, keep-outs, masks (thinning part way, inverted), outlines, variants and the cap;
 - **the scatter**: saved children, ray ground, slopes, normals, 2D, saving a scene;
+- **the command-line tools**: `scatter_scene` saves the props, `bake_scene --check` gives the same hash twice;
 - **every obstruction shape**, merging, and the fingerprint;
 - **the zone grid**;
-- **the 3D and 2D zones**: zones that meet, props that block, partial = full, added props, MANUAL apply, joined requests, saved and stale bakes, merging, components;
+- **the 3D and 2D zones**: zones that meet, props that block, partial = full, added props, MANUAL apply, joined requests, saved and stale bakes (props or the game's fingerprint), merging, components;
 - **the batch**;
 - **both examples, end to end.**
 

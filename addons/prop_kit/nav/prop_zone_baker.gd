@@ -38,6 +38,10 @@ var carve := false
 var manual_apply := false
 ## Build a PropNavIndex with every bake.
 var with_index := true
+## Optional: `func() -> int`, a number from the game that changes when what the navmesh is baked
+## from changes besides the props (the terrain's heights, a building's place). It joins the
+## props' fingerprint, so a saved bake goes stale when either changes.
+var extra_fingerprint := Callable()
 var stats := PropNavStats.new()
 ## The pieces in force, one per zone (null = not baked yet, or nothing walkable).
 var pieces: Array[Resource] = []
@@ -193,10 +197,13 @@ func to_saved() -> PropNavBake:
 	return out
 
 
-## The fingerprint of every obstruction under `root` with these settings.
+## The fingerprint of every obstruction under `root` with these settings, and the game's own
+## (`extra_fingerprint`).
 func fingerprint() -> int:
 	var list := _walk([])
-	return hash([PropObstructions.fingerprint(list), sides, snappedf(merge_gap, 0.001), carve])
+	var extra: int = extra_fingerprint.call() if extra_fingerprint.is_valid() else 0
+	var props := PropObstructions.fingerprint(list)
+	return hash([props, sides, snappedf(merge_gap, 0.001), carve, extra])
 
 
 func _start(rects: Array[Rect2], everything: bool, reparse: bool) -> void:
