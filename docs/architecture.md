@@ -21,6 +21,7 @@ flowchart TB
     fsmkit[FsmKit addon]
     platkit[PlatKit addon]
     rtskit[RtsKit addon]
+    propkit[PropKit addon]
   end
 
   subgraph playtest [godot-studio-playtest]
@@ -41,6 +42,8 @@ flowchart TB
   agentkit -.-> code
   fsmkit -.-> code
   platkit -.-> code
+  rtskit -.-> code
+  propkit -.-> code
 ```
 
 Roles (tool de subagentes — `Agent` en Claude Code, `Task` en Cursor — → `subagent_type`):

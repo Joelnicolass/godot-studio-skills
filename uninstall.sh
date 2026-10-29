@@ -17,6 +17,7 @@ SKILL_NAMES=(
   godot-fsm
   godot-platformer-2d
   godot-rts-kit
+  godot-prop-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -36,6 +37,7 @@ COMMAND_FILES=(
   add-state-machine.md
   add-platformer-2d.md
   add-rts-controls.md
+  add-props.md
   create-material.md
   research-feature.md
   manage-changes.md
