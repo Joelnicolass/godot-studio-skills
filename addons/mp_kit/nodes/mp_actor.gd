@@ -233,8 +233,8 @@ func _process(delta: float) -> void:
 		_smoother.draw(delta)
 
 
-## How fast what this node shows moves, for animation (a run clip, footsteps, dust): in the node's units per second
-## (2D: x and y). The same on every machine, and never the network's own motion:
+## How fast what this node shows moves, for animation (a run clip, a jump or fall, footsteps): a Vector2 in 2D, a
+## Vector3 in 3D, in the node's units per second. The same on every machine, and never the network's own motion:
 ##   server and solo - each physics tick's step;
 ##   the owner, with `predict` - its own predicted steps (mp_move's), never a server correction or a paced tick fading
 ##                     on screen (MpCorrectionSmoother);
@@ -242,7 +242,20 @@ func _process(delta: float) -> void:
 ##             chases; without smoothing, the change since the last tick.
 ## Zero when it stands still, and across a teleport. Read it anywhere, `_process` included: unlike the node's pose
 ## read frame to frame, it does not jump with physics ticks, corrections or late packets.
-func motion_velocity() -> Vector3:
+func motion_velocity() -> Variant:
+	var velocity := _velocity()
+	if _root is Node2D:
+		return Vector2(velocity.x, velocity.y)
+	return velocity
+
+
+## How fast what this node shows moves, as one number (units per second): `motion_velocity()`'s length. For the
+## usual choice: `if net.motion_speed() > 0.1:` run, else idle.
+func motion_speed() -> float:
+	return _velocity().length()
+
+
+func _velocity() -> Vector3:
 	if is_authority() or not uses_net_pose():
 		return _tick_velocity
 	if _prediction and is_local():

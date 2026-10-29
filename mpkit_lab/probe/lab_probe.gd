@@ -328,10 +328,10 @@ func _measure_own_lag() -> void:
 		if not is_instance_valid(net):
 			break
 		worst = maxf(worst, net.last_correction())
-	var walking := net.motion_velocity()
+	var walking: Vector2 = net.motion_velocity()
 	Input.action_release(&"ui_right")
 	var ticks := 0
-	while net.motion_velocity().length() > 0.01 and ticks < 60:
+	while net.motion_speed() > 0.01 and ticks < 60:
 		await get_tree().physics_frame
 		ticks += 1
 	print("METRIC walking_velocity_px_s=%.1f stop_ticks=%d" % [walking.x, ticks])
@@ -1226,7 +1226,7 @@ class _Sampler extends Node:
 	var ys := PackedFloat64Array()
 	var ts := PackedInt64Array()
 	## MpActor.motion_velocity each frame.
-	var velocities := PackedVector3Array()
+	var velocities := PackedVector2Array()
 
 	func _process(_delta: float) -> void:
 		if not is_instance_valid(target):
@@ -1235,4 +1235,4 @@ class _Sampler extends Node:
 		ys.append(target.position.y)
 		ts.append(Time.get_ticks_usec())
 		var net := MpActor.of(target)
-		velocities.append(net.motion_velocity() if net else Vector3.ZERO)
+		velocities.append(net.motion_velocity() if net else Vector2.ZERO)

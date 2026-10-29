@@ -495,7 +495,7 @@ func hit(from: Vector2) -> void:   # on the server
 - **the owner with prediction:** its own predicted steps (`mp_move`'s), still within a tick or two of the key going up;
 - **a proxy:** the motion between the two server states it is drawn between (BUFFERED), or how fast it chases (FOLLOW).
 
-It is zero standing still and across a teleport. Pick the clip from its length (`motion_velocity().length() > 0.1`): no slow fall-off is needed, and nothing to sync for it.
+It is a `Vector2` in 2D and a `Vector3` in 3D (a platformer reads `.y` for its jump and fall clips), zero standing still and across a teleport. `net.motion_speed()` is its length, for the usual choice: `if net.motion_speed() > 0.1:` run, else idle. No slow fall-off is needed, and nothing to sync for it.
 
 ### 6.3 Where am I? `is_authority` and `is_local`
 
@@ -597,7 +597,8 @@ func mp_all_flash() -> void:
 |---|---|
 | `net.despawn()` | Server only, and only on nodes a spawner made: removes it everywhere (see [7.3](#73-removing-things)) |
 | `net.snap()` | After a teleport or respawn, **on the server**, right after moving the node: every client jumps there instead of sliding (the others when their drawn time gets there, the owner with prediction with no fade). It travels with the pose, so no `to_all` is needed |
-| `net.motion_velocity()` | How fast what the node shows moves, for animation, on every machine: the server's ticks, the owner's predicted steps (never a correction fading), a proxy's motion between the states it is drawn between. Units per second (2D: x, y); zero standing still or across a teleport (see 6.2) |
+| `net.motion_velocity()` | How fast what the node shows moves, for animation, on every machine: the server's ticks, the owner's predicted steps (never a correction fading), a proxy's motion between the states it is drawn between. A Vector2 in 2D, a Vector3 in 3D, units per second; zero standing still or across a teleport (see 6.2) |
+| `net.motion_speed()` | The same as one number: `if net.motion_speed() > 0.1:` run, else idle |
 | `net.correction_offset()` | With prediction, on the owner: how far what is drawn still is from the real pose while a correction fades (0 = none) |
 | `net.last_correction()` | With prediction, on the owner: how much the server corrected it in the last state (0 = the prediction was right) |
 | `net.owner_slot` | The owning slot (to show "P1", pick a color...) |
@@ -946,7 +947,7 @@ What to tune by looking:
 - The other players stutter: switch to `BUFFERED`, lower `late_tolerance` or raise the `buffer_delay_s` cap.
 - The others look far behind on a good network: check that `adaptive_buffer` is on.
 - Your player answers late: turn on `predict`.
-- A run clip goes on after the player stops, or flickers on the others: pick it from `net.motion_velocity()`, not from the pose frame to frame (see 6.2).
+- A run clip goes on after the player stops, or flickers on the others: pick it from `net.motion_speed()` (or `net.motion_velocity()`), not from the pose frame to frame (see 6.2).
 - Your player "jumps" often: print `net.last_correction()`; if it is high, check that `mp_move` depends only on the keys, the position and what is in Sync (e.g. `velocity`, see [6.2](#62-mp_move-and-its-rules)).
 
 What the kit does by itself with the network (all measured, nothing fixed):

@@ -49,16 +49,33 @@ func test_the_server_and_solo_move_as_each_tick() -> void:
 	tree.root.add_child(parent)
 	await tree.physics_frame
 	await tree.physics_frame
-	check(actor.motion_velocity() == Vector3.ZERO, "standing: still")
+	check(actor.motion_velocity() == Vector2.ZERO and actor.motion_speed() == 0.0, "standing: still")
 	var tick := 1.0 / float(Engine.physics_ticks_per_second)
 	for i in 3:
-		parent.position.x += 2.0
+		parent.position += Vector2(2.0, 0.0)
 		await tree.physics_frame
-	check(actor.motion_velocity().is_equal_approx(Vector3(2.0 / tick, 0, 0)), "each tick's step, per second (%s)" % actor.motion_velocity())
+	var velocity: Variant = actor.motion_velocity()
+	check(velocity is Vector2 and (velocity as Vector2).is_equal_approx(Vector2(2.0 / tick, 0)), "each tick's step, per second, a Vector2 in 2D (%s)" % velocity)
+	check(is_equal_approx(actor.motion_speed(), 2.0 / tick), "and its speed as one number")
 	parent.position.x += 500.0
 	actor.snap()
 	await tree.physics_frame
-	check(actor.motion_velocity() == Vector3.ZERO, "a teleport (snap) is not a step")
+	check(actor.motion_speed() == 0.0, "a teleport (snap) is not a step")
 	await tree.physics_frame
-	check(actor.motion_velocity() == Vector3.ZERO, "and it stands again")
+	check(actor.motion_speed() == 0.0, "and it stands again")
+	parent.free()
+
+
+func test_a_vector3_in_3d() -> void:
+	var parent := Node3D.new()
+	var actor := MpActor.new()
+	actor.name = "MpActor"
+	actor.smoothing = MpActor.Smoothing.NONE
+	parent.add_child(actor)
+	tree.root.add_child(parent)
+	await tree.physics_frame
+	parent.position += Vector3(0, 0, 1)
+	await tree.physics_frame
+	var velocity: Variant = actor.motion_velocity()
+	check(velocity is Vector3 and (velocity as Vector3).z > 0.0, "in 3D, a Vector3 (%s)" % velocity)
 	parent.free()
