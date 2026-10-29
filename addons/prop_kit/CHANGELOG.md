@@ -1,5 +1,10 @@
 # Changelog de PropKit
 
+## 0.2.1
+
+- **Iteraciones de navegación síncronas.** Con `navigation/world/map_use_async_iterations` apagado (un juego en lockstep lo pone así, para que el tick del cambio sea el mismo en todas las máquinas), `is_ready()` nunca llegaba y `updated` nunca se emitía: el mapa se reconstruye con las regiones en el mismo paso, y el nodo esperaba una iteración más del mapa que nunca llega. Ahora un mapa síncrono cuenta como al día en cuanto sus regiones se reconstruyeron. `tools/bake_scene.tscn` también termina en esos proyectos.
+- **Tests**: 68.
+
 ## 0.2.0
 
 La API del navmesh, repensada para personas. **Rompe la 0.1.**
