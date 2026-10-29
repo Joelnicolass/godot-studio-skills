@@ -85,6 +85,7 @@ These are the keys Terrain3D uses, so they will be familiar.
   - **Clear**: back to never painted;
   - **Import from a PNG…**;
   - **Export to a PNG…**, to edit it in Krita or Photoshop and import it back.
+- **Bake ground colour**: renders the game's ground from above as `color_texture` (below).
 - **Show the painted map**, and **Shortcuts**.
 
 **Handles in the 3D view:**
@@ -127,7 +128,10 @@ Where grass grows and how high the ground is, over `area`.
 - **Painted maps**, stretched over `area` (the brushes paint them; `paint()`, `fill_map()`, `clear_map()`, `import_map()`, `export_map()` from code):
   - `density_texture` (red): white = grass, black = none.
   - `size_texture` (red): 0.5 = as the look says, black = flat, white = twice as tall.
-  - `color_texture`: the ground's colour, which goes into the blades' base. Its alpha is how much it covers the look's `ground_color`. A texture made elsewhere works too: the game's albedo map, or its ground rendered once from above, **as it shows with GrassKit's colour under the grass** (below), so the roots match what shows between them.
+  - `color_texture`: the ground's colour, which goes into the blades' base. Its alpha is how much it covers the look's `ground_color`. It should be the ground **as it shows with GrassKit's colour under the grass** (below), so the roots match what shows between them:
+    - **GrassKit ▸ Bake ground colour**, or `await field.bake_ground_color()`, renders it from above. It sees the render layers in `color_layers` (keep props, units and trees off them), without light or fog, and with the field's own blades hidden.
+    - A game that renders its own view sets `field.ground_bake_view = true` around that render. Before any field draws, it calls `GrassGlobals.write_bake_view(look, ground)`. Either way the game's ground shader shows the colour under the grass, and the game never writes GrassKit's globals itself.
+    - Any other texture works too, such as the game's albedo map.
   - `kind_maps`: where each kind with a `map_name` grows (red).
 - **Moving the area.** `resize_area(rect)` moves its edges keeping the heights and the maps where they are in the world. It is what Fit area and the handles use.
 - **Changes in play.** Baking or writing heights emits `area_changed(rect)` at once. The field gives new bounds only to the cells there. Painting emits `map_painted(map)`. Either way, the textures go to the GPU once at the end of the frame, however many changes they had.
@@ -208,6 +212,8 @@ The values are global shader uniforms:
 - `grasskit_density`, `grasskit_area`.
 
 The plugin adds the missing ones to Project Settings each time the editor starts and touches no other. Disabling it leaves them, in case a game shader reads them. Without the plugin, a field declares them before its own shaders compile. One field per world writes them.
+
+**Every renderer, one colour.** GrassKit's shared colours are linear. Forward+ and Mobile shade in linear, while Compatibility takes `source_color` colours and ALBEDO as they are. `grasskit_ground_color()` and the blades convert by `CURRENT_RENDERER` (`field/grass_color.gdshaderinc`), so the ground under the grass and the far grass are the same colour in all three.
 
 ## The quality (`GrassQuality`)
 
@@ -371,6 +377,15 @@ GRASSKIT_EDITOR_CHECK=1 godot --headless --editor --path grasskit_lab
 ```
 
 It prints `EDITOR CHECK PASS`. The shaders themselves (the blade, the cut one, the example's ground) and the brushes' circle and map overlay are checked in a window, in Forward+ and Compatibility, by running the example and the editor.
+
+The ground-colour bake renders, so it has its own check in a window:
+
+```bash
+godot --path grasskit_lab --script res://checks/bake_color_check.gd
+godot --rendering-method gl_compatibility --path grasskit_lab --script res://checks/bake_color_check.gd
+```
+
+It checks the image's size, soil on the painted path, the colour under the grass on the meadow, no blades in it, and the map kept in the ground. It prints `BAKE COLOR CHECK PASS`.
 
 ## Not in the kit
 

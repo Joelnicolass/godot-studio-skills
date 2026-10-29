@@ -1,5 +1,15 @@
 # GrassKit changelog
 
+## 0.2.1
+
+- **Bake the ground's colour** (asked by Sacrifice): `await field.bake_ground_color()`, or GrassKit ▸ **Bake ground colour** (undoable).
+  - It renders the game's ground from above as `ground.color_texture`, the colour the blades' roots take: only the render layers in the new `ground.color_layers`, without light or fog, as the ground shows under the drawn grass. The field's own blades are hidden meanwhile.
+  - `field.ground_bake_view` holds that view of GrassKit's shader globals for a game that renders its own.
+  - `GrassGlobals.write_bake_view(look, ground)` writes it before any field draws, so a game never writes GrassKit's globals itself.
+- **The same colours in Compatibility.** Compatibility takes `source_color` colours as they are, while GrassKit's shared colours are linear. In Compatibility, the ground under the grass and the far blades' meeting colour came out darker than in Forward+. `field/grass_color.gdshaderinc` converts them by `CURRENT_RENDERER`, so `grasskit_ground_color()` and the blades now give one colour in every renderer.
+- **Example:** the walker and the camps are on render layer 2, so the colour bake sees the hills only.
+- **Tests:** 52; the editor check (42) bakes from the menu; `checks/bake_color_check.gd` renders the bake in a window (soil on the path, grass colour on the meadow, in Forward+ and Compatibility).
+
 ## 0.2.0
 
 Tools for doing it by hand, and the fixes Sacrifice's migration asked for.
