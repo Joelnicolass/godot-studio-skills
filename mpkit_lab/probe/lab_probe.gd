@@ -328,7 +328,16 @@ func _measure_own_lag() -> void:
 		if not is_instance_valid(net):
 			break
 		worst = maxf(worst, net.last_correction())
+	var walking := net.motion_velocity()
 	Input.action_release(&"ui_right")
+	var ticks := 0
+	while net.motion_velocity().length() > 0.01 and ticks < 60:
+		await get_tree().physics_frame
+		ticks += 1
+	print("METRIC walking_velocity_px_s=%.1f stop_ticks=%d" % [walking.x, ticks])
+	_check(walking.x > 150.0 and absf(walking.y) < 1.0, "motion_velocity: walking right at its speed (%.0f px/s)" % walking.x)
+	## The key is read on the next tick (as when it went down: response_ticks), and that tick's step is the still one.
+	_check(ticks <= 3, "motion_velocity: still within 3 ticks of the key going up, whatever the lag (%d)" % ticks)
 	await get_tree().create_timer(1.0).timeout
 	print("METRIC max_correction_px=%.2f settled_correction_px=%.2f" % [worst, net.last_correction()])
 	_check(worst < float(MpBoot.user_value("probe-max-correction", "2")), "server corrections stayed small while walking")
@@ -448,12 +457,15 @@ func _measure_correction() -> void:
 	add_child(sampler)
 	Input.action_press(&"ui_left")
 	var worst := 0.0
+	var sideways := 0.0
 	var end := Time.get_ticks_msec() + 3500
 	while Time.get_ticks_msec() < end:
 		await get_tree().process_frame
 		if not is_instance_valid(net):
 			break
 		worst = maxf(worst, net.last_correction())
+		if net.correction_offset() > 1.0:
+			sideways = maxf(sideways, absf(net.motion_velocity().y))
 	Input.action_release(&"ui_left")
 	sampler.queue_free()
 	var steps: Array = []
@@ -462,7 +474,8 @@ func _measure_correction() -> void:
 	steps.sort()
 	var median: float = steps[steps.size() / 2] if not steps.is_empty() else 0.0
 	var biggest: float = steps.back() if not steps.is_empty() else 0.0
-	print("METRIC max_correction_px=%.1f max_step_px=%.1f median_step_px=%.2f frames=%d" % [worst, biggest, median, steps.size()])
+	print("METRIC max_correction_px=%.1f max_step_px=%.1f median_step_px=%.2f frames=%d sideways_velocity_px_s=%.1f" % [worst, biggest, median, steps.size(), sideways])
+	_check(sideways < 1.0, "motion_velocity: a fading correction is not motion (sideways %.1f px/s while pushes fade)" % sideways)
 	_check(worst > push * 0.5, "the server's pushes reached the owner as corrections (%.1f px)" % worst)
 	if MpBoot.user_flag("probe-expect-jump"):
 		_check(biggest > push * 0.6, "control: without smoothing a correction shows as one jump (%.1f px)" % biggest)
@@ -498,6 +511,19 @@ func _measure_proxy_jitter() -> void:
 	add_child(sampler)
 	await get_tree().create_timer(3.0).timeout
 	sampler.queue_free()
+	var animated := PackedFloat64Array()
+	for v in sampler.velocities:
+		animated.append(absf(v.x))
+	var animated_sorted := Array(animated)
+	animated_sorted.sort()
+	var animated_median: float = animated_sorted[animated_sorted.size() / 2] if not animated_sorted.is_empty() else 0.0
+	var still := 0
+	for v in animated:
+		if v < animated_median * 0.5:
+			still += 1
+	print("METRIC proxy_motion_velocity_median=%.1f proxy_motion_velocity_still_frames=%d" % [animated_median, still])
+	## A state late past the extrapolation holds the proxy (and its velocity) for a frame: a few on a lossy network.
+	_check(animated_median > 150.0 and still <= animated.size() / 20, "motion_velocity of another player: its walking speed, steady (%d still frames of %d)" % [still, animated.size()])
 	var speeds := PackedFloat64Array()
 	for i in range(1, sampler.xs.size()):
 		var dt := (sampler.ts[i] - sampler.ts[i - 1]) / 1000000.0
@@ -1199,6 +1225,8 @@ class _Sampler extends Node:
 	var xs := PackedFloat64Array()
 	var ys := PackedFloat64Array()
 	var ts := PackedInt64Array()
+	## MpActor.motion_velocity each frame.
+	var velocities := PackedVector3Array()
 
 	func _process(_delta: float) -> void:
 		if not is_instance_valid(target):
@@ -1206,3 +1234,5 @@ class _Sampler extends Node:
 		xs.append(target.position.x)
 		ys.append(target.position.y)
 		ts.append(Time.get_ticks_usec())
+		var net := MpActor.of(target)
+		velocities.append(net.motion_velocity() if net else Vector3.ZERO)
