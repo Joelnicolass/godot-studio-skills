@@ -1,5 +1,22 @@
 # Changelog de PropKit
 
+## 0.2.0
+
+La API del navmesh, repensada para personas. **Rompe la 0.1.**
+
+- **El navmesh sigue a sus props.** Un prop liberado o agregado en el juego rehornea sus zonas solo (`follow_props`, los cambios de un frame juntos); un grupo agregado justo después de `add_child()` cuenta. `rebake_prop(prop)` para uno que se movió. El código del juego para talar un árbol es `tree.queue_free()`.
+- **Los rehorneados se piden por nombre.** `rebake(position, radius)` (cambió el suelo o un edificio: vuelve a parsear), `rebake_prop(prop)`, `rebake_all()`. Ya no están: `rebake(areas, reparse)` ni `rebake_all(reparse)`.
+- **Una señal para "los caminos ya lo ven".** `updated` (el mapa de navegación usa las últimas piezas, con su `index`), `is_ready()` (las primeras piezas están puestas; queda en true) e `is_updating()`. Ya no están: `applied`, `synced`, `is_done()`, `is_synced()`.
+- **MANUAL espera solo los cambios en el juego.** Los horneados propios del kit (el arranque, un horneado guardado vencido) se aplican solos.
+- **Un horneado guardado vencido nunca se usa**: primero se vuelve a hornear (`rebake_when_stale`). Un horneado guardado se carga con su índice, y entran juntos.
+- **El fingerprint cubre la configuración**: la plantilla, la grilla de zonas, `height_range`, la configuración de las obstrucciones. Un horneado guardado cortado en otra grilla también emite `stale`. `extra_fingerprint` se puede poner en cualquier momento; las piezas en uso se vuelven a comparar ahí. Los horneados guardados con la 0.1 quedan vencidos: apretá «Bake».
+- **El índice**: `can_reach(a, b, max_distance)` (antes `same_component`), `component_at(point, max_distance)`, y `closest_point(point, max_distance, min_area)` mide `max_distance` en el plano del suelo, sea cual sea la altura del navmesh sobre él.
+- **El inspector**: lo que la mayoría de los juegos pone primero, el resto en Advanced.
+- **Las herramientas de línea de comandos son escenas**: `tools/bake_scene.tscn` y `tools/scatter_scene.tscn`, así el proyecto corre como en el juego (su main loop, sus autoloads).
+- **En el editor**: «Bake» guarda la escena, la hornea en otro Godot headless y la recarga (no importa dónde esté la escena en el editor); «Scatter» y «Clear» se pueden deshacer, y un scatter que no puede correr deja los props; Proyecto > Herramientas > *PropKit: Bake the open scene*; las vistas 3D y 2D dibujan el suelo de un scatter y las zonas de un nodo de zonas; avisos por un horneado guardado vencido, sin props, props parseados como geometría, un tamaño de zona o de celda que no encaja.
+- **2D: sin errores de aristas.** El horneado 2D de Godot puede dejar vértices más cerca que una celda del mapa de navegación, que entonces deja aristas sin unir ("More than 2 edges…"). El kit los suelda en cada pieza; los contornos de `merge_gap` pierden sus aristas más cortas que una celda.
+- **Tests**: 66, y un chequeo del editor (`PROPKIT_EDITOR_CHECK=1`, 17 chequeos en un editor real).
+
 ## 0.1.1
 
 - **Costuras que aguantan cuando el suelo cambia de altura (3D).** El piso y el techo del horneado de cada zona caen en celdas enteras de `cell_height` desde 0. Antes salían directo de los límites del parseo: una zona rehorneada después de que el suelo bajó de su punto más bajo medía sus alturas desde otro piso, y el mapa de navegación dejaba de unirla con las zonas vecinas. `height_range` (piso, techo) les da a todas las zonas la misma caja. Un horneado guardado con 0.1.0 puede tener el piso fuera de la grilla de celdas: volvé a apretar «Bake».

@@ -51,11 +51,11 @@ func _map() -> RID:
 	return root.get_viewport().find_world_2d().navigation_map
 
 
-## Waits until nothing bakes and the navigation map uses the pieces in force (`synced`).
+## Waits until the navmesh is ready and nothing is on its way.
 func _settled(zones: PropNavZones2D, frames := 900) -> bool:
 	for i in frames:
 		await tree.process_frame
-		if zones.is_done() and not zones.has_result() and zones.is_synced():
+		if zones.is_ready() and not zones.is_updating():
 			return true
 	return false
 
@@ -80,8 +80,8 @@ func test_a_wall_splits_the_field() -> void:
 	await _settled(zones)
 	check(not _walkable(Vector2(512, 256)), "the parsed wall blocks")
 	check(zones.index.component_count == 2, "two components (%d)" % zones.index.component_count)
-	check(not zones.index.same_component_2d(Vector2(100, 100), Vector2(900, 100)), "left and right apart")
-	check(zones.index.same_component_2d(Vector2(100, 100), Vector2(100, 480)), "the left side is one")
+	check(not zones.index.can_reach_2d(Vector2(100, 100), Vector2(900, 100)), "left and right apart")
+	check(zones.index.can_reach_2d(Vector2(100, 100), Vector2(100, 480)), "the left side is one")
 	var closest := zones.index.closest_point_2d(Vector2(512, 256))
 	check(absf(closest.x - 512.0) >= 20.0, "the closest point is beside the wall (%s)" % closest)
 
@@ -89,11 +89,8 @@ func test_a_wall_splits_the_field() -> void:
 func test_removing_a_prop_rebakes_its_zones() -> void:
 	var zones := _world([Vector2(128, 128), Vector2(900, 400)])
 	await _settled(zones)
-	var gone := props.get_child(0) as StaticBody2D
-	var area := PropObstructions.area_of(gone, false)
-	gone.free()
-	zones.rebake([area], false)
-	await _settled(zones)
+	props.get_child(0).queue_free()
+	check(await _settled(zones), "the re-bake ends")
 	check(zones.stats.zones_baked < 8, "only the zones it touched (%s)" % zones.stats)
 	check(_walkable(Vector2(128, 128)), "walkable where it stood")
 	check(not _walkable(Vector2(900, 400)), "the other prop still blocks")
@@ -117,3 +114,23 @@ func test_closest_point_can_skip_a_small_side() -> void:
 	check(strip >= 0 and index.component_area[strip] < 100000.0, "the strip is small (%s)" % index.component_area)
 	check(index.closest_point_2d(Vector2(905, 256)).x > 900.0, "any component: the strip beside it")
 	check(index.closest_point_2d(Vector2(905, 256), INF, 100000.0).x < 900.0, "at least 100000 px²: the field")
+
+
+func test_a_weld_drops_what_the_map_cannot_tell_apart() -> void:
+	# A zone of 20 x 10 and a sliver: vertex 4 is 0.36 px from vertex 1, in its map cell.
+	var piece := NavigationPolygon.new()
+	piece.border_size = 2.0
+	piece.baking_rect = Rect2(0, 0, 20, 10).grow(2.0)
+	piece.vertices = PackedVector2Array([
+		Vector2(0, 0), Vector2(10, 0), Vector2(10, 10), Vector2(0, 10), Vector2(10.3, 0.2),
+		Vector2(20, 0), Vector2(20, 10),
+	])
+	piece.add_polygon(PackedInt32Array([0, 1, 2, 3]))
+	piece.add_polygon(PackedInt32Array([1, 4, 2]))
+	piece.add_polygon(PackedInt32Array([4, 5, 6, 2]))
+	PropZoneBaker._weld_2d(piece, 1.0)
+	check(piece.vertices.size() == 6, "the two in one cell are one (%d)" % piece.vertices.size())
+	check(piece.vertices.has(Vector2(10, 0)) and not piece.vertices.has(Vector2(10.3, 0.2)), "the one on the zone's edge stays")
+	check(piece.get_polygon_count() == 2, "the sliver is gone (%d)" % piece.get_polygon_count())
+	var right := piece.get_polygon(1)
+	check(right.size() == 4 and piece.vertices[right[0]] == Vector2(10, 0), "the next polygon uses the kept vertex")

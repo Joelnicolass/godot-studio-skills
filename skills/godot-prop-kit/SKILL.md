@@ -27,8 +27,9 @@ Habilitá el plugin **PropKit**. Pedido acotado: `/add-props`. Composición: [go
 - **Tres piezas, cada una por su cuenta.** Scatter (`PropScatter3D` / `PropScatter2D`), dibujo en lotes (`PropBatch3D`) y el navmesh por zonas (`PropNavZones3D` / `PropNavZones2D`). Un juego usa una, dos o las tres.
 - **Los props son nodos de la escena.** Un scatter planta hijos guardados: se editan con el gizmo, y se vuelve a plantar solo para reemplazarlos todos. Nunca generes props en el juego "para ahorrar la escena" cuando tienen que chocar o cortar el navmesh igual en todos los peers; el scatter ya es determinista.
 - **El suelo es un contrato.** `PropFlatGround`, `PropRayGround` (3D, cualquier collider) o un script del juego que `extends PropGround` con `@tool`. El kit nunca nombra una clase del juego: las zonas prohibidas son grupos (`PropKeepOut`).
-- **Los props cortan el navmesh como obstrucciones, no como geometría.** Cada escena de prop pone el grupo `prop_obstruction`, y su capa de colisión queda fuera de la máscara de colisión de la plantilla del navmesh. Leé `PropObstructions.area_of(prop, is_3d)` antes de liberar un prop, y después llamá a `rebake([area], false)`.
-- **Ningún kit depende de otro.** PropKit no tiene red: un scatter determinista da los mismos props en todos los peers. Un cambio en el juego viaja como dato del juego por el transporte del juego, cada peer llama a `rebake`, y `apply_mode` MANUAL más `apply()` lo aplica en el mismo tick.
+- **Los props cortan el navmesh como obstrucciones, no como geometría.** Cada escena de prop pone el grupo `prop_obstruction`, y su capa de colisión queda fuera de la máscara de colisión de la plantilla del navmesh.
+- **El navmesh sigue a sus props.** Liberar o agregar un prop rehornea sus zonas solo (`follow_props`). Solo un prop que se movió (`rebake_prop(prop)`) o un cambio del suelo o de un edificio (`rebake(position, radius)`) necesitan una llamada. Caminos: `if not nav.is_ready(): await nav.updated`.
+- **Ningún kit depende de otro.** PropKit no tiene red: un scatter determinista da los mismos props en todos los peers. Un cambio en el juego viaja como dato del juego por el transporte del juego, cada peer lo hace, y `apply_mode` MANUAL más `apply()` lo aplica en el mismo tick.
 - **Las distancias van en unidades del mundo**: metros en 3D, píxeles en 2D (`spacing`, `zone_size`, `merge_gap`).
 
 ## Árbol
@@ -56,15 +57,16 @@ Arrancá desde `addons/prop_kit/examples/forest_3d/forest_3d.tscn` o `grove_2d/g
 ## Listo cuando
 
 - «Scatter» llena el área: ninguno dentro de una zona prohibida, ninguno sobre una máscara prohibida, el mismo resultado dos veces.
-- «Bake» guarda `<escena>_nav.res`; F6 lo carga sin hornear (`stats.zones_baked` 0) y un camino rodea los props.
-- Liberar un prop y llamar a `rebake([area], false)` rehornea solo sus zonas (`stats.zones_baked` < `zones_total`, `parse_ms` 0).
-- En CI, `tools/bake_scene.gd -- --scene=… --check` sale con 0: el horneado commiteado coincide con uno nuevo.
+- «Bake» guarda `<escena>_nav.res` y el inspector no muestra avisos; F6 lo carga sin hornear (`stats.zones_baked` 0) y un camino rodea los props.
+- Liberar un prop rehornea solo sus zonas (`stats.zones_baked` < `zones_total`, `parse_ms` 0).
+- En CI, `godot --headless --path . res://addons/prop_kit/tools/bake_scene.tscn -- --scene=… --check` sale con 0: el horneado commiteado coincide con uno nuevo.
 - `godot --headless --path propkit_lab --script res://addons/prop_kit/tests/prop_test_runner.gd` da `PROPKIT TESTS PASS` (en el repo del kit).
 
 ## Anti-patrones
 
 - Props parseados como geometría del navmesh: su capa está en la máscara de la plantilla, así el horneado paga dos veces. El kit avisa una vez.
 - Volver a hornear una NavigationRegion3D gigante en cada cambio en vez de usar zonas.
-- `rebake` con `reparse = true` cuando solo cambiaron props.
+- Llamar a `rebake()` después de liberar un prop: el nodo ya sigue a sus props, y `rebake` vuelve a parsear la geometría para nada.
+- Pedir caminos antes de `is_ready()`.
 - `merge_gap` más grande que el diámetro del agente: cierra pasos por los que un agente podría caminar.
 - Un script de suelo sin `@tool`: el scatter no lo puede llamar en el editor.
