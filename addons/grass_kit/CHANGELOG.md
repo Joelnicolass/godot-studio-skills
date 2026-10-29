@@ -1,5 +1,49 @@
 # Changelog de GrassKit
 
+## 0.2.0
+
+Herramientas para hacerlo a mano, y los arreglos que pidió la migración de Sacrifice.
+
+- **Pinceles en la vista 3D.** Seleccioná un GrassField3D y la vista 3D muestra arriba el menú **GrassKit** y cuatro pinceles, y abajo sus ajustes:
+  - **Grass**: dónde crece el pasto;
+  - **Height**: qué tan alto;
+  - **Colour**: el color del suelo bajo el pasto;
+  - **Kind**: dónde crece un tipo de hoja.
+
+  Pintan los mapas del propio suelo, las texturas de las que dibuja el campo.
+  - Tamaño, fuerza, caída y ruido (un borde irregular, fijo en el mundo); la presión de un lápiz.
+  - Las teclas de Terrain3D: Ctrl (Cmd) borra, Shift suaviza, `[` `]` tamaño, `-` `=` fuerza, Esc baja el pincel.
+  - El pasto sigue al pincel, el círculo del pincel se apoya en el suelo, y el mapa se puede mostrar encima.
+  - Cada trazo es un paso del historial del editor. Los mapas se guardan dentro del suelo con la escena.
+- **El menú.** Hornear el suelo, ajustar el área a los colliders, armar lo que falta; llenar, limpiar, importar o exportar como PNG el mapa del pincel.
+- **Asas.** El área del suelo tiene un asa por lado: lo pintado queda donde está y la parte nueva se hornea. Un GrassClear3D tiene asas para su `radius` y su borde `soft`. Cada arrastre se deshace.
+- **Deshacer** en Bake ground, los cambios de área, los rellenos, las importaciones, el nombre nuevo de un tipo y los presets de calidad.
+- **Armado.** Un GrassField3D agregado en el editor se arma solo: un suelo ajustado a los colliders de la escena, el look meadow, calidad media, un viento. Si la escena ya está guardada, también hornea. Desde código: `set_up()` y `colliders_area()`.
+- **GrassQuality.** Botones **Low**, **Medium** y **High**, y una línea de **costo** en vivo en el inspector; `apply_preset()`.
+- **Looks.** `looks/`: meadow, autumn, lush, steppe.
+- **Mapas pintados.**
+  - `GrassMap`: una textura que guarda su imagen pintada y la guarda en el archivo, también headless.
+  - Desde código: `GrassBrush`, y `GrassGround.paint()`, `fill_map()`, `clear_map()`, `import_map()`, `export_map()`, `map_region()` / `put_map()`.
+  - `kind_maps` por el nuevo `GrassMesh.map_name` de un tipo, así los looks que comparten un nombre hacen crecer sus tipos en los mismos lugares.
+  - `paint_texel_size`.
+  - El alfa de `color_texture` cubre el color de suelo del look.
+- **Los tipos que crecen por un mapa suman sus hojas** en vez de tomar parte de las otras, así pintar flores no ralea nada.
+- **Las celdas se saltean lo despintado.** No se dibuja nada donde el mapa de densidad está vacío, y un tipo que crece por un mapa solo donde está pintado (las flores del ejemplo: 31 draws en vez de 46).
+- **El suelo bajo el pasto** (pedido de Sacrifice).
+  - `grasskit_ground_color()` lleva el suelo del juego al color del pasto bajo las hojas dibujadas, conservando algo de su relieve: `GrassLook.under_grass` y `under_relief`, en el nuevo global `grasskit_under`. De cerca el campo ya no se ve sombreado ni manchado.
+  - `grasskit_painted_grass(xz)` (globales `grasskit_density`, `grasskit_area`) deja que el suelo del juego muestre su tierra en un sendero pintado.
+- **`trample_recover`** (pedido de Sacrifice): el pasto pisado se vuelve a levantar en esa cantidad de segundos, desde un rastro que se desvanece. Un cuerpo quieto mantiene su lugar aplastado.
+- **`GrassClear3D.changed`** (pedido de Sacrifice): se emite cuando cambian `radius` o `soft`.
+- **`GrassGround.set_heights_image(image, rect)`** (pedido de Sacrifice): alturas desde una imagen o un PackedFloat32Array. Con 1 millón de texels tarda 0,3 s, contra 1,4 s de `set_heights()`.
+- **También en `GrassGround`:**
+  - `ray_hit()`: dónde un rayo encuentra el suelo (los pinceles apuntan con él);
+  - `resize_area()`, `layout()` / `set_layout()`;
+  - `map_empty_in()`;
+  - la señal `map_painted`.
+- **El plugin** agrega los globales de shader que falten cada vez que arranca el editor, así una actualización trae los suyos.
+- **Ejemplo:** un sendero de tierra pintado con pasto corto a los lados, manchas de flores, una mancha seca, y pasto pisado que se vuelve a levantar; su suelo muestra tierra en el sendero.
+- **Tests:** 51, y un chequeo del editor de 41 que pinta, deshace, guarda, arrastra asas y arma un campo nuevo.
+
 ## 0.1.0
 
 - **GrassField3D**: pasto alrededor de la cámara en la GPU, en celdas cuadradas que se mueven con ella.

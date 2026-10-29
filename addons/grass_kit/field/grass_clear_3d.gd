@@ -8,14 +8,20 @@ extends Node3D
 
 const GROUP := &"grass_clear_3d"
 
+## `radius` or `soft` changed (in the inspector, by its handles, or from code): anything else that
+## follows the clearing (the game's own flora) can listen to it.
+signal changed
+
 @export_range(0.0, 100.0, 0.1, "or_greater", "suffix:m") var radius := 3.0:
 	set(value):
 		radius = value
 		update_gizmos()
+		changed.emit()
 @export_range(0.0, 100.0, 0.1, "or_greater", "suffix:m") var soft := 1.5:
 	set(value):
 		soft = value
 		update_gizmos()
+		changed.emit()
 
 
 func _enter_tree() -> void:

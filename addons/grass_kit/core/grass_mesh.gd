@@ -5,16 +5,20 @@ extends Resource
 ## One kind of blade in a look: the kit's own blade, or any mesh (a modelled blade, a tuft, a
 ## flower, a fern), its share of the blades, its textures and where it grows. A look mixes several
 ## by `weight` (90 % blades, 8 % tufts, 2 % flowers); each kind is a prefix of the same evenly
-## spread blades, so mixing keeps the density smooth. A mesh stands in its own space: y up, the
-## root at y 0; it is scaled to the look's blade height, turned at random and bent by the wind,
-## more the higher a vertex is (or by its vertex colour's red, with `bend_from_color`).
+## spread blades, so mixing keeps the density smooth. A kind that grows where a map says
+## (`map_name`, `mask_texture`) adds its blades there on top of the others instead of taking a
+## share of them: painting flowers in a meadow leaves the rest of the meadow as dense. A mesh
+## stands in its own space: y up, the root at y 0; it is scaled to the look's blade height, turned
+## at random and bent by the wind, more the higher a vertex is (or by its vertex colour's red, with
+## `bend_from_color`).
 
 ## Null = the kit's blade (its segments come from the quality; it is bent along a curve).
 @export var mesh: Mesh:
 	set(value):
 		mesh = value
 		emit_changed()
-## Share of the blades (the weights of a look's meshes are relative to each other).
+## Share of the blades (the weights of a look's meshes are relative to each other). A kind that
+## grows by a map adds this share where it grows, against the weights of the kinds that do not.
 @export_range(0.0, 100.0, 0.01, "or_greater") var weight := 1.0:
 	set(value):
 		weight = value
@@ -24,7 +28,16 @@ extends Resource
 	set(value):
 		size = value
 		emit_changed()
-## Where this kind grows, stretched over the ground's area (red: white = here). Null = everywhere.
+## The name of the ground's painted map that says where this kind grows (`GrassGround.kind_maps`):
+## the «Kind» brush paints it, and names the kind when it has no name yet. Looks that share a name
+## grow their kinds in the same places (flowers in summer and in autumn). Empty = everywhere, or
+## `mask_texture`.
+@export var map_name: StringName = &"":
+	set(value):
+		map_name = value
+		emit_changed()
+## Where this kind grows, stretched over the ground's area (red: white = here), when the ground has
+## no map by `map_name`. Null = everywhere.
 @export var mask_texture: Texture2D:
 	set(value):
 		mask_texture = value
@@ -70,4 +83,11 @@ extends Resource
 
 ## What a field builds from this kind (a change here needs new meshes, not only new uniforms).
 func build_key() -> String:
-	return "%s|%s|%s" % [mesh.get_rid() if mesh != null else "blade", alpha_scissor > 0.0, weight]
+	var kind := mesh.get_rid() if mesh != null else "blade"
+	return "%s|%s|%s|%s" % [kind, alpha_scissor > 0.0, weight, grows_by_map()]
+
+
+## True when a map says where this kind grows (`map_name` or `mask_texture`): it adds its blades
+## there instead of sharing the others'.
+func grows_by_map() -> bool:
+	return map_name != &"" or mask_texture != null
