@@ -30,6 +30,8 @@ var root: Node
 var grid := PropZoneGrid.new()
 ## Non-walkable margin baked around each zone (world units), so the pieces meet exactly.
 var border := 0.0
+## 3D: floor (x) and ceiling (y) of every zone's bake (y <= x: the parse's, with a margin).
+var height_range := Vector2.ZERO
 var group: StringName = PropObstructions.GROUP
 var sides := 6
 var merge_gap := 0.0
@@ -404,10 +406,10 @@ func _piece_for(zone: int) -> Resource:
 	var rect := grid.zone_rect(zone).grow(border)
 	if is_3d:
 		var mesh := (template as NavigationMesh).duplicate() as NavigationMesh
-		var box := (_parsed as NavigationMeshSourceGeometryData3D).get_bounds()
+		var heights := _heights()
 		mesh.filter_baking_aabb = AABB(
-			Vector3(rect.position.x, box.position.y - 1.0, rect.position.y),
-			Vector3(rect.size.x, box.size.y + 2.0, rect.size.y)
+			Vector3(rect.position.x, heights.x, rect.position.y),
+			Vector3(rect.size.x, heights.y - heights.x, rect.size.y)
 		)
 		mesh.filter_baking_aabb_offset = Vector3.ZERO
 		mesh.border_size = border
@@ -427,6 +429,20 @@ func _piece_for(zone: int) -> Resource:
 	polygon.baking_rect_offset = Vector2.ZERO
 	polygon.border_size = border
 	return polygon
+
+
+## Floor and ceiling of a 3D zone's bake, on whole cells of height from 0. The bake measures
+## heights in cells from the floor, so every zone on the same grid gives the same height on a
+## seam, whatever the parse's bounds were when it baked (the ground went lower in play).
+func _heights() -> Vector2:
+	var low := height_range.x
+	var high := height_range.y
+	if high <= low:
+		var box := (_parsed as NavigationMeshSourceGeometryData3D).get_bounds()
+		low = box.position.y - 1.0
+		high = box.end.y + 1.0
+	var cell := (template as NavigationMesh).cell_height
+	return Vector2(floorf(low / cell) * cell, ceilf(high / cell) * cell)
 
 
 ## Walks every obstruction node under `root`: rebuilds the index of nodes by zone and gives the
