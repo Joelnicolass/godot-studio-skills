@@ -1,0 +1,61 @@
+; GrassKit lab: a tiny project that runs the kit's own example and tests, apart from any game.
+; addons/grass_kit is a symlink to the kit's own addons/grass_kit (one copy of the kit).
+
+config_version=5
+
+[application]
+
+config/name="GrassKit Lab"
+run/main_scene="res://addons/grass_kit/examples/grass_3d/grass_3d.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_cast=1
+gdscript/warnings/unsafe_call_argument=1
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/grass_kit/plugin.cfg", "res://addons/grasskit_editor_check/plugin.cfg")
+
+[shader_globals]
+
+grasskit_wind={
+"type": "vec4",
+"value": Vector4(1, 0, 0, 55)
+}
+grasskit_wind_offset={
+"type": "vec2",
+"value": Vector2(0, 0)
+}
+grasskit_wind_time={
+"type": "float",
+"value": 0.0
+}
+grasskit_wind_noise={
+"type": "sampler2D",
+"value": "res://addons/grass_kit/core/grass_wind_noise.tres"
+}
+grasskit_field={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+grasskit_grass={
+"type": "vec4",
+"value": Vector4(0.3, 0.45, 0.12, 0)
+}
+
+[layer_names]
+
+3d_physics/layer_1="ground"
+3d_physics/layer_2="units"
