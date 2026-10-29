@@ -29,6 +29,7 @@ SKILL_NAMES=(
   godot-platformer-2d
   godot-rts-kit
   godot-prop-kit
+  godot-grass-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -63,10 +64,10 @@ Instalador del kit Godot studio (skills + commands + subagentes + addons).
   ./install.sh --all                Cursor y Claude Code
   ./install.sh --project            ./.cursor/ del cwd (./.claude/ con --claude; los dos con --all)
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|all]
                                     Copia el addon al proyecto Godot (default: mp_kit)
                                     agent_kit se instala desde godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|all]
                                     Solo el addon
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias de --addon GODOT_ROOT agent_kit
@@ -379,6 +380,12 @@ install_addon() {
       echo "Habilitá el plugin PropKit (sin autoload). Los props cortan el navmesh en el grupo prop_obstruction,"
       echo "en una capa de colisión que el navmesh no parsea. Arrancá desde addons/prop_kit/examples/forest_3d o grove_2d."
       ;;
+    grass_kit)
+      copy_one_addon "$project" "grass_kit"
+      echo
+      echo "Habilitá el plugin GrassKit (sin autoload). Agregá un GrassField3D, poné el área de su suelo y apretá Bake ground."
+      echo "Arrancá desde addons/grass_kit/examples/grass_3d."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -391,9 +398,11 @@ install_addon() {
       install_addon "$project" "rts_kit"
       echo
       install_addon "$project" "prop_kit"
+      echo
+      install_addon "$project" "grass_kit"
       ;;
     *)
-      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | all)" >&2
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -443,6 +452,7 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/plat_kit   (./install.sh --addon /path/to/godot-project plat_kit)"
   echo "  - addons/rts_kit    (./install.sh --addon /path/to/godot-project rts_kit)"
   echo "  - addons/prop_kit   (./install.sh --addon /path/to/godot-project prop_kit)"
+  echo "  - addons/grass_kit  (./install.sh --addon /path/to/godot-project grass_kit)"
   echo
   echo "AgentKit / playtester (repo aparte, este instalador lo trae):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"
@@ -483,6 +493,7 @@ install_harness() {
     echo "  plataformas:  godot-platformer-2d"
     echo "  rts:          godot-rts-kit"
     echo "  props:        godot-prop-kit"
+    echo "  grass:        godot-grass-kit"
     echo "  materiales:   godot-material-maker"
     echo "  investigar:   godot-feature-research"
   fi
@@ -492,7 +503,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /create-material, /research-feature, /create-prd, …"
+    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then

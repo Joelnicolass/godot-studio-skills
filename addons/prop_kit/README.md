@@ -151,9 +151,9 @@ En el juego:
 
 | Consulta | Respuesta |
 |---|---|
-| `can_reach(a, b, max_distance)` | Si un agente puede caminar de `a` hasta `b`. `max_distance`: los puntos que están así de lejos del navmesh en el plano del suelo (una unidad contra una pared) cuentan desde el punto caminable más cercano |
+| `can_reach(a, b, max_distance, min_area)` | Si un agente puede caminar de `a` hasta `b`. `max_distance`: los puntos que están así de lejos del navmesh en el plano del suelo (una unidad contra una pared) cuentan desde el punto caminable más cercano; `min_area`: las islas no cuentan |
 | `closest_point(point, max_distance, min_area)` | El punto caminable más cercano entre los que están a `max_distance` en el plano del suelo, sea cual sea la altura del navmesh sobre el suelo. Con `min_area`, solo sobre una componente al menos así de grande: la tierra más cercana y no el techo o el bolsillo entre paredes donde está un cuerpo |
-| `component_at(point, max_distance)`, `component_area[c]` | La componente conexa en un punto, y el área de cada una en el plano del suelo (m² en 3D, px² en 2D) |
+| `component_at(point, max_distance, min_area)`, `component_area[c]` | La componente conexa en un punto (con `min_area`, la tierra más cercana así de grande, no una isla al lado), y el área de cada una en el plano del suelo (m² en 3D, px² en 2D) |
 | `polygon_at(point)` | El polígono bajo un punto |
 | `stitched(template)` | Todo el navmesh como una sola NavigationMesh |
 
