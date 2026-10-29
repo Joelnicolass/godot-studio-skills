@@ -167,14 +167,13 @@ func input(camera: Camera3D, event: InputEvent) -> int:
 ## Writes the grounds painted since the last save, and the looks whose kinds got a map name (the
 ## plugin's _save_external_data).
 func save_painted() -> void:
-	for ground: GrassGround in GrassGround._edited.duplicate():
+	for ground in GrassGround.edited_grounds():
 		var path := ground.resource_path
 		if path.is_empty() or path.contains("::"):
 			continue
 		ground.flush_maps()
 		if ResourceSaver.save(ground, path, ResourceSaver.FLAG_COMPRESS) == OK:
-			ground._maps_edited = false
-			GrassGround._edited.erase(ground)
+			GrassGround.mark_saved(ground)
 
 
 func _process(delta: float) -> void:

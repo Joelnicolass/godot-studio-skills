@@ -27,7 +27,7 @@ Con el kit:
 | Pieza               | Dónde                                                                          | Qué es                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orquestador         | `skills/godot-studio-workflow/`                                                | El agente del chat: entrevista + `/implement-feature` (PRD/RFC opcionales)                       |
-| Cómo escribir Godot | `skills/`                                                                      | Capas, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, juicy, materiales, investigar features, visual, memoria, tests y CI |
+| Cómo escribir Godot | `skills/`                                                                      | Capas, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, juicy, materiales, investigar features, visual, memoria, tests y CI, un banco de determinismo (con AgentKit) |
 | Subagentes          | `agents/`                                                                      | Tech lead, developer, reviewer; tester y visual opcionales. Playtester: módulo playtest          |
 | Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer con nodos y sin RPCs a mano: el juego en un `.tres` (`MpGame`), el mundo en un nodo (`MpWorld`), los verbos de la partida en `Mp`, más `MpActor`, `MpInput`, `MpState`, `MpMatch`. Predicción, buffers adaptativos, compensación de lag y calidad de red; LAN, dedicated, salas online, partida privada, web, relay para servidores sin IP pública (Railway), deploy a VPS y asistente *Setup game*. **Cero** gameplay. Empezá por `addons/mp_kit/QUICKSTART.md` (paso a paso: `GUIDE.md`); pruebas sin juego en `mpkit_lab/run/all.sh`. |
@@ -42,7 +42,7 @@ Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `Sc
 
 ## Cómo funciona
 
-El detalle (diagramas del orquestador, roles, Clean vs estándar, tipos de multiplayer, flujo de una iteración, arte/shaders) está en [docs/architecture.md](docs/architecture.md). Diagrama interactivo del flujo: [joelnicolass.github.io/godot-studio-skills](https://joelnicolass.github.io/godot-studio-skills/). En corto: entrevista → `/implement-feature` → un OK sobre el árbol (incluye `res://debug/` si hace falta) → developer → reviewer → playtester sobre esa escena → el orquestador clasifica el FAIL → cierre en `FEATURES.md`. El pase visual se pregunta. El contrato del slice es el `F<n>`, no un RFC obligatorio.
+El detalle (diagramas del orquestador, roles, Clean vs estándar, tipos de multiplayer, flujo de una iteración, arte/shaders) está en [docs/architecture.md](docs/architecture.md). Diagramas interactivos: [el flujo de una feature](https://joelnicolass.github.io/godot-studio-skills/) y [un kit en tu juego](https://joelnicolass.github.io/godot-studio-skills/kits.html) (fuentes en [docs/diagram/](docs/diagram/README.md)). En corto: entrevista → `/implement-feature` → un OK sobre el árbol (incluye `res://debug/` si hace falta) → developer → reviewer → playtester sobre esa escena → el orquestador clasifica el FAIL → cierre en `FEATURES.md`. El pase visual se pregunta. El contrato del slice es el `F<n>`, no un RFC obligatorio.
 
 ## Instalar (Claude Code o Cursor)
 
@@ -127,6 +127,21 @@ Herramientas externas que el flujo **ofrece** cuando hacen falta (nunca las inst
 
 Hay una demo lista en [`example/`](example/README.md) (1P, LAN, dedicated, mundos 2D y 3D con placeholders, flujo PRD→RFC). Snippets VS Code/Cursor: `.vscode/mpkit.code-snippets` (el instalador los copia).
 
+## Ejemplos de cada kit
+
+Cada kit trae un **ejemplo mínimo**: la integración más chica que anda, para abrir y apretar F6, con su código explicado en el README del kit junto a **tips y recomendaciones**. Los tests de cada kit juegan sus ejemplos.
+
+| Kit | Ejemplo mínimo | Completos | README | Tests |
+|---|---|---|---|---|
+| MpKit | `addons/mp_kit/examples/minimal_2d/boot.tscn`: lo que escribe *Setup game* (menú, mundo, jugador predicho) | `arena_2d/boot.tscn` | [QUICKSTART](addons/mp_kit/QUICKSTART.md) | `mpkit_lab/run/all.sh` |
+| FsmKit | `addons/fsm_kit/examples/minimal_2d/minimal_2d.tscn`: `Idle`, `Move`, `Hurt` con payload | — | [README](addons/fsm_kit/README.md) | `fsmkit_lab/` |
+| PlatKit | `addons/plat_kit/examples/minimal_2d/minimal_2d.tscn`: un jugador y dos repisas, sin código | — | [README](addons/plat_kit/README.md) | `platkit_lab/` |
+| RtsKit | `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn`: seis soldados y el equipo de mando | `skirmish_3d`, `skirmish_2d` | [GUIDE](addons/rts_kit/GUIDE.md) | `rtskit_lab/` |
+| PropKit | `addons/prop_kit/examples/minimal_3d/minimal_3d.tscn`: árboles alrededor de un campamento, en lotes | `forest_3d`, `grove_2d` | [README](addons/prop_kit/README.md) | `propkit_lab/` |
+| GrassKit | `addons/grass_kit/examples/minimal_3d/minimal_3d.tscn`: un piso y un campo, con el shader del suelo | `grass_3d` | [README](addons/grass_kit/README.md) | `grasskit_lab/` |
+
+Cada lab es un proyecto Godot chico, con el kit por symlink; su README dice cómo correr los tests.
+
 ## Layout
 
 ```
@@ -138,9 +153,12 @@ addons/plat_kit/
 addons/rts_kit/
 addons/prop_kit/
 addons/grass_kit/
+mpkit_lab/                     # tests, pruebas de red y ejemplos de MpKit, sin juego
+fsmkit_lab/                    # tests y ejemplo de FsmKit, sin juego
+platkit_lab/                   # tests y ejemplo de PlatKit, sin juego
 rtskit_lab/                    # tests y ejemplos de RtsKit, sin juego
 propkit_lab/                   # tests y ejemplos de PropKit, sin juego
-grasskit_lab/                  # tests y ejemplo de GrassKit, sin juego
+grasskit_lab/                  # tests y ejemplos de GrassKit, sin juego
 skills/
   godot-studio-workflow/
   godot-studio-memory/
@@ -159,6 +177,7 @@ skills/
   godot-grass-kit/
   godot-material-maker/
   godot-feature-research/
+  godot-determinism/
 agents/                        # studio-tech-lead, studio-developer, …
 commands/
 install.sh

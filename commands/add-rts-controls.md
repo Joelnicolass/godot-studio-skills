@@ -37,7 +37,7 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 [~] project.godot                      # plugin RtsKit; acciones de entrada (Herramientas > RtsKit: Add default input actions)
 ```
 
-Seguí `addons/rts_kit/GUIDE.md` (secciones 2–6). Arrancá desde `addons/rts_kit/examples/skirmish_3d` o `skirmish_2d`: copiá los nodos del equipo, no el caminante del ejemplo. En 2D, distancias en píxeles (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
+Seguí `addons/rts_kit/GUIDE.md` (secciones 2–6). Arrancá desde `addons/rts_kit/examples/minimal_2d` (lo mínimo), `skirmish_3d` o `skirmish_2d`: copiá los nodos del equipo, no el caminante del ejemplo (el `soldier.gd` del mínimo es la forma de un script de unidad). En 2D, distancias en píxeles (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
 
 ## 3. Implementar
 

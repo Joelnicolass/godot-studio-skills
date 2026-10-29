@@ -79,7 +79,7 @@ Acciones semánticas en Project Settings → Input Map: `move_left`, `attack`, `
 - One-shot de gameplay (salto, ataque): `_unhandled_input` (la UI ya pudo consumir el evento).
 - `_input` solo para interceptar (pausa, remap).
 
-El catcher de input llama `apply_*` / `submit_*`; no spawnea ni puntúa.
+El catcher de input llama `apply_*` (en red, el `MpInput` del actor manda las acciones y el servidor aplica); no spawnea ni puntúa.
 
 ## 5. Reuso
 

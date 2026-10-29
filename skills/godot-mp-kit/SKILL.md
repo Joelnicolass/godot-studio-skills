@@ -56,6 +56,8 @@ Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
+Ejemplos del addon: `addons/mp_kit/examples/minimal_2d/` (lo que escribe *Setup game*: un menú, un mundo y un jugador predicho; abrí `boot.tscn` y F6) y `examples/arena_2d/` (el completo). Partí del mínimo y sumá lo que pide la feature.
+
 Guía humana (inspector, paso a paso, túnel custom, servidor de salas, salas hub y cola): `addons/mp_kit/README.md`.
 
 ## Primero los nodos (human first)
@@ -148,7 +150,9 @@ Vive en `addons/mp_kit/lobby/`, genérico (sin reglas ni textos de juego). Resum
 
 Cliente: `apply_snapshot` **apaga** el tick de simulación de la sesión. El guest no tiquea el reloj. Dedicated sí simula (es el servidor).
 
-## Input y autoridad
+## Input y autoridad (bajo nivel)
+
+En código nuevo, la entrada del jugador es su `MpInput` y una orden puntual es `net.to_server(&"x")` (tabla de [Primero los nodos](#primero-los-nodos-human-first)). Esto es el camino a mano, para lo que los nodos no cubren.
 
 Actores: el servidor es authority. Si el body es `RigidBody2D`/`RigidBody3D`, los proxies se freezan (`MpAuthority.freeze_rigid_proxy`). No asumas RigidBody en todo pawn.
 
@@ -231,4 +235,4 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 - [ ] Guest no simula reglas; servidor valida sender.
 - [ ] 1P offline verificado.
 - [ ] Pawns son packed scenes componibles, no lógica de red incrustada en el kit.
-- [ ] Features nuevas: Tools scaffold o `/new-mp-feature`; túnel solo para lo que no es `submit_*` / Resource.
+- [ ] Features nuevas: un actor con `MpActor` (+ `MpInput`), con Tools › *Make selection a network actor* o `/new-mp-feature`; túnel solo para lo que no cubren `to_server` / `to_all` / `Mp.state()`.

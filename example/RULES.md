@@ -3,7 +3,7 @@
 **Tipo de producto:** juego Godot (demo / guía).  
 **Controles omitidos (auditables):** responsive web, auth, SQL, REST, semver de librería, bundle size, WCAG web, infra SaaS. No rellenar esas secciones con “N/A tranquilizador” en forma de falso hallazgo.
 
-**Anclaje en código existente:** `example/project.godot` (Godot 4.7, Jolt, mobile) y `addons/mp_kit` v0.6.0 del repo padre. Gana la consistencia con ese addon, no un patrón inventado.
+**Anclaje en código existente:** `example/project.godot` (Godot 4.7, Jolt, mobile) y `addons/mp_kit` (la versión de su `plugin.cfg`, hoy 0.18.3) del repo padre. Gana la consistencia con ese addon, no un patrón inventado.
 
 ---
 
@@ -15,7 +15,7 @@
 | GDScript | el del editor 4.7 | mismo proyecto |
 | Física 3D | Jolt Physics | `example/project.godot` |
 | Renderer | mobile | mismo |
-| MpKit | 0.6.0 | `addons/mp_kit/plugin.cfg` |
+| MpKit | 0.18.3 | `example/addons/mp_kit/plugin.cfg` (copia de `addons/mp_kit`) |
 | Tests | no hay runner (PRD: F23 Won't); chequeos de red: `debug/spawn_lab/run_lab.sh`, `agent/run_mp_playtest.sh` (AgentKit) | README → Chequeos de red |
 
 Copiar el addon: desde la raíz del studio kit, `./install.sh --addon-only example`. No forkear archivos del kit dentro de `glue/` o `scenes/`.
@@ -104,6 +104,6 @@ Cablear este archivo: `example/AGENTS.md` apunta a `RULES.md` y `example/CLAUDE.
 
 ## Autochequeo
 
-- Tabla stack: 6 filas, versiones ancladas a archivos (Godot 4.7, MpKit 0.6.0).
+- Tabla stack: 6 filas, versiones ancladas a archivos (Godot 4.7, MpKit según `plugin.cfg`).
 - Features citadas F1–F23 coinciden con FEATURES.md (Must 16, Should 2, Won't 5).
 - No contradice el PRD (estándar, tres modos de MP, placeholders, dedicated al 1.er cliente).

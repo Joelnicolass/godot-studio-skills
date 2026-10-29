@@ -1,7 +1,8 @@
 extends "res://addons/prop_kit/tests/prop_test.gd"
 
-## Both examples run: they scatter, draw (3D), bake in zones, answer a path, chop (the navmesh
-## follows, re-baking only the touched zones), and scatter anew.
+## The examples run. The minimal one scatters around its camp, draws in batches and scatters anew
+## with another seed. forest_3d and grove_2d scatter, draw (3D), bake in zones, answer a path, chop
+## (the navmesh follows, re-baking only the touched zones), and scatter anew.
 
 
 func _until(condition: Callable, frames := 900) -> bool:
@@ -14,6 +15,35 @@ func _until(condition: Callable, frames := 900) -> bool:
 
 func _quiet(zones: Node) -> bool:
 	return zones.call(&"is_ready") and not zones.call(&"is_updating")
+
+
+func test_minimal_3d_runs() -> void:
+	PropBatch3D.draw_anywhere = true
+	var scene := (load("res://addons/prop_kit/examples/minimal_3d/minimal_3d.tscn") as PackedScene).instantiate()
+	root.add_child(scene)
+	var scatter := scene.get_node(^"Forest") as PropScatter3D
+	var batch := scene.get_node(^"Batch") as PropBatch3D
+	check(scatter.get_child_count() > 50, "trees are scattered (%d)" % scatter.get_child_count())
+	var near_camp := 0
+	var off_ground := 0
+	for tree_node: Node3D in scatter.get_children():
+		var at := Vector2(tree_node.global_position.x, tree_node.global_position.z)
+		if at.length() < 8.0:
+			near_camp += 1
+		if not Rect2(-30, -30, 60, 60).has_point(at):
+			off_ground += 1
+	check(near_camp == 0, "none within the camp's keep-out")
+	check(off_ground == 0, "all on the flat ground's square")
+	check(batch.batch_count() > 0 and batch.batch_count() < 20, "drawn in a few batches (%d)" % batch.batch_count())
+	var first := (scatter.get_child(0) as Node3D).global_position
+	var event := InputEventAction.new()
+	event.action = &"ui_accept"
+	event.pressed = true
+	scene.call(&"_unhandled_input", event)
+	check((scatter.get_child(0) as Node3D).global_position != first and batch.batch_count() > 0, "Space: another seed, drawn again")
+	PropBatch3D.draw_anywhere = false
+	scene.queue_free()
+	await tree.process_frame
 
 
 func test_forest_3d_runs() -> void:

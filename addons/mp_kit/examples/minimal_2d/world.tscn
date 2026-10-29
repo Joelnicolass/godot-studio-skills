@@ -1,0 +1,78 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_world.gd" id="1_kv7qk"]
+[ext_resource type="PackedScene" path="res://addons/mp_kit/examples/minimal_2d/player.tscn" id="2_ynx0c"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_slot_spawner.gd" id="3_00wl7"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_state.gd" id="4_2de3r"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_match.gd" id="5_yfll8"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_leave_button.gd" id="6_6whsd"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_invite_label.gd" id="7_77de6"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_start_button.gd" id="8_8p3qe"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_waiting_label.gd" id="9_arv07"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_afuid"]
+properties/0/path = NodePath(".:values")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+
+[node name="World" type="Node2D" unique_id=395292251]
+
+[node name="MpWorld" type="Node" parent="." unique_id=238752317]
+script = ExtResource("1_kv7qk")
+player_scene = ExtResource("2_ynx0c")
+seats = 2
+
+[node name="SpawnPoints" type="Node2D" parent="MpWorld" unique_id=615302326]
+
+[node name="P1" type="Marker2D" parent="MpWorld/SpawnPoints" unique_id=1774129369]
+position = Vector2(660, 270)
+
+[node name="P2" type="Marker2D" parent="MpWorld/SpawnPoints" unique_id=597383848]
+position = Vector2(300, 270)
+
+[node name="Actors" type="Node2D" parent="MpWorld" unique_id=2034163338]
+
+[node name="Players" type="MultiplayerSpawner" parent="MpWorld" unique_id=2002797408]
+spawn_path = NodePath("../Actors")
+script = ExtResource("3_00wl7")
+pawn_scene = ExtResource("2_ynx0c")
+spawn_points = NodePath("../SpawnPoints")
+
+[node name="State" type="Node" parent="MpWorld" unique_id=1136204855]
+script = ExtResource("4_2de3r")
+
+[node name="MpSync" type="MultiplayerSynchronizer" parent="MpWorld/State" unique_id=1768457002]
+replication_config = SubResource("SceneReplicationConfig_afuid")
+
+[node name="Match" type="Node" parent="MpWorld" unique_id=68106098]
+script = ExtResource("5_yfll8")
+
+[node name="Hud" type="CanvasLayer" parent="MpWorld" unique_id=1314518459]
+
+[node name="Leave" type="Button" parent="MpWorld/Hud" unique_id=2113300431]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 16.0
+offset_bottom = 16.0
+script = ExtResource("6_6whsd")
+
+[node name="Invite" type="Label" parent="MpWorld/Hud" unique_id=616246132]
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 16.0
+offset_bottom = 56.0
+script = ExtResource("7_77de6")
+
+[node name="Start" type="Button" parent="MpWorld/Hud" unique_id=64050347]
+offset_left = 16.0
+offset_top = 96.0
+offset_right = 16.0
+offset_bottom = 96.0
+script = ExtResource("8_8p3qe")
+
+[node name="Waiting" type="Label" parent="MpWorld/Hud" unique_id=269937607]
+offset_left = 16.0
+offset_top = 136.0
+offset_right = 16.0
+offset_bottom = 136.0
+script = ExtResource("9_arv07")

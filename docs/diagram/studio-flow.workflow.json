@@ -3,64 +3,312 @@
   "diagram_type": "workflow",
   "meta": {
     "title": "Una feature, de la idea al cierre",
+    "locale": "es",
     "quality_profile": "showcase",
+    "output": "index.html",
     "views": [
       {
         "id": "camino",
         "label": "El trabajo",
-        "focus": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "play", "classify", "close"],
+        "focus": [
+          "idea",
+          "interview",
+          "feature",
+          "lead",
+          "ok",
+          "dev",
+          "review",
+          "play",
+          "classify",
+          "close"
+        ],
         "note": "Un OK sobre el árbol. Después se construye, se revisa y se juega la escena del F n."
+      },
+      {
+        "id": "chico",
+        "label": "Un corte chico",
+        "focus": [
+          "feature",
+          "ok",
+          "dev"
+        ],
+        "note": "Un componente o un @export: el árbol lo arma el orquestador, sin tech lead. El OK es el mismo."
       },
       {
         "id": "suite",
         "label": "Qué queda escrito",
-        "focus": ["feature", "lead", "dev", "play", "close"],
-        "note": "FEATURES nombra res://debug y la acción. El developer arma esa escena. El playtester escribe el flow."
+        "focus": [
+          "feature",
+          "lead",
+          "dev",
+          "play",
+          "close"
+        ],
+        "note": "El F n nombra res://debug y la acción. El developer arma esa escena. El playtester escribe el flow."
       },
       {
         "id": "vuelta",
         "label": "Después del informe",
-        "focus": ["classify", "dev", "review", "play", "lead"],
-        "note": "Criterio roto: developer. Escena trampa: reviewer. Cache: orquestador. Tech lead solo si el corte estaba mal."
+        "focus": [
+          "classify",
+          "dev",
+          "review",
+          "play"
+        ],
+        "note": "Criterio roto: developer. Escena trampa: reviewer. El resto, en la tarjeta Después del informe."
       }
     ]
   },
   "lanes": [
-    { "id": "you", "label": "Vos" },
-    { "id": "orch", "label": "Orquestador" },
-    { "id": "agents", "label": "Subagentes" }
+    {
+      "id": "you",
+      "label": "Vos"
+    },
+    {
+      "id": "agents",
+      "label": "Subagentes"
+    },
+    {
+      "id": "orch",
+      "label": "Orquestador"
+    }
   ],
   "phases": [
-    { "id": "setup", "label": "Pedido", "fromCol": 0, "toCol": 1 },
-    { "id": "plan", "label": "Plan", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
-    { "id": "build", "label": "Construcción y juego", "fromCol": 4, "toCol": 5 }
+    {
+      "id": "setup",
+      "label": "Pedido",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "plan",
+      "label": "Plan",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "build",
+      "label": "Construcción y juego",
+      "fromCol": 4,
+      "toCol": 5
+    }
   ],
-  "mainPath": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "play", "classify", "close"],
+  "mainPath": [
+    "idea",
+    "interview",
+    "feature",
+    "lead",
+    "ok",
+    "dev",
+    "review",
+    "play",
+    "classify",
+    "close"
+  ],
   "nodes": [
-    { "id": "idea", "lane": "you", "col": 0, "type": "external", "label": "Feature", "sublabel": "un slice", "width": 120 },
-    { "id": "ok", "lane": "you", "col": 3, "type": "security", "label": "Un OK", "sublabel": "árbol y escena", "width": 130 },
-    { "id": "interview", "lane": "orch", "col": 1, "type": "frontend", "label": "Entrevista", "sublabel": "arquitectura, MP, 2D/3D", "width": 156 },
-    { "id": "feature", "lane": "orch", "col": 2, "type": "backend", "label": "F n", "sublabel": "FEATURES.md", "width": 130 },
-    { "id": "classify", "lane": "orch", "col": 5, "type": "backend", "label": "Clasifica", "sublabel": "el informe", "width": 130 },
-    { "id": "close", "lane": "you", "col": 5, "type": "database", "label": "Cierre", "sublabel": "F n al día", "width": 120 },
-    { "id": "lead", "lane": "agents", "col": 2, "type": "backend", "label": "Tech lead", "sublabel": "plan + res://debug", "width": 150 },
-    { "id": "dev", "lane": "agents", "col": 3, "type": "backend", "label": "Developer", "sublabel": "producto y debug", "width": 146 },
-    { "id": "review", "lane": "agents", "col": 4, "type": "backend", "label": "Reviewer", "sublabel": "un pase", "width": 130 },
-    { "id": "play", "lane": "agents", "col": 5, "type": "frontend", "label": "Playtester", "sublabel": "solo InputMap", "width": 140 }
+    {
+      "id": "idea",
+      "lane": "you",
+      "col": 0,
+      "type": "external",
+      "label": "Feature",
+      "sublabel": "un slice"
+    },
+    {
+      "id": "ok",
+      "lane": "you",
+      "col": 3,
+      "type": "security",
+      "label": "Un OK",
+      "sublabel": "árbol [+] [~] [-]"
+    },
+    {
+      "id": "close",
+      "lane": "you",
+      "col": 5,
+      "type": "database",
+      "label": "Cierre",
+      "sublabel": "F n y memoria",
+      "tag": "parse · gdlint · F6"
+    },
+    {
+      "id": "interview",
+      "lane": "orch",
+      "col": 1,
+      "type": "frontend",
+      "label": "Entrevista",
+      "sublabel": "stack, MP, 2D/3D, arte"
+    },
+    {
+      "id": "feature",
+      "lane": "orch",
+      "col": 2,
+      "type": "backend",
+      "label": "F n",
+      "sublabel": "FEATURES.md"
+    },
+    {
+      "id": "classify",
+      "lane": "orch",
+      "col": 5,
+      "type": "backend",
+      "label": "Clasifica",
+      "sublabel": "el informe"
+    },
+    {
+      "id": "lead",
+      "lane": "agents",
+      "col": 2,
+      "type": "backend",
+      "label": "Tech lead",
+      "sublabel": "plan + res://debug"
+    },
+    {
+      "id": "dev",
+      "lane": "agents",
+      "col": 3,
+      "type": "backend",
+      "label": "Developer",
+      "sublabel": "producto, kits, debug"
+    },
+    {
+      "id": "review",
+      "lane": "agents",
+      "col": 4,
+      "type": "backend",
+      "label": "Reviewer",
+      "sublabel": "un pase"
+    },
+    {
+      "id": "play",
+      "lane": "agents",
+      "col": 5,
+      "type": "frontend",
+      "label": "Playtester",
+      "sublabel": "solo InputMap"
+    }
   ],
   "edges": [
-    { "id": "e1", "from": "idea", "to": "interview" },
-    { "id": "e2", "from": "interview", "to": "feature", "label": "stack", "variant": "emphasis" },
-    { "id": "e3", "from": "feature", "to": "lead" },
-    { "id": "e4", "from": "lead", "to": "ok", "label": "árbol", "variant": "security" },
-    { "id": "e5", "from": "ok", "to": "dev", "label": "aprobado", "variant": "emphasis" },
-    { "id": "e6", "from": "dev", "to": "review" },
-    { "id": "e7", "from": "review", "to": "play", "label": "escena del F n", "variant": "emphasis" },
-    { "id": "e8", "from": "play", "to": "classify", "label": "informe" },
-    { "id": "e9", "from": "classify", "to": "close", "label": "sin FAIL de producto", "variant": "emphasis" },
-    { "id": "back-dev", "from": "classify", "to": "dev", "label": "criterio roto", "variant": "dashed", "role": "return" },
-    { "id": "back-review", "from": "classify", "to": "review", "label": "escena trampa", "variant": "dashed", "role": "return" },
-    { "id": "back-play", "from": "classify", "to": "play", "label": "import y reintento", "variant": "dashed", "role": "return" },
-    { "id": "back-lead", "from": "classify", "to": "lead", "label": "corte mal", "variant": "dashed", "role": "return" }
+    {
+      "id": "e1",
+      "from": "idea",
+      "to": "interview"
+    },
+    {
+      "id": "e2",
+      "from": "interview",
+      "to": "feature",
+      "label": "stack",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "feature",
+      "to": "lead"
+    },
+    {
+      "id": "e4",
+      "from": "lead",
+      "to": "ok",
+      "label": "árbol",
+      "variant": "security"
+    },
+    {
+      "id": "e5",
+      "from": "ok",
+      "to": "dev",
+      "label": "aprobado",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e6",
+      "from": "dev",
+      "to": "review"
+    },
+    {
+      "id": "e7",
+      "from": "review",
+      "to": "play",
+      "label": "escena del F n",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e8",
+      "from": "play",
+      "to": "classify",
+      "label": "informe"
+    },
+    {
+      "id": "e9",
+      "from": "classify",
+      "to": "close",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "right",
+      "route": "outside-right"
+    },
+    {
+      "id": "back-dev",
+      "from": "classify",
+      "to": "dev",
+      "label": "criterio roto",
+      "variant": "dashed",
+      "role": "return",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "route": "bottom-channel",
+      "labelSegment": 1
+    },
+    {
+      "id": "back-review",
+      "from": "classify",
+      "to": "review",
+      "label": "escena trampa",
+      "variant": "dashed",
+      "role": "return",
+      "fromSide": "left",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "La entrevista",
+      "items": [
+        "Clean o estándar, tipo de multiplayer, 2D o 3D",
+        "Arte con MCP de Aseprite o Blender, y Material Maker, solo con tu OK",
+        "Como en X: el orquestador la investiga (web, decompilar) y anota las fuentes en el F n"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Si los pedís",
+      "items": [
+        "Tester: tests, si los pedís o RULES los exige",
+        "Visual: un pase de UI, con VISUAL.md",
+        "Playtester: módulo godot-studio-playtest; sin él, checklist manual"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Después del informe",
+      "items": [
+        "Criterio roto, o el PNG muestra otra cosa: developer, una corrección",
+        "res://debug ya muestra el resultado: reviewer (la escena hace trampa)",
+        "Cache o un CLI que no corrió: un --import y se relanza el playtester",
+        "Falta res://debug (NEED_SETUP): el orquestador completa el plan",
+        "El corte o la escena estaban mal planteados: tech lead"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Listo cuando",
+      "items": [
+        "El proyecto parsea headless",
+        "gdformat y gdlint en verde, si el proyecto los usa",
+        "La escena corre con F6 y el F n queda al día"
+      ]
+    }
   ]
 }

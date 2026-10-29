@@ -20,13 +20,13 @@ Si un ítem no aplica, escribir “N/A”. No saltearlo en silencio.
 
 Si eligieron **local / WiFi** o **online**. Si no hay MP: N/A. Online: dedicated, ver [dedicated.md](../godot-mp-kit/dedicated.md).
 
-8. [ ] Input local distingue host vs guest (`rpc_id(1, …)`). Túnel `send_custom` solo si no alcanza `submit_*` / Resource.
-9. [ ] RPC cliente → servidor: allowlist, `any_peer` + sender vs `MpKit.peer_id_for(slot)`. No `call_local` que duplique daño/spawn.
-10. [ ] Spawn de simulación: **solo host** + `MultiplayerSpawner` **antes** de `add_child`.
-11. [ ] Transform: `MultiplayerSynchronizer` (o `MpAuthority.ensure_sync`).
-12. [ ] Colisión / `queue_free` / puntos: autoridad del servidor.
-13. [ ] Guest no muta vidas/trackers.
-14. [ ] 1P: mismo código (`OfflineMultiplayerPeer`), **sin** `host()`.
+8. [ ] Input del jugador: hijo `MpInput`; el servidor lee `input.get_vector(...)` / `is_action_just_pressed(...)` (o `mp_move(keys, delta)` con predicción). Una orden puntual: `net.to_server(&"x", args)` → `mp_sv_x(args)`. Túnel `send_custom` solo si no alcanzan.
+9. [ ] Solo el dueño pide los `mp_sv_*` de su actor (`MpActor › Owner › callers`); validá lo que piden adentro. Sin `@rpc` a mano salvo un caso que los nodos no cubren (anotalo).
+10. [ ] Spawn de simulación: **solo el servidor**, con `MpSpawner.spawn_actor(escena, {...})` (la escena en *Extra Scenes*).
+11. [ ] Lo que se ve igual en todos: tildado en `MpActor › Sync` (no un `MultiplayerSynchronizer` armado a mano).
+12. [ ] Colisión / `queue_free` / puntos: autoridad del servidor (`net.is_authority()`).
+13. [ ] El cliente no muta vidas ni puntaje: `Mp.state()` lo escribe el servidor.
+14. [ ] 1P: mismo código (`Mp.play_solo()`), **sin** `host()`.
 15. [ ] 2P: no se duplican actores. Rejoin: decisión explícita. Dedicated: sin pawn para el server (`local_slot() == 0`).
 16. [ ] El actor no tiene RPC de score.
 
@@ -35,10 +35,9 @@ Si eligieron **local / WiFi** o **online**. Si no hay MP: N/A. Online: dedicated
 ```
 1. InputMap (acciones), no scancodes
 2. if not puede_actuar(): return
-3. if hay red y MpAuthority.should_send_command():
-      rpc_id(1, submit_action, payload)
-   else:
-      apply_action(payload)
+3. Sin red: el actor lee Input y aplica.
+   Con MpKit: el MpInput del actor manda las acciones del dueño; el servidor las lee
+   (input.is_action_just_pressed(...)) y aplica. Una orden puntual: net.to_server(&"use", payload).
 ```
 
 El nodo de input **no** instancia proyectiles ni suma puntos. Solo pide.

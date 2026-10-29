@@ -16,14 +16,17 @@ No tiene red, reglas de juego ni autoload, y GrassKit no depende de ningún otro
 
 Habilitá el plugin **GrassKit**. Trae las herramientas de la vista 3D, y agrega los uniforms globales de shader de GrassKit a Project Settings (solo los que falten, también después de actualizar). Los nodos funcionan sin él.
 
-**Ejemplo:** `examples/grass_3d/grass_3d.tscn`. Lomas de pasto con:
+**Ejemplos:**
+
+- `examples/minimal_3d/minimal_3d.tscn`: lo mínimo, un piso y un campo (abajo, [Ejemplo mínimo](#ejemplo-mínimo)).
+- `examples/grass_3d/grass_3d.tscn`: lomas de pasto con:
 - un sendero de tierra pintado con los pinceles, pasto corto a sus lados, manchas de flores y una mancha seca;
 - un caminante que pisa un sendero que se vuelve a levantar detrás de él;
 - campamentos despejados por grupo, y un claro puesto a mano;
 - un montículo demasiado empinado para el pasto;
 - un suelo que se encuentra con el pasto, cerca y lejos.
 
-Teclas:
+Teclas de `grass_3d`:
 - **1 2 3:** calidad.
 - **L:** el look siguiente (verano, otoño, flores).
 - **T:** una tormenta que sube o se calma.
@@ -44,6 +47,58 @@ Teclas:
 4. **Guardá la escena.** Los mapas pintados quedan dentro del archivo del suelo, `<escena>_grass_ground.res`.
 
 Para cambiar el look, elegí otro `.tres` de `addons/grass_kit/looks/` (meadow, autumn, lush, steppe), o duplicá uno y editalo. Para cambiar el costo, apretá **Low**, **Medium** o **High** en el inspector de la calidad y leé la línea de costo debajo de los botones.
+
+## Ejemplo mínimo
+
+`examples/minimal_3d/minimal_3d.tscn` (F6): un piso de 100 × 100 m con collider y un campo de pasto alrededor de la cámara. Espacio cambia el look.
+
+```
+Minimal3D (minimal_3d.gd)
+├── Environment, Sun, Camera
+├── Floor (StaticBody3D)
+│   ├── Shape            # BoxShape3D: de acá lee el suelo el pasto
+│   └── Mesh             # su material usa floor.gdshader
+└── GrassField3D         # ground (área por defecto), look = meadow.tres, quality (media), wind
+```
+
+El script hornea el suelo al arrancar. En un juego no hace falta: apretás **Bake ground** en el editor, pintás y guardás, y el suelo viene horneado en su archivo.
+
+```gdscript
+# minimal_3d.gd (lo esencial)
+@onready var field: GrassField3D = $GrassField3D
+
+
+func _ready() -> void:
+	await get_tree().physics_frame  # un collider está en el espacio de física un frame después de entrar
+	field.bake_ground()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_accept"):
+		field.look = LOOKS[(LOOKS.find(field.look) + 1) % LOOKS.size()]  # solo uniforms: nada se reconstruye
+```
+
+El piso se encuentra con el pasto lejano sin costura porque su shader incluye `grass_ground.gdshaderinc`:
+
+```glsl
+// floor.gdshader
+shader_type spatial;
+
+#include "res://addons/grass_kit/field/grass_ground.gdshaderinc"
+
+uniform vec3 soil_color : source_color = vec3(0.33, 0.27, 0.18);
+
+varying vec3 world_position;
+
+void vertex() {
+	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	ALBEDO = grasskit_ground_color(soil_color, world_position.xz, 1.0);
+	ROUGHNESS = 0.95;
+}
+```
 
 ## Pintar a mano
 
@@ -286,6 +341,17 @@ Con un depth prepass (Forward+) el shader de vértices de cada hoja corre dos ve
 
 **No se dibuja nada headless ni en un servidor dedicado.** `can_draw()` lo dice, y los tests ponen `GrassField3D.draw_anywhere`.
 
+## Tips y recomendaciones
+
+- **Empezá por el editor.** Agregá el campo, dejá que se arme solo, apretá **Bake ground**, pintá y guardá. Hornear al arrancar (como el ejemplo mínimo) sirve para un suelo que el juego genera; para un nivel hecho a mano, el suelo horneado en su archivo arranca más rápido.
+- **El suelo del juego con `grass_ground.gdshaderinc`.** Es lo que más se nota: sin eso, donde termina el pasto dibujado (a `radius` de la cámara) se ve un borde contra el color propio del suelo.
+- **El área del suelo cubre el piso.** Afuera del área no crece pasto; **Fit area to the colliders** la ajusta a los colliders de la escena.
+- **El costo es la calidad.** `density` y `radius` son las primeras perillas; leé la línea **cost** del inspector mientras las cambiás, y `field.stats` en el juego. `cast_shadows` queda apagado.
+- **Un look es un `.tres`.** Cambiar de look en el juego son solo uniforms; agregar un tipo de hoja a un look suma una draw por celda donde crece.
+- **Lo que el juego cambia, avisalo.** Un cráter o un edificio nuevo: `field.ground_changed(position, radius)` (solo esas celdas). Quemar o cortar pasto: `ground.paint(...)` con un `GrassBrush`.
+- **Capas de render.** Lo que no es suelo (unidades, campamentos) va en otra capa que `ground.color_layers`, así **Bake ground colour** ve solo el suelo.
+- **Un campo por mundo.** Los globales de shader de GrassKit los escribe un solo campo.
+
 ## De dónde salen las ideas
 
 La charla del pasto de Ghost of Tsushima (Eric Wohllaib, GDC 2021) y sus análisis dieron forma a casi todo el render:
@@ -350,7 +416,10 @@ El resultado es `GRASSKIT TESTS PASS (n)`. Los tests cubren:
   - nada headless;
 - **los looks listos**, el `changed` de un claro;
 - **ningún instance uniform** en los shaders;
-- **el ejemplo, de punta a punta.**
+- **un suelo pintado en el juego se libera** como cualquier recurso;
+- **los dos ejemplos, de punta a punta.**
+
+Un test que corta con un error de script, o que no llega a chequear nada, falla.
 
 Las herramientas del editor tienen su propio chequeo en un editor real, usadas como las usa una persona:
 - **el pasto y el suelo:**

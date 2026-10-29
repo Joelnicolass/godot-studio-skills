@@ -8,7 +8,7 @@ Fuente: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and
 2. **Jump buffer** — el press se guarda y se gasta al aterrizar.
 3. **Apex** — hold jump → menos gravedad en el pico (más tiempo para acomodar el land).
 4. **Jump corner** — techo en esquina → deslizar en X para no “bonkear”.
-7. **Lift** — `get_platform_velocity()` se recuerda `lift_remember` s.
+7. **Lift** — `get_platform_velocity()` se recuerda `lift_remember` s. Al saltar del piso, Godot ya suma la velocidad de la plataforma (`platform_on_leave`); el motor agrega la recordada solo en coyote, así nunca se suma dos veces.
 
 Wall jump con `wall_extra_pixels` (el artículo: 2 px en 320×180 ≈ ¼ tile). Off por default.
 

@@ -48,7 +48,7 @@ Juego
     └── Cue                 # opcional
 ```
 
-Arrancá desde `addons/rts_kit/examples/skirmish_3d/skirmish_3d.tscn` (menú radial) o `skirmish_2d/skirmish_2d.tscn` (sin menú, panel de comandos): el equipo entero viene conectado en el inspector.
+Arrancá desde `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn` (lo mínimo: el equipo de la GUIDE › 3 y seis soldados cuyo `soldier.gd` es el script de unidad de la GUIDE › 2 en 2D), `skirmish_3d/skirmish_3d.tscn` (menú radial, cursor, pings) o `skirmish_2d/skirmish_2d.tscn` (sin menú, panel de comandos): el equipo viene conectado en el inspector.
 
 ## Qué va dónde
 

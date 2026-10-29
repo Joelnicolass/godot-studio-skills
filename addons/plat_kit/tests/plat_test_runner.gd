@@ -1,0 +1,52 @@
+extends SceneTree
+
+## Runs PlatKit's own tests, headless, no game:
+##   godot --headless --path <project> --script res://addons/plat_kit/tests/plat_test_runner.gd
+## Every `test_*.gd` file next to this one; every method of it named `test_*`. Prints one line per method and
+## PLATKIT TESTS PASS (exit 0) or PLATKIT TESTS FAIL: n (exit 1). Add a test: a new `func test_x()` or a new file.
+
+const DIR := "res://addons/plat_kit/tests"
+
+
+func _initialize() -> void:
+	await process_frame
+	var errors: Object = null
+	if ClassDB.class_exists(&"Logger"):
+		errors = (load(DIR.path_join("plat_test_errors.gd")) as GDScript).new()
+		OS.add_logger(errors)
+	var fails := 0
+	var count := 0
+	for file in DirAccess.get_files_at(DIR):
+		if not file.begins_with("test_") or not file.ends_with(".gd"):
+			continue
+		var script := load(DIR.path_join(file)) as GDScript
+		if script == null or not script.can_instantiate():
+			print("FAIL %s does not load" % file)
+			fails += 1
+			continue
+		for info in script.get_script_method_list():
+			var method: String = info["name"]
+			if not method.begins_with("test_"):
+				continue
+			var suite: Object = script.new()
+			suite.tree = self
+			if errors != null:
+				errors.call(&"take")
+			await suite.call(method)
+			count += 1
+			var checks: int = suite.passes + suite.fails
+			var script_errors: int = errors.call(&"take") if errors != null else 0
+			# A script error or no checks at all is a test that stopped early, not a pass.
+			var ok: bool = suite.fails == 0 and script_errors == 0 and checks > 0
+			var note := ", %d script errors" % script_errors if script_errors > 0 else ""
+			print("%s %s::%s (%d checks%s)" % ["PASS" if ok else "FAIL", file.get_basename(), method, checks, note])
+			if not ok:
+				fails += 1
+	# Out before quitting: a script logger must not outlive the scripts while the engine shuts down.
+	if errors != null:
+		OS.remove_logger(errors)
+	if fails == 0:
+		print("PLATKIT TESTS PASS (%d)" % count)
+	else:
+		print("PLATKIT TESTS FAIL: %d of %d" % [fails, count])
+	quit(0 if fails == 0 else 1)

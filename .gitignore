@@ -9,3 +9,8 @@ dist/
 node_modules/
 pnpm-debug.log*
 .pnpm-store/
+
+# Recibos de archify al regenerar los diagramas
+docs/diagram/*.finalize*.json
+docs/diagram/*.delivery*.json
+docs/diagram/*.browser-check.json

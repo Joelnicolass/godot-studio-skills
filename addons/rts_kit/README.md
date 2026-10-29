@@ -14,6 +14,74 @@ No depende de ningún otro kit. Un juego en red lo conecta con MpKit (o con cual
 
 Habilitá el plugin **RtsKit**. Proyecto > Herramientas > *RtsKit: Add default input actions* escribe las teclas por defecto en el Input Map para que las puedas reasignar ahí (sin eso, `RtsCommandInput` agrega las que falten al correr).
 
+## Ejemplo mínimo
+
+`examples/minimal_2d/minimal_2d.tscn` (F6): seis soldados y el equipo de mando de [GUIDE.md › 3](GUIDE.md#3-el-equipo-de-mando), con cada socket conectado en el inspector. Arrastrá un rectángulo sobre los soldados, hacé clic derecho en el suelo y van en línea; Ctrl/Cmd+1 guarda el grupo y 1 lo trae.
+
+```
+Minimal2D
+├── Units/Soldier1…6     # soldier.tscn
+├── Camera               # RtsCamera2D
+├── Command              # RtsCommandInput: Selection, Orders, Pointer, State, Armed,
+│                        #   OrderInput, SelectInput, GroupKeys, OrderButton
+└── Hud/View/Box         # toma los clics del mundo; el rectángulo de selección
+```
+
+Una unidad es tu escena con un hijo `RtsUnit`, y tu script hace lo que el kit no: caminar hasta su lugar y avisar.
+
+```
+Soldier (CharacterBody2D, soldier.gd)   # capa 2: la de las unidades
+├── Shape, Body
+├── Ring                                # visible mientras está elegida
+└── RtsUnit                             # owner_slot = 1, kind = soldier, size = 34 (px)
+```
+
+```gdscript
+# soldier.gd
+extends CharacterBody2D
+
+## Pixels per second.
+@export var speed := 160.0
+## How close counts as there, in pixels.
+@export var arrive := 4.0
+
+var order: RtsUnitOrder
+
+@onready var unit: RtsUnit = $RtsUnit
+@onready var ring: CanvasItem = $Ring
+
+
+func _ready() -> void:
+	unit.order_started.connect(_on_order_started)
+	unit.order_ended.connect(_on_order_ended)
+	unit.selected_changed.connect(func(on: bool) -> void: ring.visible = on)
+
+
+func _on_order_started(next: RtsUnitOrder, _replaced: RtsUnitOrder) -> void:
+	order = next
+
+
+func _on_order_ended(old: RtsUnitOrder, _result: StringName) -> void:
+	if old == order:
+		order = null
+
+
+func _physics_process(delta: float) -> void:
+	if order == null:
+		return
+	# spot_2d() is this unit's place in the formation; it follows a guarded body that walks.
+	var to := order.spot_2d() - global_position
+	if to.length() <= arrive:
+		velocity = Vector2.ZERO
+		if order.type.ends_on_its_own:
+			unit.complete()  # the next queued order, if any, starts by itself
+		return
+	velocity = to.normalized() * minf(speed, to.length() / delta)
+	move_and_slide()
+```
+
+Las distancias del kit vienen en metros: en 2D, el ejemplo pone las de `Orders` y `Selection` en píxeles.
+
 ## Un mismo suelo para 2D y 3D
 
 El kit piensa en un solo espacio (`RtsSpace`): el suelo es el plano XZ e Y es arriba, las coordenadas del mundo 3D tal como son. Un punto del mundo 2D `(x, y)` es el punto del kit `(x, 0, y)`: visto desde arriba, un campo 3D y un mapa 2D cenital son el mismo dibujo, así que una formación, una distancia y un yaw sirven para los dos. Solo convierten los bordes: `RtsSpace.from_2d` / `to_2d`, `RtsUnitOrder.spot_2d()`.
@@ -47,7 +115,7 @@ Juego
     └── Cue                        # opcional: rts_command_cue.tscn
 ```
 
-Cada pieza es un nodo con sockets `@export`; si sacás uno, ese comando desaparece y nada más se rompe. Los dos ejemplos traen el equipo entero conectado: `examples/skirmish_3d` (con el menú radial) y `examples/skirmish_2d` (sin ningún menú: un clic derecho simple y el panel de comandos).
+Cada pieza es un nodo con sockets `@export`; si sacás uno, ese comando desaparece y nada más se rompe. Los ejemplos traen el equipo conectado: `examples/minimal_2d` (lo mínimo, arriba), `examples/skirmish_3d` (con el menú radial, el cursor y los pings) y `examples/skirmish_2d` (sin ningún menú: un clic derecho simple y el panel de comandos).
 
 ## La unidad (RtsUnit)
 
@@ -116,7 +184,19 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 godot --headless --path rtskit_lab --script res://addons/rts_kit/tests/rts_test_runner.gd
 ```
 
-`RTSKIT TESTS PASS (n)`. Cubren los lugares de las formaciones, quién obedece, el reparto de lugares (greedy y por filas), el re-blanco y la retirada, los datos simples de una orden, la cola, la selección (clic, tipo, rectángulo en 2D y 3D con oclusión, límite, grupos), la entrada sobre colisiones reales (puntero, contexto, ciclo de armado, rectángulo con eventos de mouse, el menú radial, el panel de comandos, las teclas, los modales), las dos cámaras, y los dos ejemplos jugados de punta a punta. `rtskit_lab/` es un proyecto aparte para ellos; ahí `addons/rts_kit` es un symlink.
+`RTSKIT TESTS PASS (n)`. Cubren los lugares de las formaciones, quién obedece, el reparto de lugares (greedy y por filas), el re-blanco y la retirada, los datos simples de una orden, la cola, la selección (clic, tipo, rectángulo en 2D y 3D con oclusión, límite, grupos), la entrada sobre colisiones reales (puntero, contexto, ciclo de armado, rectángulo con eventos de mouse, el menú radial, el panel de comandos, las teclas, los modales), las dos cámaras, y los tres ejemplos jugados de punta a punta. Un test que corta con un error de script, o que no llega a chequear nada, falla. `rtskit_lab/` es un proyecto aparte para ellos; ahí `addons/rts_kit` es un symlink.
+
+## Tips y recomendaciones
+
+- **Copiá el equipo, no lo armes.** Elegí `Command` y `Hud` en un ejemplo, copialos a tu escena y corregí los sockets que apuntan a la cámara y al suelo.
+- **Capas:** el suelo en la 1 y las unidades en la 2 (`RtsPointer.ground_mask`, `unit_mask`). Una unidad fuera de la capa de unidades no se puede elegir con un clic.
+- **`Hud/View` toma los clics del mundo.** Todo lo del HUD que esté encima conserva los suyos; dejá su filtro de mouse en *Stop*.
+- **En 2D las distancias son píxeles:** `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius` y `RtsUnit.size`.
+- **Avisá siempre.** Una orden que termina sola (`move`, `attack`) espera tu `complete()` o `fail(reason)`; si no avisás, la cola nunca avanza.
+- **Una unidad muerta** apaga `selectable`, `orderable` y `targetable`: sale sola de la selección y de los grupos.
+- **Reglas por unidad** en un script que `extends RtsUnit` (`accepts`, `is_foe`), no en la entrada.
+- **Una IA** llama `orders.apply(order, slot)` o `apply_units` con nodos; no pasa por la entrada ni por `request`.
+- **Teclas:** Proyecto ▸ Herramientas ▸ *RtsKit: Add default input actions* las escribe en el Input Map para reasignarlas.
 
 ## Lo que no trae esta versión
 

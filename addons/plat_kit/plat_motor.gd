@@ -44,6 +44,7 @@ extends Node
 @export var wall_extra_pixels: int = 2
 @export var wall_jump_velocity: Vector2 = Vector2(220.0, -300.0)
 
+## Run input, -1 (left) to 1 (right). read_input writes it from the InputMap; with it off, the driver does.
 var axis: float = 0.0
 
 var _buffer: float = 0.0
@@ -59,8 +60,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(jump_action) and not event.is_echo():
 		request_jump()
 	if event.is_action_released(jump_action):
-		_holding_jump = false
-		_cut_jump()
+		release_jump()
 
 
 func _physics_process(delta: float) -> void:
@@ -77,11 +77,23 @@ func _poll_hold() -> void:
 	_holding_jump = jump_action != &"" and Input.is_action_pressed(jump_action)
 
 
+## Press jump: it fires now on the floor (or within coyote_time), or as soon as the body lands within
+## jump_buffer. Holding it lengthens the apex. With read_input off, the driver (a state, the network)
+## calls this and release_jump().
 func request_jump() -> void:
 	_buffer = jump_buffer
 	_holding_jump = true
 
 
+## Let go of jump: a rising jump is cut (cut_jump_mult) and the apex stops floating. A tap still in
+## jump_buffer fires on landing.
+func release_jump() -> void:
+	_holding_jump = false
+	_cut_jump()
+
+
+## One physics step: run, jump, gravity, corners, move_and_slide. Called by _physics_process with
+## auto_process on; with it off, call it in your own order (a rollback, a fixed simulation).
 func tick(delta: float) -> void:
 	var b := _resolve_body()
 	if b == null:
@@ -98,6 +110,8 @@ func tick(delta: float) -> void:
 	_update_lift(b, delta)
 
 
+## Running into a ledge lip up to side_corner_pixels high steps the body up it. side_corner_pixels > 0
+## does it every tick; a game's dash calls it during the dash.
 func try_side_corner_correct(delta: float) -> void:
 	var b := _resolve_body()
 	if b == null or side_corner_pixels <= 0:
@@ -114,6 +128,7 @@ func try_side_corner_correct(delta: float) -> void:
 			return
 
 
+## -1 / 1 when a wall touches the body's left / right side (or is within wall_extra_pixels), else 0.
 func wall_dir() -> int:
 	var b := _resolve_body()
 	if b == null:
@@ -168,7 +183,10 @@ func _try_jump(b: CharacterBody2D) -> void:
 		b.velocity.x += _lift.x
 		return
 	b.velocity.y = -jump_speed
-	b.velocity.x += _lift.x
+	# Leaving the floor, Godot already adds the platform's velocity (platform_on_leave); the
+	# remembered lift is for a jump in coyote time, or a body set not to add it.
+	if not (b.is_on_floor() and b.platform_on_leave == CharacterBody2D.PLATFORM_ON_LEAVE_ADD_VELOCITY):
+		b.velocity.x += _lift.x
 
 
 func _apply_gravity(b: CharacterBody2D, delta: float) -> void:

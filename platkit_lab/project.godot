@@ -1,0 +1,19 @@
+; PlatKit lab: a tiny project that runs the kit's own example and tests, apart from any game.
+; addons/plat_kit is a symlink to the kit's own addons/plat_kit (one copy of the kit).
+
+config_version=5
+
+[application]
+
+config/name="PlatKit Lab"
+run/main_scene="res://addons/plat_kit/examples/minimal_2d/minimal_2d.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/plat_kit/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

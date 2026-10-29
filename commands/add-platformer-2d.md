@@ -34,7 +34,7 @@ Player (CharacterBody2D)
 └── PlatMotor
 ```
 
-Knobs en el inspector. Si hay FSM, `read_input = false` y el estado alimenta `axis` / `request_jump()`. En MP el host llama `tick`; el guest no simula.
+Knobs en el inspector. Si hay FSM, `read_input = false` y el estado alimenta `axis` / `request_jump()` / `release_jump()`. En MP el motor corre donde se simula (servidor o 1P); el resto dibuja el cuerpo. Referencia: `addons/plat_kit/examples/minimal_2d/`.
 
 ## 3. Implementar
 

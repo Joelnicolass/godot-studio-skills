@@ -1,0 +1,82 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Un kit en tu juego",
+    "locale": "es",
+    "quality_profile": "showcase",
+    "output": "kits.html",
+    "views": [
+      {
+        "id": "camino",
+        "label": "El camino",
+        "focus": ["ask", "skill", "tree", "ok", "install", "scene", "check", "play"],
+        "note": "Un pedido, el command del kit, un OK sobre el árbol. El addon se copia y tu escena usa sus nodos."
+      },
+      {
+        "id": "ejemplo",
+        "label": "El ejemplo mínimo",
+        "focus": ["skill", "example", "scene"],
+        "note": "Cada kit trae la integración más chica que anda. Tu escena copia su patrón, no sus números."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "you", "label": "Vos" },
+    { "id": "orch", "label": "Orquestador" },
+    { "id": "kit", "label": "El kit (addon)" },
+    { "id": "game", "label": "Tu juego" }
+  ],
+  "phases": [
+    { "id": "ask", "label": "Pedido", "fromCol": 0, "toCol": 1 },
+    { "id": "plan", "label": "Plan", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "build", "label": "Integración", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": ["ask", "skill", "tree", "ok", "install", "scene", "check", "play"],
+  "nodes": [
+    { "id": "ask", "lane": "you", "col": 0, "type": "external", "label": "Un pedido", "sublabel": "pasto, props, RTS, estados" },
+    { "id": "ok", "lane": "you", "col": 3, "type": "security", "label": "Un OK", "sublabel": "árbol [+] [~] [-]" },
+    { "id": "play", "lane": "you", "col": 5, "type": "external", "label": "Lo jugás", "sublabel": "F6 y los tips" },
+    { "id": "skill", "lane": "orch", "col": 1, "type": "frontend", "label": "Skill + command", "sublabel": "/add-grass, /add-props…" },
+    { "id": "tree", "lane": "orch", "col": 2, "type": "backend", "label": "Árbol", "sublabel": "[+] addons/<kit>/ y tus escenas" },
+    { "id": "example", "lane": "kit", "col": 2, "type": "database", "label": "Ejemplo mínimo", "sublabel": "examples/minimal_*" },
+    { "id": "install", "lane": "kit", "col": 4, "type": "backend", "label": "El addon", "sublabel": "install.sh --addon, plugin" },
+    { "id": "scene", "lane": "game", "col": 4, "type": "frontend", "label": "Tu escena", "sublabel": "nodos del kit + tu script" },
+    { "id": "check", "lane": "game", "col": 5, "type": "backend", "label": "Chequeo", "sublabel": "parse, review, playtest" }
+  ],
+  "edges": [
+    { "id": "k1", "from": "ask", "to": "skill" },
+    { "id": "k2", "from": "skill", "to": "tree", "label": "acota", "variant": "emphasis" },
+    { "id": "k3", "from": "tree", "to": "ok", "label": "árbol", "variant": "security" },
+    { "id": "k4", "from": "ok", "to": "install", "label": "aprobado", "variant": "emphasis" },
+    { "id": "k5", "from": "install", "to": "scene", "label": "sus nodos" },
+    { "id": "k6", "from": "scene", "to": "check" },
+    { "id": "k7", "from": "check", "to": "play", "variant": "emphasis" },
+    { "id": "k8", "from": "skill", "to": "example", "label": "arrancá desde", "variant": "dashed", "role": "branch" },
+    { "id": "k9", "from": "example", "to": "scene", "label": "el patrón", "variant": "dashed", "role": "branch" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cada kit y su ejemplo mínimo",
+      "items": [
+        "MpKit: minimal_2d, lo que escribe Setup game",
+        "FsmKit: minimal_2d, Idle, Move y Hurt",
+        "PlatKit: minimal_2d, sin código",
+        "RtsKit: minimal_2d, seis soldados y el equipo de mando",
+        "PropKit: minimal_3d, scatter alrededor de un campamento y lotes",
+        "GrassKit: minimal_3d, un piso, un campo y el shader del suelo"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Reglas de los kits",
+      "items": [
+        "Ningún kit depende de otro: los une tu script",
+        "Lo que el kit no hace queda en tu juego: reglas, puntaje, el movimiento de una unidad",
+        "El README de cada kit explica el código del ejemplo y trae tips y recomendaciones",
+        "Cada kit tiene tests que juegan sus ejemplos"
+      ]
+    }
+  ]
+}

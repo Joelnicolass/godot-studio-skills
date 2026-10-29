@@ -2,7 +2,10 @@
 
 Un juego multijugador sin escribir código de red: nodos en el editor y un script como el de un juego de un jugador. Funciona igual solo, en LAN (un jugador hostea) y con servidor dedicado, por ENet (UDP) o WebSocket (TCP).
 
-El ejemplo completo está en `examples/arena_2d/`: abrí `boot.tscn` y apretá F6.
+Dos ejemplos, cada uno con su `boot.tscn` (abrilo y apretá F6):
+
+- `examples/minimal_2d/`: lo mínimo, exactamente lo que escribe el asistente de abajo (2D, dos jugadores, ENet, sin salas). Un menú, un mundo vacío y un jugador predicho que se mueve con las flechas y suma con Enter. Son los pasos 2 a 6 de esta página, ya hechos.
+- `examples/arena_2d/`: el completo, con disparos, una campana que toca cualquiera, salas online y partida privada.
 
 **El camino más corto**: con el plugin activo, **Proyecto › Herramientas › MpKit: Setup game...**. Elegís carpeta, 2D o 3D, jugadores, transporte y si querés salas online; el diálogo muestra los archivos que va a crear (`[+]`, y `[~]` si ya existen: entonces no escribe nada) y arma `game.tres`, boot, mundo, jugador predicho y salas. F5 y ya se juega solo, en LAN, dedicado u online. Los pasos de abajo son lo mismo a mano: un recurso, dos nodos de escena y tu jugador.
 
@@ -128,6 +131,17 @@ Para probar con red mala, agregá a cada proceso `--net-lag-ms=100 --net-jitter-
 | Dedicado | `godot --headless --path . -- --dedicated` y los clientes se unen a `127.0.0.1` |
 | WebSocket | agregá `--transport=ws` a todos los procesos (un servidor WS solo atiende clientes WS) |
 | Web | exportá con el preset Web (sin threads). El export usa WebSocket (directo, o por el relay si el juego dice `relay`) y oculta Host y la lista LAN: un navegador solo se une. El servidor es un dedicado con `transport = ws`, o cualquiera por el relay |
+
+## Tips y recomendaciones
+
+- **Empezá por el asistente.** *Setup game* te deja un juego que ya anda solo, en LAN y dedicado; después cambiás el jugador. `examples/minimal_2d/` es lo que escribe.
+- **Las reglas, en el servidor.** `if not net.is_authority(): return` antes de puntuar, dañar o hacer aparecer algo. Jugando solo, tu PC es el servidor: el mismo código anda en los dos casos.
+- **`mp_move` es solo movimiento.** Puede correr varias veces en un tick al reconciliar: sonidos y efectos detrás de `if not keys.is_replaying():`. Con inercia o gravedad, `velocity` en *Sync › Extra*.
+- **Guardá la escena del jugador** después de tocar el `MpActor`: el editor arma su `MpSync` y lo guarda. El `MpActor` va en la escena del actor (`player.tscn`), no sobre una instancia dentro del mundo.
+- **Nada de `@rpc` a mano.** Una orden puntual del dueño: `net.to_server(&"x")` → `mp_sv_x()`. Un efecto en todos: `net.to_all(&"x")` → `mp_all_x()`. Un número de la partida: `Mp.state()`.
+- **Animá con la velocidad del kit:** `net.motion_velocity()` / `net.motion_speed()` (Vector2 en 2D, Vector3 en 3D) dicen cómo se mueve lo que se ve en cada máquina; la pose dibujada frame a frame no.
+- **Probá con red mala desde el principio:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` en cada proceso, y `Mp.net_quality()` para mostrarle al jugador cómo está su conexión.
+- **No toques el kit.** Nada de reglas en `mp_kit.gd` ni un fork: lo que hace tu juego va en tus escenas.
 
 ## Más allá de lo básico
 

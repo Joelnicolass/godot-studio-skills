@@ -16,8 +16,49 @@ Habilitá el plugin **PropKit**: agrega las herramientas del editor ([En el edit
 
 Ejemplos:
 
+- `examples/minimal_3d/minimal_3d.tscn`: lo mínimo, árboles plantados alrededor de un campamento y dibujados en lotes (abajo, [Ejemplo mínimo](#ejemplo-mínimo)). Espacio da otra semilla.
 - `examples/forest_3d/forest_3d.tscn`: un bosque, los lotes y un navmesh de 16 zonas. Dos clics marcan un camino, C tala y R da otro bosque.
 - `examples/grove_2d/grove_2d.tscn`: arbustos alrededor de paredes y un navmesh 2D, con las mismas teclas.
+
+## Ejemplo mínimo
+
+`examples/minimal_3d/minimal_3d.tscn` (F6): las piezas 1 y 2 sin nada más.
+
+```
+Minimal3D (minimal_3d.gd)
+├── Environment, Sun, Camera, Floor
+├── Camp (Marker3D)      # en el grupo camp: nada se planta a menos de 8 m
+├── Forest               # PropScatter3D: rules, variants = [tree.tscn], ground = PropFlatGround 60 × 60,
+│                        #   keep_out = [PropKeepOut {group = camp, radius = 8, soft = 0.5}]
+└── Batch                # PropBatch3D: props = [Forest]
+```
+
+Un prop es cualquier escena: `tree.tscn` es un `StaticBody3D` con un tronco (su collider, en la capa 2 y en el grupo `prop_obstruction`, cortaría un navmesh) y dos mallas que el lote dibuja.
+
+En un juego apretás **Scatter** en el editor y guardás: los árboles quedan como hijos guardados, el lote se arma solo (`build_on_ready`) y no hace falta código. El ejemplo planta al arrancar, así su escena queda chica:
+
+```gdscript
+# minimal_3d.gd
+extends Node3D
+
+@onready var scatter: PropScatter3D = $Forest
+@onready var batch: PropBatch3D = $Batch
+
+
+func _ready() -> void:
+	if scatter.get_child_count() == 0:
+		scatter.scatter()
+	batch.rebuild_all()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_accept"):
+		scatter.rules.random_seed += 1  # otra semilla: otro bosque, siempre el mismo para esa semilla
+		scatter.scatter()
+		batch.rebuild_all()
+```
+
+El navmesh por zonas (pieza 3) está en `forest_3d` y `grove_2d`.
 
 ## El plano del suelo
 
@@ -210,7 +251,9 @@ El resultado es `PROPKIT TESTS PASS (n)`. Los tests cubren:
 - **la grilla de zonas**;
 - **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, ready y updated, props liberados, agregados y movidos que el nodo sigue, parcial = completo, `follow_props` apagado, aplicar en MANUAL los cambios en el juego mientras los horneados propios del kit se aplican solos, cambios que se juntan, horneados guardados y vencidos (por los props, la configuración o el fingerprint del juego), merge, una costura después de que el suelo bajó, un rango de altura fijo, `can_reach` cerca del navmesh, el punto más cercano en el plano y salteando islas, la soldadura 2D, iteraciones de navegación síncronas;
 - **los lotes**;
-- **los dos ejemplos, de punta a punta.**
+- **los tres ejemplos, de punta a punta.**
+
+Un test que corta con un error de script, o que no llega a chequear nada, falla.
 
 Las herramientas del editor tienen su propio chequeo, un editor real haciendo lo que hace una persona (Scatter, Clear, deshacer y rehacer, una edición a mano que deshacer conserva, Bake y la escena que recarga, el aviso de horneado vencido):
 
@@ -220,6 +263,17 @@ PROPKIT_EDITOR_CHECK=1 godot --headless --editor --path propkit_lab
 
 Imprime `EDITOR CHECK PASS`.
 
+## Tips y recomendaciones
+
+- **Plantá en el editor y guardá.** Los props son hijos guardados: se editan a mano y cargan sin calcular nada. Volver a plantar reemplaza todos los hijos del nodo de scatter, así que tus props sueltos van en otro nodo.
+- **La misma semilla da los mismos props**, en todas las máquinas: un mapa en red no manda los props, manda la semilla (o la escena).
+- **Zonas prohibidas por grupo.** Poné tus puntos de inicio, edificios o caminos en un grupo y agregá un `PropKeepOut`; el kit nunca conoce las clases del juego.
+- **Un suelo propio** es un script `@tool` que `extends PropGround` y responde desde tu terreno (`grove_2d/grove_ground.gd`).
+- **Los props que cortan el navmesh**: en el grupo `prop_obstruction` y en una capa que la plantilla del navmesh no parsea; si no, el horneado los paga dos veces (el inspector avisa).
+- **Lotes solo en 3D.** Godot ya agrupa los sprites en 2D. Después de agregar props por código, `batch.rebuild_all()`; después de mover uno dentro de su cuadrado, `batch.refresh(prop)`.
+- **Esperá al navmesh** antes de pedir caminos: `if not nav.is_ready(): await nav.updated`.
+- **Hornear desde CI:** `tools/bake_scene.tscn -- --scene=… --check` sale con 1 si un horneado guardado quedó vencido.
+
 ## Lo que no está en el kit
 
 Esto es del juego:
@@ -228,4 +282,4 @@ Esto es del juego:
 - el transporte, y cuándo se aplica un cambio en el juego (MANUAL);
 - qué más cambió además de los props (`rebake`), y los datos del suelo.
 
-El pasto es un kit aparte, GrassKit, planeado como el siguiente.
+El pasto es un kit aparte, GrassKit.

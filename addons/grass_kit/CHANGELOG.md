@@ -1,5 +1,13 @@
 # Changelog de GrassKit
 
+## 0.2.2
+
+- **Un suelo pintado en el juego se libera.** `GrassGround` guardaba en una lista estática cada suelo pintado u horneado, para que el editor lo guardara con la escena, también en un juego exportado. Un suelo pintado en el juego (quemar pasto con `ground.paint`) nunca se liberaba, y al salir esa lista hacía caer el proceso (exit 134 en los tests). Ahora solo el editor la lleva, con referencias débiles (`GrassGround.edited_grounds()`, `GrassGround.mark_saved()`).
+- **Ejemplo mínimo** `examples/minimal_3d/`: un piso con collider, un campo, el suelo horneado al arrancar, y `floor.gdshader` con `grass_ground.gdshaderinc` para que el piso se encuentre con el pasto lejano. Espacio cambia el look.
+- **Tests:** 54. El runner falla un test que corta con un error de script o que no hizo ningún chequeo (antes lo daba por bueno), y el proceso sale con 0.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.1
 
 - **Hornear el color del suelo** (pedido de Sacrifice): `await field.bake_ground_color()`, o GrassKit ▸ **Bake ground colour** (se deshace).

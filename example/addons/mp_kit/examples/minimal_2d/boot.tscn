@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/mp_kit/mp_flow.gd" id="1_yn4ub"]
+[ext_resource type="Resource" path="res://addons/mp_kit/examples/minimal_2d/game.tres" id="2_klvow"]
+[ext_resource type="PackedScene" path="res://addons/mp_kit/mp_boot_menu.tscn" id="3_f44wq"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_boot_menu.gd" id="4_oxhkc"]
+
+[node name="Boot" type="Control" unique_id=2034733763]
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Flow" type="Node" parent="." unique_id=430115407]
+script = ExtResource("1_yn4ub")
+game = ExtResource("2_klvow")
+custom_channels = PackedStringArray()
+
+[node name="Menu" type="Control" parent="." unique_id=250137609 instance=ExtResource("3_f44wq")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_oxhkc")

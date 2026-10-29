@@ -1,0 +1,75 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://addons/fsm_kit/examples/minimal_2d/minimal_2d.gd" id="1_root"]
+[ext_resource type="Script" path="res://addons/fsm_kit/examples/minimal_2d/mover.gd" id="2_mover"]
+[ext_resource type="Script" path="res://addons/fsm_kit/fsm_machine.gd" id="3_machine"]
+[ext_resource type="Script" path="res://addons/fsm_kit/examples/minimal_2d/states/idle.gd" id="4_idle"]
+[ext_resource type="Script" path="res://addons/fsm_kit/examples/minimal_2d/states/move.gd" id="5_move"]
+[ext_resource type="Script" path="res://addons/fsm_kit/examples/minimal_2d/states/hurt.gd" id="6_hurt"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(40, 40)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_top"]
+normal = Vector2(0, 1)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_bottom"]
+distance = -648.0
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_left"]
+normal = Vector2(1, 0)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_right"]
+normal = Vector2(-1, 0)
+distance = -1152.0
+
+[node name="Minimal2D" type="Node2D"]
+script = ExtResource("1_root")
+
+[node name="Walls" type="StaticBody2D" parent="."]
+
+[node name="Top" type="CollisionShape2D" parent="Walls"]
+shape = SubResource("WorldBoundaryShape2D_top")
+
+[node name="Bottom" type="CollisionShape2D" parent="Walls"]
+shape = SubResource("WorldBoundaryShape2D_bottom")
+
+[node name="Left" type="CollisionShape2D" parent="Walls"]
+shape = SubResource("WorldBoundaryShape2D_left")
+
+[node name="Right" type="CollisionShape2D" parent="Walls"]
+shape = SubResource("WorldBoundaryShape2D_right")
+
+[node name="Mover" type="CharacterBody2D" parent="."]
+position = Vector2(576, 324)
+motion_mode = 1
+script = ExtResource("2_mover")
+
+[node name="Shape" type="CollisionShape2D" parent="Mover"]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Body" type="Polygon2D" parent="Mover"]
+color = Color(0.3, 0.6, 1, 1)
+polygon = PackedVector2Array(-20, -20, 20, -20, 20, 20, -20, 20)
+
+[node name="States" type="Node" parent="Mover" node_paths=PackedStringArray("initial_state", "actor")]
+script = ExtResource("3_machine")
+initial_state = NodePath("Idle")
+actor = NodePath("..")
+
+[node name="Idle" type="Node" parent="Mover/States"]
+script = ExtResource("4_idle")
+
+[node name="Move" type="Node" parent="Mover/States"]
+script = ExtResource("5_move")
+
+[node name="Hurt" type="Node" parent="Mover/States"]
+script = ExtResource("6_hurt")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="State" type="Label" parent="Hud"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 600.0
+offset_bottom = 40.0

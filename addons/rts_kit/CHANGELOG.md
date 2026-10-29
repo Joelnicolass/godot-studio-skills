@@ -1,5 +1,12 @@
 # Cambios de RtsKit
 
+## 0.1.1
+
+- **Ejemplo mínimo** `examples/minimal_2d/`: seis soldados (`soldier.tscn`: un cuerpo, un `RtsUnit` y el script de unidad de la GUIDE en 2D) y el equipo de mando de la GUIDE › 3. Los tests lo juegan con eventos de mouse.
+- **Tests:** el runner falla un test que corta con un error de script o que no hizo ningún chequeo; antes lo daba por bueno.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.1.0
 
 Primera versión: la capa de mando de un RTS, para 2D y 3D, sin red y sin reglas de juego.

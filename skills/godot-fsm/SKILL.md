@@ -21,6 +21,8 @@ Enable plugin **FsmKit**. Pedido acotado: `/add-state-machine`. Sin subagente ex
 
 Composición: [godot-composition-first](../godot-composition-first/SKILL.md). Plataformas 2D (coyote, buffer): [godot-platformer-2d](../godot-platformer-2d/SKILL.md) — el motor es **otro** hijo; los estados lo llaman.
 
+Ejemplo de referencia: `addons/fsm_kit/examples/minimal_2d/` (F6). Un actor flaco con `Idle`, `Move` (`@export speed` en el estado) y `Hurt` (el golpe llega como payload; otro golpe estando herido es `apply_payload`), y un Label que sigue `state_changed`. Copiá el patrón, no los números.
+
 ## Árbol
 
 ```
@@ -47,7 +49,7 @@ Al overridear `enter` / `exit`, llamá `super.enter()` si querés las señales.
 
 | Sí | No |
 |----|----|
-| `enter` / `exit`, pedir `actor.velocity`, llamar `PlatMotor.request_jump()` | HP, puntaje, spawn, cambio de escena |
+| `enter` / `exit`, pedir `actor.velocity`, pasarle la entrada a un motor (`PlatMotor.request_jump()` / `release_jump()`) | HP, puntaje, spawn, cambio de escena |
 | `physics_update` de **este** verbo | `match kind` de todo el actor |
 | Señales `entered` / `exited` | Autoload `StateManager` |
 
@@ -59,7 +61,7 @@ La simulación (a qué estado pasás) es **autoridad del host**. Los guests inte
 
 Si el estado mismo se replica (un valor del host): un script que `extends FsmMachine` overridea `_request_transition` para escribir el pedido donde decide el host y devolver `false`; el setter del valor replicado llama `transition_to()`. Un peer que entra a mitad de partida: `autostart = false` y `start(<el estado que dice la red>)`.
 
-Tests del addon: `godot --headless --path <proyecto> --script res://addons/fsm_kit/tests/fsm_test_runner.gd`. Si venís de 0.1.0: `addons/fsm_kit/CHANGELOG.md` (primero lo que rompe).
+Tests del addon: `godot --headless --path <proyecto> --script res://addons/fsm_kit/tests/fsm_test_runner.gd` (juegan también el ejemplo). Si venís de 0.1.0: `addons/fsm_kit/CHANGELOG.md` (primero lo que rompe). Tips para una persona: `addons/fsm_kit/README.md` › Tips y recomendaciones.
 
 ## Anti-patrones
 
