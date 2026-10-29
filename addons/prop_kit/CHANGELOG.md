@@ -1,5 +1,10 @@
 # PropKit changelog
 
+## 0.2.1
+
+- **Synchronous navigation iterations.** With `navigation/world/map_use_async_iterations` off (a lockstep game sets it so, for the same swap tick on every machine), `is_ready()` never came and `updated` never arrived: the map rebuilds with the regions in the same step, and the node waited for one more map iteration that never comes. Now a synchronous map counts as up to date once its regions have rebuilt. `tools/bake_scene.tscn` finishes in such projects too.
+- **Tests**: 68.
+
 ## 0.2.0
 
 The navmesh API, rethought for people. **It breaks 0.1.**

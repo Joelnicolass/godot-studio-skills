@@ -172,7 +172,7 @@ In 2D, the same queries end in `_2d`. `build_index` off: no index.
 
 PropKit has no network. A scatter is deterministic, so all peers that load the same scene have the same props.
 
-When something blocks changes during a match (a prop chopped, a building up), every peer gets the change as game data, over its own transport (MpKit or anything else), and makes it: it frees the prop (the navmesh follows), or calls `rebake(position, radius)`. With `apply_mode` MANUAL, each one swaps the result in at the same tick (`bake_ready`, `apply()`).
+When something blocks changes during a match (a prop chopped, a building up), every peer gets the change as game data, over its own transport (MpKit or anything else), and makes it: it frees the prop (the navmesh follows), or calls `rebake(position, radius)`. With `apply_mode` MANUAL, each one swaps the result in at the same tick (`bake_ready`, `apply()`). A lockstep game may also turn the navigation map's asynchronous iterations off (`navigation/world/map_use_async_iterations`); PropKit works either way.
 
 ## Godot issues it works around
 
@@ -205,7 +205,7 @@ The result is `PROPKIT TESTS PASS (n)`. The tests cover:
 - **the command-line tools**: `scatter_scene` saves the props, `bake_scene --check` gives the same hash twice, and bakes a scene whose script uses an autoload;
 - **every obstruction shape**, merging, and the fingerprint;
 - **the zone grid**;
-- **the 3D and 2D zones**: zones that meet, props that block, ready and updated, freed, added and moved props followed, partial = full, `follow_props` off, MANUAL apply of changes in play while the kit's own bakes apply at once, joined changes, saved and stale bakes (props, settings or the game's fingerprint), merging, a seam after the ground went lower, a fixed height range, `can_reach` near the navmesh, the closest point on the plane and past islands, the 2D weld;
+- **the 3D and 2D zones**: zones that meet, props that block, ready and updated, freed, added and moved props followed, partial = full, `follow_props` off, MANUAL apply of changes in play while the kit's own bakes apply at once, joined changes, saved and stale bakes (props, settings or the game's fingerprint), merging, a seam after the ground went lower, a fixed height range, `can_reach` near the navmesh, the closest point on the plane and past islands, the 2D weld, synchronous navigation iterations;
 - **the batch**;
 - **both examples, end to end.**
 
