@@ -8,7 +8,7 @@ Plantá **props** en el **proyecto Godot del juego** con el addon PropKit:
 - un `PropBatch3D` que los dibuja barato (3D);
 - un `PropNavZones3D` / `PropNavZones2D` cuyo navmesh cortan, que se rehornea solo donde algo cambió.
 
-Esto **no** es pasto (GrassKit, un kit aparte) ni lo que hace un prop en el juego (vida, botín, talar): eso queda en el juego. **No** es multijugador: un cambio en el juego viaja como dato por el transporte del juego y después cada peer llama a `rebake`. **No** inventa el arte de los props.
+Esto **no** es pasto (GrassKit, un kit aparte) ni lo que hace un prop en el juego (vida, botín, talar): eso queda en el juego. **No** es multijugador: un cambio en el juego viaja como dato por el transporte del juego y cada peer lo hace (el navmesh sigue a sus props). **No** inventa el arte de los props.
 
 Cargar: `godot-prop-kit`, `godot-composition-first`.
 
@@ -48,13 +48,14 @@ Arrancá desde `addons/prop_kit/examples/forest_3d` o `grove_2d`.
 
 Seguí [godot-prop-kit](../skills/godot-prop-kit/SKILL.md) y `addons/prop_kit/README.md`.
 
-- Apretá «Scatter» y después «Bake».
-- Durante el juego, leé `PropObstructions.area_of(prop, is_3d)` antes de liberar un prop y después llamá a `rebake([area], false)`.
+- Apretá «Scatter» y después «Bake» (el inspector avisa cuando el horneado ya no coincide con los props).
+- Durante el juego, liberar o agregar un prop es todo: el navmesh rehornea sus zonas (`follow_props`). Un prop que se movió: `rebake_prop(prop)`. Cambió el suelo o un edificio: `rebake(position, radius)`.
+- Esperá los caminos con `if not nav.is_ready(): await nav.updated`.
 - El suelo del juego, si lo hay, es un script `@tool` que `extends PropGround`.
 
 ## 4. Listo cuando
 
 - «Scatter» da los mismos props dos veces y ninguno dentro de una zona prohibida.
-- F6 carga el horneado guardado sin hornear, y un camino rodea los props.
-- Liberar un prop y rehornear toca solo sus zonas (`stats.zones_baked` < `zones_total`).
+- F6 carga el horneado guardado sin hornear (`stats.zones_baked` 0), y un camino rodea los props.
+- Liberar un prop rehornea solo sus zonas (`stats.zones_baked` < `zones_total`, `parse_ms` 0).
 - Nada de movimiento, daño ni red dentro de `addons/prop_kit`.

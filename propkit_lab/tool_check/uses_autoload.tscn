@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tool_check/uses_autoload.gd" id="1"]
+[ext_resource type="Script" path="res://addons/prop_kit/nav/prop_nav_zones_3d.gd" id="2"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(4, 1, 4)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_nav"]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
+
+[node name="UsesAutoload" type="Node3D" node_paths=PackedStringArray()]
+script = ExtResource("1")
+floor_shape = SubResource("BoxShape3D_floor")
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, -0.5, 10)
+
+[node name="Shape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Nav" type="Node3D" parent="."]
+script = ExtResource("2")
+navigation_mesh = SubResource("NavigationMesh_nav")
+zone_size = 10.0
