@@ -175,7 +175,7 @@ En 2D, las mismas consultas terminan en `_2d`. Con `build_index` apagado no hay 
 
 PropKit no tiene red. Un scatter es determinista, así que todos los peers que cargan la misma escena tienen los mismos props.
 
-Cuando algo que bloquea cambia durante la partida (un prop talado, un edificio levantado), cada peer recibe el cambio como un dato del juego, por su propio transporte (MpKit o cualquier otro). Cada uno lo hace: libera el prop (el navmesh lo sigue) o llama a `rebake(position, radius)`. Con `apply_mode` MANUAL, cada uno aplica el resultado en el mismo tick (`bake_ready`, `apply()`).
+Cuando algo que bloquea cambia durante la partida (un prop talado, un edificio levantado), cada peer recibe el cambio como un dato del juego, por su propio transporte (MpKit o cualquier otro). Cada uno lo hace: libera el prop (el navmesh lo sigue) o llama a `rebake(position, radius)`. Con `apply_mode` MANUAL, cada uno aplica el resultado en el mismo tick (`bake_ready`, `apply()`). Un juego en lockstep también puede apagar las iteraciones asíncronas del mapa de navegación (`navigation/world/map_use_async_iterations`); PropKit funciona igual de las dos maneras.
 
 ## Problemas de Godot que esquiva
 
@@ -208,7 +208,7 @@ El resultado es `PROPKIT TESTS PASS (n)`. Los tests cubren:
 - **las herramientas de línea de comandos**: `scatter_scene` guarda los props, `bake_scene --check` da el mismo hash dos veces y hornea una escena cuyo script usa un autoload;
 - **cada forma de obstrucción**, el merge y el fingerprint;
 - **la grilla de zonas**;
-- **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, ready y updated, props liberados, agregados y movidos que el nodo sigue, parcial = completo, `follow_props` apagado, aplicar en MANUAL los cambios en el juego mientras los horneados propios del kit se aplican solos, cambios que se juntan, horneados guardados y vencidos (por los props, la configuración o el fingerprint del juego), merge, una costura después de que el suelo bajó, un rango de altura fijo, `can_reach` cerca del navmesh, el punto más cercano en el plano y salteando islas, la soldadura 2D;
+- **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, ready y updated, props liberados, agregados y movidos que el nodo sigue, parcial = completo, `follow_props` apagado, aplicar en MANUAL los cambios en el juego mientras los horneados propios del kit se aplican solos, cambios que se juntan, horneados guardados y vencidos (por los props, la configuración o el fingerprint del juego), merge, una costura después de que el suelo bajó, un rango de altura fijo, `can_reach` cerca del navmesh, el punto más cercano en el plano y salteando islas, la soldadura 2D, iteraciones de navegación síncronas;
 - **los lotes**;
 - **los dos ejemplos, de punta a punta.**
 
