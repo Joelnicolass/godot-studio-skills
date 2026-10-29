@@ -77,7 +77,7 @@ El kit tiene que poder usarlo una persona **sin IA**. Por eso, en código nuevo,
 | Spawnear desde cualquier peer | `MpSpawner.spawn_here(data)` (null en un cliente) | `if MpKit.is_server(): spawn(...)` por todos lados |
 | Input del jugador | hijo **`MpInput`** + `input.get_vector(...)` en el servidor | un `submit_move` por frame |
 | Movimiento sin lag | `MpActor.predict` + `func mp_move(input, delta)` (solo movimiento; efectos detrás de `not input.is_replaying()`) | predicción o rollback propios |
-| Animación desde el movimiento (clip de correr, pasos) | `net.motion_velocity()` (lo mismo en servidor, dueño y proxies; nunca una corrección que se desvanece) | velocidad estimada desde la pose del nodo frame a frame, una velocity sincronizada solo para animar |
+| Animación desde el movimiento (clip de correr, salto y caída, pasos) | `net.motion_speed()` / `net.motion_velocity()` (Vector2 en 2D, Vector3 en 3D; lo mismo en servidor, dueño y proxies; nunca una corrección que se desvanece) | velocidad estimada desde la pose del nodo frame a frame, una velocity sincronizada solo para animar |
 | Stun, ralentización, empujón sobre un jugador predicho | el servidor escribe valores que `mp_move` lee (`stun_ticks`, `knock`) listados en `sync_extra`; las correcciones se desvanecen solas (`correction_smoothing_s`), un warp: `net.snap()` en el servidor después de moverlo | mover el nodo del dueño desde el servidor a mano, suavizar correcciones por tu cuenta |
 | Objetos suaves (criaturas, otros jugadores) | `MpActor` con `smoothing = BUFFERED` (por defecto) | un `MultiplayerSynchronizer` sobre `position` + un lerp propio |
 | Orden puntual del dueño | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
