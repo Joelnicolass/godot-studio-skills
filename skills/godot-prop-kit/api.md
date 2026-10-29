@@ -6,9 +6,9 @@ Everything is in `addons/prop_kit/`. Ground-plane points are `Vector2`: (x, z) i
 
 | Class | What |
 |---|---|
-| `PropScatter3D` / `PropScatter2D` (@tool) | `rules`, `variants`, `ground`, `mask`, `keep_out`, `name_prefix`; «Scatter» / «Clear». `scatter(scene_owner = null) -> int`, `clear()`, signal `scattered(count)` |
+| `PropScatter3D` / `PropScatter2D` (@tool) | `rules`, `variants`, `ground`, `mask`, `keep_out`, `name_prefix`; «Scatter» / «Clear» (undoable in the editor). `scatter(scene_owner = null) -> int`, `clear()`, signal `scattered(count)` |
 | `PropScatterRules` | `random_seed`, `cluster_size`, `cover`, `edge`, `density`, `lone_chance`, `spacing`, `scale_range`, `scale_jitter`, `keep_out_shrink`, `random_rotation`, `max_count`, `tries`, `sink`, `align_to_normal` |
-| `PropGround` | Base: `begin(scatter) -> bool`, `bounds() -> Rect2`, `height_at(at)`, `normal_at(at)`, `weight_at(at)`. A game's ground extends it with `@tool` |
+| `PropGround` | Base: `begin(scatter) -> bool`, `bounds() -> Rect2`, `height_at(at)`, `normal_at(at)`, `weight_at(at)`, `editor_outline()` (what the editor draws). A game's ground extends it with `@tool` |
 | `PropFlatGround` | `area`, `outline`, `height` |
 | `PropRayGround` (3D) | `area`, `collision_mask`, `max_slope_deg`, `top`, `bottom` |
 | `PropMask` | `texture`, `area`, `density_channel`, `density_strength`, `density_invert`, `forbid_channel`, `forbid_above` |
@@ -16,8 +16,9 @@ Everything is in `addons/prop_kit/`. Ground-plane points are `Vector2`: (x, z) i
 | `PropVariant` | `scene`, `weight`; `PropVariant.weights_of(list)` |
 | `PropPlanner` | `plan(rules, ground, mask, discs, weights) -> Array[PropSpot]` (pure); `problems(rules, ground, variants)` |
 | `PropSpot` | `at`, `scale`, `angle`, `variant`, `depth` |
-| `PropScatterRun` | `run_all(scene) -> int` (Tools menu, `tools/scatter_scene.gd`) |
-| `tools/bake_scene.gd` | `-- --scene=res://… [--check]`: bakes every zones node headless; `--check` prints a reproducible hash, exit 1 when it differs from the saved bake |
+| `PropScatterRun` | `run_all(scene) -> int` (`tools/scatter_scene.tscn`) |
+| `tools/scatter_scene.tscn` | `godot --headless --path . res://addons/prop_kit/tools/scatter_scene.tscn -- --scene=res://… [--out=res://…]` |
+| `tools/bake_scene.tscn` | `… res://addons/prop_kit/tools/bake_scene.tscn -- --scene=res://… [--check]`: bakes every zones node headless (as the game runs, autoloads included); `--check` prints a reproducible hash, exit 1 when it differs from the saved bake. «Bake» in the editor runs it |
 
 ## Drawing (`draw/`)
 
@@ -29,12 +30,12 @@ Everything is in `addons/prop_kit/`. Ground-plane points are `Vector2`: (x, z) i
 
 | Class | What |
 |---|---|
-| `PropNavZones3D` / `PropNavZones2D` (@tool) | `navigation_mesh` / `navigation_polygon`, `source_root`, `zone_size`, `zone_border`, `area`, `height_range` (3D: floor, ceiling; (0, 0) = from the parse), `apply_mode` (AUTO / MANUAL), `build_index`, `navigation_layers`, `use_edge_connections`, `obstruction_group`, `obstruction_sides`, `merge_gap`, `carve`, `saved`, `rebake_when_stale`; «Bake» |
-| …methods | `rebake(areas, reparse = true)`, `rebake_all(reparse = true)`, `apply()`, `is_done()`, `has_result()`, `is_synced()`, `region_of(zone)`, `grid()`, `to_saved()`, `save_bake(path)`, `bake_and_save()` (editor); `stats`, `index`, `extra_fingerprint: Callable() -> int` |
-| …signals | `bake_ready(zones)`, `applied(zones)`, `synced`, `stale` |
-| `PropObstructions` | `GROUP` (`prop_obstruction`), `nodes_under(root)`, `of_3d(node, sides)`, `of_2d(node, sides)`, `gather(nodes, is_3d, sides, within)`, `merged(list, gap)`, `add_3d` / `add_2d(source, list, carve)`, `fingerprint(list)`, `area_of(node, is_3d)`, `touches(rect, within)` |
+| `PropNavZones3D` / `PropNavZones2D` (@tool) | `navigation_mesh` / `navigation_polygon`, `source_root`, `zone_size`, `merge_gap`, `follow_props`; Saved: `saved`, `rebake_when_stale`, «Bake»; Advanced: `apply_mode` (AUTO / MANUAL), `area`, `zone_border`, `height_range` (3D: floor, ceiling; (0, 0) = from the parse), `build_index`, `navigation_layers`, `use_edge_connections`, `obstruction_group`, `obstruction_sides`, `carve` |
+| …methods | `rebake(position, radius)` (Vector3 / Vector2: the ground or a building changed), `rebake_prop(prop)` (it moved), `rebake_all()`, `is_ready()`, `is_updating()`, `apply()`, `has_result()`, `region_of(zone)`, `grid()`, `to_saved()`, `save_bake(path)`; `stats`, `index`, `extra_fingerprint: Callable() -> int` (any time) |
+| …signals | `updated` (paths and `index` see the latest pieces), `bake_ready(zones)` (MANUAL: a change in play waits for `apply()`), `stale` |
+| `PropObstructions` | `GROUP` (`prop_obstruction`), `nodes_under(root)`, `of_3d(node, sides)`, `of_2d(node, sides)`, `gather(nodes, is_3d, sides, within)`, `merged(list, gap, min_edge)`, `add_3d` / `add_2d(source, list, carve)`, `fingerprint(list)`, `area_of(node, is_3d)`, `touches(rect, within)` |
 | `PropObstruction` | `outline`, `bottom`, `top`, `rect()` |
-| `PropNavIndex` | `polygon_at`, `component_at`, `same_component`, `closest_point(point, max_distance = INF, min_area = 0)` (and `_2d`; `min_area` skips islands), `stitched(like)`, `stitched_2d(like)`; `vertices`, `polygons`, `component_of`, `component_count`, `component_area`. `PropNavIndex.build(pieces, is_3d, weld)` |
+| `PropNavIndex` | `can_reach(a, b, max_distance = 0)`, `closest_point(point, max_distance = INF, min_area = 0)` (`max_distance` on the ground plane; `min_area` skips islands), `component_at(point, max_distance = 0)`, `polygon_at`, `stitched(like)`, `stitched_2d(like)`; the `_2d` calls; `vertices`, `polygons`, `component_of`, `component_count`, `component_area`. `PropNavIndex.build(pieces, is_3d, weld)` |
 | `PropNavBake` | `zone_size`, `area`, `border`, `pieces`, `fingerprint`; `content_hash()` |
 | `PropNavStats` | `parse_ms`, `obstruct_ms`, `bake_ms`, `index_ms`, `zones_baked`, `zones_total`, `obstructions`, `polygons`, `components` |
 | `PropZoneGrid` | `size`, `first`, `count`; `zone_count()`, `all()`, `area()`, `cell_of(zone)`, `zone_rect(zone)`, `zone_at(point)`, `zones_touching(rect)` |

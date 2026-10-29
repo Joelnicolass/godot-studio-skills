@@ -8,7 +8,7 @@ Scatter **props** in the **game's Godot project** with the PropKit addon:
 - a `PropBatch3D` that draws them cheaply (3D);
 - a `PropNavZones3D` / `PropNavZones2D` whose navmesh they cut, re-baked only where something changed.
 
-This is **not** grass (GrassKit, a separate kit) and **not** what a prop does in the game (health, loot, chopping): those stay in the game. **Not** multiplayer: a change in play travels as game data over the game's transport, then every peer calls `rebake`. **Does not** invent the props' art.
+This is **not** grass (GrassKit, a separate kit) and **not** what a prop does in the game (health, loot, chopping): those stay in the game. **Not** multiplayer: a change in play travels as game data over the game's transport, and every peer makes it (the navmesh follows its props). **Does not** invent the props' art.
 
 Load: `godot-prop-kit`, `godot-composition-first`.
 
@@ -48,13 +48,14 @@ Start from `addons/prop_kit/examples/forest_3d` or `grove_2d`.
 
 Follow [godot-prop-kit](../skills/godot-prop-kit/SKILL.md) and `addons/prop_kit/README.md`.
 
-- Press «Scatter», then «Bake».
-- In play, read `PropObstructions.area_of(prop, is_3d)` before freeing a prop, then `rebake([area], false)`.
+- Press «Scatter», then «Bake» (the inspector warns when the bake no longer matches the props).
+- In play, freeing or adding a prop is all: the navmesh re-bakes its zones (`follow_props`). A prop that moved: `rebake_prop(prop)`. The ground or a building changed: `rebake(position, radius)`.
+- Wait for paths with `if not nav.is_ready(): await nav.updated`.
 - The game's ground, if any, is a `@tool` script that `extends PropGround`.
 
 ## 4. Done when
 
 - «Scatter» gives the same props twice and none within a keep-out.
-- F6 loads the saved bake without baking, and a path goes around the props.
-- Freeing a prop and re-baking touches only its zones (`stats.zones_baked` < `zones_total`).
+- F6 loads the saved bake without baking (`stats.zones_baked` 0), and a path goes around the props.
+- Freeing a prop re-bakes only its zones (`stats.zones_baked` < `zones_total`, `parse_ms` 0).
 - No movement, damage or network code inside `addons/prop_kit`.
