@@ -1,0 +1,87 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://addons/plat_kit/plat_motor.gd" id="1_motor"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1152, 80)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ledge"]
+size = Vector2(220, 16)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_left"]
+normal = Vector2(1, 0)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_right"]
+normal = Vector2(-1, 0)
+distance = -1152.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(24, 40)
+
+[node name="Minimal2D" type="Node2D"]
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(576, 608)
+
+[node name="Shape" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Look" type="Polygon2D" parent="Floor"]
+color = Color(0.28, 0.3, 0.36, 1)
+polygon = PackedVector2Array(-576, -40, 576, -40, 576, 40, -576, 40)
+
+[node name="LedgeLow" type="StaticBody2D" parent="."]
+position = Vector2(470, 496)
+
+[node name="Shape" type="CollisionShape2D" parent="LedgeLow"]
+shape = SubResource("RectangleShape2D_ledge")
+
+[node name="Look" type="Polygon2D" parent="LedgeLow"]
+color = Color(0.36, 0.38, 0.46, 1)
+polygon = PackedVector2Array(-110, -8, 110, -8, 110, 8, -110, 8)
+
+[node name="LedgeHigh" type="StaticBody2D" parent="."]
+position = Vector2(810, 416)
+
+[node name="Shape" type="CollisionShape2D" parent="LedgeHigh"]
+shape = SubResource("RectangleShape2D_ledge")
+
+[node name="Look" type="Polygon2D" parent="LedgeHigh"]
+color = Color(0.36, 0.38, 0.46, 1)
+polygon = PackedVector2Array(-110, -8, 110, -8, 110, 8, -110, 8)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+
+[node name="Left" type="CollisionShape2D" parent="Walls"]
+shape = SubResource("WorldBoundaryShape2D_left")
+
+[node name="Right" type="CollisionShape2D" parent="Walls"]
+shape = SubResource("WorldBoundaryShape2D_right")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(120, 547)
+
+[node name="Shape" type="CollisionShape2D" parent="Player"]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Look" type="Polygon2D" parent="Player"]
+color = Color(0.95, 0.6, 0.25, 1)
+polygon = PackedVector2Array(-12, -20, 12, -20, 12, 20, -12, 20)
+
+[node name="PlatMotor" type="Node" parent="Player" node_paths=PackedStringArray("body")]
+script = ExtResource("1_motor")
+body = NodePath("..")
+jump_action = &"ui_accept"
+left_action = &"ui_left"
+right_action = &"ui_right"
+jump_speed = 420.0
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="Help" type="Label" parent="Hud"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 1136.0
+offset_bottom = 64.0
+text = "Arrows: run.  Space: jump (tap for a hop, hold for the full jump).
+Jump just after running off a ledge (coyote time) or just before landing (jump buffer)."

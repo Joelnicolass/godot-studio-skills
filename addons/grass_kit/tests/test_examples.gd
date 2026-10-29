@@ -1,7 +1,8 @@
 extends "res://addons/grass_kit/tests/grass_test.gd"
 
-## The example runs: it reads its hills' height, draws cells, takes another quality and another
-## look, turns the grass off and on, and a crater changes only the grass's ground there.
+## The examples run. The minimal one reads its floor and draws cells, and Space takes the next look.
+## grass_3d reads its hills' height, draws cells, takes another quality and another look, turns the
+## grass off and on, and a crater changes only the grass's ground there.
 
 
 func _key(scene: Node, key: Key) -> void:
@@ -9,6 +10,24 @@ func _key(scene: Node, key: Key) -> void:
 	event.physical_keycode = key
 	event.pressed = true
 	scene.call(&"_unhandled_input", event)
+
+
+func test_minimal_3d_runs() -> void:
+	GrassField3D.draw_anywhere = true
+	var scene := (load("res://addons/grass_kit/examples/minimal_3d/minimal_3d.tscn") as PackedScene).instantiate()
+	root.add_child(scene)
+	var field := scene.get_node(^"GrassField3D") as GrassField3D
+	for i in 6:
+		await tree.process_frame
+	check(field.ground.data != null and near(field.ground.height_at(Vector2(3, -4)), 0.0, 0.05), "it read the floor's height from its collider")
+	check(field.stats.cells > 0 and field.stats.blades > 0, "cells around the camera: %s" % field.stats)
+	var first := field.look
+	var event := InputEventAction.new()
+	event.action = &"ui_accept"
+	event.pressed = true
+	scene.call(&"_unhandled_input", event)
+	check(field.look != first and field.look.resource_path.ends_with("autumn.tres"), "Space: the next look")
+	GrassField3D.draw_anywhere = false
 
 
 func test_grass_3d_runs() -> void:

@@ -20,7 +20,7 @@ Para quien nunca usó el kit. Va desde una escena de batalla vacía hasta unidad
 
 1. Proyecto > Configuración del proyecto > Plugins: habilitá **RtsKit**.
 2. Proyecto > Herramientas > **RtsKit: Add default input actions**. Las acciones del kit aparecen en el Input Map, donde las podés reasignar (sección 5.8).
-3. Abrí `addons/rts_kit/examples/skirmish_3d/skirmish_3d.tscn` (o `skirmish_2d`) y apretá F6. Todo lo que sigue está en esas escenas.
+3. Abrí `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn` y apretá F6: es lo que arman las secciones 2 y 3, en 2D. `skirmish_3d` (o `skirmish_2d`) tiene todo lo demás de esta guía.
 
 ## 2. Una unidad
 
@@ -99,11 +99,11 @@ func die() -> void:
 - `ends_on_its_own` está prendido en `move` y `attack` (avisá `complete()` al llegar / cuando el blanco murió) y apagado en `guard`, `guard_area`, `attack_move` y `retreat` (siguen hasta que otra orden las reemplaza).
 - ¿Algo salió mal (no hay camino)? `unit.fail(&"no_path")`.
 
-**2D** es igual con un `CharacterBody2D`, un `CollisionShape2D` en la capa 2 y `order.spot_2d()`. En 2D las unidades del mundo son **píxeles**: poné `RtsUnit.size` en píxeles (sección 5.6).
+**2D** es igual con un `CharacterBody2D`, un `CollisionShape2D` en la capa 2 y `order.spot_2d()`: es el `soldier.gd` de `examples/minimal_2d` (camina en línea recta, sin `NavigationAgent2D`). En 2D las unidades del mundo son **píxeles**: poné `RtsUnit.size` en píxeles (sección 5.6).
 
 ## 3. El equipo de mando
 
-El equipo es un conjunto de nodos chicos; cada uno hace una cosa y apunta a los demás con sockets `@export`. Lo más rápido: abrí el ejemplo, elegí los nodos `Command` y `Hud`, copialos a tu escena de batalla y corregí los sockets que apuntan a la cámara.
+El equipo es un conjunto de nodos chicos; cada uno hace una cosa y apunta a los demás con sockets `@export`. Lo más rápido: abrí `examples/minimal_2d` (este equipo y nada más) o un `skirmish`, elegí los nodos `Command` y `Hud`, copialos a tu escena de batalla y corregí los sockets que apuntan a la cámara.
 
 ```
 Battle (Node3D)

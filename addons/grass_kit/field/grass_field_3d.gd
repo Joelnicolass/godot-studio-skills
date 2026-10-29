@@ -789,8 +789,7 @@ func _bake_in_editor() -> void:
 		history.call(&"commit_action", false)
 	ground.flush_maps()
 	ResourceSaver.save(ground, path, ResourceSaver.FLAG_COMPRESS)
-	ground._maps_edited = false
-	GrassGround._edited.erase(ground)
+	GrassGround.mark_saved(ground)
 	update_configuration_warnings()
 	print("%s: ground baked, %d of %d texels hit (%s)" % [
 		name, found, ground.texture_size().x * ground.texture_size().y, path

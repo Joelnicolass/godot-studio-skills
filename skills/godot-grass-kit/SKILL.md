@@ -48,7 +48,7 @@ World
 └── Units/…              # en trample_group
 ```
 
-Arrancá desde `addons/grass_kit/examples/grass_3d/grass_3d.tscn`: su sendero, el pasto corto, las manchas de flores y la mancha seca se pintaron con los pinceles.
+Arrancá desde `addons/grass_kit/examples/minimal_3d/minimal_3d.tscn` (lo mínimo: un piso con collider, un campo, y `floor.gdshader` con `grass_ground.gdshaderinc` para que el piso se encuentre con el pasto lejano) o `grass_3d/grass_3d.tscn`: su sendero, el pasto corto, las manchas de flores y la mancha seca se pintaron con los pinceles.
 
 ## Qué va dónde
 

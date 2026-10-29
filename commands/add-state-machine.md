@@ -34,11 +34,11 @@ Actor
     └── …
 ```
 
-Cada estado = script chico que extiende `FsmState` **o** el script del addon + overrides en un `.gd` del juego. Knobs de feel en el inspector del actor / `PlatMotor`, no magic numbers en `enter()`.
+Cada estado = script chico que extiende `FsmState`. Sus knobs en su propio `@export` (el `speed` de `Move`), o en el inspector del `PlatMotor` si hay motor; no magic numbers en `enter()`.
 
 ## 3. Implementar
 
-Seguí [godot-fsm](../skills/godot-fsm/SKILL.md). `transition(&"Hurt")` por nombre de nodo. El estado no spawnea ni puntúa.
+Seguí [godot-fsm](../skills/godot-fsm/SKILL.md). Patrón de referencia: `addons/fsm_kit/examples/minimal_2d/` (un número por estado en su `@export`, el golpe como payload). `transition(&"Hurt")` por nombre de nodo. El estado no spawnea ni puntúa.
 
 ## 4. Listo cuando
 

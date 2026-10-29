@@ -41,7 +41,7 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 [~] project.godot                        # plugin GrassKit
 ```
 
-Arrancá desde `addons/grass_kit/examples/grass_3d`.
+Arrancá desde `addons/grass_kit/examples/minimal_3d` (lo mínimo, con el shader del piso) o `grass_3d` (pintado, claros, pisoteo, looks).
 
 ## 3. Implementar
 

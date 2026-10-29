@@ -8,6 +8,7 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | Caso | Prueba |
 |---|---|
 | Jugar solo, sin red | `--probe=solo` (all.sh) |
+| El ejemplo mínimo (`examples/minimal_2d`, lo que escribe el asistente) por red: dedicado + cliente que se mueve y suma | `minimal.sh`; que siga siendo lo del asistente: `tests/test_examples.gd` |
 | LAN: host + cliente + tardío | `arena.sh` listen **T** |
 | Dedicado + cliente + tardío | `arena.sh` dedicated **T** |
 | Unirse a una dirección muerta: falla limpio y el menú sigue | `session.sh` deadjoin |

@@ -90,8 +90,9 @@ var _maps_queued: Dictionary[StringName, bool] = {}
 ## the scene).
 var _maps_edited := false
 var _full_range := Vector2.INF
-## The grounds edited since the editor last saved them.
-static var _edited: Array[GrassGround] = []
+## The grounds edited since the editor last saved them, held weakly: only the editor keeps this
+## list (a game's painted ground is freed like any resource), and a closed scene's ground goes.
+static var _edited: Array[WeakRef] = []
 
 
 ## Texels across `area`.
@@ -708,8 +709,26 @@ static func _reframe(
 
 func _mark_edited() -> void:
 	_maps_edited = true
-	if not _edited.has(self):
-		_edited.append(self)
+	if Engine.is_editor_hint() and not edited_grounds().has(self):
+		_edited.append(weakref(self))
+
+
+## Editor only: the grounds painted or baked since they were last saved.
+static func edited_grounds() -> Array[GrassGround]:
+	var out: Array[GrassGround] = []
+	for ref in _edited:
+		var ground := ref.get_ref() as GrassGround
+		if ground != null:
+			out.append(ground)
+	return out
+
+
+## Editor only: `ground` was just saved.
+static func mark_saved(ground: GrassGround) -> void:
+	ground._maps_edited = false
+	_edited = _edited.filter(
+		func(ref: WeakRef) -> bool: return ref.get_ref() != null and ref.get_ref() != ground
+	)
 
 
 static func _format_of(map: StringName) -> Image.Format:

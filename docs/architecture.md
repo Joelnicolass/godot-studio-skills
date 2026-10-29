@@ -139,11 +139,30 @@ sequenceDiagram
   O->>U: FEATURES.md al día
 ```
 
+Un corte chico (un componente, un `@export`, sin escena de prueba que pueda hacer trampa) no pasa por el tech lead: el árbol lo arma el orquestador, y igual se muestra y se espera el OK.
+
 La escena de prueba no la inventa quien juega. El tech lead la nombra en el árbol (`res://debug/…`, piezas del producto, estado inicial, acción del InputMap). El developer la construye. El reviewer mira que el resultado del criterio no esté ya puesto en el `.tscn`. El playtester solo corre esa escena con input mapeado. Un `.tres` de debug (otros números, mismo script) evita recorrer todo el juego hasta el criterio; un script paralelo o un `call()` que deja el objetivo ya resuelto no lo prueba.
 
 En un chat nuevo, con el kit instalado, pedí el juego o **una feature**. El orquestador corre `/implement-feature` **sin** exigir un GDD completo. Playtest y visual: el orquestador **pregunta**. Tester GUT solo si los pedís. Un RFC grande: `/implement-rfc`. Alcance a mitad de un RFC: `/manage-changes`. Dónde estamos: `/workflow-status`.
 
-Listo cuando: el proyecto parsea headless, el slice se juega, cada criterio tiene evidencia del review, y `FEATURES.md` + memoria quedan al día (checklist completo en la skill `godot-studio-workflow`).
+Listo cuando: el proyecto parsea headless, `gdformat` / `gdlint` (si el proyecto los usa) quedan en verde, el slice se juega, cada criterio tiene evidencia del review, y `FEATURES.md` + memoria quedan al día (checklist completo en la skill `godot-studio-workflow`).
+
+Diagrama interactivo de este flujo y de cómo entra un kit a tu juego: [docs/diagram/](diagram/README.md).
+
+## Los kits en tu juego
+
+Cada kit es un addon que se copia al juego con `./install.sh --addon <proyecto> <kit>`, sin depender de otro kit. El orquestador lo ofrece cuando la feature lo pide, con su command, y el árbol incluye la carpeta del addon (`[+] addons/<kit>/`).
+
+| Si el juego necesita | Kit | Command | Empezá por |
+|---|---|---|---|
+| Multijugador (LAN, dedicado, online) | MpKit | `/new-mp-feature` (y *Setup game* en el editor) | `addons/mp_kit/examples/minimal_2d/boot.tscn` |
+| Estados de un actor (Idle, Move, Hurt) | FsmKit | `/add-state-machine` | `addons/fsm_kit/examples/minimal_2d/` |
+| Saltos de plataformas 2D con perdón | PlatKit | `/add-platformer-2d` | `addons/plat_kit/examples/minimal_2d/` |
+| Selección y órdenes de un RTS | RtsKit | `/add-rts-controls` | `addons/rts_kit/examples/minimal_2d/` |
+| Props plantados y su navmesh | PropKit | `/add-props` | `addons/prop_kit/examples/minimal_3d/` |
+| Pasto 3D | GrassKit | `/add-grass` | `addons/grass_kit/examples/minimal_3d/` |
+
+El ejemplo mínimo es la integración más chica que anda; el README de cada kit explica su código y suma tips y recomendaciones. Lo que el kit no hace (las reglas, el puntaje, el movimiento de una unidad de RTS) queda en el juego.
 
 ## Prioridades (siempre)
 

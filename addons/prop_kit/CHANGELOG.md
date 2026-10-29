@@ -1,5 +1,12 @@
 # Changelog de PropKit
 
+## 0.2.3
+
+- **Ejemplo mínimo** `examples/minimal_3d/`: árboles plantados sobre un `PropFlatGround` alrededor de un campamento (`PropKeepOut`) y dibujados por un `PropBatch3D`. Espacio da otra semilla.
+- **Tests:** el runner falla un test que corta con un error de script o que no hizo ningún chequeo; antes lo daba por bueno.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.2
 
 - **`component_at(point, max_distance, min_area)`** y **`can_reach(a, b, max_distance, min_area)`**: una componente más chica que `min_area` (un techo, un bolsillo entre paredes junto al punto) no cuenta, y sí cuenta la tierra más cercana así de grande dentro de `max_distance`. La misma idea que el `min_area` de `closest_point`, sin llamar a los dos.

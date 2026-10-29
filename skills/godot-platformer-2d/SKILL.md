@@ -21,6 +21,8 @@ Si el addon no está:
 
 Enable **PlatKit**. Pedido acotado: `/add-platformer-2d`. Estados: [godot-fsm](../godot-fsm/SKILL.md). Juicy de land/jump: `/add-juicy`. Motion de squash: [godot-animation](../godot-animation/SKILL.md).
 
+Ejemplo de referencia: `addons/plat_kit/examples/minimal_2d/` (F6), sin código: un `CharacterBody2D` con su `PlatMotor`, un piso y dos repisas. Los tests del addon (`res://addons/plat_kit/tests/plat_test_runner.gd`) juegan el motor sobre física real.
+
 **No** copies el addon en un top-down, un fighter 3D o un menú.
 
 ## En el addon (defaults)
@@ -31,10 +33,10 @@ Enable **PlatKit**. Pedido acotado: `/add-platformer-2d`. Estados: [godot-fsm](.
 | Jump buffer | Jump apretado en el aire se consume al aterrizar | `jump_buffer` |
 | Apex gravity | Con jump hold, mitad de gravedad cerca del pico | `apex_gravity_mult` |
 | Jump corner | Si el techo recorta, wiggling horizontal | `jump_corner_pixels` |
-| Lift remember | Momentum de plataforma unos frames | `lift_remember` |
+| Lift remember | Momentum de plataforma, una vez (Godot lo suma al dejarla; el motor, en coyote) | `lift_remember` |
 | Wall jump window | Extra píxeles (off) | `wall_jump_enabled`, `wall_extra_pixels` |
 
-`read_input = false` + `axis` / `request_jump()` cuando un estado o el host MP alimentan el motor.
+`read_input = false` + `axis` / `request_jump()` / `release_jump()` cuando un estado, una IA o la red alimentan el motor (sin `release_jump()` el salto queda siempre mantenido). Con `auto_process = false`, el que lo maneja llama `tick(delta)`.
 
 ## En el juego (no el addon)
 
@@ -55,7 +57,7 @@ Player (CharacterBody2D)
 
 ## MP
 
-Host (o 1P) corre `tick`. Guest interpola el body. Input del guest → `submit_*` → host `request_jump` / `axis`.
+El motor corre donde se simula (servidor o 1P); los demás dibujan el cuerpo sincronizado. La entrada del dueño llega al servidor por la red del juego (con MpKit, su `MpInput`) y el servidor le pasa `axis` / `request_jump()` / `release_jump()`. Los temporizadores del motor (coyote, buffer, lift) no son parte de la pose: una reconciliación no los rebobina.
 
 ## Anti-patrones
 

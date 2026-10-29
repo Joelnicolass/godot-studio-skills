@@ -42,7 +42,7 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 [~] project.godot                      # plugin PropKit; una capa de colisión para los props
 ```
 
-Arrancá desde `addons/prop_kit/examples/forest_3d` o `grove_2d`.
+Arrancá desde `addons/prop_kit/examples/minimal_3d` (scatter + lotes), `forest_3d` (más el navmesh) o `grove_2d` (2D).
 
 ## 3. Implementar
 

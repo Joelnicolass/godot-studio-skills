@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MpGame" format=3]
+
+[ext_resource type="Script" path="res://addons/mp_kit/mp_game.gd" id="1_s5a7y"]
+
+[resource]
+script = ExtResource("1_s5a7y")
+boot_scene = "res://addons/mp_kit/examples/minimal_2d/boot.tscn"
+world_scene = "res://addons/mp_kit/examples/minimal_2d/world.tscn"
+max_players = 2
+custom_channels = PackedStringArray()
+relay_room = "mpkit-minimal-2d"

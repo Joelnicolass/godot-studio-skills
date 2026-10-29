@@ -353,6 +353,7 @@ install_addon() {
       echo
       echo "Habilitá el plugin MpKit (autoload). CI/headless, en project.godot:"
       echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
+      echo "Ejemplos: addons/mp_kit/examples/minimal_2d (lo que escribe Setup game) y arena_2d. Primeros pasos: addons/mp_kit/QUICKSTART.md."
       ;;
     agent_kit)
       install_playtest_addon "$project"
@@ -361,30 +362,32 @@ install_addon() {
       copy_one_addon "$project" "fsm_kit"
       echo
       echo "Habilitá el plugin FsmKit (tipos FsmMachine / FsmState, sin autoload)."
+      echo "Ejemplo: addons/fsm_kit/examples/minimal_2d (Idle, Move, Hurt)."
       ;;
     plat_kit)
       copy_one_addon "$project" "plat_kit"
       echo
       echo "Habilitá el plugin PlatKit (tipo PlatMotor, sin autoload)."
       echo "InputMap: move_left, move_right, jump."
+      echo "Ejemplo: addons/plat_kit/examples/minimal_2d (sin código)."
       ;;
     rts_kit)
       copy_one_addon "$project" "rts_kit"
       echo
       echo "Habilitá el plugin RtsKit (sin autoload). Teclas por defecto: Proyecto > Herramientas > RtsKit: Add default input actions."
-      echo "Arrancá desde addons/rts_kit/examples/skirmish_3d o skirmish_2d."
+      echo "Arrancá desde addons/rts_kit/examples/minimal_2d (lo mínimo), skirmish_3d o skirmish_2d."
       ;;
     prop_kit)
       copy_one_addon "$project" "prop_kit"
       echo
       echo "Habilitá el plugin PropKit (sin autoload). Los props cortan el navmesh en el grupo prop_obstruction,"
-      echo "en una capa de colisión que el navmesh no parsea. Arrancá desde addons/prop_kit/examples/forest_3d o grove_2d."
+      echo "en una capa de colisión que el navmesh no parsea. Arrancá desde addons/prop_kit/examples/minimal_3d, forest_3d o grove_2d."
       ;;
     grass_kit)
       copy_one_addon "$project" "grass_kit"
       echo
       echo "Habilitá el plugin GrassKit (sin autoload). Agregá un GrassField3D (se arma solo), seleccionalo y pintá"
-      echo "con los pinceles arriba de la vista 3D. Arrancá desde addons/grass_kit/examples/grass_3d."
+      echo "con los pinceles arriba de la vista 3D. Arrancá desde addons/grass_kit/examples/minimal_3d o grass_3d."
       ;;
     all)
       install_addon "$project" "mp_kit"
