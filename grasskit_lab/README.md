@@ -15,5 +15,6 @@
 
   Trabaja sobre una copia del ejemplo en `scratch/editor_check/` (los archivos del addon quedan como están). Lo hace el plugin propio del lab, `addons/grasskit_editor_check`; sin esa variable no hace nada.
   - `GRASSKIT_EDITOR_SHOTS=<carpeta> godot --editor --path grasskit_lab` (con ventana) guarda lo que muestra la vista 3D, y el editor entero con un pincel en la mano.
+- **Horneado del color del suelo** (renderiza, así que necesita una ventana): `godot --path grasskit_lab --script res://checks/bake_color_check.gd` (y con `--rendering-method gl_compatibility`) imprime `BAKE COLOR CHECK PASS`; `BAKE_COLOR_PNG=<archivo>` guarda la imagen.
 - **Globales de shader**: `project.godot` declara los de GrassKit (como hace el plugin), así el shader del suelo del ejemplo compila desde el principio.
 - **Cómo se juega**: abrí el proyecto. F5 corre `grass_3d`; `godot --rendering-method gl_compatibility --path grasskit_lab` lo corre en Compatibility.

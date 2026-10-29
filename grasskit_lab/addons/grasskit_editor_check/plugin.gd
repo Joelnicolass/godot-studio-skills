@@ -248,6 +248,9 @@ func _run() -> void:
 	_check(field.ground.size_texture == null, "GrassKit ▸ Clear the size map")
 	_history(field).undo()
 	_check(field.ground.size_texture != null, "Ctrl+Z: back")
+	var colour := field.ground.color_texture
+	await tool.call(&"_bake_colour")
+	_check(field.ground.color_texture == colour and not field.ground_bake_view and field.visible, "GrassKit ▸ Bake ground colour headless: nothing baked, nothing left hidden (it needs a window)")
 
 	# Handles.
 	var gizmos: EditorNode3DGizmoPlugin = plugin.get(&"_gizmos")
@@ -312,6 +315,13 @@ func _shots(folder: String) -> void:
 	await _frames(60)
 	viewport.get_texture().get_image().save_png(folder.path_join("editor_paint.png"))
 	get_tree().root.get_texture().get_image().save_png(folder.path_join("editor_window.png"))
+	# Bake ground colour from the menu, and its undo.
+	await tool.call(&"_bake_colour")
+	var baked := field.ground.color_texture
+	print("%s Bake ground colour makes the colour map" % ("PASS" if baked is GrassMap else "FAIL"))
+	_history(field).undo()
+	print("%s Ctrl+Z: the colour map as it was" % ("PASS" if field.ground.color_texture != baked else "FAIL"))
+	_history(field).redo()
 	field.look = root.get(&"flowers")
 	tool.call(&"edit", field)
 	tool.set(&"kind_index", 1)
