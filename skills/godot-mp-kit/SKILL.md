@@ -56,6 +56,8 @@ If the project addon and a loose copy diverge, `res://addons/mp_kit/` in this pr
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / tunnel / scaffold: [editor.md](editor.md). Generic code: [examples.md](examples.md).
 
+The addon's examples: `addons/mp_kit/examples/minimal_2d/` (what *Setup game* writes: a menu, a world and a predicted player; open `boot.tscn` and F6) and `examples/arena_2d/` (the full one). Start from the minimal one and add what the feature asks for.
+
 Human guide (inspector, step-by-step, custom tunnel, room server, hub rooms and queue): `addons/mp_kit/README.md`.
 
 ## Nodes first (human first)
@@ -148,7 +150,9 @@ Lives in `addons/mp_kit/lobby/`, generic (no game rules or text). Short form:
 
 Client: `apply_snapshot` **turns off** the session simulation tick. The guest does not tick the clock. Dedicated does simulate (it is the server).
 
-## Input and authority
+## Input and authority (low level)
+
+In new code, the player's input is their `MpInput` and a one-off order is `net.to_server(&"x")` (the table in [Nodes first](#nodes-first-human-first)). This is the by-hand path, for what the nodes do not cover.
 
 Actors: the server is authority. If the body is `RigidBody2D`/`RigidBody3D`, freeze proxies (`MpAuthority.freeze_rigid_proxy`). Do not assume RigidBody on every pawn.
 
@@ -231,4 +235,4 @@ Same collision and `submit_*` code (the local host does not send an RPC). Always
 - [ ] Guest does not simulate rules; server validates sender.
 - [ ] 1P offline verified.
 - [ ] Pawns are composable packed scenes, not netcode embedded in the kit.
-- [ ] New features: Tools scaffold or `/new-mp-feature`; tunnel only for what is not `submit_*` / Resource.
+- [ ] New features: an actor with `MpActor` (+ `MpInput`), through Tools › *Make selection a network actor* or `/new-mp-feature`; tunnel only for what `to_server` / `to_all` / `Mp.state()` do not cover.

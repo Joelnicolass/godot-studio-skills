@@ -41,7 +41,7 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` rem
 [~] project.godot                        # GrassKit plugin
 ```
 
-Start from `addons/grass_kit/examples/grass_3d`.
+Start from `addons/grass_kit/examples/minimal_3d` (the minimum, with the floor shader) or `grass_3d` (painting, clearings, trampling, looks).
 
 ## 3. Implement
 

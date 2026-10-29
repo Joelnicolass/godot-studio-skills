@@ -4,16 +4,17 @@ With the plugin enabled, the autoload is registered and **Project → Tools** ga
 
 | Action | What it does |
 |--------|----------|
-| **Wire replication on selection** | Child `MpReplicate` + `MultiplayerSynchronizer` with `MpReplicate.sync_properties` as spawn + always (undo). Does not clone Godot’s Replication dock. |
-| **New replicated feature...** | Writes `res://features/<id>/` (or the folder you pick): `.gd` + `.tscn` with replicate, sync, and optional `MpCustomPipe`. |
+| **Setup game...** | A whole multiplayer game from one dialog: `game.tres`, the boot, a world with `MpWorld`, a predicted player, optional rooms. It shows the tree (`[+]` / `[~]`) and never overwrites a file. `addons/mp_kit/examples/minimal_2d/` is what it writes in 2D without rooms. |
+| **Make selection a network actor** | Child `MpActor` (its `MpSync` built and saved with the scene) and, on a `CharacterBody`, `MpInput` (undo). The path for new code. |
+| **New replicated feature...** | Low level: writes `res://features/<id>/` (or the folder you pick), `.gd` + `.tscn` with `MpReplicate`, sync, `submit_*` / `apply_*` and an optional `MpCustomPipe`. |
 | **New session flow...** | Writes `res://glue/session_flow.tscn` + `.gd` (`extends MpFlow`) and registers it as an autoload. |
 | **Install Cursor/VS Code snippets** | Copies `.vscode/mpkit.code-snippets`. Reload the editor window. Prefixes: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
-Enable also copies **script templates** to `res://script_templates/` (with `.gdignore`). When attaching a script to `CharacterBody2D/3D` or `Node2D/3D`, template **MpKit replicated**.
+Enable also copies **script templates** to `res://script_templates/` (with `.gdignore`). When attaching a script: **MpKit actor** (`CharacterBody2D/3D`: rules on the server, `mp_sv_*` / `mp_all_*`; needs the `MpActor` + `MpInput` children) or, low level, **MpKit replicated** (`submit_*` / `apply_*`).
 
 CI/headless: autoload in `project.godot`. Do not duplicate Enable + a manual line.
 
-Without Godot open (Claude Code or Cursor): command `/new-mp-feature` (same file layout). `./install.sh --addon` also installs snippets into `.vscode/`.
+Without Godot open (Claude Code or Cursor): command `/new-mp-feature` (an actor with `MpActor` + `MpInput`; the low-level scaffold only when asked). `./install.sh --addon` also installs snippets into `.vscode/`.
 
 ## Nodes (Create New Node)
 
@@ -44,11 +45,21 @@ Optional allowlist in `configure(..., custom_channels)`. Empty = all names. Non-
 
 Or one `MpCustomPipe` node per feature (`@export channel`, signal `packet`).
 
-Do not put meshes, score, or bullet `kind` here: Resources + actor `submit_*`. The tunnel is the escape hatch (emote, debug, your own handshake).
+Do not put meshes, score, or bullet `kind` here: Resources + `net.to_server(&"x")` / `Mp.state()`. The tunnel is the escape hatch (emote, debug, your own handshake).
 
 Human step-by-step (send / receive / server forward, hub rooms and queue, with diagrams): `addons/mp_kit/README.md`.
 
 ## Feature layout
+
+With nodes (new code):
+
+```
+res://features/<id>/
+  <id>.gd      MpKit actor template: rules behind net.is_authority(), mp_sv_* / mp_all_*
+  <id>.tscn    root + MpActor (+ saved MpSync) [+ MpInput if a player drives it]
+```
+
+Low level (*New replicated feature...*):
 
 ```
 res://features/<id>/
@@ -56,4 +67,4 @@ res://features/<id>/
   <id>.tscn    root + MpReplicate + MultiplayerSynchronizer [+ MpCustomPipe]
 ```
 
-Then register the packed scene on the match `MpSpawner`. Content types = the game’s `.tres`, not a channel per `kind`.
+Then: the scene in the `MpSpawner`'s *Extra Scenes* (`spawn_actor(scene, {...})`). Content types = the game’s `.tres`, not a channel per `kind`.

@@ -48,7 +48,7 @@ Game
     └── Cue                 # optional
 ```
 
-Start from `addons/rts_kit/examples/skirmish_3d/skirmish_3d.tscn` (radial menu) or `skirmish_2d/skirmish_2d.tscn` (no menu, command panel): the whole rig is wired in the inspector.
+Start from `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn` (the minimum: the rig of GUIDE › 3 and six soldiers whose `soldier.gd` is the unit script of GUIDE › 2 in 2D), `skirmish_3d/skirmish_3d.tscn` (radial menu, cursor, pings) or `skirmish_2d/skirmish_2d.tscn` (no menu, command panel): the rig is wired in the inspector.
 
 ## What belongs where
 

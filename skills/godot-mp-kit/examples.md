@@ -2,6 +2,41 @@
 
 Nothing from a concrete title. The kit does not name these classes.
 
+## First: a player with nodes
+
+What *Setup game* writes (and `addons/mp_kit/examples/minimal_2d/player.gd`): a `CharacterBody2D` with `MpActor` (Prediction › predict) and `MpInput` children. No RPCs.
+
+```gdscript
+extends CharacterBody2D
+
+
+const SPEED := 220.0
+
+@onready var net: MpActor = $MpActor
+@onready var input: MpInput = $MpInput
+
+
+func mp_move(keys: MpInput, _delta: float) -> void:
+	var dir := keys.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down")
+	velocity = dir * SPEED
+	move_and_slide()
+
+
+func _physics_process(_delta: float) -> void:
+	if not net.is_authority():
+		return
+	if input.is_action_just_pressed(&"ui_accept"):
+		MpState.of(self).add(StringName("p%d" % net.owner_slot))
+		net.to_all(&"flash")
+
+
+func mp_all_flash() -> void:
+	$Visual.scale = Vector2(1.4, 1.4)
+	create_tween().tween_property($Visual, "scale", Vector2(1, 1), 0.2)
+```
+
+What follows is the **low level** (RPC, snapshots, tunnel): for what the node layer does not cover.
+
 ## Session flow (`extends MpFlow`)
 
 ```gdscript
@@ -96,7 +131,7 @@ Or a child `MpCustomPipe` with `channel` in the inspector.
 
 ## Spawn identity (actor, not kit)
 
-Put `player_slot` (or another id) on the `MultiplayerSynchronizer` with `spawn = true`, like Asteroidcitos’ `player_id`. Stable name (`Pawn_2`) as fallback.
+With `MpActor`, `owner_slot` already travels at spawn. By hand: `player_slot` (or another id) on the `MultiplayerSynchronizer` with `spawn = true`. Stable name (`Pawn_2`) as fallback.
 
 ```gdscript
 # In the actor's own _ready (or before add_child). Not deferred: the spawn packet would miss it.

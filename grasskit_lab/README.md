@@ -1,8 +1,8 @@
 # grasskit_lab
 
-- **What**: a small Godot project that runs GrassKit's example and tests without any game.
+- **What**: a small Godot project that runs GrassKit's examples and tests without any game.
 - **Not**: a game. `addons/grass_kit` is a symlink to the kit's own copy.
-- **Talks to**: nothing else. The tests build their own scenes; `test_examples` plays the example through its own keys and methods.
+- **Talks to**: nothing else. The tests build their own scenes; `test_examples` plays both examples (`minimal_3d`, `grass_3d`) through their own keys and methods.
 - **Check**: `godot --headless --path grasskit_lab --script res://addons/grass_kit/tests/grass_test_runner.gd` gives `GRASSKIT TESTS PASS (n)`.
   - One file: `-- --only=test_field`.
   - After adding a script with a new `class_name`, import once first: `godot --headless --path grasskit_lab --import`.

@@ -1,11 +1,13 @@
 extends "res://addons/rts_kit/tests/rts_test.gd"
 
-## The two examples played end to end, headless, through the same events a player makes: a box of
+## The examples played end to end, headless, through the same events a player makes: a box of
 ## mouse events selects the own units, a right tap on the ground orders them, they walk to their
-## slots and report `complete()`; a group key and Alt+N work on the real rig.
+## slots and report `complete()`; a group key and Alt+N work on the real rig. The minimal example's
+## soldiers are the GUIDE's unit script in 2D.
 
 const SCENE_3D := preload("res://addons/rts_kit/examples/skirmish_3d/skirmish_3d.tscn")
 const SCENE_2D := preload("res://addons/rts_kit/examples/skirmish_2d/skirmish_2d.tscn")
+const SCENE_MINIMAL := preload("res://addons/rts_kit/examples/minimal_2d/minimal_2d.tscn")
 
 
 func _own(selection: RtsSelection) -> Array[RtsUnit]:
@@ -92,6 +94,47 @@ func test_skirmish_3d() -> void:
 
 func test_skirmish_2d() -> void:
 	await _play(SCENE_2D, Vector2(640, 200))
+
+
+func test_minimal_2d() -> void:
+	var example := SCENE_MINIMAL.instantiate()
+	root.add_child(example)
+	await physics(3)
+	var command: RtsCommandInput = example.get_node("Command")
+	var selection := command.selection
+	var own := _own(selection)
+	check(own.size() == 6, "six soldiers to select (%d)" % own.size())
+	var low := Vector2(INF, INF)
+	var high := Vector2(-INF, -INF)
+	for unit in own:
+		low = low.min(_screen(unit))
+		high = high.max(_screen(unit))
+	var view: Control = example.get_node("Hud/View")
+	view.gui_input.emit(_button(MOUSE_BUTTON_LEFT, true, low - Vector2(30, 30)))
+	view.gui_input.emit(_motion(high + Vector2(30, 30)))
+	view.gui_input.emit(_button(MOUSE_BUTTON_LEFT, false, high + Vector2(30, 30)))
+	check(selection.size() == 6, "the box selected them (%d)" % selection.size())
+	check(own.all(func(u: RtsUnit) -> bool: return (u.get_parent().get_node("Ring") as CanvasItem).visible), "each shows its ring")
+	var done: Array = []
+	for unit in own:
+		unit.order_ended.connect(func(_o: RtsUnitOrder, result: StringName) -> void: done.append(result))
+	var ground := Vector2(640, 160)
+	view.gui_input.emit(_button(MOUSE_BUTTON_RIGHT, true, ground))
+	view.gui_input.emit(_button(MOUSE_BUTTON_RIGHT, false, ground))
+	check(own.all(func(u: RtsUnit) -> bool: return u.current_order() != null and u.current_order().command == &"move"), "a right tap on the ground: move")
+	var spots := {}
+	for unit in own:
+		spots[unit] = unit.current_order().spot_2d()
+	for i in 600:
+		await tree.physics_frame
+		if done.size() >= 6:
+			break
+	check(done.size() == 6 and done.all(func(r: StringName) -> bool: return r == &"done"), "each walked to its slot and completed (%d)" % done.size())
+	check(own.all(func(u: RtsUnit) -> bool: return (u.get_parent() as Node2D).global_position.distance_to(spots[u]) < 5.0), "each stands on its own slot")
+	selection.clear()
+	check(own.all(func(u: RtsUnit) -> bool: return not (u.get_parent().get_node("Ring") as CanvasItem).visible), "cleared: no rings")
+	example.queue_free()
+	await tree.process_frame
 
 
 func _button(index: MouseButton, pressed: bool, at: Vector2) -> InputEventMouseButton:

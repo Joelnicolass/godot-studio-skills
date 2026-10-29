@@ -47,7 +47,7 @@ World
 └── Units/…              # in trample_group
 ```
 
-Start from `addons/grass_kit/examples/grass_3d/grass_3d.tscn`: its path, short grass, flower patches and dry patch were painted with the brushes.
+Start from `addons/grass_kit/examples/minimal_3d/minimal_3d.tscn` (the minimum: a floor with a collider, a field, and `floor.gdshader` with `grass_ground.gdshaderinc` so the floor meets the far grass) or `grass_3d/grass_3d.tscn`: its path, short grass, flower patches and dry patch were painted with the brushes.
 
 ## What belongs where
 

@@ -9,3 +9,8 @@ dist/
 node_modules/
 pnpm-debug.log*
 .pnpm-store/
+
+# archify receipts when the diagrams are regenerated
+docs/diagram/*.finalize*.json
+docs/diagram/*.delivery*.json
+docs/diagram/*.browser-check.json

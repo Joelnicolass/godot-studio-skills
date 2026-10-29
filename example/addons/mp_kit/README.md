@@ -6,7 +6,7 @@ Do **not** install for a 1P-only game.
 
 This guide is for **manual setup in the editor**. Code identifiers stay in English.
 
-**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. The `examples/arena_2d/` example runs solo, on a LAN and on a dedicated server. What follows is the reference of every piece.
+**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Two examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes) and `examples/arena_2d/` (shots, a bell, rooms, private match). What follows is the reference of every piece.
 
 ## Contents
 
@@ -534,7 +534,8 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `deploy/` | `deploy.sh user@vps build` (one command: user, files, systemd units, instances, firewall), `mp-rooms@.service` / `mp-dedicated@.service` (one instance per port), example export presets and the guide; `fly.sh` + `fly/` (`Dockerfile`, `fly.toml`): the server on Fly.io behind the relay, no VPS and no export |
 | `editor/` | the Setup game wizard (`mp_setup_wizard.gd`, `mp_setup_templates.gd`, `mp_setup_dialog.gd`) |
 | `tests/` | the kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd` |
-| `examples/arena_2d/` | minimal example (boot, arena, player, lobby, room server); the quickstart and the e2e fixture |
+| `examples/minimal_2d/` | minimal example: what *Setup game* writes in 2D without rooms (boot, world, predicted player); `tests/test_examples.gd` keeps it that way and `mpkit_lab/run/minimal.sh` plays it over the network |
+| `examples/arena_2d/` | full example (boot, arena, player, shots, bell, lobby, room server); the lab's e2e fixture |
 
 Role helpers on `MpKit`: `is_authority()` (solo or the server: where the rules run), `has_local_slot()` (this machine has a player with a known slot). `local_slot()` returns 0 on a client until the server assigns its slot (it used to guess). `MpSpawner.spawn_actor(scene, props, owner_slot)` instances on the server under `spawn_path` (the scene must be in the spawner's list). `MpFlow` can be a node in the boot scene: it moves itself under the root.
 

@@ -21,6 +21,8 @@ If the addon is missing:
 
 Enable **PlatKit**. Bounded request: `/add-platformer-2d`. States: [godot-fsm](../godot-fsm/SKILL.md). Land/jump juicy: `/add-juicy`. Squash motion: [godot-animation](../godot-animation/SKILL.md).
 
+Reference example: `addons/plat_kit/examples/minimal_2d/` (F6), no code: a `CharacterBody2D` with its `PlatMotor`, a floor and two ledges. The addon's tests (`res://addons/plat_kit/tests/plat_test_runner.gd`) play the motor on real physics.
+
 **Do not** copy the addon into a top-down, a 3D fighter, or a menu.
 
 ## In the addon (defaults)
@@ -31,10 +33,10 @@ Enable **PlatKit**. Bounded request: `/add-platformer-2d`. States: [godot-fsm](.
 | Jump buffer | Jump pressed in air is consumed on landing | `jump_buffer` |
 | Apex gravity | Jump hold → half gravity near the peak | `apex_gravity_mult` |
 | Jump corner | Ceiling clip → horizontal wiggle | `jump_corner_pixels` |
-| Lift remember | Platform momentum for a few frames | `lift_remember` |
+| Lift remember | Platform momentum, once (Godot adds it on leaving; the motor, in coyote time) | `lift_remember` |
 | Wall jump window | Extra pixels (off) | `wall_jump_enabled`, `wall_extra_pixels` |
 
-`read_input = false` + `axis` / `request_jump()` when a state or the MP host feeds the motor.
+`read_input = false` + `axis` / `request_jump()` / `release_jump()` when a state, an AI or the network feeds the motor (without `release_jump()` the jump stays held forever). With `auto_process = false`, whoever drives it calls `tick(delta)`.
 
 ## In the game (not the addon)
 
@@ -55,7 +57,7 @@ Player (CharacterBody2D)
 
 ## MP
 
-Host (or 1P) runs `tick`. Guest interpolates the body. Guest input → `submit_*` → host `request_jump` / `axis`.
+The motor runs where physics is simulated (server or 1P); the others draw the synced body. The owner's input reaches the server through the game's network (with MpKit, their `MpInput`) and the server feeds `axis` / `request_jump()` / `release_jump()`. The motor's timers (coyote, buffer, lift) are not part of the pose: a reconciliation does not rewind them.
 
 ## Anti-patterns
 

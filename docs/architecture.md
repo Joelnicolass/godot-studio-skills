@@ -139,11 +139,30 @@ sequenceDiagram
   O->>U: FEATURES.md up to date
 ```
 
+A small cut (one component, one `@export`, no test scene that could cheat) skips the tech lead: the orchestrator draws the tree, and it is still shown and waits for the OK.
+
 The test scene is not invented by whoever plays. The tech lead names it on the tree (`res://debug/…`, product pieces, initial state, InputMap action). The developer builds it. The reviewer checks that the criterion’s outcome is not already in the `.tscn`. The playtester only runs that scene with mapped input. A debug `.tres` (other numbers, same script) avoids playing the whole game to reach the criterion; a parallel script or a `call()` that leaves the goal already done does not test it.
 
 In a new chat, with the kit installed, ask for the game or **one feature**. The orchestrator runs `/implement-feature` without a full GDD. A visual pass is asked. GUT tester only if you ask. A large RFC: `/implement-rfc`. Scope mid-build: `/manage-changes`. Where we are: `/workflow-status`.
 
-Done when: the project parses headless, the slice plays, every criterion has review evidence, and `FEATURES.md` + memory are up to date (full checklist in the `godot-studio-workflow` skill).
+Done when: the project parses headless, `gdformat` / `gdlint` (if the project uses them) pass, the slice plays, every criterion has review evidence, and `FEATURES.md` + memory are up to date (full checklist in the `godot-studio-workflow` skill).
+
+Interactive diagram of this flow and of how a kit enters your game: [docs/diagram/](diagram/README.md).
+
+## The kits in your game
+
+Each kit is an addon copied into the game with `./install.sh --addon <project> <kit>`, depending on no other kit. The orchestrator offers it when the feature needs it, with its command, and the tree includes the addon's folder (`[+] addons/<kit>/`).
+
+| If the game needs | Kit | Command | Start from |
+|---|---|---|---|
+| Multiplayer (LAN, dedicated, online) | MpKit | `/new-mp-feature` (and *Setup game* in the editor) | `addons/mp_kit/examples/minimal_2d/boot.tscn` |
+| An actor's states (Idle, Move, Hurt) | FsmKit | `/add-state-machine` | `addons/fsm_kit/examples/minimal_2d/` |
+| Forgiving 2D platformer jumps | PlatKit | `/add-platformer-2d` | `addons/plat_kit/examples/minimal_2d/` |
+| RTS selection and orders | RtsKit | `/add-rts-controls` | `addons/rts_kit/examples/minimal_2d/` |
+| Placed props and their navmesh | PropKit | `/add-props` | `addons/prop_kit/examples/minimal_3d/` |
+| 3D grass | GrassKit | `/add-grass` | `addons/grass_kit/examples/minimal_3d/` |
+
+The minimal example is the smallest integration that works; each kit's README explains its code and adds tips and recommendations. What the kit does not do (the rules, the score, how an RTS unit moves) stays in the game.
 
 ## Priorities (always)
 

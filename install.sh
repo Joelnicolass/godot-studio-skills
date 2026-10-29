@@ -353,6 +353,7 @@ install_addon() {
       echo
       echo "Enable the MpKit plugin (autoload). CI/headless, in project.godot:"
       echo '  MpKit="*res://addons/mp_kit/mp_kit.gd"'
+      echo "Examples: addons/mp_kit/examples/minimal_2d (what Setup game writes) and arena_2d. First steps: addons/mp_kit/QUICKSTART.md."
       ;;
     agent_kit)
       install_playtest_addon "$project"
@@ -361,30 +362,32 @@ install_addon() {
       copy_one_addon "$project" "fsm_kit"
       echo
       echo "Enable the FsmKit plugin (FsmMachine / FsmState types, no autoload)."
+      echo "Example: addons/fsm_kit/examples/minimal_2d (Idle, Move, Hurt)."
       ;;
     plat_kit)
       copy_one_addon "$project" "plat_kit"
       echo
       echo "Enable the PlatKit plugin (PlatMotor type, no autoload)."
       echo "InputMap: move_left, move_right, jump."
+      echo "Example: addons/plat_kit/examples/minimal_2d (no code)."
       ;;
     rts_kit)
       copy_one_addon "$project" "rts_kit"
       echo
       echo "Enable the RtsKit plugin (no autoload). Default keys: Project > Tools > RtsKit: Add default input actions."
-      echo "Start from addons/rts_kit/examples/skirmish_3d or skirmish_2d."
+      echo "Start from addons/rts_kit/examples/minimal_2d (the minimum), skirmish_3d or skirmish_2d."
       ;;
     prop_kit)
       copy_one_addon "$project" "prop_kit"
       echo
       echo "Enable the PropKit plugin (no autoload). Props cut the navmesh in group prop_obstruction,"
-      echo "on a collision layer the navmesh does not parse. Start from addons/prop_kit/examples/forest_3d or grove_2d."
+      echo "on a collision layer the navmesh does not parse. Start from addons/prop_kit/examples/minimal_3d, forest_3d or grove_2d."
       ;;
     grass_kit)
       copy_one_addon "$project" "grass_kit"
       echo
       echo "Enable the GrassKit plugin (no autoload). Add a GrassField3D (it sets itself up), select it and paint"
-      echo "with the brushes on top of the 3D view. Start from addons/grass_kit/examples/grass_3d."
+      echo "with the brushes on top of the 3D view. Start from addons/grass_kit/examples/minimal_3d or grass_3d."
       ;;
     all)
       install_addon "$project" "mp_kit"

@@ -20,7 +20,7 @@ For someone who has never used the kit. It walks from an empty battle scene to u
 
 1. Project > Project Settings > Plugins: enable **RtsKit**.
 2. Project > Tools > **RtsKit: Add default input actions**. The kit's actions appear in the Input Map, where you can rebind them (section 5.8).
-3. Open `addons/rts_kit/examples/skirmish_3d/skirmish_3d.tscn` (or `skirmish_2d`) and press F6. Everything below is in those scenes.
+3. Open `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn` and press F6: it is what sections 2 and 3 build, in 2D. `skirmish_3d` (or `skirmish_2d`) has everything else in this guide.
 
 ## 2. A unit
 
@@ -99,11 +99,11 @@ func die() -> void:
 - `ends_on_its_own` is on for `move` and `attack` (report `complete()` when there / when the target is dead) and off for `guard`, `guard_area`, `attack_move`, `retreat` (they stay until another order replaces them).
 - Something went wrong (no path)? `unit.fail(&"no_path")`.
 
-**2D** is the same with a `CharacterBody2D`, a `CollisionShape2D` on layer 2 and `order.spot_2d()`. In 2D, world units are **pixels**: set `RtsUnit.size` in pixels (section 5.6).
+**2D** is the same with a `CharacterBody2D`, a `CollisionShape2D` on layer 2 and `order.spot_2d()`: it is the `soldier.gd` of `examples/minimal_2d` (it walks in a straight line, no `NavigationAgent2D`). In 2D, world units are **pixels**: set `RtsUnit.size` in pixels (section 5.6).
 
 ## 3. The command rig
 
-The rig is a set of small nodes; each does one thing and points at the others through `@export` sockets. The fastest way: open the example, select the `Command` and `Hud` nodes, copy them into your battle scene, and fix the sockets that point at the camera.
+The rig is a set of small nodes; each does one thing and points at the others through `@export` sockets. The fastest way: open `examples/minimal_2d` (this rig and nothing else) or a `skirmish`, select the `Command` and `Hud` nodes, copy them into your battle scene, and fix the sockets that point at the camera.
 
 ```
 Battle (Node3D)

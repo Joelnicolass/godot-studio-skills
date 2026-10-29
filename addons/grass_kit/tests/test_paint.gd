@@ -4,7 +4,8 @@ extends "res://addons/grass_kit/tests/grass_test.gd"
 ## the map's rest, smoothing evens it, the noise rags the edge the same way every time; a ground
 ## makes a map on the first dab, copies a texture made elsewhere, keeps its maps when saved, puts a
 ## stroke back for an undo, fills, clears, imports and exports, resizes its area keeping what is
-## painted, aims a ray at itself and takes heights from an image.
+## painted, aims a ray at itself and takes heights from an image. A game's painted ground is freed
+## like any resource.
 
 
 func _ground() -> GrassGround:
@@ -250,3 +251,13 @@ func test_heights_from_an_image() -> void:
 	var call_ms := Time.get_ticks_msec() - start
 	print("    1M texels: set_heights_image %d ms, set_heights %d ms" % [image_ms, call_ms])
 	check(image_ms < call_ms, "quicker than a call a texel")
+
+
+func test_a_painted_ground_is_freed() -> void:
+	var ground := _ground()
+	ground.paint(GrassGround.DENSITY, Vector2(5, 5), _brush())
+	var ref := weakref(ground)
+	ground = null
+	await tree.process_frame
+	check(ref.get_ref() == null, "a game's painted ground is freed like any resource")
+	check(GrassGround.edited_grounds().is_empty(), "only the editor keeps a list of edited grounds")

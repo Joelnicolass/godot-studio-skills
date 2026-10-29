@@ -34,7 +34,7 @@ PostFxStack (CanvasLayer, high layer)
 ## Actor with physics
 
 - Simulation in `_physics_process` (or `_integrate_forces` if it is a `RigidBody`).
-- Look on children. Input on a catcher that uses InputMap and calls `apply_*` / `submit_*`.
+- Look on children. Input on a catcher that uses InputMap and calls `apply_*` (on a network: `MpInput` + `net.to_server`).
 - If the body is a `RigidBody`, `MpAuthority.freeze_rigid_proxy` on proxies. Do not assume RigidBody on every actor.
 
 ## Editor preview

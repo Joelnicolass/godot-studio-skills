@@ -42,7 +42,7 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` rem
 [~] project.godot                      # PropKit plugin; a collision layer for the props
 ```
 
-Start from `addons/prop_kit/examples/forest_3d` or `grove_2d`.
+Start from `addons/prop_kit/examples/minimal_3d` (scatter + batches), `forest_3d` (plus the navmesh) or `grove_2d` (2D).
 
 ## 3. Implement
 

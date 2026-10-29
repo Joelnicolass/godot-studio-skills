@@ -1,5 +1,13 @@
 # GrassKit changelog
 
+## 0.2.2
+
+- **A ground painted in the game is freed.** `GrassGround` kept every painted or baked ground in a static list, so the editor would save it with the scene, in an exported game too. A ground painted in the game (burning grass with `ground.paint`) was never freed, and on quit that list crashed the process (exit 134 in the tests). Now only the editor keeps it, with weak references (`GrassGround.edited_grounds()`, `GrassGround.mark_saved()`).
+- **Minimal example** `examples/minimal_3d/`: a floor with a collider, a field, the ground baked at start, and `floor.gdshader` with `grass_ground.gdshaderinc` so the floor meets the far grass. Space changes the look.
+- **Tests:** 54. The runner fails a test that stops on a script error or made no check at all (it used to count it as a pass), and the process exits with 0.
+
+Nothing to update in your project.
+
 ## 0.2.1
 
 - **Bake the ground's colour** (asked by Sacrifice): `await field.bake_ground_color()`, or GrassKit ▸ **Bake ground colour** (undoable).
