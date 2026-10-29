@@ -134,3 +134,33 @@ func test_a_weld_drops_what_the_map_cannot_tell_apart() -> void:
 	check(piece.get_polygon_count() == 2, "the sliver is gone (%d)" % piece.get_polygon_count())
 	var right := piece.get_polygon(1)
 	check(right.size() == 4 and piece.vertices[right[0]] == Vector2(10, 0), "the next polygon uses the kept vertex")
+
+
+## A world of its own (a SubViewport with its own World2D) whose navigation map iterates
+## synchronously from the start, with synchronous regions: a field, one bush at (128, 128).
+func test_ready_with_synchronous_iterations() -> void:
+	var viewport := SubViewport.new()
+	viewport.world_2d = World2D.new()
+	root.add_child(viewport)
+	var map := viewport.world_2d.navigation_map
+	NavigationServer2D.map_set_use_async_iterations(map, false)
+	ProjectSettings.set_setting("navigation/world/region_use_async_iterations", false)
+	props = Node2D.new()
+	viewport.add_child(props)
+	_bush(Vector2(128, 128))
+	var template := NavigationPolygon.new()
+	template.parsed_geometry_type = NavigationPolygon.PARSED_GEOMETRY_STATIC_COLLIDERS
+	template.parsed_collision_mask = 1
+	var zones := PropNavZones2D.new()
+	zones.navigation_polygon = template
+	zones.zone_size = 256.0
+	zones.area = Rect2(0.0, 0.0, 1024.0, 512.0)
+	viewport.add_child(zones)
+	var walkable := func(at: Vector2) -> bool:
+		return NavigationServer2D.map_get_closest_point(map, at).distance_to(at) < 0.5
+	check(await _settled(zones, 300), "a synchronous map: ready")
+	check(not walkable.call(Vector2(128, 128)) and walkable.call(Vector2(600, 300)), "the paths see the prop at once")
+	props.get_child(0).queue_free()
+	check(await _settled(zones, 300), "a change in play: updated too")
+	check(walkable.call(Vector2(128, 128)), "where it stood is walkable at once")
+	ProjectSettings.set_setting("navigation/world/region_use_async_iterations", true)

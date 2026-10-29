@@ -389,3 +389,62 @@ func test_closest_point_can_skip_islands() -> void:
 	check(footprint.has_point(Vector2(inside.x, inside.z)), "any component: the pocket inside")
 	var out := index.closest_point(Vector3(28, 1, 16), INF, 100.0)
 	check(not footprint.has_point(Vector2(out.x, out.z)), "at least 100 m²: out of it (%s)" % out)
+
+
+## A world of its own (a SubViewport with its own World3D), whose navigation map iterates
+## synchronously from the start, as in a game that sets it so for determinism. Regions take
+## `regions_async`. The floor and one trunk at (8, 0, 8), and a zones node over them.
+func _sync_world(regions_async: bool) -> PropNavZones3D:
+	var viewport := SubViewport.new()
+	viewport.world_3d = World3D.new()
+	root.add_child(viewport)
+	NavigationServer3D.map_set_use_async_iterations(viewport.world_3d.navigation_map, false)
+	ProjectSettings.set_setting("navigation/world/region_use_async_iterations", regions_async)
+	var floor := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(64.0, 1.0, 32.0)
+	shape.shape = box
+	floor.add_child(shape)
+	floor.position = Vector3(32.0, -0.5, 16.0)
+	viewport.add_child(floor)
+	var body := StaticBody3D.new()
+	body.collision_layer = 1 << (PROPS_LAYER - 1)
+	var trunk := CollisionShape3D.new()
+	var cylinder := CylinderShape3D.new()
+	cylinder.radius = 1.0
+	cylinder.height = 4.0
+	trunk.shape = cylinder
+	body.add_child(trunk)
+	body.position = Vector3(8, 2, 8)
+	body.add_to_group(PropObstructions.GROUP)
+	viewport.add_child(body)
+	var template := NavigationMesh.new()
+	template.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
+	template.geometry_collision_mask = 1
+	var zones := PropNavZones3D.new()
+	zones.navigation_mesh = template
+	zones.zone_size = 16.0
+	viewport.add_child(zones)
+	return zones
+
+
+func _walkable_in(map: RID, at: Vector3) -> bool:
+	var closest := NavigationServer3D.map_get_closest_point(map, at)
+	return Vector2(closest.x, closest.z).distance_to(Vector2(at.x, at.z)) < 0.05
+
+
+func test_ready_with_synchronous_iterations() -> void:
+	for regions_async in [false, true]:
+		var zones := _sync_world(regions_async)
+		var map := zones.get_world_3d().navigation_map
+		var ok := await _settled(zones, 300)
+		check(ok, "a synchronous map, regions async %s: ready" % regions_async)
+		check(not _walkable_in(map, Vector3(8, 0, 8)) and _walkable_in(map, Vector3(20, 0, 20)), "the paths see it at once")
+		var trunk := zones.get_parent().get_child(1)
+		trunk.queue_free()
+		check(await _settled(zones, 300), "a change in play: updated too")
+		check(_walkable_in(map, Vector3(8, 0, 8)), "where the prop stood is walkable at once")
+		ProjectSettings.set_setting("navigation/world/region_use_async_iterations", true)
+		zones.get_parent().queue_free()
+		await tree.process_frame

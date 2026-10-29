@@ -357,10 +357,12 @@ func _process(_delta: float) -> void:
 			for rid in _unsynced:
 				if NavigationServer3D.region_get_iteration_id(rid) == _unsynced[rid]:
 					return
-			# Every region rebuilt its piece; the map has to iterate once more to use them.
-			_map_iteration = NavigationServer3D.map_get_iteration_id(map)
-			return
-		if NavigationServer3D.map_get_iteration_id(map) <= _map_iteration:
+			# Every region rebuilt its piece. A synchronous map rebuilt with them in the same
+			# step; an asynchronous one has to iterate once more to use them.
+			if NavigationServer3D.map_get_use_async_iterations(map):
+				_map_iteration = NavigationServer3D.map_get_iteration_id(map)
+				return
+		elif NavigationServer3D.map_get_iteration_id(map) <= _map_iteration:
 			return
 		_unsynced.clear()
 		_map_iteration = -1
