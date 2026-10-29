@@ -8,6 +8,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | Case | Test |
 |---|---|
 | Play solo, no network | `--probe=solo` (all.sh) |
+| The minimal example (`examples/minimal_2d`, what the wizard writes) over the network: dedicated + a client that moves and scores | `minimal.sh`; that it stays the wizard's: `tests/test_examples.gd` |
 | LAN: host + client + late joiner | `arena.sh` listen **T** |
 | Dedicated + client + late joiner | `arena.sh` dedicated **T** |
 | Joining a dead address: fails cleanly and the menu carries on | `session.sh` deadjoin |

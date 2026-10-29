@@ -3,63 +3,312 @@
   "diagram_type": "workflow",
   "meta": {
     "title": "One feature, from idea to close",
+    "locale": "en",
     "quality_profile": "showcase",
+    "output": "index.html",
     "views": [
       {
         "id": "path",
         "label": "The work",
-        "focus": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "play", "classify", "close"],
+        "focus": [
+          "idea",
+          "interview",
+          "feature",
+          "lead",
+          "ok",
+          "dev",
+          "review",
+          "play",
+          "classify",
+          "close"
+        ],
         "note": "One OK on the tree. Then build, review, and play the scene named on F n."
+      },
+      {
+        "id": "small",
+        "label": "A small cut",
+        "focus": [
+          "feature",
+          "ok",
+          "dev"
+        ],
+        "note": "One component or one @export: the orchestrator draws the tree, no tech lead. The OK is the same."
       },
       {
         "id": "suite",
         "label": "What gets written",
-        "focus": ["feature", "lead", "dev", "play", "close"],
-        "note": "FEATURES names res://debug and the action. The developer builds that scene. The playtester writes the flow."
+        "focus": [
+          "feature",
+          "lead",
+          "dev",
+          "play",
+          "close"
+        ],
+        "note": "F n names res://debug and the action. The developer builds that scene. The playtester writes the flow."
       },
       {
         "id": "return",
         "label": "After the report",
-        "focus": ["classify", "dev", "review", "play", "lead"],
-        "note": "Broken criterion: developer. Cheating scene: reviewer. Cache: orchestrator. Tech lead only if the cut was wrong."
+        "focus": [
+          "classify",
+          "dev",
+          "review",
+          "play"
+        ],
+        "note": "Broken criterion: developer. Rigged scene: reviewer. The rest is on the After the report card."
       }
     ]
   },
   "lanes": [
-    { "id": "you", "label": "You" },
-    { "id": "orch", "label": "Orchestrator" },
-    { "id": "agents", "label": "Subagents" }
+    {
+      "id": "you",
+      "label": "You"
+    },
+    {
+      "id": "agents",
+      "label": "Subagents"
+    },
+    {
+      "id": "orch",
+      "label": "Orchestrator"
+    }
   ],
   "phases": [
-    { "id": "setup", "label": "Ask", "fromCol": 0, "toCol": 1 },
-    { "id": "plan", "label": "Plan", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
-    { "id": "build", "label": "Build and play", "fromCol": 4, "toCol": 5 }
+    {
+      "id": "setup",
+      "label": "Ask",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "plan",
+      "label": "Plan",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "build",
+      "label": "Build and play",
+      "fromCol": 4,
+      "toCol": 5
+    }
   ],
-  "mainPath": ["idea", "interview", "feature", "lead", "ok", "dev", "review", "play", "classify", "close"],
+  "mainPath": [
+    "idea",
+    "interview",
+    "feature",
+    "lead",
+    "ok",
+    "dev",
+    "review",
+    "play",
+    "classify",
+    "close"
+  ],
   "nodes": [
-    { "id": "idea", "lane": "you", "col": 0, "type": "external", "label": "Feature", "sublabel": "one slice", "width": 120 },
-    { "id": "ok", "lane": "you", "col": 3, "type": "security", "label": "One OK", "sublabel": "tree and scene", "width": 130 },
-    { "id": "interview", "lane": "orch", "col": 1, "type": "frontend", "label": "Interview", "sublabel": "architecture, MP, 2D/3D", "width": 160 },
-    { "id": "feature", "lane": "orch", "col": 2, "type": "backend", "label": "F n", "sublabel": "FEATURES.md", "width": 130 },
-    { "id": "classify", "lane": "orch", "col": 5, "type": "backend", "label": "Classify", "sublabel": "the report", "width": 130 },
-    { "id": "close", "lane": "you", "col": 5, "type": "database", "label": "Close", "sublabel": "F n up to date", "width": 130 },
-    { "id": "lead", "lane": "agents", "col": 2, "type": "backend", "label": "Tech lead", "sublabel": "plan + res://debug", "width": 150 },
-    { "id": "dev", "lane": "agents", "col": 3, "type": "backend", "label": "Developer", "sublabel": "product and debug", "width": 150 },
-    { "id": "review", "lane": "agents", "col": 4, "type": "backend", "label": "Reviewer", "sublabel": "one pass", "width": 130 },
-    { "id": "play", "lane": "agents", "col": 5, "type": "frontend", "label": "Playtester", "sublabel": "InputMap only", "width": 140 }
+    {
+      "id": "idea",
+      "lane": "you",
+      "col": 0,
+      "type": "external",
+      "label": "Feature",
+      "sublabel": "one slice"
+    },
+    {
+      "id": "ok",
+      "lane": "you",
+      "col": 3,
+      "type": "security",
+      "label": "One OK",
+      "sublabel": "tree [+] [~] [-]"
+    },
+    {
+      "id": "close",
+      "lane": "you",
+      "col": 5,
+      "type": "database",
+      "label": "Close",
+      "sublabel": "F n and memory",
+      "tag": "parse · gdlint · F6"
+    },
+    {
+      "id": "interview",
+      "lane": "orch",
+      "col": 1,
+      "type": "frontend",
+      "label": "Interview",
+      "sublabel": "stack, MP, 2D/3D, art"
+    },
+    {
+      "id": "feature",
+      "lane": "orch",
+      "col": 2,
+      "type": "backend",
+      "label": "F n",
+      "sublabel": "FEATURES.md"
+    },
+    {
+      "id": "classify",
+      "lane": "orch",
+      "col": 5,
+      "type": "backend",
+      "label": "Classify",
+      "sublabel": "the report"
+    },
+    {
+      "id": "lead",
+      "lane": "agents",
+      "col": 2,
+      "type": "backend",
+      "label": "Tech lead",
+      "sublabel": "plan + res://debug"
+    },
+    {
+      "id": "dev",
+      "lane": "agents",
+      "col": 3,
+      "type": "backend",
+      "label": "Developer",
+      "sublabel": "product, kits, debug"
+    },
+    {
+      "id": "review",
+      "lane": "agents",
+      "col": 4,
+      "type": "backend",
+      "label": "Reviewer",
+      "sublabel": "one pass"
+    },
+    {
+      "id": "play",
+      "lane": "agents",
+      "col": 5,
+      "type": "frontend",
+      "label": "Playtester",
+      "sublabel": "InputMap only"
+    }
   ],
   "edges": [
-    { "id": "e1", "from": "idea", "to": "interview" },
-    { "id": "e2", "from": "interview", "to": "feature", "label": "stack", "variant": "emphasis" },
-    { "id": "e3", "from": "feature", "to": "lead" },
-    { "id": "e4", "from": "lead", "to": "ok", "label": "tree", "variant": "security" },
-    { "id": "e5", "from": "ok", "to": "dev", "label": "approved", "variant": "emphasis" },
-    { "id": "e6", "from": "dev", "to": "review" },
-    { "id": "e7", "from": "review", "to": "play", "label": "F n scene", "variant": "emphasis" },
-    { "id": "e8", "from": "play", "to": "classify", "label": "report" },
-    { "id": "e9", "from": "classify", "to": "close", "label": "no product FAIL", "variant": "emphasis" },
-    { "id": "back-dev", "from": "classify", "to": "dev", "label": "criterion failed", "variant": "dashed", "role": "return" },
-    { "id": "back-review", "from": "classify", "to": "review", "label": "cheating scene", "variant": "dashed", "role": "return" },
-    { "id": "back-play", "from": "classify", "to": "play", "label": "import and retry", "variant": "dashed", "role": "return" }
+    {
+      "id": "e1",
+      "from": "idea",
+      "to": "interview"
+    },
+    {
+      "id": "e2",
+      "from": "interview",
+      "to": "feature",
+      "label": "stack",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e3",
+      "from": "feature",
+      "to": "lead"
+    },
+    {
+      "id": "e4",
+      "from": "lead",
+      "to": "ok",
+      "label": "tree",
+      "variant": "security"
+    },
+    {
+      "id": "e5",
+      "from": "ok",
+      "to": "dev",
+      "label": "approved",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e6",
+      "from": "dev",
+      "to": "review"
+    },
+    {
+      "id": "e7",
+      "from": "review",
+      "to": "play",
+      "label": "the F n scene",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e8",
+      "from": "play",
+      "to": "classify",
+      "label": "report"
+    },
+    {
+      "id": "e9",
+      "from": "classify",
+      "to": "close",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "right",
+      "route": "outside-right"
+    },
+    {
+      "id": "back-dev",
+      "from": "classify",
+      "to": "dev",
+      "label": "broken criterion",
+      "variant": "dashed",
+      "role": "return",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "route": "bottom-channel",
+      "labelSegment": 1
+    },
+    {
+      "id": "back-review",
+      "from": "classify",
+      "to": "review",
+      "label": "rigged scene",
+      "variant": "dashed",
+      "role": "return",
+      "fromSide": "left",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "The interview",
+      "items": [
+        "Clean or standard, which multiplayer, 2D or 3D",
+        "Art with the Aseprite or Blender MCP, and Material Maker, only with your OK",
+        "Like in X: the orchestrator researches it (web, decompiling) and writes the sources on F n"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "If you ask for them",
+      "items": [
+        "Tester: tests, if you ask or RULES requires them",
+        "Visual: a UI pass, with VISUAL.md",
+        "Playtester: the godot-studio-playtest module; without it, a manual checklist"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "After the report",
+      "items": [
+        "Broken criterion, or the PNG shows something else: developer, one fix",
+        "res://debug already shows the result: reviewer (the scene cheats)",
+        "Cache or a CLI that did not run: one --import and the playtester runs again",
+        "res://debug is missing (NEED_SETUP): the orchestrator finishes the plan",
+        "The cut or the scene was planned wrong: tech lead"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Done when",
+      "items": [
+        "The project parses headless",
+        "gdformat and gdlint pass, if the project uses them",
+        "The scene runs with F6 and F n is up to date"
+      ]
+    }
   ]
 }

@@ -14,7 +14,51 @@ There is no network, no game rule and no autoload, and PropKit depends on no oth
 
 Enable the **PropKit** plugin: it adds the editor tools ([In the editor](#in-the-editor)). The kit's nodes work without it too.
 
-Examples: `examples/forest_3d/forest_3d.tscn` (a forest, batches, a navmesh in 16 zones; click twice for a path, C chops, R gives a new forest) and `examples/grove_2d/grove_2d.tscn` (bushes around walls, a 2D navmesh; the same keys).
+Examples:
+
+- `examples/minimal_3d/minimal_3d.tscn`: the minimum, trees planted around a camp and drawn in batches (below, [Minimal example](#minimal-example)). Space gives another seed.
+- `examples/forest_3d/forest_3d.tscn`: a forest, batches, a navmesh in 16 zones. Click twice for a path, C chops, R gives a new forest.
+- `examples/grove_2d/grove_2d.tscn`: bushes around walls, a 2D navmesh; the same keys.
+
+## Minimal example
+
+`examples/minimal_3d/minimal_3d.tscn` (F6): pieces 1 and 2 and nothing else.
+
+```
+Minimal3D (minimal_3d.gd)
+├── Environment, Sun, Camera, Floor
+├── Camp (Marker3D)      # in the group camp: nothing is planted within 8 m
+├── Forest               # PropScatter3D: rules, variants = [tree.tscn], ground = PropFlatGround 60 × 60,
+│                        #   keep_out = [PropKeepOut {group = camp, radius = 8, soft = 0.5}]
+└── Batch                # PropBatch3D: props = [Forest]
+```
+
+A prop is any scene: `tree.tscn` is a `StaticBody3D` with a trunk (its collider, on layer 2 and in the group `prop_obstruction`, would cut a navmesh) and two meshes the batch draws.
+
+In a game you press **Scatter** in the editor and save: the trees stay as saved children, the batch builds itself (`build_on_ready`) and no code is needed. The example plants when it starts, so its scene stays small:
+
+```gdscript
+# minimal_3d.gd
+extends Node3D
+
+@onready var scatter: PropScatter3D = $Forest
+@onready var batch: PropBatch3D = $Batch
+
+
+func _ready() -> void:
+	if scatter.get_child_count() == 0:
+		scatter.scatter()
+	batch.rebuild_all()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_accept"):
+		scatter.rules.random_seed += 1  # another seed: another forest, always the same one for that seed
+		scatter.scatter()
+		batch.rebuild_all()
+```
+
+The navmesh in zones (piece 3) is in `forest_3d` and `grove_2d`.
 
 ## The ground plane
 
@@ -207,7 +251,9 @@ The result is `PROPKIT TESTS PASS (n)`. The tests cover:
 - **the zone grid**;
 - **the 3D and 2D zones**: zones that meet, props that block, ready and updated, freed, added and moved props followed, partial = full, `follow_props` off, MANUAL apply of changes in play while the kit's own bakes apply at once, joined changes, saved and stale bakes (props, settings or the game's fingerprint), merging, a seam after the ground went lower, a fixed height range, `can_reach` near the navmesh, the closest point on the plane and past islands, the 2D weld, synchronous navigation iterations;
 - **the batch**;
-- **both examples, end to end.**
+- **the three examples, end to end.**
+
+A test that stops on a script error, or never gets to check anything, fails.
 
 The editor tools have their own check, a real editor doing what a person does (Scatter, Clear, undo and redo, a hand edit undo keeps, Bake and the scene it reloads, the stale warning):
 
@@ -217,6 +263,17 @@ PROPKIT_EDITOR_CHECK=1 godot --headless --editor --path propkit_lab
 
 It prints `EDITOR CHECK PASS`.
 
+## Tips and recommendations
+
+- **Scatter in the editor and save.** Props are saved children: they are edited by hand and load with nothing to compute. Scattering again replaces every child of the scatter node, so your loose props go under another node.
+- **The same seed gives the same props**, on every machine: a networked map sends the seed (or the scene), not the props.
+- **Keep-outs by group.** Put your spawn points, buildings or roads in a group and add a `PropKeepOut`; the kit never knows the game's classes.
+- **Your own ground** is a `@tool` script that `extends PropGround` and answers from your terrain (`grove_2d/grove_ground.gd`).
+- **Props that cut the navmesh**: in the group `prop_obstruction` and on a layer the navmesh template does not parse; otherwise the bake pays for them twice (the inspector warns).
+- **Batches in 3D only.** Godot already batches sprites in 2D. After adding props from code, `batch.rebuild_all()`; after moving one within its square, `batch.refresh(prop)`.
+- **Wait for the navmesh** before asking for paths: `if not nav.is_ready(): await nav.updated`.
+- **Bake from CI:** `tools/bake_scene.tscn -- --scene=… --check` exits with 1 when a saved bake went stale.
+
 ## Not in the kit
 
 These are the game's:
@@ -225,4 +282,4 @@ These are the game's:
 - the transport, and when a change in play applies (MANUAL);
 - what else changed besides the props (`rebake`), and the ground's data.
 
-Grass is a separate kit, GrassKit, planned next.
+Grass is a separate kit, GrassKit.

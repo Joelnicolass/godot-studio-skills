@@ -78,7 +78,7 @@ Semantic actions in Project Settings → Input Map: `move_left`, `attack`, `paus
 - Gameplay one-shot (jump, attack): `_unhandled_input` (UI may already have consumed the event).
 - `_input` only to intercept (pause, remap).
 
-The input catcher calls `apply_*` / `submit_*`; it does not spawn or score.
+The input catcher calls `apply_*` (on a network, the actor's `MpInput` sends the actions and the server applies); it does not spawn or score.
 
 ## 5. Reuse
 

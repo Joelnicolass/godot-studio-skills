@@ -37,7 +37,7 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` rem
 [~] project.godot                      # RtsKit plugin; input actions (Tools > RtsKit: Add default input actions)
 ```
 
-Follow `addons/rts_kit/GUIDE.md` (sections 2–6). Start from `addons/rts_kit/examples/skirmish_3d` or `skirmish_2d`: copy the rig nodes, not the example's walker. In 2D, distances in pixels (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
+Follow `addons/rts_kit/GUIDE.md` (sections 2–6). Start from `addons/rts_kit/examples/minimal_2d` (the minimum), `skirmish_3d` or `skirmish_2d`: copy the rig nodes, not the example's walker (the minimal one's `soldier.gd` is the shape of a unit script). In 2D, distances in pixels (`spacing_base`, `max_spacing`, `retarget_range`, `same_type_radius`, `size`).
 
 ## 3. Implement
 

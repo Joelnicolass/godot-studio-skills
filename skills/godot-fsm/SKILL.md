@@ -21,6 +21,8 @@ Enable plugin **FsmKit**. Bounded request: `/add-state-machine`. No extra subage
 
 Composition: [godot-composition-first](../godot-composition-first/SKILL.md). 2D platformer (coyote, buffer): [godot-platformer-2d](../godot-platformer-2d/SKILL.md) — the motor is **another** child; states call it.
 
+Reference example: `addons/fsm_kit/examples/minimal_2d/` (F6). A thin actor with `Idle`, `Move` (`@export speed` on the state) and `Hurt` (the hit arrives as the payload; another hit while hurt is `apply_payload`), and a Label that follows `state_changed`. Copy the pattern, not the numbers.
+
 ## Tree
 
 ```
@@ -47,7 +49,7 @@ When overriding `enter` / `exit`, call `super.enter()` if you want the signals.
 
 | Yes | No |
 |-----|----|
-| `enter` / `exit`, read `actor.velocity`, call `PlatMotor.request_jump()` | HP, score, spawn, scene change |
+| `enter` / `exit`, read `actor.velocity`, feed a motor (`PlatMotor.request_jump()` / `release_jump()`) | HP, score, spawn, scene change |
 | `physics_update` for **this** verb | `match kind` for the whole actor |
 | `entered` / `exited` signals | Autoload `StateManager` |
 
@@ -59,7 +61,7 @@ Simulation (which state you enter) is **host-authoritative**. Guests interpolate
 
 If the state itself replicates (a value the host owns): a script that `extends FsmMachine` overrides `_request_transition` to write the request where the host decides and return `false`; the replicated value's setter calls `transition_to()`. A peer that joins mid-match: `autostart = false` and `start(<the state the network says>)`.
 
-Addon tests: `godot --headless --path <project> --script res://addons/fsm_kit/tests/fsm_test_runner.gd`. Upgrading from 0.1.0: `addons/fsm_kit/CHANGELOG.md` (breaking changes first).
+Addon tests: `godot --headless --path <project> --script res://addons/fsm_kit/tests/fsm_test_runner.gd` (they also play the example). Upgrading from 0.1.0: `addons/fsm_kit/CHANGELOG.md` (breaking changes first). Tips for a person: `addons/fsm_kit/README.md` › Tips and recommendations.
 
 ## Anti-patterns
 

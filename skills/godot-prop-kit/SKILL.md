@@ -43,7 +43,7 @@ Batch                    # PropBatch3D (props = [Forest])
 Nav                      # PropNavZones3D (navigation_mesh template, saved .res)
 ```
 
-Start from `addons/prop_kit/examples/forest_3d/forest_3d.tscn` or `grove_2d/grove_2d.tscn`.
+Start from `addons/prop_kit/examples/minimal_3d/minimal_3d.tscn` (the minimum: scatter on a `PropFlatGround` with a `PropKeepOut`, and a `PropBatch3D`), `forest_3d/forest_3d.tscn` (plus the navmesh in zones) or `grove_2d/grove_2d.tscn` (2D, a ground of its own).
 
 ## What belongs where
 

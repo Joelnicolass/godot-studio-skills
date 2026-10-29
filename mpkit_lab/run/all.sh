@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Every MpKit lab check in a row (mpkit_lab/CASES.md lists them): the kit's own tests, solo, the session cases, and
-# the relay's host rules, arena, rooms and private over ENet, WebSocket and the relay (rooms also over wss://), the
+# the minimal example over the network, the relay's host rules, arena, rooms and private over ENet, WebSocket and the relay (rooms also over wss://), the
 # relay's faults, a browser client over WebSocket and over the relay (Web export templates + a headless Chrome /
 # Chromium; without a browser those two say SKIP; BROWSER=none skips them), instances, the server image in Docker (SKIP without it), the wizard, and MpWorld + the
 # wizard in the real editor (headless).
 #   all.sh            the whole matrix (before a release candidate; about an hour with a shared queue)
-#   all.sh --quick    one of each over ENet: tests, solo, relay rules, arena (dedicated + lag), rooms (public), online (no browser),
+#   all.sh --quick    one of each over ENet: tests, solo, the minimal example, relay rules, arena (dedicated + lag), rooms (public), online (no browser),
 #                     private, wizard 2D (a few minutes, for every change)
 # Prints one line per check with its time, and MPKIT ALL PASS / MPKIT ALL FAIL: n (exit 0 / 1).
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -24,6 +24,7 @@ step() { # step <name> <command…>
 run_godot --headless --path "$LAB" --import > /dev/null 2>&1
 step tests run_godot --headless --path "$LAB" --script res://addons/mp_kit/tests/mp_test_runner.gd
 step solo run_godot --headless --path "$LAB" -- --probe=solo
+step minimal bash "$HERE/minimal.sh"
 step relay bash "$HERE/relay.sh"
 if [ "$QUICK" = 1 ]; then
   step "arena enet" env SCENARIOS="dedicated lag" bash "$HERE/arena.sh"

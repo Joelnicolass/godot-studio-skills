@@ -1,0 +1,136 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="PackedScene" path="res://addons/rts_kit/examples/minimal_2d/soldier.tscn" id="1_soldier"]
+[ext_resource type="Script" path="res://addons/rts_kit/camera/rts_camera_2d.gd" id="2_camera"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_command_input.gd" id="3_command"]
+[ext_resource type="Script" path="res://addons/rts_kit/selection/rts_selection.gd" id="4_selection"]
+[ext_resource type="Script" path="res://addons/rts_kit/orders/rts_orders.gd" id="5_orders"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_pointer.gd" id="6_pointer"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_command_state.gd" id="7_state"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_armed_command.gd" id="8_armed"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_order_input.gd" id="9_order_input"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_select_input.gd" id="10_select_input"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_group_keys.gd" id="11_group_keys"]
+[ext_resource type="Script" path="res://addons/rts_kit/input/rts_order_button.gd" id="12_button"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+bg_color = Color(0.4, 1, 0.5, 0.12)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 1, 0.5, 0.9)
+
+[node name="Minimal2D" type="Node2D"]
+editor_description = "RtsKit's minimal example: six soldiers (soldier.tscn: a body, an RtsUnit, a script that walks to the order's spot) and the command rig of GUIDE.md › 3, every socket wired in the inspector. Drag a box over the soldiers, right click the ground: they go in a line. World units are pixels here, so Orders and Selection have their distances in pixels."
+
+[node name="Units" type="Node2D" parent="."]
+
+[node name="Soldier1" parent="Units" instance=ExtResource("1_soldier")]
+position = Vector2(-90, 140)
+
+[node name="Soldier2" parent="Units" instance=ExtResource("1_soldier")]
+position = Vector2(-30, 140)
+
+[node name="Soldier3" parent="Units" instance=ExtResource("1_soldier")]
+position = Vector2(30, 140)
+
+[node name="Soldier4" parent="Units" instance=ExtResource("1_soldier")]
+position = Vector2(90, 140)
+
+[node name="Soldier5" parent="Units" instance=ExtResource("1_soldier")]
+position = Vector2(-60, 200)
+
+[node name="Soldier6" parent="Units" instance=ExtResource("1_soldier")]
+position = Vector2(60, 200)
+
+[node name="Camera" type="Camera2D" parent="." node_paths=PackedStringArray("edge_area")]
+script = ExtResource("2_camera")
+edge_area = NodePath("../Hud/View")
+bounds = Rect2(-800, -500, 1600, 1000)
+
+[node name="Command" type="Node" parent="." node_paths=PackedStringArray("selection", "orders", "pointer", "armed", "state", "order_input", "select_input", "group_keys", "order_button")]
+script = ExtResource("3_command")
+selection = NodePath("Selection")
+orders = NodePath("Orders")
+pointer = NodePath("Pointer")
+armed = NodePath("Armed")
+state = NodePath("State")
+order_input = NodePath("OrderInput")
+select_input = NodePath("SelectInput")
+group_keys = NodePath("GroupKeys")
+order_button = NodePath("OrderButton")
+
+[node name="Selection" type="Node" parent="Command" node_paths=PackedStringArray("box")]
+script = ExtResource("4_selection")
+box = NodePath("../../Hud/View/Box")
+same_type_radius = 600.0
+
+[node name="Orders" type="Node" parent="Command"]
+script = ExtResource("5_orders")
+spacing_base = 8.0
+max_spacing = 120.0
+retarget_range = 1200.0
+
+[node name="Pointer" type="Node" parent="Command" node_paths=PackedStringArray("camera")]
+script = ExtResource("6_pointer")
+dimension = 2
+camera = NodePath("../../Camera")
+ground_bounds_2d = Rect2(-800, -500, 1600, 1000)
+
+[node name="State" type="Node" parent="Command"]
+script = ExtResource("7_state")
+
+[node name="Armed" type="Node" parent="Command" node_paths=PackedStringArray("state")]
+script = ExtResource("8_armed")
+state = NodePath("../State")
+
+[node name="OrderInput" type="Node" parent="Command" node_paths=PackedStringArray("selection", "orders", "pointer", "armed", "state")]
+script = ExtResource("9_order_input")
+selection = NodePath("../Selection")
+orders = NodePath("../Orders")
+pointer = NodePath("../Pointer")
+armed = NodePath("../Armed")
+state = NodePath("../State")
+
+[node name="SelectInput" type="Node" parent="Command" node_paths=PackedStringArray("view", "selection", "pointer", "armed", "order_input")]
+script = ExtResource("10_select_input")
+view = NodePath("../../Hud/View")
+selection = NodePath("../Selection")
+pointer = NodePath("../Pointer")
+armed = NodePath("../Armed")
+order_input = NodePath("../OrderInput")
+
+[node name="GroupKeys" type="Node" parent="Command" node_paths=PackedStringArray("selection")]
+script = ExtResource("11_group_keys")
+selection = NodePath("../Selection")
+
+[node name="OrderButton" type="Node" parent="Command" node_paths=PackedStringArray("view", "order_input", "pointer")]
+script = ExtResource("12_button")
+view = NodePath("../../Hud/View")
+order_input = NodePath("../OrderInput")
+pointer = NodePath("../Pointer")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="View" type="Control" parent="Hud"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="Panel" parent="Hud/View"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+
+[node name="Help" type="Label" parent="Hud"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 900.0
+offset_bottom = 60.0
+mouse_filter = 2
+text = "Drag a box over the soldiers (or click one), then right click the ground: they go in a line.
+Ctrl/Cmd+1 keeps the selection as group 1; 1 brings it back. Arrows pan."

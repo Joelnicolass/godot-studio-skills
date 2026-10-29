@@ -3,7 +3,7 @@
 **Product type:** Godot game (demo / guide).  
 **Omitted (auditable):** responsive web, auth, SQL, REST, library semver, bundle size, web WCAG, SaaS infra.
 
-**Anchored in existing code:** `example/project.godot` (Godot 4.7, Jolt, mobile) and parent `addons/mp_kit` v0.6.0.
+**Anchored in existing code:** `example/project.godot` (Godot 4.7, Jolt, mobile) and parent `addons/mp_kit` (the version in its `plugin.cfg`, 0.18.3 today).
 
 ## 1. Stack
 
@@ -13,7 +13,7 @@
 | GDScript | Godot 4.7 | same |
 | 3D physics | Jolt Physics | `example/project.godot` |
 | Renderer | mobile | same |
-| MpKit | 0.6.0 | `addons/mp_kit/plugin.cfg` |
+| MpKit | 0.18.3 | `example/addons/mp_kit/plugin.cfg` (a copy of `addons/mp_kit`) |
 | Tests | no runner (PRD: F23 Won't); network checks: `debug/spawn_lab/run_lab.sh`, `agent/run_mp_playtest.sh` (AgentKit) | README → Network checks |
 
 Copy the addon: from the studio kit root, `./install.sh --addon-only example`. Do not fork kit files into `glue/` or `scenes/`.

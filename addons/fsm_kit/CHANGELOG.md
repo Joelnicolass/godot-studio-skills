@@ -1,5 +1,12 @@
 # FsmKit changelog
 
+## 0.2.1
+
+- Minimal example `examples/minimal_2d/`: an actor with `Idle`, `Move` and `Hurt` (payload and `apply_payload`), and a Label that follows `state_changed`. The tests play it with input.
+- The test runner fails a test that stops on a script error or made no check at all; it used to count it as a pass. Script errors are seen from Godot 4.5 on (with a `Logger`); on an older version only the checks count.
+
+Nothing to update in your project.
+
 ## 0.2.0
 
 From **0.1.0**, everything below. If your project has 0.1.0, check the four breaking changes first.

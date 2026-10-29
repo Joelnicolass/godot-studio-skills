@@ -1,0 +1,42 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_trunk"]
+height = 4.0
+radius = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.42, 0.28, 0.16, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wood"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.25
+bottom_radius = 0.38
+height = 4.0
+radial_segments = 8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_leaves"]
+albedo_color = Color(0.16, 0.42, 0.2, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_crown"]
+material = SubResource("StandardMaterial3D_leaves")
+top_radius = 0.0
+bottom_radius = 1.8
+height = 4.5
+radial_segments = 10
+
+[node name="Tree" type="StaticBody3D" groups=["prop_obstruction"]]
+editor_description = "A prop is any scene. This one's trunk stops bodies on layer 2 and, in the group prop_obstruction, would cut a PropNavZones3D navmesh. Its two meshes are what PropBatch3D draws in batches."
+collision_layer = 2
+collision_mask = 0
+
+[node name="Trunk" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("CylinderShape3D_trunk")
+
+[node name="Wood" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("CylinderMesh_wood")
+
+[node name="Crown" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("CylinderMesh_crown")

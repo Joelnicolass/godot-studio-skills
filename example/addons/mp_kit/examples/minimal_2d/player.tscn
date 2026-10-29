@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/mp_kit/examples/minimal_2d/player.gd" id="1_tci5j"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_actor.gd" id="2_xm08m"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_input.gd" id="3_dumu7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3mokw"]
+size = Vector2(32, 32)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ig7v"]
+properties/0/path = NodePath("MpActor:net_position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("MpActor:net_stamp")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("MpActor:net_teleports")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath("MpInput:acked_seq")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath("MpActor:owner_slot")
+properties/4/spawn = true
+properties/4/replication_mode = 0
+
+[node name="Player" type="CharacterBody2D" unique_id=359741025]
+motion_mode = 1
+script = ExtResource("1_tci5j")
+
+[node name="Visual" type="Polygon2D" parent="." unique_id=330365018]
+polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+
+[node name="Shape" type="CollisionShape2D" parent="." unique_id=1018623777]
+shape = SubResource("RectangleShape2D_3mokw")
+
+[node name="MpActor" type="Node" parent="." unique_id=1739208583]
+script = ExtResource("2_xm08m")
+sync_rotation = false
+sync_extra = PackedStringArray()
+predict = true
+
+[node name="MpSync" type="MultiplayerSynchronizer" parent="MpActor" unique_id=72136854]
+root_path = NodePath("../..")
+replication_config = SubResource("SceneReplicationConfig_2ig7v")
+
+[node name="MpInput" type="Node" parent="." unique_id=168178541]
+script = ExtResource("3_dumu7")
+actions = PackedStringArray("ui_left", "ui_right", "ui_up", "ui_down", "ui_accept")

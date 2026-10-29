@@ -1,0 +1,245 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "A kit in your game",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "kits.html",
+    "views": [
+      {
+        "id": "path",
+        "label": "The path",
+        "focus": [
+          "ask",
+          "skill",
+          "tree",
+          "ok",
+          "install",
+          "scene",
+          "check",
+          "play"
+        ],
+        "note": "One request, the kit's command, one OK on the tree. The addon is copied and your scene uses its nodes."
+      },
+      {
+        "id": "example",
+        "label": "The minimal example",
+        "focus": [
+          "skill",
+          "example",
+          "scene"
+        ],
+        "note": "Every kit ships the smallest integration that works. Your scene copies its pattern, not its numbers."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "you",
+      "label": "You"
+    },
+    {
+      "id": "orch",
+      "label": "Orchestrator"
+    },
+    {
+      "id": "kit",
+      "label": "The kit (addon)"
+    },
+    {
+      "id": "game",
+      "label": "Your game"
+    }
+  ],
+  "phases": [
+    {
+      "id": "ask",
+      "label": "Ask",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "plan",
+      "label": "Plan",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "build",
+      "label": "Integration",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "ask",
+    "skill",
+    "tree",
+    "ok",
+    "install",
+    "scene",
+    "check",
+    "play"
+  ],
+  "nodes": [
+    {
+      "id": "ask",
+      "lane": "you",
+      "col": 0,
+      "type": "external",
+      "label": "A request",
+      "sublabel": "grass, props, RTS, states"
+    },
+    {
+      "id": "ok",
+      "lane": "you",
+      "col": 3,
+      "type": "security",
+      "label": "One OK",
+      "sublabel": "tree [+] [~] [-]"
+    },
+    {
+      "id": "play",
+      "lane": "you",
+      "col": 5,
+      "type": "external",
+      "label": "You play it",
+      "sublabel": "F6 and the tips"
+    },
+    {
+      "id": "skill",
+      "lane": "orch",
+      "col": 1,
+      "type": "frontend",
+      "label": "Skill + command",
+      "sublabel": "/add-grass, /add-props…"
+    },
+    {
+      "id": "tree",
+      "lane": "orch",
+      "col": 2,
+      "type": "backend",
+      "label": "Tree",
+      "sublabel": "[+] addons/<kit>/ and your scenes"
+    },
+    {
+      "id": "example",
+      "lane": "kit",
+      "col": 2,
+      "type": "database",
+      "label": "Minimal example",
+      "sublabel": "examples/minimal_*"
+    },
+    {
+      "id": "install",
+      "lane": "kit",
+      "col": 4,
+      "type": "backend",
+      "label": "The addon",
+      "sublabel": "install.sh --addon, plugin"
+    },
+    {
+      "id": "scene",
+      "lane": "game",
+      "col": 4,
+      "type": "frontend",
+      "label": "Your scene",
+      "sublabel": "kit nodes + your script"
+    },
+    {
+      "id": "check",
+      "lane": "game",
+      "col": 5,
+      "type": "backend",
+      "label": "Check",
+      "sublabel": "parse, review, playtest"
+    }
+  ],
+  "edges": [
+    {
+      "id": "k1",
+      "from": "ask",
+      "to": "skill"
+    },
+    {
+      "id": "k2",
+      "from": "skill",
+      "to": "tree",
+      "label": "scopes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k3",
+      "from": "tree",
+      "to": "ok",
+      "label": "tree",
+      "variant": "security"
+    },
+    {
+      "id": "k4",
+      "from": "ok",
+      "to": "install",
+      "label": "approved",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k5",
+      "from": "install",
+      "to": "scene",
+      "label": "its nodes"
+    },
+    {
+      "id": "k6",
+      "from": "scene",
+      "to": "check"
+    },
+    {
+      "id": "k7",
+      "from": "check",
+      "to": "play",
+      "variant": "emphasis"
+    },
+    {
+      "id": "k8",
+      "from": "skill",
+      "to": "example",
+      "label": "start from",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "k9",
+      "from": "example",
+      "to": "scene",
+      "label": "the pattern",
+      "variant": "dashed",
+      "role": "branch"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Each kit and its minimal example",
+      "items": [
+        "MpKit: minimal_2d, what Setup game writes",
+        "FsmKit: minimal_2d, Idle, Move and Hurt",
+        "PlatKit: minimal_2d, no code",
+        "RtsKit: minimal_2d, six soldiers and the command rig",
+        "PropKit: minimal_3d, scatter around a camp, and batches",
+        "GrassKit: minimal_3d, a floor, a field and the ground shader"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Kit rules",
+      "items": [
+        "No kit depends on another: your script joins them",
+        "What the kit does not do stays in your game: rules, score, how a unit moves",
+        "Each kit's README explains the example's code and adds tips and recommendations",
+        "Each kit has tests that play its examples"
+      ]
+    }
+  ]
+}

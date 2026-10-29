@@ -14,6 +14,70 @@ It depends on no other kit. A multiplayer game connects it to MpKit (or any tran
 
 Enable the **RtsKit** plugin. Project > Tools > *RtsKit: Add default input actions* writes the default keys into the Input Map so you can rebind them there (without it, `RtsCommandInput` adds the missing ones at runtime).
 
+## Minimal example
+
+`examples/minimal_2d/minimal_2d.tscn` (F6): six soldiers and the command rig of [GUIDE.md › 3](GUIDE.md#3-the-command-rig), every socket wired in the inspector. Drag a box over the soldiers, right click the ground and they go in a line; Ctrl/Cmd+1 keeps the group and 1 brings it back.
+
+```
+Minimal2D
+├── Units/Soldier1…6     # soldier.tscn
+├── Camera               # RtsCamera2D
+├── Command              # RtsCommandInput: Selection, Orders, Pointer, State, Armed,
+│                        #   OrderInput, SelectInput, GroupKeys, OrderButton
+└── Hud/View/Box         # takes the world's clicks; the selection box
+```
+
+A unit is your scene with an `RtsUnit` child, and your script does what the kit does not: walk to its place and report.
+
+```
+Soldier (CharacterBody2D, soldier.gd)   # layer 2: the units' layer
+├── Shape, Body
+├── Ring                                # visible while selected
+└── RtsUnit                             # owner_slot = 1, kind = soldier, size = 34 (px)
+```
+
+```gdscript
+# soldier.gd
+extends CharacterBody2D
+
+## Pixels per second.
+@export var speed := 160.0
+## How close counts as there, in pixels.
+@export var arrive := 4.0
+
+var order: RtsUnitOrder
+
+@onready var unit: RtsUnit = $RtsUnit
+@onready var ring: CanvasItem = $Ring
+
+func _ready() -> void:
+	unit.order_started.connect(_on_order_started)
+	unit.order_ended.connect(_on_order_ended)
+	unit.selected_changed.connect(func(on: bool) -> void: ring.visible = on)
+
+func _on_order_started(next: RtsUnitOrder, _replaced: RtsUnitOrder) -> void:
+	order = next
+
+func _on_order_ended(old: RtsUnitOrder, _result: StringName) -> void:
+	if old == order:
+		order = null
+
+func _physics_process(delta: float) -> void:
+	if order == null:
+		return
+	# spot_2d() is this unit's place in the formation; it follows a guarded body that walks.
+	var to := order.spot_2d() - global_position
+	if to.length() <= arrive:
+		velocity = Vector2.ZERO
+		if order.type.ends_on_its_own:
+			unit.complete()  # the next queued order, if any, starts by itself
+		return
+	velocity = to.normalized() * minf(speed, to.length() / delta)
+	move_and_slide()
+```
+
+The kit's distances come in metres: in 2D, the example sets those of `Orders` and `Selection` in pixels.
+
 ## One ground for 2D and 3D
 
 The kit thinks in one space (`RtsSpace`): the ground is the XZ plane and Y is up, 3D world coordinates as they are. A 2D world point `(x, y)` is the kit point `(x, 0, y)`: seen from above, a 3D field and a 2D top-down map are the same picture, so one formation, one distance and one yaw serve both. Only the edges convert: `RtsSpace.from_2d` / `to_2d`, `RtsUnitOrder.spot_2d()`.
@@ -47,7 +111,7 @@ Game
     └── Cue                        # optional: rts_command_cue.tscn
 ```
 
-Every piece is a node with `@export` sockets; remove one and that command is gone, nothing else breaks. The two examples have the whole rig wired: `examples/skirmish_3d` (with the radial menu) and `examples/skirmish_2d` (no menu at all: a plain right click and the command panel).
+Every piece is a node with `@export` sockets; remove one and that command is gone, nothing else breaks. The examples have the rig wired: `examples/minimal_2d` (the minimum, above), `examples/skirmish_3d` (with the radial menu, the cursor and the pings) and `examples/skirmish_2d` (no menu at all: a plain right click and the command panel).
 
 ## The unit (RtsUnit)
 
@@ -116,7 +180,19 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 godot --headless --path rtskit_lab --script res://addons/rts_kit/tests/rts_test_runner.gd
 ```
 
-`RTSKIT TESTS PASS (n)`. They cover the formations' slots, who obeys, the slot match (greedy and by rows), retarget and retreat, the plain data of an order, the queue, the selection (click, kind, box in 2D and 3D with occlusion, limit, groups), the input on real colliders (pointer, context, armed cycle, box from mouse events, the radial menu, the command panel, the keys, modals), both cameras, and both examples played end to end. `rtskit_lab/` is a project of its own for them; `addons/rts_kit` there is a symlink.
+`RTSKIT TESTS PASS (n)`. They cover the formations' slots, who obeys, the slot match (greedy and by rows), retarget and retreat, the plain data of an order, the queue, the selection (click, kind, box in 2D and 3D with occlusion, limit, groups), the input on real colliders (pointer, context, armed cycle, box from mouse events, the radial menu, the command panel, the keys, modals), both cameras, and the three examples played end to end. A test that stops on a script error, or never gets to check anything, fails. `rtskit_lab/` is a project of its own for them; `addons/rts_kit` there is a symlink.
+
+## Tips and recommendations
+
+- **Copy the rig, do not build it.** Select `Command` and `Hud` in an example, copy them into your scene and fix the sockets that point at the camera and the ground.
+- **Layers:** the ground on 1 and the units on 2 (`RtsPointer.ground_mask`, `unit_mask`). A unit outside the units' layer cannot be picked with a click.
+- **`Hud/View` takes the world's clicks.** Anything of the HUD on top keeps its own; leave its mouse filter on *Stop*.
+- **In 2D distances are pixels:** `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius` and `RtsUnit.size`.
+- **Always report.** An order that ends by itself (`move`, `attack`) waits for your `complete()` or `fail(reason)`; if you never report, the queue never moves on.
+- **A dead unit** turns `selectable`, `orderable` and `targetable` off: it leaves every selection and group by itself.
+- **Per-unit rules** in a script that `extends RtsUnit` (`accepts`, `is_foe`), not in the input.
+- **An AI** calls `orders.apply(order, slot)` or `apply_units` with nodes; it goes through neither the input nor `request`.
+- **Keys:** Project ▸ Tools ▸ *RtsKit: Add default input actions* writes them to the Input Map so you can remap them.
 
 ## Not in this version
 

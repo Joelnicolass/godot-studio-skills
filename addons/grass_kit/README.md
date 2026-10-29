@@ -16,14 +16,17 @@ There is no network, no game rule and no autoload, and GrassKit depends on no ot
 
 Enable the **GrassKit** plugin. It brings the tools in the 3D view, and adds GrassKit's global shader uniforms to Project Settings (only the ones missing, also after an update). The nodes work without it.
 
-**Example:** `examples/grass_3d/grass_3d.tscn`. Hills of grass with:
+**Examples:**
+
+- `examples/minimal_3d/minimal_3d.tscn`: the minimum, a floor and a field (below, [Minimal example](#minimal-example)).
+- `examples/grass_3d/grass_3d.tscn`: hills of grass with:
 - a dirt path painted with the brushes, short grass along it, flower patches and a dry patch;
 - a walker trampling a path that stands up again behind it;
 - camps cleared by group, and a hand-placed clearing;
 - a mound too steep for grass;
 - a ground that meets the grass, near and far.
 
-Keys:
+`grass_3d` keys:
 - **1 2 3:** quality.
 - **L:** the next look (summer, autumn, flowers).
 - **T:** a storm rising or calming.
@@ -44,6 +47,58 @@ Keys:
 4. **Save the scene.** The painted maps are kept inside the ground's file, `<scene>_grass_ground.res`.
 
 To change the look, pick another `.tres` from `addons/grass_kit/looks/` (meadow, autumn, lush, steppe) or duplicate one and edit it. To change the cost, press **Low**, **Medium** or **High** in the quality's inspector and read the cost line under the buttons.
+
+## Minimal example
+
+`examples/minimal_3d/minimal_3d.tscn` (F6): a 100 × 100 m floor with a collider and a field of grass around the camera. Space changes the look.
+
+```
+Minimal3D (minimal_3d.gd)
+├── Environment, Sun, Camera
+├── Floor (StaticBody3D)
+│   ├── Shape            # BoxShape3D: the grass reads the ground from here
+│   └── Mesh             # its material uses floor.gdshader
+└── GrassField3D         # ground (default area), look = meadow.tres, quality (medium), wind
+```
+
+The script bakes the ground when the scene starts. A game does not need it: you press **Bake ground** in the editor, paint and save, and the ground comes baked in its file.
+
+```gdscript
+# minimal_3d.gd (the essentials)
+@onready var field: GrassField3D = $GrassField3D
+
+
+func _ready() -> void:
+	await get_tree().physics_frame  # a collider is in the physics space one frame after it enters
+	field.bake_ground()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_accept"):
+		field.look = LOOKS[(LOOKS.find(field.look) + 1) % LOOKS.size()]  # uniforms only: nothing is rebuilt
+```
+
+The floor meets the far grass without a seam because its shader includes `grass_ground.gdshaderinc`:
+
+```glsl
+// floor.gdshader
+shader_type spatial;
+
+#include "res://addons/grass_kit/field/grass_ground.gdshaderinc"
+
+uniform vec3 soil_color : source_color = vec3(0.33, 0.27, 0.18);
+
+varying vec3 world_position;
+
+void vertex() {
+	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	ALBEDO = grasskit_ground_color(soil_color, world_position.xz, 1.0);
+	ROUGHNESS = 0.95;
+}
+```
 
 ## Paint by hand
 
@@ -286,6 +341,17 @@ With a depth prepass (Forward+) every blade's vertex shader runs twice; a game w
 
 **Nothing is drawn headless or on a dedicated server.** `can_draw()` says so, and tests set `GrassField3D.draw_anywhere`.
 
+## Tips and recommendations
+
+- **Start in the editor.** Add the field, let it set itself up, press **Bake ground**, paint and save. Baking at start (like the minimal example) suits a ground the game generates; for a hand-made level, a ground baked in its file starts faster.
+- **The game's ground with `grass_ground.gdshaderinc`.** It is the most visible thing: without it, where the drawn grass ends (`radius` from the camera) shows an edge against the ground's own colour.
+- **The ground's area covers the floor.** No grass grows outside the area; **Fit area to the colliders** fits it to the scene's colliders.
+- **The cost is the quality.** `density` and `radius` are the first knobs; read the **cost** line in the inspector while you change them, and `field.stats` in the game. `cast_shadows` stays off.
+- **A look is a `.tres`.** Changing the look in the game is uniforms only; adding a kind of blade to a look adds one draw per cell where it grows.
+- **Tell it what the game changes.** A crater or a new building: `field.ground_changed(position, radius)` (only those cells). Burning or cutting grass: `ground.paint(...)` with a `GrassBrush`.
+- **Render layers.** What is not ground (units, camps) goes on a layer outside `ground.color_layers`, so **Bake ground colour** sees only the ground.
+- **One field per world.** GrassKit's shader globals are written by one field.
+
 ## Where the ideas come from
 
 Ghost of Tsushima's grass talk (Eric Wohllaib, GDC 2021) and write-ups of it shaped most of the rendering:
@@ -350,7 +416,10 @@ The result is `GRASSKIT TESTS PASS (n)`. The tests cover:
   - nothing headless;
 - **the ready-made looks**, a clearing's `changed`;
 - **no instance uniform** in the shaders;
-- **the example, end to end.**
+- **a ground painted in the game is freed** like any resource;
+- **both examples, end to end.**
+
+A test that stops on a script error, or never gets to check anything, fails.
 
 The editor tools have their own check in a real editor, used the way a person uses them:
 - **the grass and the ground:**

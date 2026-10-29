@@ -1,0 +1,32 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://addons/rts_kit/examples/minimal_2d/soldier.gd" id="1_soldier"]
+[ext_resource type="Script" path="res://addons/rts_kit/core/rts_unit.gd" id="2_unit"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 14.0
+
+[node name="Soldier" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 0
+motion_mode = 1
+script = ExtResource("1_soldier")
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.3, 0.55, 1, 1)
+polygon = PackedVector2Array(14, 0, 12.93, 5.36, 9.9, 9.9, 5.36, 12.93, 0, 14, -5.36, 12.93, -9.9, 9.9, -12.93, 5.36, -14, 0, -12.93, -5.36, -9.9, -9.9, -5.36, -12.93, 0, -14, 5.36, -12.93, 9.9, -9.9, 12.93, -5.36)
+
+[node name="Ring" type="Line2D" parent="."]
+visible = false
+points = PackedVector2Array(20, 0, 19.32, 5.18, 17.32, 10, 14.14, 14.14, 10, 17.32, 5.18, 19.32, 0, 20, -5.18, 19.32, -10, 17.32, -14.14, 14.14, -17.32, 10, -19.32, 5.18, -20, 0, -19.32, -5.18, -17.32, -10, -14.14, -14.14, -10, -17.32, -5.18, -19.32, 0, -20, 5.18, -19.32, 10, -17.32, 14.14, -14.14, 17.32, -10, 19.32, -5.18)
+closed = true
+width = 2.5
+default_color = Color(0.4, 1, 0.5, 1)
+
+[node name="RtsUnit" type="Node" parent="."]
+script = ExtResource("2_unit")
+kind = &"soldier"
+size = 34.0

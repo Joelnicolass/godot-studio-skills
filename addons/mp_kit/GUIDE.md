@@ -97,6 +97,8 @@ When you enable it:
 
 The shortest path. In two minutes you have a game that works solo, on LAN, dedicated and online.
 
+Want to see the result before running it? `examples/minimal_2d/` is what it writes with 2D, two players, ENet and no rooms or private server: open its `boot.tscn` and press F6.
+
 ### 4.1 Opening the dialog
 
 1. With the plugin on, go to **Project › Tools › MpKit: Setup game...**

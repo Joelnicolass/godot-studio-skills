@@ -8,7 +8,7 @@ Source: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and
 2. **Jump buffer** — the press is stored and spent on landing.
 3. **Apex** — hold jump → less gravity at the peak (more time to adjust the land).
 4. **Jump corner** — ceiling corner → slide in X so you don’t bonk.
-7. **Lift** — `get_platform_velocity()` is remembered for `lift_remember` s.
+7. **Lift** — `get_platform_velocity()` is remembered for `lift_remember` s. On a jump from the floor Godot already adds the platform's velocity (`platform_on_leave`); the motor adds the remembered one only in coyote time, so it is never added twice.
 
 Wall jump with `wall_extra_pixels` (the article: 2 px at 320×180 ≈ ¼ tile). Off by default.
 

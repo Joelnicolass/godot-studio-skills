@@ -1,5 +1,12 @@
 # RtsKit changelog
 
+## 0.1.1
+
+- **Minimal example** `examples/minimal_2d/`: six soldiers (`soldier.tscn`: a body, an `RtsUnit` and the GUIDE's unit script in 2D) and the command rig of GUIDE › 3. The tests play it with mouse events.
+- **Tests:** the runner fails a test that stops on a script error or made no check at all; it used to count it as a pass.
+
+Nothing to update in your project.
+
 ## 0.1.0
 
 First version: the command layer of an RTS, for 2D and 3D, with no network and no game rules.

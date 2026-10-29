@@ -2,7 +2,10 @@
 
 A multiplayer game without writing network code: nodes in the editor and a script like a single-player one. It works the same solo, on LAN (a player hosts) and with a dedicated server, over ENet (UDP) or WebSocket (TCP).
 
-The full example is in `examples/arena_2d/`: open `boot.tscn` and press F6.
+Two examples, each with its `boot.tscn` (open it and press F6):
+
+- `examples/minimal_2d/`: the minimum, exactly what the wizard below writes (2D, two players, ENet, no rooms). A menu, an empty world and a predicted player that moves with the arrows and scores with Enter. It is steps 2 to 6 of this page, done.
+- `examples/arena_2d/`: the full one, with shots, a bell anyone can ring, online rooms and a private match.
 
 **The shortest path**: with the plugin on, **Project › Tools › MpKit: Setup game...**. Pick a folder, 2D or 3D, players, transport and whether you want online rooms; the dialog lists the files it will create (`[+]`, and `[~]` if they exist: then it writes nothing) and builds `game.tres`, the boot, the world, a predicted player and the rooms. F5 and it plays solo, on LAN, dedicated or online. The steps below are the same by hand: one resource, two scene nodes and your player.
 
@@ -128,6 +131,17 @@ To test with a bad network, add `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=
 | Dedicated | `godot --headless --path . -- --dedicated` and the clients join `127.0.0.1` |
 | WebSocket | add `--transport=ws` to every process (a WS server only serves WS clients) |
 | Web | export with the Web preset (no threads). The export uses WebSocket (direct, or through the relay when the game says `relay`) and hides Host and the LAN list: a browser only joins. The server is a dedicated with `transport = ws`, or any server through the relay |
+
+## Tips and recommendations
+
+- **Start with the wizard.** *Setup game* leaves you a game that already plays solo, on LAN and dedicated; then you change the player. `examples/minimal_2d/` is what it writes.
+- **Rules on the server.** `if not net.is_authority(): return` before scoring, damaging or spawning anything. Playing solo, your PC is the server: the same code works in both cases.
+- **`mp_move` is movement only.** It can run several times in one tick while reconciling: sounds and effects behind `if not keys.is_replaying():`. With inertia or gravity, `velocity` in *Sync › Extra*.
+- **Save the player's scene** after touching the `MpActor`: the editor builds its `MpSync` and saves it. The `MpActor` goes in the actor's scene (`player.tscn`), not on an instance inside the world.
+- **No hand-written `@rpc`.** A one-off order from the owner: `net.to_server(&"x")` → `mp_sv_x()`. An effect everywhere: `net.to_all(&"x")` → `mp_all_x()`. A match number: `Mp.state()`.
+- **Animate from the kit's velocity:** `net.motion_velocity()` / `net.motion_speed()` (a Vector2 in 2D, a Vector3 in 3D) tell how what is shown moves on each machine; the pose drawn frame by frame does not.
+- **Test on a bad network from the start:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` on every process, and `Mp.net_quality()` to show the player how their connection is.
+- **Do not touch the kit.** No rules in `mp_kit.gd` and no fork: what your game does goes in your scenes.
 
 ## Beyond the basics
 

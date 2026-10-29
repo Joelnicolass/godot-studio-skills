@@ -18,13 +18,13 @@ If an item does not apply, write “N/A”. Do not skip it silently.
 
 Only if they chose **local / Wi-Fi** or **online**. If no MP: N/A. Online: dedicated, see [dedicated.md](../godot-mp-kit/dedicated.md).
 
-8. [ ] Local input distinguishes host vs guest (`rpc_id(1, …)`). `send_custom` tunnel only if `submit_*` / Resource is not enough.
-9. [ ] Client → server RPC: allowlist, `any_peer` + sender vs `MpKit.peer_id_for(slot)`. No `call_local` that duplicates damage/spawn.
-10. [ ] Simulation spawn: **host only** + `MultiplayerSpawner` **before** `add_child`.
-11. [ ] Transform: `MultiplayerSynchronizer` (or `MpAuthority.ensure_sync`).
-12. [ ] Collision / `queue_free` / points: server authority.
-13. [ ] Guest does not mutate lives/trackers.
-14. [ ] 1P: same code (`OfflineMultiplayerPeer`), **without** `host()`.
+8. [ ] The player's input: an `MpInput` child; the server reads `input.get_vector(...)` / `is_action_just_pressed(...)` (or `mp_move(keys, delta)` with prediction). A one-off order: `net.to_server(&"x", args)` → `mp_sv_x(args)`. `send_custom` tunnel only if those are not enough.
+9. [ ] Only the owner asks for its actor's `mp_sv_*` (`MpActor › Owner › callers`); validate what they ask inside. No hand-written `@rpc` unless the nodes do not cover the case (note why).
+10. [ ] Simulation spawn: **the server only**, with `MpSpawner.spawn_actor(scene, {...})` (the scene in *Extra Scenes*).
+11. [ ] What looks the same for everyone: ticked in `MpActor › Sync` (not a hand-built `MultiplayerSynchronizer`).
+12. [ ] Collision / `queue_free` / points: server authority (`net.is_authority()`).
+13. [ ] The client does not mutate lives or score: `Mp.state()` is written by the server.
+14. [ ] 1P: same code (`Mp.play_solo()`), **without** `host()`.
 15. [ ] 2P: actors are not duplicated. Rejoin: explicit decision. Dedicated: no pawn for the server (`local_slot() == 0`).
 16. [ ] The actor has no score RPC.
 
@@ -33,10 +33,9 @@ Only if they chose **local / Wi-Fi** or **online**. If no MP: N/A. Online: dedic
 ```
 1. InputMap (actions), not scancodes
 2. if not can_act(): return
-3. if networked and MpAuthority.should_send_command():
-      rpc_id(1, submit_action, payload)
-   else:
-      apply_action(payload)
+3. No network: the actor reads Input and applies.
+   With MpKit: the actor's MpInput sends the owner's actions; the server reads them
+   (input.is_action_just_pressed(...)) and applies. A one-off order: net.to_server(&"use", payload).
 ```
 
 The input node **does not** instantiate projectiles or add points. It only asks.

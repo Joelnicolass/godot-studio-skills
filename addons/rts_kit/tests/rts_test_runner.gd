@@ -11,6 +11,10 @@ const DIR := "res://addons/rts_kit/tests"
 
 func _initialize() -> void:
 	await process_frame
+	var errors: Object = null
+	if ClassDB.class_exists(&"Logger"):
+		errors = (load(DIR.path_join("rts_test_errors.gd")) as GDScript).new()
+		OS.add_logger(errors)
 	root.size = Vector2i(1280, 720)
 	var only := ""
 	for arg in OS.get_cmdline_user_args():
@@ -24,7 +28,7 @@ func _initialize() -> void:
 		if not only.is_empty() and file.get_basename() != only:
 			continue
 		var script := load(DIR.path_join(file)) as GDScript
-		if script == null:
+		if script == null or not script.can_instantiate():
 			print("FAIL %s does not load" % file)
 			fails += 1
 			continue
@@ -38,14 +42,23 @@ func _initialize() -> void:
 			holder.name = "Test"
 			root.add_child(holder)
 			suite.root = holder
+			if errors != null:
+				errors.call(&"take")
 			await suite.call(method)
 			count += 1
-			var ok: bool = suite.fails == 0
-			print("%s %s::%s (%d checks)" % ["PASS" if ok else "FAIL", file.get_basename(), method, suite.passes + suite.fails])
+			var checks: int = suite.passes + suite.fails
+			var script_errors: int = errors.call(&"take") if errors != null else 0
+			# A script error or no checks at all is a test that stopped early, not a pass.
+			var ok: bool = suite.fails == 0 and script_errors == 0 and checks > 0
+			var note := ", %d script errors" % script_errors if script_errors > 0 else ""
+			print("%s %s::%s (%d checks%s)" % ["PASS" if ok else "FAIL", file.get_basename(), method, checks, note])
 			if not ok:
 				fails += 1
 			holder.queue_free()
 			await process_frame
+	# Out before quitting: a script logger must not outlive the scripts while the engine shuts down.
+	if errors != null:
+		OS.remove_logger(errors)
 	if fails == 0:
 		print("RTSKIT TESTS PASS (%d)" % count)
 		quit(0)
