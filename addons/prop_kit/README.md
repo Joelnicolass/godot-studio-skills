@@ -148,9 +148,9 @@ In the game:
 
 | Query | Answer |
 |---|---|
-| `can_reach(a, b, max_distance)` | Can an agent walk from `a` to `b` at all. `max_distance`: points that far off the navmesh on the ground plane (a unit against a wall) count from the closest walkable point |
+| `can_reach(a, b, max_distance, min_area)` | Can an agent walk from `a` to `b` at all. `max_distance`: points that far off the navmesh on the ground plane (a unit against a wall) count from the closest walkable point; `min_area`: islands do not count |
 | `closest_point(point, max_distance, min_area)` | The nearest walkable point among those within `max_distance` of it on the ground plane, whatever the navmesh's height above the ground. With `min_area`, only on a component at least that large: the closest land, not the roof or the walled pocket a body is in |
-| `component_at(point, max_distance)`, `component_area[c]` | The connected component at a point, and each one's area on the ground plane (m² in 3D, px² in 2D) |
+| `component_at(point, max_distance, min_area)`, `component_area[c]` | The connected component at a point (with `min_area`, the closest land that large, not an island next to it), and each one's area on the ground plane (m² in 3D, px² in 2D) |
 | `polygon_at(point)` | The polygon under a point |
 | `stitched(template)` | The whole navmesh as one NavigationMesh |
 

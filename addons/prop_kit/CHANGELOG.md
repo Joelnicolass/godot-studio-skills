@@ -1,5 +1,9 @@
 # PropKit changelog
 
+## 0.2.2
+
+- **`component_at(point, max_distance, min_area)`** and **`can_reach(a, b, max_distance, min_area)`**: a component smaller than `min_area` (a roof, a walled pocket next to the point) does not count, and the closest land that large within `max_distance` does. The same idea as `closest_point`'s `min_area`, without calling both.
+
 ## 0.2.1
 
 - **Synchronous navigation iterations.** With `navigation/world/map_use_async_iterations` off (a lockstep game sets it so, for the same swap tick on every machine), `is_ready()` never came and `updated` never arrived: the map rebuilds with the regions in the same step, and the node waited for one more map iteration that never comes. Now a synchronous map counts as up to date once its regions have rebuilt. `tools/bake_scene.tscn` finishes in such projects too.
