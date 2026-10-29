@@ -18,6 +18,7 @@ SKILL_NAMES=(
   godot-platformer-2d
   godot-rts-kit
   godot-prop-kit
+  godot-grass-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -38,6 +39,7 @@ COMMAND_FILES=(
   add-platformer-2d.md
   add-rts-controls.md
   add-props.md
+  add-grass.md
   create-material.md
   research-feature.md
   manage-changes.md
