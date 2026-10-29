@@ -123,6 +123,8 @@ En el juego:
 
 **Cómo se tocan las zonas.** Cada zona se hornea con su propio filtro (`filter_baking_aabb` / `baking_rect`) y un borde (`zone_border`, 0 = según el radio del agente), con las líneas de zona ancladas en (0, 0). Las piezas se tocan justo en la línea de zona y el mapa de navegación las une sin edge connections (`use_edge_connections` queda apagado, y cada cambio sale barato). Un rehorneado parcial da las mismas piezas que hornear todo.
 
+**Altura (3D).** El horneado mide las alturas en celdas desde el piso de cada zona, así que el piso y el techo de cada zona caen en celdas enteras de `cell_height` desde 0. Una zona rehorneada después de que el suelo bajó o subió en el juego (un cráter, un montículo) se sigue tocando con las zonas que no se rehornearon. Salen de la geometría parseada, con un margen. `height_range` (piso, techo) les da a todas las zonas la misma caja, sea cual sea la geometría cuando una zona se rehornea; lo que queda afuera no se hornea.
+
 **Menos polígonos** (`merge_gap`):
 
 - Los props más cerca que el hueco se vuelven una sola obstrucción. Es un cierre: cada contorno crece gap / 2, los que se tocan se unen y después se achican de nuevo. Así un paso más ancho que el hueco queda abierto; ponelo por debajo del diámetro del agente.
@@ -136,7 +138,8 @@ En el juego:
 |---|---|
 | `component_at(point)`, `same_component(a, b)` | Si un agente puede llegar de acá hasta allá |
 | `polygon_at(point)` | El polígono bajo un punto |
-| `closest_point(point)` | El punto caminable más cercano |
+| `closest_point(point, max_distance, min_area)` | El punto caminable más cercano; con `min_area`, solo sobre una componente al menos así de grande: la tierra más cercana y no el techo o el bolsillo entre paredes donde está un cuerpo |
+| `component_area[c]` | El área de una componente en el plano del suelo (m² en 3D, px² en 2D) |
 | `stitched(template)` | Todo el navmesh como una sola NavigationMesh |
 
 En 2D, las mismas consultas terminan en `_2d`. Con `build_index` apagado no hay índice.
@@ -180,7 +183,7 @@ El resultado es `PROPKIT TESTS PASS (n)`. Los tests cubren:
 - **las herramientas de línea de comandos**: `scatter_scene` guarda los props, `bake_scene --check` da el mismo hash dos veces;
 - **cada forma de obstrucción**, el merge y el fingerprint;
 - **la grilla de zonas**;
-- **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, parcial = completo, props agregados, aplicar en MANUAL, pedidos que se juntan, horneados guardados y vencidos (por los props o por el fingerprint del juego), merge, componentes;
+- **las zonas 3D y 2D**: zonas que se tocan, props que bloquean, parcial = completo, props agregados, aplicar en MANUAL, pedidos que se juntan, horneados guardados y vencidos (por los props o por el fingerprint del juego), merge, componentes, una costura después de que el suelo bajó, un rango de altura fijo, islas que el punto más cercano saltea;
 - **los lotes**;
 - **los dos ejemplos, de punta a punta.**
 

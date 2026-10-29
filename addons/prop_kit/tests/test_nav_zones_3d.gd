@@ -236,3 +236,81 @@ func test_merging_lowers_the_polygon_count() -> void:
 	await _settled(merged)
 	check(merged.stats.obstructions < 36, "36 trunks become fewer obstructions (%d)" % merged.stats.obstructions)
 	check(merged.stats.polygons < apart, "fewer polygons: %d < %d" % [merged.stats.polygons, apart])
+
+
+## Under the floor from -1.0 down to `bottom`: lower ground for the parse, and no new walkable top.
+func _pit(at: Vector2, bottom: float) -> StaticBody3D:
+	var pit := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4.0, -1.0 - bottom, 4.0)
+	shape.shape = box
+	pit.add_child(shape)
+	pit.position = Vector3(at.x, (bottom - 1.0) * 0.5, at.y)
+	root.add_child(pit)
+	return pit
+
+
+func test_a_lower_ground_keeps_the_seams() -> void:
+	var zones := _world([])
+	await _settled(zones)
+	# The ground goes below its lowest point so far, by a fraction of a cell, in the last zone only.
+	_pit(Vector2(56, 24), -3.01)
+	zones.rebake([Rect2(54, 22, 4, 4)], true)
+	check(await _settled(zones), "the re-bake ends")
+	check(zones.stats.zones_baked == 1, "one zone (%s)" % zones.stats)
+	var index := zones.index
+	check(index.component_count == 1, "one floor across the seams (%d)" % index.component_count)
+	var path := NavigationServer3D.map_get_path(_map(), Vector3(2, 0, 2), Vector3(62, 0, 30), true)
+	check(path.size() > 1 and path[-1].distance_to(Vector3(62, 0, 30)) < 0.6, "a path still reaches the re-baked zone")
+	var partial: Array[PackedVector3Array] = []
+	for zone in zones.grid().zone_count():
+		partial.append((zones.region_of(zone).navigation_mesh as NavigationMesh).get_vertices())
+	zones.rebake_all(true)
+	await _settled(zones)
+	var same := true
+	for zone in zones.grid().zone_count():
+		same = same and partial[zone] == (zones.region_of(zone).navigation_mesh as NavigationMesh).get_vertices()
+	check(same, "every zone equals a full bake of the lower ground")
+
+
+func test_a_fixed_height_range() -> void:
+	var zones := _world([])
+	zones.height_range = Vector2(-50.1, 400.0)
+	check(await _settled(zones), "the bake ends")
+	var box := (zones.region_of(0).navigation_mesh as NavigationMesh).filter_baking_aabb
+	check(is_equal_approx(box.position.y, -50.25) and is_equal_approx(box.end.y, 400.0), "the range, out to whole cells (%s)" % box)
+	check(zones.index.component_count == 1, "one floor (%d)" % zones.index.component_count)
+
+
+func test_closest_point_can_skip_islands() -> void:
+	var zones := _world([])
+	# An 8 m building across a zone line. Its roof is an island, and so is its inside: the bake
+	# sees a collider's faces, so the floor within the walls is a pocket closed off by them.
+	var building := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(8.0, 8.0, 8.0)
+	shape.shape = box
+	building.add_child(shape)
+	building.position = Vector3(28, 4, 16)
+	root.add_child(building)
+	check(await _settled(zones), "the bake ends")
+	var index := zones.index
+	check(index.component_count == 3, "the floor, the roof and the inside (%d)" % index.component_count)
+	var roof := index.component_at(Vector3(28, 8, 16))
+	check(roof >= 0 and index.component_area[roof] < 64.0, "the roof is small (%s)" % index.component_area)
+	var largest := 0.0
+	for area in index.component_area:
+		largest = maxf(largest, area)
+	check(largest > 1500.0, "the floor is large (%s)" % index.component_area)
+	var footprint := Rect2(24, 12, 8, 8)
+	var above := Vector3(28, 9, 16)
+	check(index.closest_point(above).y > 7.0, "any component: the roof")
+	var land := index.closest_point(above, INF, 100.0)
+	check(land != Vector3.INF and land.y < 1.0 and not footprint.has_point(Vector2(land.x, land.z)), "at least 100 m²: the floor outside (%s)" % land)
+	check(index.closest_point(above, 2.0, 100.0) == Vector3.INF, "none within 2 m but the roof")
+	var inside := index.closest_point(Vector3(28, 1, 16))
+	check(footprint.has_point(Vector2(inside.x, inside.z)), "any component: the pocket inside")
+	var out := index.closest_point(Vector3(28, 1, 16), INF, 100.0)
+	check(not footprint.has_point(Vector2(out.x, out.z)), "at least 100 m²: out of it (%s)" % out)

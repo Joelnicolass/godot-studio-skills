@@ -29,12 +29,12 @@ Todo está en `addons/prop_kit/`. Los puntos del plano del suelo son `Vector2`: 
 
 | Clase | Qué |
 |---|---|
-| `PropNavZones3D` / `PropNavZones2D` (@tool) | `navigation_mesh` / `navigation_polygon`, `source_root`, `zone_size`, `zone_border`, `area`, `apply_mode` (AUTO / MANUAL), `build_index`, `navigation_layers`, `use_edge_connections`, `obstruction_group`, `obstruction_sides`, `merge_gap`, `carve`, `saved`, `rebake_when_stale`; «Bake» |
+| `PropNavZones3D` / `PropNavZones2D` (@tool) | `navigation_mesh` / `navigation_polygon`, `source_root`, `zone_size`, `zone_border`, `area`, `height_range` (3D: piso, techo; (0, 0) = según el parseo), `apply_mode` (AUTO / MANUAL), `build_index`, `navigation_layers`, `use_edge_connections`, `obstruction_group`, `obstruction_sides`, `merge_gap`, `carve`, `saved`, `rebake_when_stale`; «Bake» |
 | …métodos | `rebake(areas, reparse = true)`, `rebake_all(reparse = true)`, `apply()`, `is_done()`, `has_result()`, `is_synced()`, `region_of(zone)`, `grid()`, `to_saved()`, `save_bake(path)`, `bake_and_save()` (editor); `stats`, `index`, `extra_fingerprint: Callable() -> int` |
 | …señales | `bake_ready(zones)`, `applied(zones)`, `synced`, `stale` |
 | `PropObstructions` | `GROUP` (`prop_obstruction`), `nodes_under(root)`, `of_3d(node, sides)`, `of_2d(node, sides)`, `gather(nodes, is_3d, sides, within)`, `merged(list, gap)`, `add_3d` / `add_2d(source, list, carve)`, `fingerprint(list)`, `area_of(node, is_3d)`, `touches(rect, within)` |
 | `PropObstruction` | `outline`, `bottom`, `top`, `rect()` |
-| `PropNavIndex` | `polygon_at`, `component_at`, `same_component`, `closest_point` (y `_2d`), `stitched(like)`, `stitched_2d(like)`; `vertices`, `polygons`, `component_of`, `component_count`. `PropNavIndex.build(pieces, is_3d, weld)` |
+| `PropNavIndex` | `polygon_at`, `component_at`, `same_component`, `closest_point(point, max_distance = INF, min_area = 0)` (y `_2d`; `min_area` saltea islas), `stitched(like)`, `stitched_2d(like)`; `vertices`, `polygons`, `component_of`, `component_count`, `component_area`. `PropNavIndex.build(pieces, is_3d, weld)` |
 | `PropNavBake` | `zone_size`, `area`, `border`, `pieces`, `fingerprint`; `content_hash()` |
 | `PropNavStats` | `parse_ms`, `obstruct_ms`, `bake_ms`, `index_ms`, `zones_baked`, `zones_total`, `obstructions`, `polygons`, `components` |
 | `PropZoneGrid` | `size`, `first`, `count`; `zone_count()`, `all()`, `area()`, `cell_of(zone)`, `zone_rect(zone)`, `zone_at(point)`, `zones_touching(rect)` |

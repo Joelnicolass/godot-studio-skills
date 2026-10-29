@@ -97,3 +97,23 @@ func test_removing_a_prop_rebakes_its_zones() -> void:
 	check(zones.stats.zones_baked < 8, "only the zones it touched (%s)" % zones.stats)
 	check(_walkable(Vector2(128, 128)), "walkable where it stood")
 	check(not _walkable(Vector2(900, 400)), "the other prop still blocks")
+
+
+func test_closest_point_can_skip_a_small_side() -> void:
+	var zones := _world([])
+	# A wall near the right edge: the strip beyond it is a small component.
+	var body := StaticBody2D.new()
+	var shape := CollisionShape2D.new()
+	var box := RectangleShape2D.new()
+	box.size = Vector2(20.0, 600.0)
+	shape.shape = box
+	body.add_child(shape)
+	body.position = Vector2(900.0, 256.0)
+	root.add_child(body)
+	check(await _settled(zones), "the bake ends")
+	var index := zones.index
+	check(index.component_count == 2, "two components (%d)" % index.component_count)
+	var strip := index.component_at_2d(Vector2(980, 256))
+	check(strip >= 0 and index.component_area[strip] < 100000.0, "the strip is small (%s)" % index.component_area)
+	check(index.closest_point_2d(Vector2(905, 256)).x > 900.0, "any component: the strip beside it")
+	check(index.closest_point_2d(Vector2(905, 256), INF, 100000.0).x < 900.0, "at least 100000 px²: the field")

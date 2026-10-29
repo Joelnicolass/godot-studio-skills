@@ -1,5 +1,11 @@
 # Changelog de PropKit
 
+## 0.1.1
+
+- **Costuras que aguantan cuando el suelo cambia de altura (3D).** El piso y el techo del horneado de cada zona caen en celdas enteras de `cell_height` desde 0. Antes salían directo de los límites del parseo: una zona rehorneada después de que el suelo bajó de su punto más bajo medía sus alturas desde otro piso, y el mapa de navegación dejaba de unirla con las zonas vecinas. `height_range` (piso, techo) les da a todas las zonas la misma caja. Un horneado guardado con 0.1.0 puede tener el piso fuera de la grilla de celdas: volvé a apretar «Bake».
+- **Islas en el índice.** `PropNavIndex.component_area` (el área de cada componente en el plano del suelo) y `closest_point(point, max_distance, min_area)` (y `closest_point_2d`): la tierra más cercana, salteando un techo caminable o un bolsillo encerrado por paredes.
+- **Tests**: 58.
+
 ## 0.1.0
 
 - **Scatter** (`PropScatter3D`, `PropScatter2D`): props sobre cualquier suelo como hijos guardados y editables, desde el inspector («Scatter», «Clear»), desde código (`scatter()`), desde el menú Herramientas o headless (`tools/scatter_scene.gd`). Determinista. `PropScatterRules` compartibles: grupos según un ruido, un espacio que crece con la escala, tamaño del borde al corazón de un grupo, un tope que corta en los bordes, hundir e inclinar con la pendiente (3D).
