@@ -1,5 +1,10 @@
-; GrassKit lab: a tiny project that runs the kit's own example and tests, apart from any game.
-; addons/grass_kit is a symlink to the kit's own addons/grass_kit (one copy of the kit).
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -28,8 +33,25 @@ window/stretch/aspect="expand"
 
 enabled=PackedStringArray("res://addons/grass_kit/plugin.cfg", "res://addons/grasskit_editor_check/plugin.cfg")
 
+[layer_names]
+
+3d_physics/layer_1="ground"
+3d_physics/layer_2="units"
+
 [shader_globals]
 
+grasskit_area={
+"type": "vec4",
+"value": Vector4(-1000000, -1000000, 2000000, 2000000)
+}
+grasskit_density={
+"type": "sampler2D",
+"value": "res://addons/grass_kit/core/grass_full.tres"
+}
+grasskit_under={
+"type": "vec4",
+"value": Vector4(0, 0, 0.1, 0)
+}
 grasskit_wind={
 "type": "vec4",
 "value": Vector4(1, 0, 0, 55)
@@ -54,8 +76,3 @@ grasskit_grass={
 "type": "vec4",
 "value": Vector4(0.3, 0.45, 0.12, 0)
 }
-
-[layer_names]
-
-3d_physics/layer_1="ground"
-3d_physics/layer_2="units"

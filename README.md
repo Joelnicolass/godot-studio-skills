@@ -36,7 +36,7 @@ With the kit:
 | PlatKit             | `addons/plat_kit/`                                                             | 2D motor: coyote, buffer, apex, corner, lift. No levels or score.                                |
 | RtsKit              | `addons/rts_kit/`                                                              | RTS controls for 2D and 3D: units, selection and groups, typed orders in formations, command input (command panel and radial menu optional), RTS cameras. No network inside; no movement or combat. Start with `addons/rts_kit/GUIDE.md` (includes MpKit); tests in `rtskit_lab/`. |
 | PropKit             | `addons/prop_kit/`                                                             | Props for 2D and 3D: scatter over any ground as saved nodes (clusters, keep-outs, masks, variants), batch drawing (3D), and the navmesh baked in zones with props as cheap obstructions, re-baking only what changed on worker threads. No network inside; no prop behavior. Start with `addons/prop_kit/README.md`; tests in `propkit_lab/`. |
-| GrassKit            | `addons/grass_kit/`                                                            | Grass for 3D: blades drawn on the GPU around the camera in cells that move with it, tiers that thin with distance without popping, a ground read from the colliders (exact heights, normals, slope fade), clearings, trampling, a look that changes in play. No network inside. Start with `addons/grass_kit/README.md`; tests in `grasskit_lab/`. |
+| GrassKit            | `addons/grass_kit/`                                                            | Grass for 3D: blades drawn on the GPU around the camera in cells that move with it, painted by hand with brushes in the 3D view (where it grows, how tall, the ground's colour, flower patches), tiers that thin with distance without popping, a ground read from the colliders (exact heights, normals, slope fade), clearings, trampling, a look that changes in play. No network inside. Start with `addons/grass_kit/README.md`; tests in `grasskit_lab/`. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -90,7 +90,7 @@ Short path (default):
 4. `/add-platformer-2d` — coyote, jump buffer, apex, corner (PlatKit addon)
 5. `/add-rts-controls` — units, selection, groups, orders in formations, RTS camera (RtsKit addon)
 6. `/add-props` — scattered props, batch drawing, a navmesh baked in zones that they cut (PropKit addon)
-7. `/add-grass` — grass around the camera on the GPU, over the ground's colliders (GrassKit addon)
+7. `/add-grass` — grass around the camera on the GPU, over the ground's colliders, painted by hand in the 3D view (GrassKit addon)
 8. `/new-mp-feature` — MpKit actor scaffold only
 9. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
 10. `/research-feature` — understand a mechanic of a similar game (web research, and decompiling it when it can be opened) before implementing it

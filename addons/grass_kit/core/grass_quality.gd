@@ -11,6 +11,9 @@ extends Resource
 
 enum Level { LOW, MEDIUM, HIGH }
 
+## What a preset sets.
+const _PRESET_VALUES := [&"density", &"radius", &"near_radius", &"segments"]
+
 ## Blades per m² near the camera.
 @export_range(1.0, 400.0, 1.0, "or_greater") var density := 40.0:
 	set(value):
@@ -63,6 +66,19 @@ enum Level { LOW, MEDIUM, HIGH }
 		cast_shadows = value
 		emit_changed()
 
+@export_group("Presets")
+## Sets every value above to the low preset (weak GPUs), as one step of the editor's history.
+@export_tool_button("Low", "Remove") var low_button := _apply.bind(Level.LOW)
+@export_tool_button("Medium", "Node") var medium_button := _apply.bind(Level.MEDIUM)
+@export_tool_button("High", "Add") var high_button := _apply.bind(Level.HIGH)
+## What these settings instance: read it while tuning them.
+@export_custom(PROPERTY_HINT_MULTILINE_TEXT, "", PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY)
+var cost: String:
+	get:
+		return describe()
+	set(_value):
+		pass
+
 
 ## A ready-made quality: LOW for weak GPUs, MEDIUM, HIGH.
 static func preset(level: Level) -> GrassQuality:
@@ -84,6 +100,28 @@ static func preset(level: Level) -> GrassQuality:
 			out.near_radius = 16.0
 			out.segments = 8
 	return out
+
+
+## Takes `level`'s values (density, radius, near radius, segments). In the editor, one step of its
+## history.
+func apply_preset(level: Level) -> void:
+	_apply(level)
+
+
+func _apply(level: Level) -> void:
+	var preset := preset(level)
+	# Looked up by name: EditorInterface is not in an exported game.
+	var editor := Engine.get_singleton(&"EditorInterface") if Engine.is_editor_hint() else null
+	if editor == null:
+		for property in _PRESET_VALUES:
+			set(property, preset.get(property))
+		return
+	var history: Object = editor.call(&"get_editor_undo_redo")
+	history.call(&"create_action", "GrassQuality preset", UndoRedo.MERGE_DISABLE, self)
+	for property in _PRESET_VALUES:
+		history.call(&"add_do_property", self, property, preset.get(property))
+		history.call(&"add_undo_property", self, property, get(property))
+	history.call(&"commit_action")
 
 
 ## How far the ring's centre moves before the cells follow (m): a quarter of a cell. A cell takes

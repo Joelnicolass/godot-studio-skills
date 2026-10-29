@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://addons/grass_kit/examples/grass_3d/grass_3d.gd" id="1_main"]
 [ext_resource type="Script" path="res://addons/grass_kit/examples/grass_3d/grass_hills.gd" id="2_hills"]
 [ext_resource type="Script" path="res://addons/grass_kit/field/grass_field_3d.gd" id="3_field"]
-[ext_resource type="Script" path="res://addons/grass_kit/core/grass_ground.gd" id="4_ground"]
 [ext_resource type="Script" path="res://addons/grass_kit/core/grass_look.gd" id="5_look"]
 [ext_resource type="Script" path="res://addons/grass_kit/core/grass_quality.gd" id="6_quality"]
 [ext_resource type="Script" path="res://addons/grass_kit/core/grass_clearing.gd" id="7_clearing"]
@@ -11,19 +10,9 @@
 [ext_resource type="Script" path="res://addons/grass_kit/core/grass_wind.gd" id="9_wind"]
 [ext_resource type="Script" path="res://addons/grass_kit/core/grass_mesh.gd" id="10_mesh"]
 [ext_resource type="Resource" path="res://addons/grass_kit/examples/grass_3d/flower.tres" id="11_flower"]
-
-[sub_resource type="Resource" id="Resource_ground"]
-script = ExtResource("4_ground")
-area = Rect2(-80, -80, 160, 160)
-
-[sub_resource type="Resource" id="Resource_summer"]
-script = ExtResource("5_look")
-
-[sub_resource type="Resource" id="Resource_autumn"]
-script = ExtResource("5_look")
-base_color = Color(0.34, 0.24, 0.08, 1)
-tip_color = Color(0.8, 0.62, 0.24, 1)
-ground_color = Color(0.3, 0.26, 0.13, 1)
+[ext_resource type="Resource" path="res://addons/grass_kit/examples/grass_3d/grass_3d_grass_ground.res" id="12_ground"]
+[ext_resource type="Resource" path="res://addons/grass_kit/looks/meadow.tres" id="13_meadow"]
+[ext_resource type="Resource" path="res://addons/grass_kit/looks/autumn.tres" id="14_autumn"]
 
 [sub_resource type="Resource" id="Resource_blade"]
 script = ExtResource("10_mesh")
@@ -79,7 +68,7 @@ hills = NodePath("Hills")
 walker = NodePath("Walker")
 camera = NodePath("Camera")
 hud = NodePath("Hud/Info")
-autumn = SubResource("Resource_autumn")
+autumn = ExtResource("14_autumn")
 flowers = SubResource("Resource_flowers")
 
 [node name="Hills" type="StaticBody3D" parent="."]
@@ -87,12 +76,13 @@ script = ExtResource("2_hills")
 
 [node name="Field" type="Node3D" parent="."]
 script = ExtResource("3_field")
-ground = SubResource("Resource_ground")
-look = SubResource("Resource_summer")
+ground = ExtResource("12_ground")
+look = ExtResource("13_meadow")
 quality = SubResource("Resource_quality")
 wind = SubResource("Resource_wind")
 clearings = Array[ExtResource("7_clearing")]([SubResource("Resource_camps")])
 trample_group = &"units"
+trample_recover = 1.5
 
 [node name="Walker" type="MeshInstance3D" parent="." groups=["units"]]
 mesh = SubResource("CapsuleMesh_walker")
