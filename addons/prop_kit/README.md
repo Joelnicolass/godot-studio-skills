@@ -120,6 +120,8 @@ In the game:
 
 **How the zones meet.** Each zone bakes with its own filter (`filter_baking_aabb` / `baking_rect`) and a border (`zone_border`, 0 = from the agent radius), with the zone lines anchored at (0, 0). The pieces meet exactly on the zone lines and the navigation map joins them with no edge connections (`use_edge_connections` stays off, which keeps every swap cheap). A partial re-bake gives the same pieces as baking everything.
 
+**Height (3D).** The bake measures heights in cells from each zone's floor, so the floor and ceiling of every zone are whole cells of `cell_height` from 0. A zone re-baked after the ground went lower or higher in play (a crater, a mound) still meets the zones that did not re-bake. They come from the parsed geometry with a margin. `height_range` (floor, ceiling) gives every zone the same box instead, whatever the geometry is when a zone re-bakes; nothing outside it is baked.
+
 **Fewer polygons** (`merge_gap`):
 
 - Props closer than the gap become one obstruction. It is a closing: each outline grows by gap / 2, the touching ones join, and they shrink back. So a passage wider than the gap stays open; set it under the agent's diameter.
@@ -133,7 +135,8 @@ In the game:
 |---|---|
 | `component_at(point)`, `same_component(a, b)` | Can an agent get from here to there at all |
 | `polygon_at(point)` | The polygon under a point |
-| `closest_point(point)` | The closest walkable point |
+| `closest_point(point, max_distance, min_area)` | The closest walkable point; with `min_area`, only on a component at least that large, so the closest land and not the roof or the walled pocket a body is in |
+| `component_area[c]` | A component's area on the ground plane (m² in 3D, px² in 2D) |
 | `stitched(template)` | The whole navmesh as one NavigationMesh |
 
 In 2D, the same queries end in `_2d`. `build_index` off: no index.
@@ -177,7 +180,7 @@ The result is `PROPKIT TESTS PASS (n)`. The tests cover:
 - **the command-line tools**: `scatter_scene` saves the props, `bake_scene --check` gives the same hash twice;
 - **every obstruction shape**, merging, and the fingerprint;
 - **the zone grid**;
-- **the 3D and 2D zones**: zones that meet, props that block, partial = full, added props, MANUAL apply, joined requests, saved and stale bakes (props or the game's fingerprint), merging, components;
+- **the 3D and 2D zones**: zones that meet, props that block, partial = full, added props, MANUAL apply, joined requests, saved and stale bakes (props or the game's fingerprint), merging, components, a seam after the ground went lower, a fixed height range, islands skipped by the closest point;
 - **the batch**;
 - **both examples, end to end.**
 

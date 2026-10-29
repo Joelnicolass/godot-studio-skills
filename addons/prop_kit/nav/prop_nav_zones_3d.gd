@@ -38,6 +38,10 @@ enum Apply { AUTO, MANUAL }
 @export_range(0.0, 1000.0, 0.05, "or_greater", "suffix:m") var zone_border := 0.0
 ## The area the zones cover (x, z). Empty = the parsed geometry's bounds.
 @export var area := Rect2()
+## Floor (x) and ceiling (y) of every zone's bake, for a ground whose height changes in play (a
+## crater, a mound): the same box for every zone, whatever the geometry is when a zone re-bakes.
+## (0, 0) = the parsed geometry's, with a margin. Both are rounded out to the cell height.
+@export var height_range := Vector2.ZERO
 @export var apply_mode := Apply.AUTO
 ## Keep `index` (PropNavIndex) up to date with every bake.
 @export var build_index := true
@@ -210,6 +214,7 @@ func _configure() -> bool:
 	if _baker.template == null:
 		var under := source_root if source_root != null else get_parent()
 		_baker.configure(navigation_mesh, under, area, zone_size, zone_border)
+		_baker.height_range = height_range
 		_baker.group = obstruction_group
 		_baker.sides = obstruction_sides
 		_baker.merge_gap = merge_gap

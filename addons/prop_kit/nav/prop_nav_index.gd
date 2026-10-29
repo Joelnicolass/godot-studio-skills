@@ -5,11 +5,11 @@ extends RefCounted
 ## The walkable surface of a navmesh baked in zones, as one piece of data for the questions the
 ## navigation server does not answer: which polygons connect across the zones (the connected
 ## components: can an agent get from here to there at all), the polygon and component at a point,
-## the closest walkable point, and the whole navmesh stitched into one. Built from the zone pieces
-## on a worker thread (pure data: no nodes, no server), so it is ready the moment its pieces are
-## swapped in. Polygons connect where they share an edge, the way the navigation map joins the
-## pieces. Points are Vector3 in 3D; the `_2d` calls take and give the Vector2 points of a 2D
-## navmesh.
+## the closest walkable point (skipping islands, if asked), and the whole navmesh stitched into
+## one. Built from the zone pieces on a worker thread (pure data: no nodes, no server), so it is
+## ready the moment its pieces are swapped in. Polygons connect where they share an edge, the way
+## the navigation map joins the pieces. Points are Vector3 in 3D; the `_2d` calls take and give the
+## Vector2 points of a 2D navmesh.
 
 ## Every vertex, welded across zones: (x, y, z) in 3D, (x, 0, y) in 2D.
 var vertices := PackedVector3Array()
@@ -18,6 +18,9 @@ var polygons: Array[PackedInt32Array] = []
 ## The connected component of each polygon, numbered 0, 1, 2... by their first polygon.
 var component_of := PackedInt32Array()
 var component_count := 0
+## The ground-plane area of each component (world units squared): a small one is an island, such as
+## a walkable roof or a pocket closed off by walls.
+var component_area := PackedFloat32Array()
 
 var _is_3d := true
 var _cell := 1.0
@@ -89,8 +92,9 @@ func same_component(a: Vector3, b: Vector3) -> bool:
 	return ca >= 0 and ca == component_at(b)
 
 
-## The walkable point closest to `point` within `max_distance` (Vector3.INF = none).
-func closest_point(point: Vector3, max_distance := INF) -> Vector3:
+## The walkable point closest to `point` within `max_distance` (Vector3.INF = none), on a component
+## of at least `min_area` (0 = any): the closest land, not the roof a body stands on.
+func closest_point(point: Vector3, max_distance := INF, min_area := 0.0) -> Vector3:
 	if polygons.is_empty():
 		return Vector3.INF
 	var flat := Vector2(point.x, point.z)
@@ -107,6 +111,8 @@ func closest_point(point: Vector3, max_distance := INF) -> Vector3:
 				if seen.has(polygon):
 					continue
 				seen[polygon] = true
+				if component_area[component_of[polygon]] < min_area:
+					continue
 				var candidate := _closest_on(polygon, point)
 				var distance := candidate.distance_to(point)
 				if distance < best_distance:
@@ -127,8 +133,8 @@ func same_component_2d(a: Vector2, b: Vector2) -> bool:
 	return same_component(Vector3(a.x, 0.0, a.y), Vector3(b.x, 0.0, b.y))
 
 
-func closest_point_2d(point: Vector2, max_distance := INF) -> Vector2:
-	var at := closest_point(Vector3(point.x, 0.0, point.y), max_distance)
+func closest_point_2d(point: Vector2, max_distance := INF, min_area := 0.0) -> Vector2:
+	var at := closest_point(Vector3(point.x, 0.0, point.y), max_distance, min_area)
 	return Vector2.INF if at == Vector3.INF else Vector2(at.x, at.z)
 
 
@@ -178,7 +184,7 @@ static func _polygons_of(piece: Resource, is_3d: bool) -> Array[PackedInt32Array
 	return out
 
 
-## Components: polygons that share an edge are one.
+## Components: polygons that share an edge are one. Each one's area too.
 func _link() -> void:
 	var parent := PackedInt32Array()
 	parent.resize(polygons.size())
@@ -204,6 +210,10 @@ func _link() -> void:
 			numbers[top] = numbers.size()
 		component_of[i] = numbers[top]
 	component_count = numbers.size()
+	component_area.resize(component_count)
+	component_area.fill(0.0)
+	for i in polygons.size():
+		component_area[component_of[i]] += absf(_flat_area(i))
 
 
 ## Buckets of polygons by their bounds, for the point queries.
@@ -239,6 +249,17 @@ func _flat(polygon: int) -> PackedVector2Array:
 	for i in polygons[polygon]:
 		out.append(Vector2(vertices[i].x, vertices[i].z))
 	return out
+
+
+## Signed area of `polygon` on the ground plane (shoelace).
+func _flat_area(polygon: int) -> float:
+	var ids := polygons[polygon]
+	var twice := 0.0
+	for k in ids.size():
+		var a := vertices[ids[k]]
+		var b := vertices[ids[(k + 1) % ids.size()]]
+		twice += a.x * b.z - b.x * a.z
+	return twice * 0.5
 
 
 func _flat_rect(polygon: int) -> Rect2:
