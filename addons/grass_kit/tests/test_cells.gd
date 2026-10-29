@@ -84,6 +84,33 @@ func test_kinds_share_the_blades_by_weight() -> void:
 	check(rolled == GrassBlades.kinds_of(1000, PackedFloat32Array([90.0, 8.0, 2.0])), "the same roll every time")
 
 
+func test_a_kind_that_grows_by_a_map_adds_its_blades() -> void:
+	var quality := GrassQuality.new()
+	quality.density = 20.0
+	var blade := GrassMesh.new()
+	blade.weight = 90.0
+	var flower := GrassMesh.new()
+	flower.mesh = SphereMesh.new()
+	flower.weight = 30.0
+	flower.map_name = &"flower"
+	var kinds: Array[GrassMesh] = [blade, flower]
+	var meshes := GrassBlades.tier_meshes(quality, kinds)
+	var total := quality.blades_per_cell()
+	var blades := (meshes[0][0] as MultiMesh).instance_count
+	var flowers := (meshes[1][0] as MultiMesh).instance_count
+	check(blades == total, "the blades keep every point: painting flowers thins nothing (%d of %d)" % [blades, total])
+	check(absi(flowers - ceili(total / 3.0)) <= 1, "the flowers add their share where they grow (%d)" % flowers)
+	var last := quality.tiers - 1
+	var far := (meshes[1][last] as MultiMesh).instance_count
+	check(far <= ceili(quality.blades_in_tier(last) / 3.0) + 1 and far > 0, "a prefix of their own in every tier")
+	var buffer := (meshes[1][0] as MultiMesh).buffer
+	var first := Vector2(buffer[3], buffer[11])
+	var base := (meshes[0][0] as MultiMesh).buffer
+	check(not first.is_equal_approx(Vector2(base[3], base[11])), "on points of their own")
+	flower.map_name = &""
+	check(blade.build_key() != "" and flower.build_key() != GrassMesh.new().build_key(), "growing by a map or not changes what is built")
+
+
 func test_segments_halve_and_blend() -> void:
 	var quality := GrassQuality.new()
 	quality.segments = 3

@@ -299,7 +299,12 @@ void vertex() {
 			// Colour: the palette base to tip with the clump's shade, the ground at the base, the
 			// root in shade, gusts lighting the tips; far away, towards where the ground's colour
 			// and the grass's meet.
-			vec3 ground_rgb = has_ground_colors ? texture(ground_colors, uv).rgb : ground_color;
+			// The ground's colour map covers the look's ground colour by its alpha.
+			vec3 ground_rgb = ground_color;
+			if (has_ground_colors) {
+				vec4 painted = texture(ground_colors, uv);
+				ground_rgb = mix(ground_color, painted.rgb, painted.a);
+			}
 			float variation = 1.0 + (shade - 0.5) * 2.0 * color_variation;
 			vec3 color = mix(base_color, tip_color, t) * variation;
 			color = mix(color, ground_rgb, ground_tint * (1.0 - t));

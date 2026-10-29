@@ -12,9 +12,10 @@ extends Node3D
 ## meshes again. `enabled` off frees every cell (the wind still blows for the rest of the world;
 ## it moves with this node's processing, so it holds while the tree is paused, by default).
 ## Nothing is drawn headless or on a dedicated server. In the editor it follows the viewport's
-## camera with `editor_radius`. The ring centres on `center` when set (the unit an RTS camera
-## follows), else on where the camera looks, never farther ahead of it than it is high (so a camera
-## at eye height keeps grass at its feet). Keep this node at the origin.
+## camera with `editor_radius` (and the brush, while one paints). The ring centres on `center` when
+## set (the unit an RTS camera follows), else on where the camera looks, never farther ahead of it
+## than it is high (so a camera at eye height keeps grass at its feet). Keep this node at the
+## origin. Added to a scene in the editor, it sets itself up (`set_up()`): select it to paint.
 
 ## The cells are hidden headless and on dedicated servers; tests set this to draw anyway.
 static var draw_anywhere := false
@@ -26,6 +27,8 @@ const CUT_SHADER := preload("grass_cut.gdshader")
 const CLEARINGS_EVERY := 0.5
 const MAX_CLEARINGS := 48
 const MAX_STAMPS := 48
+## The look `set_up()` gives a field without one.
+const DEFAULT_LOOK := "res://addons/grass_kit/looks/meadow.tres"
 
 ## Where grass grows and how high the ground is (GrassGround).
 @export var ground: GrassGround:
@@ -33,9 +36,11 @@ const MAX_STAMPS := 48
 		_watch(ground, value, _on_ground_changed)
 		if ground != null and ground.area_changed.is_connected(_on_area_changed):
 			ground.area_changed.disconnect(_on_area_changed)
+			ground.map_painted.disconnect(_on_map_painted)
 		ground = value
 		if ground != null:
 			ground.area_changed.connect(_on_area_changed)
+			ground.map_painted.connect(_on_map_painted)
 		_reset()
 ## What the blades look like (GrassLook). Another one, or new values, take effect at once.
 @export var look: GrassLook:
@@ -73,6 +78,9 @@ const MAX_STAMPS := 48
 ## How wide each one tramples, unless the node says otherwise with a property or meta
 ## `grass_trample_radius` (a dragon and a gnome in the same group).
 @export_range(0.05, 10.0, 0.05, "suffix:m") var trample_radius := 0.7
+## How long the grass takes to stand up again behind a body (s): it leaves a trail that fades.
+## 0 = it stands up at once.
+@export_range(0.0, 10.0, 0.1, "or_greater", "suffix:s") var trample_recover := 0.0
 
 @export_group("Camera")
 ## The camera the grass follows. Empty = the viewport's current camera.
@@ -110,6 +118,11 @@ var _center := Vector2.INF
 var _ring_center := Vector2.INF
 var _clearings_timer := 0.0
 var _textures_dirty := true
+## Per trampling body: where it passed (x, z, radius, when).
+var _trails: Dictionary[int, PackedVector4Array] = {}
+var _trample_time := 0.0
+## Editor only: where the brush is, so the grass shows around what is painted.
+var _editor_focus := Vector2.INF
 
 
 func _get_configuration_warnings() -> PackedStringArray:
@@ -168,6 +181,71 @@ func bake_ground() -> int:
 	return ground.bake(get_world_3d().direct_space_state)
 
 
+## Gives the field what it lacks to draw, and nothing else: a ground fitted to the scene's colliders
+## (`colliders_area()`), the meadow look, medium quality and a wind. The editor does it when the
+## field is added to a scene. Returns the names of what it set.
+func set_up() -> PackedStringArray:
+	var made := PackedStringArray()
+	if ground == null:
+		var fresh := GrassGround.new()
+		ground = fresh
+		var fitted := colliders_area()
+		if fitted.has_area():
+			fresh.area = fitted
+		made.append("ground")
+	if look == null:
+		look = load(DEFAULT_LOOK) as GrassLook
+		made.append("look")
+	if quality == null:
+		quality = GrassQuality.preset(GrassQuality.Level.MEDIUM)
+		made.append("quality")
+	if wind == null:
+		wind = GrassWind.new()
+		made.append("wind")
+	return made
+
+
+## The rect on the ground plane (x, z) that the scene's colliders on `ground.collision_mask` cover
+## (with `meshes_too`, the scene's meshes when it has none), out to whole metres: what «Fit area»
+## sets. Empty when the scene has none.
+func colliders_area(meshes_too := true) -> Rect2:
+	if not is_inside_tree():
+		return Rect2()
+	var mask := ground.collision_mask if ground != null else 1
+	var colliders: Array[AABB] = []
+	var meshes: Array[AABB] = []
+	_boxes_under(_scene_root(), mask, colliders, meshes)
+	var boxes := colliders if not colliders.is_empty() or not meshes_too else meshes
+	if boxes.is_empty():
+		return Rect2()
+	var box := boxes[0]
+	for other in boxes:
+		box = box.merge(other)
+	var low := Vector2(floorf(box.position.x), floorf(box.position.z))
+	var high := Vector2(ceilf(box.end.x), ceilf(box.end.z))
+	return Rect2(low, high - low)
+
+
+## The world boxes of the colliders on `mask` and of the visible meshes under `node`, its internal
+## children too (a terrain node's own collider).
+func _boxes_under(node: Node, mask: int, colliders: Array[AABB], meshes: Array[AABB]) -> void:
+	if node == self:
+		return
+	var shape := node as CollisionShape3D
+	if shape != null and shape.shape != null and not shape.disabled:
+		var body := shape.get_parent() as CollisionObject3D
+		if body != null and body.collision_layer & mask:
+			colliders.append(shape.global_transform * shape.shape.get_debug_mesh().get_aabb())
+	var csg := node as CSGShape3D
+	if csg != null and csg.use_collision and csg.is_root_shape() and csg.collision_layer & mask:
+		colliders.append(csg.global_transform * csg.get_aabb())
+	var mesh := node as MeshInstance3D
+	if mesh != null and mesh.mesh != null and mesh.is_visible_in_tree():
+		meshes.append(mesh.global_transform * mesh.get_aabb())
+	for child in node.get_children(true):
+		_boxes_under(child, mask, colliders, meshes)
+
+
 ## Reads the clearings' nodes now instead of within half a second.
 func refresh_clearings() -> void:
 	_clearings_timer = CLEARINGS_EVERY
@@ -183,7 +261,8 @@ func _process(delta: float) -> void:
 		return
 	if _textures_dirty:
 		_apply_ground()
-	_center = _focus(view)
+	var painting := Engine.is_editor_hint() and _editor_focus != Vector2.INF
+	_center = _editor_focus if painting else _focus(view)
 	_set_all(&"field_center", _center)
 	_write_meeting()
 	if _ring_center == Vector2.INF or _ring_center.distance_to(_center) > _quality.ring_margin():
@@ -192,7 +271,7 @@ func _process(delta: float) -> void:
 	if _clearings_timer >= CLEARINGS_EVERY:
 		_clearings_timer = 0.0
 		_apply_clearings()
-	_apply_stamps()
+	_apply_stamps(delta)
 	_count(view)
 
 
@@ -252,6 +331,7 @@ func _write_meeting() -> void:
 	var grass := look.average_color()
 	var colour := Vector4(grass.r, grass.g, grass.b, look.far_grass)
 	RenderingServer.global_shader_parameter_set(&"grasskit_grass", colour)
+	RenderingServer.global_shader_parameter_set(&"grasskit_under", look.ground_under())
 
 
 func _free_cells() -> void:
@@ -294,7 +374,7 @@ func _apply_look() -> void:
 		material.set_shader_parameter(&"bend_from_color", kind.bend_from_color)
 		material.set_shader_parameter(&"palette", kind.palette)
 		material.set_shader_parameter(&"tint", kind.tint)
-		material.set_shader_parameter(&"mask_map", kind.mask_texture)
+		material.set_shader_parameter(&"mask_map", _mask_of(kind))
 		material.set_shader_parameter(&"albedo_map", kind.albedo_texture)
 		material.set_shader_parameter(&"has_albedo", kind.albedo_texture != null)
 		material.set_shader_parameter(&"normal_map", kind.normal_texture)
@@ -318,6 +398,49 @@ func _apply_ground() -> void:
 	_set_all(&"has_ground_colors", ground.color_texture != null)
 	var area := ground.area
 	_set_all(&"ground_area", Vector4(area.position.x, area.position.y, area.size.x, area.size.y))
+	for index in mini(_kinds.size(), _materials.size()):
+		_materials[index].set_shader_parameter(&"mask_map", _mask_of(_kinds[index]))
+	_show_all_kinds()
+	# Where grass grows, for the game's ground (grass_ground.gdshaderinc).
+	var density: Texture2D = ground.density_texture
+	if density == null:
+		density = load(GrassGlobals.FULL_PATH)
+	RenderingServer.global_shader_parameter_set(&"grasskit_density", density)
+	RenderingServer.global_shader_parameter_set(
+		&"grasskit_area", Vector4(area.position.x, area.position.y, area.size.x, area.size.y)
+	)
+
+
+## Each kind of a cell drawn only where it can grow: none where the density map is empty, a kind
+## that grows by a map only where it is painted. A painted-out area costs no draws.
+func _show_kinds(key: Vector2i, cell: Node3D) -> void:
+	# A blade's root may stray a little past its cell.
+	var rect := GrassCells.rect_of(key, _quality.cell_size).grow(1.0)
+	var none := ground.map_empty_in(GrassGround.DENSITY, rect)
+	for index in mini(cell.get_child_count(), _kinds.size()):
+		var kind := _kinds[index]
+		var shown := not none
+		if shown and kind.map_name != &"" and ground.kind_maps.has(kind.map_name):
+			shown = not ground.map_empty_in(kind.map_name, rect)
+		(cell.get_child(index) as Node3D).visible = shown
+
+
+func _show_all_kinds() -> void:
+	if ground == null or _quality == null:
+		return
+	for key in _cells:
+		_show_kinds(key, _cells[key])
+
+
+func _on_map_painted(_map: StringName) -> void:
+	_show_all_kinds()
+
+
+## Where a kind grows: the ground's map by its name, else its own mask (null = everywhere).
+func _mask_of(kind: GrassMesh) -> Texture2D:
+	if ground != null and kind.map_name != &"" and ground.kind_maps.has(kind.map_name):
+		return ground.kind_maps[kind.map_name]
+	return kind.mask_texture
 
 
 ## Where the ring goes: `center` if set, else where the camera looks on the ground, but never
@@ -366,6 +489,7 @@ func _update_ring(center: Vector2) -> void:
 			for kind in cell.get_children():
 				(kind as MultiMeshInstance3D).custom_aabb = box
 			cell.visible = true
+			_show_kinds(key, cell)
 		if _tiers.get(key, -1) != tier:
 			for index in _kinds.size():
 				(cell.get_child(index) as MultiMeshInstance3D).multimesh = _tier_meshes[index][tier]
@@ -426,28 +550,69 @@ func _apply_clearings() -> void:
 	_set_all(&"clearings", found)
 
 
-## The trampling nodes nearest the field's centre, within its radius.
-func _apply_stamps() -> void:
+## The trampling nodes nearest the field's centre, within its radius, and with `trample_recover`
+## the trails behind them, fading (the bodies first, then the freshest of their trails).
+func _apply_stamps(delta: float) -> void:
 	if trample_group == &"":
+		_trails.clear()
 		_set_all(&"stamp_count", 0)
 		return
-	var stamps := PackedVector4Array()
+	_trample_time += delta
+	var bodies := PackedVector4Array()
+	var seen: Dictionary[int, bool] = {}
 	for node in get_tree().get_nodes_in_group(trample_group):
-		if node is Node3D:
-			var at := (node as Node3D).global_position
-			if Vector2(at.x, at.z).distance_to(_center) <= _quality.radius:
-				stamps.append(Vector4(at.x, at.z, _trample_radius_of(node), 1.0))
-	if stamps.size() > MAX_STAMPS:
-		var by_distance := Array(stamps)
-		by_distance.sort_custom(
-			func(a: Vector4, b: Vector4) -> bool:
-				var near_a := _center.distance_squared_to(Vector2(a.x, a.y))
-				return near_a < _center.distance_squared_to(Vector2(b.x, b.y))
-		)
-		stamps = PackedVector4Array(by_distance.slice(0, MAX_STAMPS))
+		if not node is Node3D:
+			continue
+		var at := (node as Node3D).global_position
+		var radius := _trample_radius_of(node)
+		if Vector2(at.x, at.z).distance_to(_center) <= _quality.radius:
+			bodies.append(Vector4(at.x, at.z, radius, 1.0))
+		if trample_recover > 0.0:
+			var id := node.get_instance_id()
+			seen[id] = true
+			var trail: PackedVector4Array = _trails.get(id, PackedVector4Array())
+			var last := trail[trail.size() - 1] if not trail.is_empty() else Vector4.INF
+			if Vector2(at.x, at.z).distance_to(Vector2(last.x, last.y)) > radius * 0.75:
+				trail.append(Vector4(at.x, at.z, radius, _trample_time))
+			else:
+				# Standing still: the grass under it starts recovering only once it leaves.
+				trail[trail.size() - 1] = Vector4(last.x, last.y, radius, _trample_time)
+			_trails[id] = trail
+	var stamps := _nearest(bodies, MAX_STAMPS)
+	var faded := PackedVector4Array()
+	for id in _trails.keys():
+		var trail := _trails[id]
+		var kept := PackedVector4Array()
+		for point in trail:
+			var age := _trample_time - point.w
+			if age < trample_recover:
+				kept.append(point)
+				if Vector2(point.x, point.y).distance_to(_center) <= _quality.radius:
+					faded.append(Vector4(point.x, point.y, point.z, 1.0 - age / trample_recover))
+		if kept.is_empty() and not seen.has(id):
+			_trails.erase(id)
+		else:
+			_trails[id] = kept
+	if not faded.is_empty() and stamps.size() < MAX_STAMPS:
+		var freshest := Array(faded)
+		freshest.sort_custom(func(a: Vector4, b: Vector4) -> bool: return a.w > b.w)
+		stamps.append_array(PackedVector4Array(freshest.slice(0, MAX_STAMPS - stamps.size())))
 	_set_all(&"stamp_count", stamps.size())
 	stamps.resize(MAX_STAMPS)
 	_set_all(&"stamps", stamps)
+
+
+## The `count` stamps nearest the field's centre.
+func _nearest(stamps: PackedVector4Array, count: int) -> PackedVector4Array:
+	if stamps.size() <= count:
+		return stamps
+	var by_distance := Array(stamps)
+	by_distance.sort_custom(
+		func(a: Vector4, b: Vector4) -> bool:
+			var near_a := _center.distance_squared_to(Vector2(a.x, a.y))
+			return near_a < _center.distance_squared_to(Vector2(b.x, b.y))
+	)
+	return PackedVector4Array(by_distance.slice(0, count))
 
 
 ## The node's own `grass_trample_radius` (property, then meta), else `trample_radius`.
@@ -470,7 +635,10 @@ func _count(view: Camera3D) -> void:
 		if seen:
 			counted.cells_in_view += 1
 		for index in cell.get_child_count():
-			var blades := (cell.get_child(index) as MultiMeshInstance3D).multimesh.instance_count
+			var kind := cell.get_child(index) as MultiMeshInstance3D
+			if not kind.visible:
+				continue
+			var blades := kind.multimesh.instance_count
 			counted.blades += blades
 			if seen:
 				counted.blades_in_view += blades
@@ -495,7 +663,7 @@ static func _in_view(box: AABB, planes: Array[Plane]) -> bool:
 func _camera() -> Camera3D:
 	if Engine.is_editor_hint():
 		# Looked up by name: EditorInterface is not in an exported game.
-		var editor := Engine.get_singleton(&"EditorInterface")
+		var editor := Engine.get_singleton(&"EditorInterface") if Engine.is_editor_hint() else null
 		if editor == null:
 			return null
 		var viewport: SubViewport = editor.call(&"get_editor_viewport_3d", 0)
@@ -523,31 +691,75 @@ func _on_area_changed(rect: Rect2) -> void:
 					(kind as MultiMeshInstance3D).custom_aabb = box
 
 
+## «Bake ground» in the editor: one step of its history (Ctrl+Z puts the old ground back), with the
+## ground saved next to the scene.
 func _bake_in_editor() -> void:
 	if ground == null:
 		push_error("%s: set ground first" % name)
 		return
+	var path := _keep_ground_in_file()
+	if path.is_empty():
+		return
+	var before := ground.data.duplicate() as Image if ground.data != null else null
 	var found := bake_ground()
-	var scene := get_tree().edited_scene_root if Engine.is_editor_hint() else null
-	var path := ground.resource_path
-	if scene != null and (path.is_empty() or path.contains("::")):
-		if scene.scene_file_path.is_empty():
-			push_error("%s: save the scene first; the ground goes next to it" % name)
-			return
-		path = scene.scene_file_path.get_basename() + "_grass_ground.res"
-	if not path.is_empty() and not path.contains("::"):
-		var err := ResourceSaver.save(ground, path)
-		if err != OK:
-			push_error("%s: could not save %s (%s)" % [name, path, error_string(err)])
-			return
-		ground.take_over_path(path)
-	var editor := Engine.get_singleton(&"EditorInterface")
+	var after := ground.data.duplicate() as Image if ground.data != null else null
+	# Looked up by name: EditorInterface is not in an exported game.
+	var editor := Engine.get_singleton(&"EditorInterface") if Engine.is_editor_hint() else null
 	if editor != null:
-		editor.call(&"mark_scene_as_unsaved")
+		var history: Object = editor.call(&"get_editor_undo_redo")
+		history.call(&"create_action", "Bake ground of %s" % name, UndoRedo.MERGE_DISABLE, self)
+		history.call(&"add_do_method", ground, &"restore_data", after)
+		history.call(&"add_undo_method", ground, &"restore_data", before)
+		history.call(&"add_do_method", self, &"update_configuration_warnings")
+		history.call(&"add_undo_method", self, &"update_configuration_warnings")
+		history.call(&"commit_action", false)
+	ground.flush_maps()
+	ResourceSaver.save(ground, path, ResourceSaver.FLAG_COMPRESS)
+	ground._maps_edited = false
+	GrassGround._edited.erase(ground)
 	update_configuration_warnings()
 	print("%s: ground baked, %d of %d texels hit (%s)" % [
 		name, found, ground.texture_size().x * ground.texture_size().y, path
 	])
+
+
+## Editor only: the ground's own file, saving it next to the scene first when it lives inside the
+## scene (`<scene>_grass_ground.res`): baked heights and painted maps are kept there, not in the
+## scene's text. Empty (and an error) when the scene has never been saved.
+func _keep_ground_in_file() -> String:
+	var path := ground.resource_path
+	if not path.is_empty() and not path.contains("::"):
+		return path
+	var scene := get_tree().edited_scene_root if Engine.is_editor_hint() else null
+	if scene == null or scene.scene_file_path.is_empty():
+		push_error("%s: save the scene first; the ground goes next to it" % name)
+		return ""
+	# Another field's ground may be there already: then this one goes by the field's name.
+	var base := scene.scene_file_path.get_basename()
+	path = base + "_grass_ground.res"
+	var n := 1
+	while FileAccess.file_exists(path):
+		path = "%s_%s%s_grass_ground.res" % [base, name.to_snake_case(), "" if n == 1 else str(n)]
+		n += 1
+	ground.flush_maps()
+	var err := ResourceSaver.save(ground, path, ResourceSaver.FLAG_COMPRESS)
+	if err != OK:
+		push_error("%s: could not save %s (%s)" % [name, path, error_string(err)])
+		return ""
+	ground.take_over_path(path)
+	var editor := Engine.get_singleton(&"EditorInterface") if Engine.is_editor_hint() else null
+	if editor != null:
+		editor.call(&"mark_scene_as_unsaved")
+	return path
+
+
+## The scene the field is in: the one being edited, else the running one.
+func _scene_root() -> Node:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root != null:
+		return get_tree().edited_scene_root
+	if get_tree().current_scene != null:
+		return get_tree().current_scene
+	return get_tree().root
 
 
 ## Keeps `callback` connected to the `changed` of the resource in force only.

@@ -6,9 +6,12 @@ extends RefCounted
 ## (`field/grass_wind.gdshaderinc`) and where the drawn grass ends and what colour it fades to
 ## (`field/grass_ground.gdshaderinc`, for the game's ground). The plugin declares them in Project
 ## Settings > Shader Globals when it is enabled, so a game's shader that reads them compiles from
-## the start; without the plugin a field declares them before its own shaders compile.
+## the start (and adds any a newer GrassKit brings, each time the editor starts); without the
+## plugin a field declares them before its own shaders compile.
 
 const NOISE_PATH := "res://addons/grass_kit/core/grass_wind_noise.tres"
+## White: grass everywhere, where no field says otherwise.
+const FULL_PATH := "res://addons/grass_kit/core/grass_full.tres"
 ## Name: [type, default].
 const ALL := {
 	&"grasskit_wind": [RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(1.0, 0.0, 0.0, 55.0)],
@@ -17,6 +20,9 @@ const ALL := {
 	&"grasskit_wind_noise": [RenderingServer.GLOBAL_VAR_TYPE_SAMPLER2D, NOISE_PATH],
 	&"grasskit_field": [RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.0, 0.0, 0.0, 0.0)],
 	&"grasskit_grass": [RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.3, 0.45, 0.12, 0.0)],
+	&"grasskit_under": [RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(0.0, 0.0, 0.1, 0.0)],
+	&"grasskit_density": [RenderingServer.GLOBAL_VAR_TYPE_SAMPLER2D, FULL_PATH],
+	&"grasskit_area": [RenderingServer.GLOBAL_VAR_TYPE_VEC4, Vector4(-1e6, -1e6, 2e6, 2e6)],
 }
 ## The type names Project Settings uses.
 const TYPE_NAMES := {
