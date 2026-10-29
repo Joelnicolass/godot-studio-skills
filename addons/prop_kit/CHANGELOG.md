@@ -1,5 +1,11 @@
 # PropKit changelog
 
+## 0.1.1
+
+- **Seams that hold when the ground changes height (3D).** The floor and ceiling of every zone's bake are whole cells of `cell_height` from 0. Before, they came straight from the parse's bounds: a zone re-baked after the ground went below its lowest point measured its heights from another floor, and the navigation map no longer joined it to the zones next to it. `height_range` (floor, ceiling) gives every zone the same box. A bake saved with 0.1.0 can have its floor off the cell grid: press «Bake» again.
+- **Islands in the index.** `PropNavIndex.component_area` (each component's area on the ground plane) and `closest_point(point, max_distance, min_area)` (and `closest_point_2d`): the closest land, skipping a walkable roof or a pocket closed off by walls.
+- **Tests**: 58.
+
 ## 0.1.0
 
 - **Scatter** (`PropScatter3D`, `PropScatter2D`): props over any ground as saved, editable children, from the inspector («Scatter», «Clear»), from code (`scatter()`), from the Tools menu or headless (`tools/scatter_scene.gd`). Deterministic. Shared `PropScatterRules`: clusters from a noise, spacing that grows with scale, size from a cluster's edge to its heart, a cap that cuts at the edges, sink and lean with the slope (3D).
