@@ -15,5 +15,6 @@
 
   It works on a copy of the example in `scratch/editor_check/` (the addon's files stay as they are). The lab's own plugin `addons/grasskit_editor_check` does it; it does nothing without that variable.
   - `GRASSKIT_EDITOR_SHOTS=<folder> godot --editor --path grasskit_lab` (with a window) saves what the 3D view shows, and the whole editor while a brush is up.
+- **Ground-colour bake** (it renders, so it needs a window): `godot --path grasskit_lab --script res://checks/bake_color_check.gd` (and with `--rendering-method gl_compatibility`) prints `BAKE COLOR CHECK PASS`; `BAKE_COLOR_PNG=<file>` saves the image.
 - **Shader globals**: `project.godot` declares GrassKit's (as the plugin does), so the example's ground shader compiles from the start.
 - **Play**: open the project. F5 runs `grass_3d`; `godot --rendering-method gl_compatibility --path grasskit_lab` runs it in Compatibility.
