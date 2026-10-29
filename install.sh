@@ -383,8 +383,8 @@ install_addon() {
     grass_kit)
       copy_one_addon "$project" "grass_kit"
       echo
-      echo "Habilitá el plugin GrassKit (sin autoload). Agregá un GrassField3D, poné el área de su suelo y apretá Bake ground."
-      echo "Arrancá desde addons/grass_kit/examples/grass_3d."
+      echo "Habilitá el plugin GrassKit (sin autoload). Agregá un GrassField3D (se arma solo), seleccionalo y pintá"
+      echo "con los pinceles arriba de la vista 3D. Arrancá desde addons/grass_kit/examples/grass_3d."
       ;;
     all)
       install_addon "$project" "mp_kit"

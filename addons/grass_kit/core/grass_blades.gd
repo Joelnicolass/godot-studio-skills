@@ -7,7 +7,8 @@ extends RefCounted
 ## blades of the sequence, so a tier with fewer is a prefix of one with more, and the shader thins
 ## any of them by each blade's rank (its place in the sequence) with no pop. With several kinds of
 ## blade, each point belongs to one kind by a fixed roll on the kinds' weights, so each kind is a
-## prefix of its own share. Every instance carries its rank and its mesh's segments (custom data).
+## prefix of its own share; a kind that grows by a map has points of its own (the same sequence,
+## shifted), as many as its share, so it adds to the others where it grows. Every instance carries its rank and its mesh's segments (custom data).
 ## The kit's blade spans x in [-0.5, 0.5] (its width) and y in [0, 1] (along it); the shader gives
 ## it size, place, curve and colour.
 
@@ -16,12 +17,13 @@ const _A1 := 0.7548776662466927
 const _A2 := 0.5698402909980532
 
 
-## `count` points over a square of side `size`, every prefix spread evenly.
-static func points(count: int, size: float) -> PackedVector2Array:
+## `count` points over a square of side `size`, every prefix spread evenly. Another `start` shifts
+## the whole pattern (a kind of its own among the others).
+static func points(count: int, size: float, start := Vector2(0.5, 0.5)) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	out.resize(count)
 	for i in count:
-		out[i] = Vector2(fposmod(0.5 + _A1 * i, 1.0), fposmod(0.5 + _A2 * i, 1.0)) * size
+		out[i] = Vector2(fposmod(start.x + _A1 * i, 1.0), fposmod(start.y + _A2 * i, 1.0)) * size
 	return out
 
 
@@ -108,14 +110,26 @@ static func blade_mesh(segments: int) -> ArrayMesh:
 ## tier; a kind's own mesh is the same in every tier.
 static func tier_meshes(quality: GrassQuality, kinds: Array[GrassMesh]) -> Array[Array]:
 	var all := points(quality.blades_per_cell(), quality.cell_size)
+	# The kinds that share the points, by weight; the ones that grow by a map have their own.
 	var weights := PackedFloat32Array()
-	for kind in kinds:
-		weights.append(kind.weight)
-	var rolled := kinds_of(all.size(), weights) if kinds.size() > 1 else PackedInt32Array()
+	var shared: Dictionary[int, int] = {}
+	var shared_total := 0.0
+	for index in kinds.size():
+		if not kinds[index].grows_by_map():
+			shared[index] = weights.size()
+			weights.append(kinds[index].weight)
+			shared_total += kinds[index].weight
+	var rolled := kinds_of(all.size(), weights) if weights.size() > 1 else PackedInt32Array()
 	var blades: Dictionary[int, ArrayMesh] = {}
 	var out: Array[Array] = []
 	for index in kinds.size():
 		var per_tier: Array[MultiMesh] = []
+		var own := all
+		var share := 1.0
+		if not shared.has(index):
+			share = kinds[index].weight / shared_total if shared_total > 0.0 else 1.0
+			var start := Vector2(fposmod(0.21 + 0.37 * index, 1.0), fposmod(0.83 + 0.29 * index, 1.0))
+			own = points(ceili(all.size() * share), quality.cell_size, start)
 		for tier in quality.tiers:
 			var segments := quality.segments_in_tier(tier)
 			var mesh := MultiMesh.new()
@@ -128,7 +142,12 @@ static func tier_meshes(quality: GrassQuality, kinds: Array[GrassMesh]) -> Array
 				if not blades.has(segments):
 					blades[segments] = blade_mesh(segments)
 				mesh.mesh = blades[segments]
-			var data := instance_buffer(all, quality.blades_in_tier(tier), rolled, index, segments)
+			var data: PackedFloat32Array
+			if shared.has(index):
+				data = instance_buffer(all, quality.blades_in_tier(tier), rolled, shared[index], segments)
+			else:
+				var count := mini(ceili(quality.blades_in_tier(tier) * share), own.size())
+				data = instance_buffer(own, count, PackedInt32Array(), 0, segments)
 			mesh.instance_count = data.size() / 16
 			if mesh.instance_count > 0:
 				mesh.buffer = data

@@ -123,6 +123,21 @@ extends Resource
 		far_grass = value
 		emit_changed()
 
+@export_group("Ground under the grass")
+## How much the game's ground takes the grass's colour under the drawn blades
+## (grass_ground.gdshaderinc), so what shows between them reads as more grass instead of bare,
+## mottled ground. 0 = the ground keeps its own colour up to where the far grass fades.
+@export_range(0.0, 1.0, 0.01) var under_grass := 0.6:
+	set(value):
+		under_grass = value
+		emit_changed()
+## How much of the ground's own light and dark it keeps there (against the brightness of
+## `ground_color`), so its relief still shows through.
+@export_range(0.0, 1.0, 0.01) var under_relief := 0.35:
+	set(value):
+		under_relief = value
+		emit_changed()
+
 @export_group("Meshes")
 ## The kinds of blade and their shares. Empty = the kit's blade only.
 @export var meshes: Array[GrassMesh] = []:
@@ -165,6 +180,15 @@ func build_key() -> String:
 	for kind in kinds():
 		parts.append(kind.build_key())
 	return ";".join(parts)
+
+
+## What the game's ground reads under the drawn grass (grass_ground.gdshaderinc's
+## `grasskit_under`): `under_grass`, `under_relief`, and the brightness of `ground_color` (linear)
+## that counts as neither light nor dark.
+func ground_under() -> Vector4:
+	var plain := ground_color.srgb_to_linear()
+	var light := plain.r * 0.2126 + plain.g * 0.7152 + plain.b * 0.0722
+	return Vector4(under_grass, under_relief, light, 0.0)
 
 
 ## Writes this look into `material` (the field's shader for one kind of blade).

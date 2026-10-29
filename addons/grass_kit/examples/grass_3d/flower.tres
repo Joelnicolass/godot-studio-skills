@@ -7,7 +7,8 @@
 [resource]
 script = ExtResource("3_poe6s")
 mesh = ExtResource("2_t1p2d")
-weight = 3.0
+weight = 40.0
+map_name = &"flower"
 size = 1.3
 albedo_texture = ExtResource("1_wolsh")
 alpha_scissor = 0.5
