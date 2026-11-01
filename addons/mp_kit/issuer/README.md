@@ -92,14 +92,14 @@ Todo pedido de un jugador dice quién pregunta: `game`, `version` (la del juego)
 | Ruta | Quién | Qué |
 |---|---|---|
 | `POST /v1/rooms` | host | Cuerpo: quién + `name`, `max_players`, `visibility` (`public`/`private`), `mode` (`dedicated`: hospeda un proceso de partida, `seats` = un ticket de admisión por asiento menos el del host; `listen`: hospeda el juego del host, sin tickets). `201` → `code`, `room` (`p-<código>`), `relay_url`, `host_token`, `room_key` (la prueba del host, se muestra una vez), `heartbeat_s`, `token_ttl_s`, `max_players` |
-| `PUT /v1/rooms/:code` | host (`Authorization: Bearer <room_key>`) | Heartbeat: `players` (el host cuenta), `state` (`open`/`playing`), `taken` (los tickets conectados). El primero deja la sala **viva**: antes no se lista y quien quiera entrar recibe `room_starting` |
+| `PUT /v1/rooms/:code` | host (`Authorization: Bearer <room_key>`) | Heartbeat: `players` (el host cuenta), `state` (`open`/`playing`), `taken` (los tickets que nadie más puede recibir: conectados, o cerrados porque la partida arrancó), `held` (opcional: los tickets de un jugador, conectado o ausente dentro de su gracia; sin `held`, los de `taken`). El primero deja la sala **viva**: antes no se lista y quien quiera entrar recibe `room_starting` |
 | `POST /v1/rooms/:code/tokens` | host (Bearer) | `{"role": "host"|"client"}` → un token nuevo (un host que se reconecta; el jugador host de una sala dedicada) |
 | `DELETE /v1/rooms/:code` | host (Bearer) | Cierra la sala |
 | `GET /v1/rooms?<quién>` | jugador | `rooms`: las salas públicas vivas de ese juego y **versión** con lugar, las más nuevas primero |
-| `POST /v1/rooms/:code/join` | jugador | Cuerpo: quién. → `room`, `relay_url`, `token`, `ticket` (dedicada: la partida lo admite; `null` en listen), `mode`, `max_players`. El mismo proceso que vuelve a pedir recibe el mismo asiento mientras esté reservado (2 × la vida del token) |
+| `POST /v1/rooms/:code/join` | jugador | Cuerpo: quién, y opcional `ticket` (el ticket propio del jugador, para volver a su asiento desde esta máquina u otra). → `room`, `relay_url`, `token`, `ticket` (dedicada: el ticket propio de este jugador, que la partida admite; `null` en listen), `mode`, `max_players`. El mismo proceso que vuelve a pedir recibe el mismo asiento mientras esté reservado (2 × la vida del token). Un asiento que el host reporta `held` es de su jugador: el emisor no se lo da a nadie más, solo a la misma instalación (su juego se reinició) o a quien muestre ese ticket |
 | `GET /health` | | `ok` |
 
-Rechazos: `bad_request` (400, con los `fields`), `banned` (403), `no_such_room` / `unknown_game` (404), `room_full` / `version_mismatch` (con `host_version`) / `room_starting` (409), `version_too_old` (426, con `min_version`), `too_many_rooms` / `rate_limited` (429), `no_room_left` (503), `too_large` (413). `MpFlow.online_texts` convierte cada uno en una frase para el jugador.
+Rechazos: `bad_request` (400, con los `fields`), `banned` (403), `no_such_room` / `unknown_game` / `bad_ticket` (404: un `ticket` que no es un asiento de esa sala), `room_full` / `version_mismatch` (con `host_version`) / `room_starting` (409), `version_too_old` (426, con `min_version`), `too_many_rooms` / `rate_limited` (429), `no_room_left` (503), `too_large` (413). `MpFlow.online_texts` convierte cada uno en una frase para el jugador.
 
 ## 5. Tokens (el contrato con el relay)
 

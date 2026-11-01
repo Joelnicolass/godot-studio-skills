@@ -220,3 +220,51 @@ test("versions compare by number and codes are read as typed", () => {
   assert.equal(versionAtLeast("2", "0"), true);
   assert.equal(normalizeCode(" ab-c d3e "), "ABCD3E");
 });
+
+test("a seat a player holds (connected or away within its grace) is never handed to anybody else", () => {
+  const { rooms, config, advance } = setup();
+  const { room } = opened(rooms, who(), dedicated(3));
+  const a = who();
+  assert.equal(ok(rooms.join(room.code, a)).ticket, "TICKET1");
+  rooms.heartbeat(room, { players: 2, state: "playing", taken: ["TICKET1"], held: ["TICKET1"] });
+  // A dropped: no longer taken (connected), still held (its grace), long after its reservation ran out.
+  advance(10 * config.tokenTtlS * 1000);
+  rooms.heartbeat(room, { players: 1, state: "playing", taken: [], held: ["TICKET1"] });
+  assert.equal(ok(rooms.join(room.code, who())).ticket, "TICKET2", "a stranger gets the free seat, not A's");
+  assert.equal(rooms.join(room.code, who()).error, "room_full", "A's seat is not free: the room is full");
+  assert.equal(rooms.list("arena", "1.2.0").length, 0, "nor listed with a free seat");
+  assert.equal(ok(rooms.join(room.code, { ...a, session: "a-new-session-1" })).ticket, "TICKET1", "A's game, restarted: its own seat back");
+});
+
+test("a player's own ticket brings its seat back from another machine; a made-up one is refused", () => {
+  const { rooms, config, advance } = setup();
+  const { room } = opened(rooms, who(), dedicated(3));
+  ok(rooms.join(room.code, who()));
+  rooms.heartbeat(room, { players: 2, state: "playing", taken: ["TICKET1"], held: ["TICKET1"] });
+  advance(10 * config.tokenTtlS * 1000);
+  rooms.heartbeat(room, { players: 1, state: "playing", taken: [], held: ["TICKET1"] });
+  const laptop = who();
+  assert.equal(ok(rooms.join(room.code, laptop, "TICKET1")).ticket, "TICKET1", "the ticket proves the seat");
+  rooms.heartbeat(room, { players: 2, state: "playing", taken: ["TICKET1"], held: ["TICKET1"] });
+  assert.equal(ok(rooms.join(room.code, { ...laptop, session: "laptop-again-01" })).ticket, "TICKET1", "now bound to the laptop");
+  const bad = rooms.join(room.code, who(), "NOTASEAT");
+  assert.equal(bad.error, "bad_ticket");
+  assert.equal(bad.status, 404);
+});
+
+test("a held seat the host lets go (past its grace, or a bot's to take) is free again; an older host binds while connected", () => {
+  const { rooms, config, advance } = setup();
+  const { room } = opened(rooms, who(), dedicated(3));
+  const a = who();
+  ok(rooms.join(room.code, a));
+  rooms.heartbeat(room, { players: 2, state: "playing", taken: ["TICKET1"], held: ["TICKET1"] });
+  advance(10 * config.tokenTtlS * 1000);
+  rooms.heartbeat(room, { players: 1, state: "playing", taken: [], held: [] });
+  assert.equal(ok(rooms.join(room.code, who())).ticket, "TICKET1", "past its grace the seat is free for a late player");
+  const { room: old } = opened(rooms, who(), dedicated(3));
+  const b = who();
+  ok(rooms.join(old.code, b));
+  rooms.heartbeat(old, { players: 2, state: "open", taken: ["TICKET1"] });
+  advance(10 * config.tokenTtlS * 1000);
+  assert.equal(ok(rooms.join(old.code, who())).ticket, "TICKET2", "no held list: a connected seat is still kept");
+});

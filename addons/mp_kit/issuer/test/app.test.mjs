@@ -126,6 +126,23 @@ test("join, the host's own tokens, heartbeat and close, with the room key as pro
   assert.equal((await call("POST", `/v1/rooms/${made.code}/join`, who())).status, 404);
 });
 
+test("a held seat: the host says so in its heartbeat, and only its own ticket brings it back", async () => {
+  const { call } = await issuer();
+  const made = (await call("POST", "/v1/rooms", { ...who(), name: "Trio", max_players: 3, mode: "dedicated", seats: ["SEAT2X", "SEAT3X"] })).body;
+  const key = { authorization: `Bearer ${made.room_key}` };
+  await live(call, made);
+  const first = (await call("POST", `/v1/rooms/${made.code}/join`, who())).body;
+  assert.equal(first.ticket, "SEAT2X");
+  assert.equal((await call("PUT", `/v1/rooms/${made.code}`, { players: 2, state: "playing", taken: [], held: ["SEAT2X"] }, key)).status, 204);
+  assert.equal((await call("PUT", `/v1/rooms/${made.code}`, { players: 2, state: "playing", held: ["nope!"] }, key)).status, 400);
+  const back = await call("POST", `/v1/rooms/${made.code}/join`, { ...who(), ticket: "SEAT2X" });
+  assert.equal(back.status, 200);
+  assert.equal(back.body.ticket, "SEAT2X");
+  assert.equal((await call("POST", `/v1/rooms/${made.code}/join`, { ...who(), ticket: "OTHER9" })).body.error, "bad_ticket");
+  assert.equal((await call("POST", `/v1/rooms/${made.code}/join`, who())).body.ticket, "SEAT3X");
+});
+
+
 test("the list answers rooms for the asker's game and version", async () => {
   const { call } = await issuer();
   await live(call, (await call("POST", "/v1/rooms", { ...who(), name: "Open one", max_players: 3, mode: "listen" })).body);

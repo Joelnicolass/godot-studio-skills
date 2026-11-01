@@ -1364,6 +1364,14 @@ Cuándo arranca y quién entra después lo dicen los knobs **Match start** del `
 | `late_join` prendido | El host puede arrancar solo, y los asientos que nadie ocupa siguen en la lista del emisor (estado `playing`): el que llega toma uno, aunque lo esté jugando un bot tuyo (7.5, «Bots en los asientos libres») |
 | `late_join` apagado | Al arrancar, la sala sale de la lista y el emisor no reparte más asientos (`room_full`). Solo vuelve un asiento que se fue, dentro de la gracia |
 
+**Cada jugador tiene su asiento.** El ticket que el emisor le da al entrar es el suyo. Mientras está en la partida o ausente dentro de la gracia, el emisor no le da ese asiento a nadie más: ni desde la lista, ni con el código de sala, ni a uno que llega tarde. El host se lo dice al emisor en cada latido (`held`). Para volver:
+
+- El mismo juego (una caída de red): `flow.join_online(code)` otra vez. El kit recuerda el ticket de esa sala y lo muestra.
+- El juego se cerró y se abrió de nuevo en la misma PC: lo mismo. El emisor reconoce la instalación y le devuelve su asiento.
+- Desde otra máquina: `flow.join_online(code, ticket)` con el ticket que leíste en la primera con `MpIssuer.seat_ticket(code)`. Quien tenga ese ticket toma el asiento: es un secreto del jugador.
+
+Pasada la gracia el asiento deja de ser suyo: con `late_join` queda libre, y sin `late_join`, cerrado.
+
 El transporte de tu juego no cambia: la conexión de la sala online va por el relay por su cuenta (`MpTransport.use_relay_room`), así que una partida LAN o un servidor local después usan ENet (o lo que diga tu `game.tres`) como antes.
 
 ### 10.6 Un navegador hospeda
@@ -1385,6 +1393,8 @@ Los navegadores de celular congelan del todo las pestañas en segundo plano; ah�
 | La sala nunca aparece en la lista | Todavía está arrancando (el host aún no está en el relay), es privada, o está llena |
 | La sala desaparece de la lista cuando arranca la partida | Así es sin `late_join`: después del arranque nadie nuevo puede entrar. Prendé `late_join` en el `MpFlow` para que sigan entrando |
 | "The match already started" al entrar a una sala | La partida arrancó antes de que el jugador llegara a su asiento y `late_join` está apagado |
+| "That ticket is not a seat of this room" (`bad_ticket`) | El ticket que pasaste a `join_online(code, ticket)` es de otra sala, o la sala ya no existe |
+| Un jugador vuelve y no recupera su asiento | Pasó la gracia (`rejoin_grace_s`), o vuelve desde otra máquina sin su ticket (`MpIssuer.seat_ticket`) |
 | El log del relay dice `refused for p-…: no RELAY_TOKEN_KEYS set` | El relay no tiene la clave pública del emisor: poné `RELAY_TOKEN_KEYS` y redesplegalo |
 | El log del relay dice `… bad token` | La clave pública del relay no es la del emisor (la hizo otra corrida de `keys.mjs`) |
 

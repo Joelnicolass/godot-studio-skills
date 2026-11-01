@@ -262,6 +262,16 @@ func vacant_slots() -> Array[int]:
 	return out
 
 
+## Server: the seats a player holds: in the match now, or away within its grace (its player may come back). An issuer room
+## hands each only to its own player.
+func held_slots() -> Array[int]:
+	var out: Array[int] = []
+	for slot in _armed_seats:
+		if _admitted.has(slot) and not _abandoned.has(slot):
+			out.append(slot)
+	return out
+
+
 ## Server: the vacant seats nobody may take any more (the match started without late_join): an issuer room stops handing them out.
 func closed_slots() -> Array[int]:
 	if phase != Phase.RUNNING or late_join:
