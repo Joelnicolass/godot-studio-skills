@@ -2,8 +2,8 @@ class_name MpStartButton
 extends Button
 
 ## Put one in the match HUD (the MpWorld's Hud has one). While the match waits for seats it starts it with the players already
-## loaded (`Mp.gate().start_now()`): on a listen host, and on the client of the player who opened a match on its own PC (private
-## or online, MpLocalServer: the server checks it). Hidden everywhere else (another client, a dedicated, solo, a running match).
+## loaded (`Mp.gate().start_now()`): on a listen host, and, with MpFlow.host_can_start, on the client of the player who opened a
+## match on its own PC (private or online, MpLocalServer: the server checks it). Hidden everywhere else (another client, a dedicated, solo, a running match).
 ## Not: who may sit or when the match starts by itself (MpMatchGate: start_seats, load_timeout_s, start_on_timeout).
 
 ## `%d` / `%d`: clients loaded / clients the match waits for.

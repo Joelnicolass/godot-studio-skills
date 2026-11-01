@@ -1,0 +1,87 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/mp_kit/examples/bots_2d/world.gd" id="0_b0tw"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_world.gd" id="1_kv7qk"]
+[ext_resource type="PackedScene" path="res://addons/mp_kit/examples/minimal_2d/player.tscn" id="2_ynx0c"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_slot_spawner.gd" id="3_00wl7"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_state.gd" id="4_2de3r"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_match.gd" id="5_yfll8"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_leave_button.gd" id="6_6whsd"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_invite_label.gd" id="7_77de6"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_start_button.gd" id="8_8p3qe"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_waiting_label.gd" id="9_arv07"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_afuid"]
+properties/0/path = NodePath(".:values")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+
+[node name="World" type="Node2D"]
+script = ExtResource("0_b0tw")
+
+[node name="MpWorld" type="Node" parent="."]
+script = ExtResource("1_kv7qk")
+player_scene = ExtResource("2_ynx0c")
+seats = 4
+
+[node name="SpawnPoints" type="Node2D" parent="MpWorld"]
+
+[node name="P1" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(660, 270)
+
+[node name="P2" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(300, 270)
+
+[node name="P3" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(480, 150)
+
+[node name="P4" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(480, 390)
+
+[node name="Actors" type="Node2D" parent="MpWorld"]
+
+[node name="Players" type="MultiplayerSpawner" parent="MpWorld"]
+spawn_path = NodePath("../Actors")
+script = ExtResource("3_00wl7")
+pawn_scene = ExtResource("2_ynx0c")
+spawn_points = NodePath("../SpawnPoints")
+despawn_on_leave = false
+
+[node name="State" type="Node" parent="MpWorld"]
+script = ExtResource("4_2de3r")
+
+[node name="MpSync" type="MultiplayerSynchronizer" parent="MpWorld/State"]
+replication_config = SubResource("SceneReplicationConfig_afuid")
+
+[node name="Match" type="Node" parent="MpWorld"]
+script = ExtResource("5_yfll8")
+
+[node name="Hud" type="CanvasLayer" parent="MpWorld"]
+
+[node name="Leave" type="Button" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 16.0
+offset_bottom = 16.0
+script = ExtResource("6_6whsd")
+
+[node name="Invite" type="Label" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 16.0
+offset_bottom = 56.0
+script = ExtResource("7_77de6")
+
+[node name="Start" type="Button" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 96.0
+offset_right = 16.0
+offset_bottom = 96.0
+script = ExtResource("8_8p3qe")
+
+[node name="Waiting" type="Label" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 136.0
+offset_right = 16.0
+offset_bottom = 136.0
+script = ExtResource("9_arv07")

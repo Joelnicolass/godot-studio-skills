@@ -57,7 +57,8 @@ extends Resource
 ## Off: the match waits until every seat loaded or the player in starter_slot starts it (MpStartButton), however long that takes.
 ## A match on a player's PC (MpLocalServer) takes it from the game's MpFlow.
 @export var start_on_timeout: bool = true
-## The seat whose player may start the match with whoever loaded (MpStartButton). 0 = nobody; MpLocalServer sets 1 (its host).
+## The seat whose player may start the match with whoever loaded (MpStartButton). 0 = nobody; a match on a player's PC
+## (MpLocalServer) takes 1 (its host) when the game's MpFlow has host_can_start.
 @export var starter_slot: int = 0
 ## After the start a player may still take a seat of the ticket nobody holds: one never taken, or one abandoned past the grace.
 ## The game hears MpKit.gate.joined_late (a bot of yours there hands it over). A match on a player's PC (MpLocalServer) takes it

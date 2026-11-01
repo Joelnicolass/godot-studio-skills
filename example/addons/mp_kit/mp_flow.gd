@@ -96,9 +96,15 @@ enum StartWhen {
 ## Seconds after the first player sat that the match waits for the rest to load (`--load-timeout-s=`); then it starts with
 ## whoever loaded. The HUD says it waits (MpWaitingLabel). A room's match takes its MpLobbyConfig instead.
 @export var load_timeout_s: float = 15.0
-## Off: the match never starts by time, only once every seat loaded or its host starts it (MpStartButton: a listen host, or the
-## player who opened a match on its PC, private or online). `--start-on-timeout=false`. A room server's match: its MpLobbyConfig.
+## Off: the match never starts by time, only once every seat loaded or its host starts it (MpStartButton: a listen host, or,
+## with host_can_start, the player who opened a match on its PC). `--start-on-timeout=false`. A room server's match: its
+## MpLobbyConfig.
 @export var start_on_timeout: bool = true
+## The player who opened a match on its own PC (private or online: MpLocalServer, slot 1) may start it with whoever loaded
+## (MpStartButton, `Mp.gate().start_now()`), as a listen host always may. Off (the default): that match starts once every seat
+## loaded or the load time passed. Turn it on with start_on_timeout off, or nobody can start a match a seat never comes to.
+## `--host-can-start=true`.
+@export var host_can_start: bool = false
 ## Clients that must load before the match starts, in Host LAN and a dedicated by hand; 0 = every seat, or whoever loaded
 ## once load_timeout_s passed (`--start-seats=`). A listen host may start sooner (MpStartButton, `Mp.gate().start_now()`).
 @export var start_seats: int = 0
@@ -603,11 +609,20 @@ func effective_start_on_timeout() -> bool:
 	return start_on_timeout
 
 
-## A match on this PC (MpLocalServer, private or online) starts and takes late players as this flow says. `config` is an
-## MpLobbyConfig, untyped on purpose: this flow must not load the lobby scripts.
+## host_can_start, or `--host-can-start=true|false`.
+func effective_host_can_start() -> bool:
+	var raw := MpBoot.user_value("host-can-start", "").to_lower()
+	if raw in ["false", "0", "off", "no"]:
+		return false
+	return host_can_start or raw in ["true", "1", "on", "yes"] or MpBoot.user_flag("host-can-start")
+
+
+## A match on this PC (MpLocalServer, private or online) starts, takes late players and may be started by its host (slot 1)
+## as this flow says. `config` is an MpLobbyConfig, untyped on purpose: this flow must not load the lobby scripts.
 func fill_match_start(config: Resource) -> void:
 	config.set("start_on_timeout", effective_start_on_timeout())
 	config.set("late_join", effective_late_join())
+	config.set("starter_slot", 1 if effective_host_can_start() else 0)
 
 
 ## A dedicated by hand (no ticket): it serves one match after another, so there is a next one when a match ends.

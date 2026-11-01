@@ -133,7 +133,7 @@ Cada kit trae un **ejemplo mínimo**: la integración más chica que anda, para 
 
 | Kit | Ejemplo mínimo | Completos | README | Tests |
 |---|---|---|---|---|
-| MpKit | `addons/mp_kit/examples/minimal_2d/boot.tscn`: lo que escribe *Setup game* (menú, mundo, jugador predicho) | `arena_2d/boot.tscn` | [QUICKSTART](addons/mp_kit/QUICKSTART.md) | `mpkit_lab/run/all.sh` |
+| MpKit | `addons/mp_kit/examples/minimal_2d/boot.tscn`: lo que escribe *Setup game* (menú, mundo, jugador predicho) | `arena_2d/boot.tscn`, `bots_2d/boot.tscn` (el host arranca, bots en los asientos libres, unirse tarde) | [QUICKSTART](addons/mp_kit/QUICKSTART.md) | `mpkit_lab/run/all.sh` |
 | FsmKit | `addons/fsm_kit/examples/minimal_2d/minimal_2d.tscn`: `Idle`, `Move`, `Hurt` con payload | — | [README](addons/fsm_kit/README.md) | `fsmkit_lab/` |
 | PlatKit | `addons/plat_kit/examples/minimal_2d/minimal_2d.tscn`: un jugador y dos repisas, sin código | — | [README](addons/plat_kit/README.md) | `platkit_lab/` |
 | RtsKit | `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn`: seis soldados y el equipo de mando | `skirmish_3d`, `skirmish_2d` | [GUIDE](addons/rts_kit/GUIDE.md) | `rtskit_lab/` |
