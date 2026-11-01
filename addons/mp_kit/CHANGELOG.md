@@ -6,7 +6,8 @@ Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …"
 
 - **The host starts its match only if the game asks for it.** New knob `host_can_start` on the `MpFlow` (**Match start** group, `--host-can-start=true`), off by default. On, the player who opened a match on its PC (private or online, slot 1) sees **Start now** and starts it with whoever loaded. In 0.19.0 and 0.20.0 that was always on; now, by default, a match on the host's PC starts as in 0.18: once every seat loaded or the load time passed. With `start_on_timeout` off turn `host_can_start` on too: otherwise nobody starts a match a seat never comes to. A listen host (Host LAN, a browser that hosts) may start as it always could.
 - **Example** `examples/bots_2d/`: a match that waits in the world until the host starts it (`start_on_timeout` off, `host_can_start`), with a bot in every free seat (`world.gd`, `bot.gd`: it presses the player's keys with `MpInput.bot_press`) and players who come in late and take a bot's place (`late_join`). It uses `minimal_2d`'s player. `tests/test_examples.gd` plays it.
-- **Tests:** 133.
+- **Issuer: a seat the host lets go is free at once.** If a player dropped and its grace ended before its issuer reservation ran out (2 × `ISSUER_TOKEN_TTL_S`, 2 minutes from its join), a late player got `room_full` though the host already reported that seat free. Now, when the host stops reporting it in `held`, its reservation is let go too. A host with no `held` (MpKit 0.19 or older) stays as before. Found by El Eternauta.
+- **Tests:** 133 kit tests, 31 issuer tests.
 
 What to update: if you used 0.19's or 0.20's host start in a match on the host's PC, turn `host_can_start` on in the `MpFlow`.
 
