@@ -6,7 +6,8 @@ Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit
 
 - **El host arranca su partida solo si el juego lo pide.** Nuevo knob `host_can_start` en el `MpFlow` (grupo **Match start**, `--host-can-start=true`), apagado por defecto. Prendido, el que abrió una partida en su PC (privada u online, el slot 1) ve **Start now** y la arranca con los que ya cargaron. En 0.19.0 y 0.20.0 eso estaba siempre prendido; ahora, por defecto, una partida en la PC del host arranca como en 0.18: cuando cargaron todos o pasó el tiempo de carga. Con `start_on_timeout` apagado prendé también `host_can_start`: si no, nadie arranca una partida a la que un asiento nunca llega. El listen host (Host LAN, un navegador que hospeda) puede arrancar como siempre.
 - **Ejemplo** `examples/bots_2d/`: una partida que espera en el mundo hasta que el host la arranca (`start_on_timeout` apagado, `host_can_start`), con un bot en cada asiento libre (`world.gd`, `bot.gd`: aprieta las teclas del jugador con `MpInput.bot_press`) y jugadores que entran tarde y toman el lugar de un bot (`late_join`). Usa el jugador de `minimal_2d`. Lo juega `tests/test_examples.gd`.
-- **Tests:** 133.
+- **Emisor: un asiento que el host suelta queda libre enseguida.** Si un jugador se caía y su gracia terminaba antes de que venciera su reserva del emisor (2 × `ISSUER_TOKEN_TTL_S`, 2 minutos desde que entró), el que llegaba tarde recibía `room_full` aunque el host ya informaba ese asiento como libre. Ahora, cuando el host deja de informarlo en `held`, su reserva se suelta también. Un host sin `held` (MpKit 0.19 o anterior) sigue como antes. Lo encontró El Eternauta.
+- **Tests:** 133 del kit, 31 del emisor.
 
 Qué actualizar: si usabas el arranque por el host de 0.19 o 0.20 en una partida en la PC del host, prendé `host_can_start` en el `MpFlow`.
 
