@@ -777,15 +777,68 @@ Who simulates is another question: `is_multiplayer_authority()` / `is_authority(
 
 ### 7.5 Start and end: `MpMatch`
 
-An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone. What counts is decided by the **start gate** (`MpMatchGate`, at `/root/MpKit/Gate`, `Mp.gate()`), which the `MpFlow` arms on every path that hosts (Host LAN, a dedicated by hand, a room's dedicated):
+An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone. What counts is decided by the **start gate** (`MpMatchGate`, at `/root/MpKit/Gate`, `Mp.gate()`), which the `MpFlow` arms on every path that hosts (Host LAN, a dedicated by hand, a match on the host's PC, private or online, and a room server's dedicated):
 
-- **Before the start** the free seats are open. The world stays **paused on every peer** until the seats it expects have loaded: every seat by default (`start_seats` = 0, in Host LAN and in a dedicated by hand alike; in a room match, every seat of the ticket). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` (15 s) has passed since the first one came in, it starts with those who loaded; meanwhile the HUD says it waits (`MpWaitingLabel`, `Hud/Waiting`: "Waiting for players (1/4)"). In Host LAN the host does not have to wait: the HUD's **Start now** button (`MpStartButton`, in the `MpWorld`'s `Hud/Start`) starts with those already loaded.
-- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a free seat, and a seat abandoned past the grace is free again. A room match never has late join (the ticket names every seat). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started`, `full`, `grace_over`, `slot_taken`. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
+- **Before the start** the free seats are open. The world stays **paused on every peer** until the seats it expects have loaded: every seat by default (`start_seats` = 0, in Host LAN and in a dedicated by hand alike; in a match with a ticket, every seat of the ticket). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` (15 s) has passed since the first one came in, it starts with those who loaded; meanwhile the HUD says it waits (`MpWaitingLabel`, `Hud/Waiting`: "Waiting for players (1/4)"). With **`start_on_timeout`** off (`MpFlow` inspector or `--start-on-timeout=false`) it never starts by time: it waits for everyone, or for the host to start it. The host does not have to wait: the HUD's **Start now** button (`MpStartButton`, in the `MpWorld`'s `Hud/Start`) starts with those already loaded. A listen host sees it (Host LAN, a browser that hosts), and so does the player who opened a match on its PC (private or online: it is slot 1, and the server checks it). It shows once another seat loaded, or at once with `late_join` on (the others may come later).
+- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a seat nobody holds (a free one, or one abandoned past the grace, which is free again) and the gate emits `joined_late(slot)`. In a match with a ticket (private or online on the host's PC) the newcomer takes the seat its ticket names; an online room with late join stays in the issuer's list while it has free seats. A room server's match takes `late_join` from its `MpLobbyConfig` (off). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started` (also a valid ticket whose seat nobody took before the start), `full`, `grace_over`, `slot_taken`, and `rejected` only for a ticket that names no seat. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
 - A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`.
 - **While a seat is away** its pawn stays if the spawner keeps it (`MpSlotSpawner.despawn_on_leave` off; on by default it is removed and spawned again on the rejoin): it holds no keys and, with prediction, the server goes on simulating it with none (gravity, a knockback still run). Back, the new connection's keys move it at once.
+- **A seat nobody holds can be played by a bot of yours** (below, "Bots in the free seats"): that slot's pawn on the server, with the keys of `MpInput.bot_press`. When a player takes the seat (late join, or the one coming back), the pawn stays as it is and its keys move it.
 - **A dedicated by hand serves one match after another** (a VPS started with `--dedicated`): when its match ends (`Mp.finish()`) and the last player leaves, or everyone stayed away past the grace (`all_gone`), it loads a fresh world (score and actors from zero) and opens every seat again. A game with a rematch screen can call `MpFlow.next_open_match()` itself once its players left. **If your game ends the match its own way** (not with `Mp.finish()`), tell the kit on the server with `MpKit.broadcast_session_ended(result)`, or call `MpFlow.next_open_match()` when it is over and empty; otherwise the next match only opens once everyone's grace passed, and whoever arrives before is turned away (`match_started`). Clients get the gate's state when they are admitted and pause as soon as their world loads, so their `MatchClock` starts at 0.
 
-The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). In a room match, the grace and the load time come from the `MpLobbyConfig`. In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. In Host LAN the host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button.
+The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). A match on the host's PC (private or online, `MpLocalServer`) takes `start_on_timeout` and `late_join` from the game's `MpFlow`; the grace and the load time, from its `MpLobbyConfig` (60 s each). A room server's match takes everything from its `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`). In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. The host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button (on the client of slot 1 of a match on its PC, `start_now()` asks the server to start).
+
+#### Bots in the free seats
+
+The kit has no AI: it says which seats nobody holds and lets a bot of yours play them with the same movement code as a player. On the server:
+
+| Name | What it does |
+|---|---|
+| `Mp.gate().vacant_slots()` | The seats nobody holds: never taken, or abandoned. Not one away within its grace (its player may come back) |
+| `Mp.gate().started(why)` | The match started: the moment to put the bots in |
+| `Mp.gate().joined_late(slot)` | With `late_join`, a player took a seat nobody held: the bot there lets go |
+| `MpSlotSpawner.spawn_slot(slot)` | That slot's pawn, with no player. When someone takes the slot, the spawner gives them that same pawn (it makes no other) |
+| `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | The bot's keys: read like a player's (`get_vector`, `is_action_just_pressed`, `mp_move`). They count while nobody plays the seat; when a player comes in they are let go and theirs count |
+| `MpInput.has_player()` | True while a player plays that seat. Also false while its player is away within the grace |
+
+```gdscript
+## arena.gd (the world): once it starts, a bot in each free seat.
+@onready var players: MpSlotSpawner = $Players
+
+
+func _ready() -> void:
+	if not MpKit.is_authority():
+		return
+	## The pawn stays in the world when its player leaves: the bot plays it again.
+	players.despawn_on_leave = false
+	Mp.gate().started.connect(func(_why: String) -> void:
+		for slot in Mp.gate().vacant_slots():
+			players.spawn_slot(slot).add_child(Bot.new()))
+```
+
+```gdscript
+## bot.gd: a child of the pawn, only on the server. It picks keys; the movement is the player's (mp_move).
+class_name Bot
+extends Node
+
+var input: MpInput
+
+
+func _ready() -> void:
+	input = get_parent().get_node("MpInput")
+
+
+func _physics_process(_delta: float) -> void:
+	if input.has_player():
+		return
+	var target := Vector2(800, 300)
+	var to_target: Vector2 = target - (get_parent() as Node2D).global_position
+	input.bot_press(&"ui_right" if to_target.x > 0 else &"ui_left", clampf(absf(to_target.x) / 100.0, 0.0, 1.0))
+```
+
+- In a match with a ticket, the late player takes the seat the issuer gave it (the first free one): if a bot plays there, it takes that pawn as it is (position, health, what is synced) and the `MpInput` follows its keys from the next tick on.
+- Solo has no seats at the gate (`vacant_slots()` empty): there you put the bots in, with `spawn_slot(2..N)`. `bot_press` works the same.
+- If your bot must not move the pawn of a player away within the grace, check `Mp.gate().vacant_slots().has(slot)` besides `has_player()`.
 
 Signals:
 
@@ -1303,6 +1356,14 @@ for row in await flow.online_rooms():
 
 The room lives while the host does: the host tells the issuer every 10 s who is in, and closes the room when the match ends or it leaves. A host whose game closes without a word (a closed tab) is forgotten by the issuer 30 s later.
 
+When it starts and who comes in later is up to the `MpFlow`'s **Match start** knobs (7.5), the same on desktop and in a browser:
+
+| Knob | In an online room |
+|---|---|
+| `start_on_timeout` off | The match waits for every seat or for the host to start it with **Start now** (`MpStartButton`, or `Mp.gate().start_now()`): never by time. Good for a lobby inside the world |
+| `late_join` on | The host may start alone, and the seats nobody holds stay in the issuer's list (state `playing`): whoever comes takes one, even one a bot of yours plays (7.5, "Bots in the free seats") |
+| `late_join` off | Once it starts, the room leaves the list and the issuer hands out no more seats (`room_full`). Only a seat that left comes back, within the grace |
+
 Your game's transport does not change: the online room's own connection goes through the relay (`MpTransport.use_relay_room`), so a LAN match or a private server afterwards uses ENet (or whatever your `game.tres` says) as before.
 
 ### 10.6 A browser hosts
@@ -1322,6 +1383,8 @@ Mobile browsers freeze background tabs entirely; there nothing keeps the host ru
 | "You already host a room" | One room per install (`ISSUER_ROOMS_PER_INSTALL`): close it, or wait 30 s after a crash |
 | "Cannot reach the online server" | The issuer's address, or (web) its `ISSUER_ORIGINS` does not list the page's origin: the browser blocks the call |
 | The room never shows in the list | It is still coming up (the host is not on the relay yet), it is private, or it is full |
+| The room leaves the list when the match starts | That is how it is without `late_join`: after the start nobody new may come in. Turn `late_join` on in the `MpFlow` to let them |
+| "The match already started" when joining a room | The match started before the player reached its seat, and `late_join` is off |
 | The relay log says `refused for p-…: no RELAY_TOKEN_KEYS set` | The relay has no public key of the issuer: set `RELAY_TOKEN_KEYS` and redeploy it |
 | The relay log says `… bad token` | The relay's public key is not the issuer's (made by another `keys.mjs` run) |
 
@@ -1847,6 +1910,12 @@ The match process could not read its ticket. That happens when you start it by h
 
 **"MpKit: setup failed (…)"** / the **Create** button disabled
 Some file of the folder already exists (`[~]`) or the folder does not start with `res://`. Pick another folder.
+
+**"MpInput 'X': bot_press(y): not one of its actions"**
+The bot pressed an action that is not in `MpInput › actions`. Add it there: only those travel and are read on the server.
+
+**"WARNING: 1 ObjectDB instance was leaked at exit"** (when the game closes)
+It is Godot 4.7's, not the kit's or your game's: loading on a thread a script that has a `const X := preload(...)` leaves an internal object unfreed at exit. The `MpFlow` loads the world on a thread, so it shows when a world script preloads into a constant. Harmless (it happens at exit). If it bothers you in the log, turn that `preload` into an `@export var x: PackedScene` or a `load()` where you use it.
 
 ### Behaviors
 

@@ -144,6 +144,7 @@ func _read(msg: PackedByteArray) -> void:
 				peer_connected.emit(value)
 		LEAVE:
 			if _peers.erase(value):
+				_forget_packets_of(value)
 				peer_disconnected.emit(value)
 		DATA:
 			if _host and not _peers.has(value):
@@ -154,9 +155,20 @@ func _read(msg: PackedByteArray) -> void:
 
 func _drop_all() -> void:
 	_status = CONNECTION_DISCONNECTED
+	_incoming.clear()
 	for peer_id in _peers.keys():
 		peer_disconnected.emit(peer_id)
 	_peers.clear()
+
+
+## A peer that left or was closed: its packets still waiting are dropped. SceneMultiplayer no longer knows it, and would
+## log `!connected_peers.has(sender)` for each.
+func _forget_packets_of(peer: int) -> void:
+	var kept: Array[Array] = []
+	for packet in _incoming:
+		if int(packet[0]) != peer:
+			kept.append(packet)
+	_incoming = kept
 
 
 func _put_packet_script(buffer: PackedByteArray) -> Error:
@@ -252,6 +264,7 @@ func _disconnect_peer(peer: int, _force: bool) -> void:
 	_kick_reasons.erase(peer)
 	_ws.send(msg)
 	if _peers.erase(peer):
+		_forget_packets_of(peer)
 		peer_disconnected.emit(peer)
 
 

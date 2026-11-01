@@ -163,3 +163,32 @@ func test_a_deliberate_stop_is_not_a_failure() -> void:
 	check(said.is_empty(), "MpOnline: nothing fails once it is stopping or closed")
 	online.free()
 	await tree.process_frame
+
+
+## A relay message as the relay sends it: kind, id (u32), and for DATA the channel, mode and payload.
+func _relay_msg(kind: int, id: int, payload: PackedByteArray = PackedByteArray()) -> PackedByteArray:
+	var msg := PackedByteArray()
+	msg.resize(5)
+	msg[0] = kind
+	msg.encode_u32(1, id)
+	if kind == MpRelayPeer.DATA:
+		msg.append_array(PackedByteArray([0, MultiplayerPeer.TRANSFER_MODE_RELIABLE]))
+		msg.append_array(payload)
+	return msg
+
+
+func test_a_peer_that_is_gone_leaves_no_packet_behind() -> void:
+	var host := MpRelayPeer.new()
+	host.start("ws://127.0.0.1:9", "p-GONE22", true, "", null, "tok")
+	host._read(_relay_msg(MpRelayPeer.JOIN, 2))
+	host._read(_relay_msg(MpRelayPeer.JOIN, 3))
+	host._read(_relay_msg(MpRelayPeer.DATA, 2, PackedByteArray([7])))
+	host._read(_relay_msg(MpRelayPeer.DATA, 3, PackedByteArray([8])))
+	host._read(_relay_msg(MpRelayPeer.DATA, 2, PackedByteArray([9])))
+	check(host.get_available_packet_count() == 3, "three packets wait (two from 2, one from 3)")
+	host._read(_relay_msg(MpRelayPeer.LEAVE, 2))
+	check(host.get_available_packet_count() == 1 and host.get_packet_peer() == 3, "2 left: its packets are dropped, 3's stays")
+	host._read(_relay_msg(MpRelayPeer.DATA, 3, PackedByteArray([10])))
+	host.disconnect_peer(3)
+	check(host.get_available_packet_count() == 0, "3 closed by the host: its packets are dropped too")
+	host.close()

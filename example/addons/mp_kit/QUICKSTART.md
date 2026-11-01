@@ -141,6 +141,7 @@ To test with a bad network, add `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=
 - **No hand-written `@rpc`.** A one-off order from the owner: `net.to_server(&"x")` → `mp_sv_x()`. An effect everywhere: `net.to_all(&"x")` → `mp_all_x()`. A match number: `Mp.state()`.
 - **Animate from the kit's velocity:** `net.motion_velocity()` / `net.motion_speed()` (a Vector2 in 2D, a Vector3 in 3D) tell how what is shown moves on each machine; the pose drawn frame by frame does not.
 - **Test on a bad network from the start:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` on every process, and `Mp.net_quality()` to show the player how their connection is.
+- **A lobby inside the world:** turn `start_on_timeout` off in the `MpFlow` and the match waits until everyone is in or the host presses **Start now**. With `late_join`, the host may start alone, a bot of yours plays the free seats (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) and a late player takes that pawn (GUIDE 7.5).
 - **Do not touch the kit.** No rules in `mp_kit.gd` and no fork: what your game does goes in your scenes.
 
 ## Beyond the basics
@@ -154,7 +155,7 @@ Two more scenes, written down in `game.tres` (`lobby_scene`, `rooms_scene`); the
 | Server (VPS or your PC) | **MpRoomServer** in a scene of its own, with an **MpLobbyConfig** (`.tres`: port, rooms, match port range, times) and optionally an **MpRoomRules** | Opens the lobby. When a room is full and everyone is ready, it starts **one dedicated process per match** with a ticket: only the seated players get in. It takes the game's network. Run it with `godot --headless --path . -- --room-server`. Several matches at once = several processes; the cap is `max_matches` |
 | Client | **MpLobbyScreen** (`rooms/ui/mp_lobby_screen.tscn`) in a scene. With `lobby_scene` in the game, the menu shows *Online rooms* and the Back button goes to the boot | Connect with a name, see rooms, create one (public or with a code), sit, *ready*, chat. When the match starts it joins by itself, and when it ends it comes back with the result |
 | World | **MpMatch** | On the server: `all_loaded`, `player_joined`, `player_left`, `player_back`, `player_abandoned`. `finish(result)` ends the match for everyone (`finished` on every peer) and tells the room |
-| (kit) | **MpMatchGate** | The start gate (`Mp.gate()`): the world waits paused until the seats load; after the start only the one who left comes back (within `rejoin_grace_s`), the rest are turned away with a reason. Knobs: the `MpFlow`'s **Match start** group |
+| (kit) | **MpMatchGate** | The start gate (`Mp.gate()`): the world waits paused until the seats load, the load time passes or the host starts it; after the start only the one who left comes back (within `rejoin_grace_s`), unless `late_join`; the rest are turned away with a reason. Knobs: the `MpFlow`'s **Match start** group |
 
 Each match process is your own project with `--dedicated` and a ticket: `MpFlow` builds the agent that checks the ticket by itself. Room rules of your own (how many seats per mode, which characters are allowed):
 

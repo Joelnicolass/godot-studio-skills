@@ -2,8 +2,10 @@ class_name MpMatchGate
 extends Node
 
 ## The door of a match: who may sit and when it starts. Before the start every free seat is open; the match starts (the tree unpauses)
-## once the seats it waits for have loaded their world. After the start only a seat that is away comes back, within rejoin_grace_s;
-## anybody else is turned away with a reason, unless late_join keeps the free seats open. Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent).
+## once the seats it waits for have loaded their world, load_timeout_s after the first one sat (start_on_timeout), or when its host
+## starts it (start_now). After the start only a seat that is away comes back, within rejoin_grace_s; anybody else is turned away
+## with a reason, unless late_join keeps the seats nobody holds open (vacant_slots: a bot of yours may play them meanwhile).
+## Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent), the bots (your game).
 ## MpKit owns it (`/root/MpKit/Gate`) and feeds it: admit() on each presentation, mark_loaded() when a seat loaded (on world_ready,
 ## or on MpKit.report_loaded with `loaded_on_world_ready` off), mark_host_loaded() for the server's own world, mark_left() on a drop.
 ## Solo arms it too, with no seats (`arm([], 0)`): with `wait_host` it holds only until the local world loaded.
@@ -27,6 +29,9 @@ signal seat_abandoned(slot: int, why: String)
 signal all_gone
 ## Server: a peer was turned away with `reason`.
 signal turned_away(peer_id: int, reason: String)
+## Server: after the start a player took a seat nobody held (late_join): a bot of yours playing it hands it over here (the seat's
+## actor stays; its MpInput takes this player's keys).
+signal joined_late(slot: int)
 
 enum Phase { IDLE, FILLING, RUNNING }
 
@@ -42,6 +47,12 @@ var rejoin_grace_s := 60.0
 ## Seconds after the first admission the match waits for the rest to load before it starts with whoever loaded (MpFlow sets it;
 ## a room's match, its MpLobbyConfig).
 var load_timeout_s := 15.0
+## True (the default): load_timeout_s after the first admission the match starts with whoever loaded. False: it waits until every
+## seat loaded or its host starts it (start_now: a listen host, or the player in starter_slot).
+var start_on_timeout := true
+## The seat whose player may start the match with whoever loaded, from its own client (MpStartButton, start_now): the player who
+## opened a match on its own PC (MpLocalServer: slot 1). 0 = none (a listen host starts its match through host_present).
+var starter_slot := 0
 ## The clients pause their world too while the match waits (nobody walks ahead).
 var pause_clients := true
 ## True (the default): a seat counts as loaded when its world is ready (MpKit's world_ready). False: when its world says so
@@ -51,8 +62,9 @@ var loaded_on_world_ready := true
 var wait_host := false
 ## True on a listen host: the host may start with whoever loaded (can_start_now). MpFlow sets it before arm().
 var host_present := false
-## Open seats only (LAN, a dedicated by hand): after the start a newcomer still takes a free seat, and a seat abandoned past the
-## grace is free again. Off: after the start only a seat that left comes back. MpFlow sets it before arm().
+## After the start a newcomer still takes a seat nobody holds (vacant_slots: never taken, or abandoned past the grace, which is free
+## again); joined_late tells the game. Open seats take the first free one; a ticket's seat (identity) only its own. Off: after the
+## start only a seat that left comes back, anybody else hears match_started. MpFlow (or the room's MpLobbyConfig) sets it before arm().
 var late_join := false
 ## Milliseconds now. Tests inject a clock.
 var now_ms: Callable = Time.get_ticks_msec
@@ -69,6 +81,8 @@ var away: Array[int]:
 		return away_slots()
 
 var _seats: Array[int] = []
+## The seats arm() was given (the open ones a start closed too): vacant_slots() looks at all of them.
+var _armed_seats: Array[int] = []
 var _need: int = 0
 var _identity: Callable = Callable()
 var _hold: bool = true
@@ -84,6 +98,8 @@ var _local_world_ready: bool = false
 var _server_pause: bool = false
 var _told_loaded: int = 0
 var _told_expected: int = 0
+## Client: the server said this peer's player may start the match now (it is the starter seat).
+var _told_can_start: bool = false
 ## slot -> credential (open mode)
 var _credentials: Dictionary = {}
 ## slot -> peer id while connected
@@ -114,6 +130,7 @@ func arm(seats: Array[int], need: int = 0, identity: Callable = Callable(), hold
 	reset()
 	_seats = seats.duplicate()
 	_seats.sort()
+	_armed_seats = _seats.duplicate()
 	_need = maxi(0, need)
 	_identity = identity
 	_hold = hold
@@ -146,6 +163,8 @@ func admit(peer_id: int, credential: String) -> Admission:
 	if _first_admit_ms < 0:
 		_first_admit_ms = _now()
 	seat_admitted.emit(out.slot, back)
+	if phase == Phase.RUNNING and not back and _hold:
+		joined_late.emit(out.slot)
 	return out
 
 
@@ -171,6 +190,9 @@ func mark_host_loaded() -> void:
 		return
 	_host_loaded = true
 	_check_start()
+	## Still waiting: the starter seat may start now (its client hears it).
+	if phase == Phase.FILLING and starter_slot > 0:
+		_set_waiting(true, true)
 
 
 ## MpKit only: the seat's peer dropped.
@@ -200,17 +222,51 @@ func displaced_by(peer_id: int, credential: String) -> int:
 	return holder if holder != peer_id else 0
 
 
-## The listen host starts with whoever loaded. False when it may not (see can_start_now).
+## Starts the match with whoever loaded: on a listen host at once; on the starter seat's client the server is asked (it checks
+## again). False when this peer may not (see can_start_now).
 func start_now() -> bool:
 	if not can_start_now():
+		return false
+	if _is_networked_client():
+		rpc_start.rpc_id(1)
+		return true
+	_start("host_started")
+	return true
+
+
+## True when this peer may start the waiting match now: a listen host whose own world is in, or the client of the starter seat
+## once its world loaded; in both, with another seat loaded or late_join on (the rest may still come). Never on a dedicated.
+func can_start_now() -> bool:
+	if _is_networked_client():
+		return phase == Phase.FILLING and _told_can_start
+	return phase == Phase.FILLING and host_present and not _identity.is_valid() and _host_in() \
+		and (_loaded_count() > 0 or late_join)
+
+
+## Server: the player in `slot` asks to start the waiting match (its client's start_now). Only the starter seat may, once its
+## world loaded, with another seat loaded or late_join on. True if the match started.
+func start_by(slot: int) -> bool:
+	if not _starter_may_start(slot):
 		return false
 	_start("host_started")
 	return true
 
 
-## True on a listen host whose open match waits and has at least one client loaded.
-func can_start_now() -> bool:
-	return phase == Phase.FILLING and host_present and not _identity.is_valid() and _loaded_count() > 0 and _host_in()
+## Server: the seats nobody holds: never taken, or out for good (abandoned). A bot of yours may play them; with late_join a newcomer
+## still takes one (joined_late). Not a seat away within its grace (its player may come back).
+func vacant_slots() -> Array[int]:
+	var out: Array[int] = []
+	for slot in _armed_seats:
+		if not _admitted.has(slot) or _abandoned.has(slot):
+			out.append(slot)
+	return out
+
+
+## Server: the vacant seats nobody may take any more (the match started without late_join): an issuer room stops handing them out.
+func closed_slots() -> Array[int]:
+	if phase != Phase.RUNNING or late_join:
+		return []
+	return vacant_slots()
 
 
 ## The game gives up on `slot` (e.g. it never sent its pick): the match stops waiting for it, and it is abandoned (`why`) as soon
@@ -267,6 +323,7 @@ func away_slots() -> Array[int]:
 func reset() -> void:
 	phase = Phase.IDLE
 	_seats.clear()
+	_armed_seats.clear()
 	_need = 0
 	_identity = Callable()
 	_hold = true
@@ -286,6 +343,7 @@ func reset() -> void:
 	_server_pause = false
 	_told_loaded = 0
 	_told_expected = 0
+	_told_can_start = false
 	if _paused_by_me:
 		_paused_by_me = false
 		if is_inside_tree():
@@ -310,7 +368,7 @@ func poll() -> void:
 		return
 	var now := _now()
 	var timeout_ms := int(load_timeout_s * 1000.0)
-	if phase == Phase.FILLING and _first_admit_ms >= 0 and now - _first_admit_ms > timeout_ms:
+	if start_on_timeout and phase == Phase.FILLING and _first_admit_ms >= 0 and now - _first_admit_ms > timeout_ms:
 		_start("load_timeout")
 	## The server's own world never said it loaded: the match does not wait for it forever either.
 	if phase == Phase.FILLING and not _host_in() and _armed_ms >= 0 and now - _armed_ms > timeout_ms:
@@ -335,8 +393,9 @@ func poll() -> void:
 		var why := str(_given_up.get(slot, GRACE_OVER))
 		_abandoned[slot] = why
 		seat_abandoned.emit(slot, why)
-		## With late join a seat out for good is a free seat again (the game heard it was abandoned).
-		if late_join and not _identity.is_valid():
+		## With late join a seat out for good is a free seat again (the game heard it was abandoned): open seats for anybody, a
+		## ticket's seat for whoever presents that ticket.
+		if late_join:
 			_abandoned.erase(slot)
 			_free_seat(slot)
 
@@ -366,7 +425,16 @@ func _judge(peer_id: int, credential: String, out: Admission) -> String:
 
 
 ## A seat the gate knows (its credential or its ticket): in unless it is out for good, past the grace, or held by a live peer.
+## A ticket's seat nobody took yet: after the start only with late_join (match_started otherwise); a gate that never held
+## (no hold) still lets it in the first time.
 func _judge_known(peer_id: int, slot: int) -> String:
+	if phase == Phase.RUNNING and not _admitted.has(slot):
+		if not late_join and _hold:
+			return MATCH_STARTED
+		## Never taken: whatever the start marked it (not loaded, abandoned) does not hold a newcomer back.
+		_abandoned.erase(slot)
+		_free_seat(slot)
+		return ""
 	if _abandoned.has(slot) or _given_up.has(slot):
 		return GRACE_OVER
 	var holder := int(_peer_of.get(slot, 0))
@@ -443,18 +511,28 @@ func _set_waiting(on: bool, force_send: bool = false) -> void:
 func _send_state_to(peer_id: int) -> void:
 	if peer_id <= 0 or not _is_networked_server() or not multiplayer.get_peers().has(peer_id):
 		return
-	rpc_state.rpc_id(peer_id, _waiting, _loaded_count(), _target(), pause_clients)
+	var may_start := _starter_may_start(_slot_of_peer(peer_id))
+	rpc_state.rpc_id(peer_id, _waiting, _loaded_count(), _target(), pause_clients, may_start)
 
 
 @rpc("authority", "call_remote", "reliable")
-func rpc_state(waiting: bool, loaded_now: int, expected_now: int, pause: bool) -> void:
+func rpc_state(waiting: bool, loaded_now: int, expected_now: int, pause: bool, may_start: bool) -> void:
 	phase = Phase.FILLING if waiting else Phase.RUNNING
 	_waiting = waiting
 	_server_pause = pause
 	_told_loaded = loaded_now
 	_told_expected = expected_now
+	_told_can_start = may_start
 	_apply_client_pause()
 	waiting_changed.emit(waiting, loaded_now, expected_now)
+
+
+## Server: the starter seat's client pressed start (start_now). Checked here again: only that seat, while the match waits.
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_start() -> void:
+	if not _is_networked_server():
+		return
+	start_by(_slot_of_peer(multiplayer.get_remote_sender_id()))
 
 
 ## Client: paused while the match waits and this peer's world is loaded (a world still loading is not held: it must finish).
@@ -468,6 +546,19 @@ func _apply_client_pause() -> void:
 	elif not hold and _paused_by_me:
 		_paused_by_me = false
 		get_tree().paused = false
+
+
+## Server: the starter seat (`slot`) may start the waiting match: its world loaded, and another seat loaded or late_join on.
+func _starter_may_start(slot: int) -> bool:
+	return phase == Phase.FILLING and starter_slot > 0 and slot == starter_slot and _host_in() and _loaded.has(slot) \
+		and _present_slots().has(slot) and (_loaded_count() > 1 or late_join)
+
+
+func _slot_of_peer(peer_id: int) -> int:
+	for slot in _peer_of.keys():
+		if int(_peer_of[slot]) == peer_id:
+			return int(slot)
+	return 0
 
 
 ## The server's own world is in, or the match does not wait for it.
@@ -521,6 +612,11 @@ func _fresh_credential() -> String:
 
 func _is_server() -> bool:
 	return not is_inside_tree() or multiplayer.is_server()
+
+
+func _is_networked_client() -> bool:
+	return is_inside_tree() and multiplayer.multiplayer_peer != null \
+		and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer) and not multiplayer.is_server()
 
 
 func _is_networked_server() -> bool:

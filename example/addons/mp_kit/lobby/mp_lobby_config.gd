@@ -2,8 +2,8 @@ class_name MpLobbyConfig
 extends Resource
 
 ## Limits and times of the room server and its match processes. Pure data: no product text.
-## Every int, float and String field can be overridden by a command-line flag with the same name, dashes
-## instead of underscores (`max_matches` -> `--max-matches=4`), through `with_cli_overrides()`.
+## Every int, float, bool and String field can be overridden by a command-line flag with the same name, dashes
+## instead of underscores (`max_matches` -> `--max-matches=4`, `late_join` -> `--late-join=true`), through `with_cli_overrides()`.
 
 @export_group("Lobby")
 @export var lobby_port: int = 7700
@@ -54,6 +54,15 @@ extends Resource
 ## How long the game may hold a match for every seat to load its world (counted from the first admission). The game
 ## decides what a seat that did not load means (for example, counting it as an abandon). The kit only carries the number.
 @export var load_timeout_s: float = 60.0
+## Off: the match waits until every seat loaded or the player in starter_slot starts it (MpStartButton), however long that takes.
+## A match on a player's PC (MpLocalServer) takes it from the game's MpFlow.
+@export var start_on_timeout: bool = true
+## The seat whose player may start the match with whoever loaded (MpStartButton). 0 = nobody; MpLocalServer sets 1 (its host).
+@export var starter_slot: int = 0
+## After the start a player may still take a seat of the ticket nobody holds: one never taken, or one abandoned past the grace.
+## The game hears MpKit.gate.joined_late (a bot of yours there hands it over). A match on a player's PC (MpLocalServer) takes it
+## from the game's MpFlow.
+@export var late_join: bool = false
 @export var heartbeat_s: float = 2.0
 @export var heartbeat_stale_s: float = 10.0
 @export var idle_no_players_s: float = 60.0
@@ -73,6 +82,7 @@ extends Resource
 ## Fields the launcher forwards to the dedicated as `--field-name=value`.
 @export var agent_fields: PackedStringArray = PackedStringArray([
 	"transport", "tls_certificate_path", "tls_key_path", "relay_url", "relay_room", "heartbeat_s", "idle_no_players_s", "rejoin_grace_s", "load_timeout_s", "parent_check_s", "result_quit_delay_s",
+	"start_on_timeout", "starter_slot", "late_join",
 ])
 
 
@@ -80,7 +90,7 @@ static func flag_for(field: String) -> String:
 	return "--%s" % field.replace("_", "-")
 
 
-## A copy with the command-line flags applied (int, float and String fields).
+## A copy with the command-line flags applied (int, float, bool and String fields; a bool reads true/false, 1/0, on/off).
 func with_cli_overrides() -> MpLobbyConfig:
 	var out := duplicate() as MpLobbyConfig
 	for prop in get_property_list():
@@ -97,6 +107,12 @@ func with_cli_overrides() -> MpLobbyConfig:
 			TYPE_FLOAT:
 				if raw.is_valid_float():
 					out.set(field, raw.to_float())
+			TYPE_BOOL:
+				var word := raw.to_lower()
+				if word in ["true", "1", "on", "yes"]:
+					out.set(field, true)
+				elif word in ["false", "0", "off", "no"]:
+					out.set(field, false)
 			TYPE_STRING:
 				out.set(field, raw)
 	return out
