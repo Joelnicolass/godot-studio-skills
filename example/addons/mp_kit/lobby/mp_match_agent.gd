@@ -128,8 +128,9 @@ func arm_gate() -> void:
 	gate.starter_slot = config.starter_slot
 	gate.late_join = config.late_join
 	gate.host_present = false
-	## state.json follows the start and the seats that close or free (an issuer room lists only what may still be taken).
-	for changed: Signal in [gate.started, gate.seat_abandoned, gate.joined_late]:
+	## state.json follows the start and the seats that close, free or are held (an issuer room lists only what may still be
+	## taken, and gives a held seat to its own player only).
+	for changed: Signal in [gate.started, gate.seat_abandoned, gate.joined_late, gate.seat_admitted]:
 		if not changed.is_connected(_on_gate_changed):
 			changed.connect(_on_gate_changed)
 	var slots: Array[int] = []
@@ -218,5 +219,5 @@ func _write_state() -> void:
 		"heartbeat_ms": MpMatchFiles.now_ms(), "started_ms": _started_ms,
 		"finished": finished, "slots": slots,
 		## The match runs (the gate let it start), and the seats nobody holds that no ticket may take any more.
-		"started": gate.phase == MpMatchGate.Phase.RUNNING, "closed": gate.closed_slots(),
+		"started": gate.phase == MpMatchGate.Phase.RUNNING, "closed": gate.closed_slots(), "held": gate.held_slots(),
 	})

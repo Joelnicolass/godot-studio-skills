@@ -5,12 +5,15 @@
 # process: --match-args) walks each free seat, and a late player finds the running room in the list, takes a bot's seat
 # (joined_late) and gets that pawn where the bot left it, moved by its own keys from then on; the host wins. Part 2, no late
 # join: a room for 3 starts by time with the host alone, then leaves the issuer's list and hands out no more seats.
+# Part 3, a seat its player holds: a player's game crashes (SIGKILL); past its reservation, inside its grace, another
+# player asks the issuer for a seat and never gets that one; the same player's game again (same install) gets its own
+# ticket and seat back and the match lets it in.
 # Never more than 3 headless Godot at once (a match process counts). Needs npm (the issuer's and relay's packages).
 # Prints PASS / FAIL lines and MPKIT LATE PASS / MPKIT LATE FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
 TAG="MPKIT LATE"
-LIMIT_S="${PROBE_LIMIT_S:-240}"
+LIMIT_S="${PROBE_LIMIT_S:-330}"
 PROC_MAX=3
 TRANSPORT=relay
 OUT="$(mktemp -d "${TMPDIR:-/tmp}/mpkit_late.XXXXXX")"
@@ -34,7 +37,7 @@ GAME="lab$$"
 ## A heartbeat a second: the issuer hears soon that a match started.
 ISSUER_PRIVATE_KEY="$ISSUER_PRIVATE_KEY" ISSUER_RELAY_URL="ws://127.0.0.1:$RELAY_PORT" PORT="$ISSUER_PORT" \
   ISSUER_GAMES="{\"$GAME\":{\"max_players\":8}}" ISSUER_ROOMS_PER_IP=10 ISSUER_RATE_LIST=600 ISSUER_RATE_JOIN=120 \
-  ISSUER_RATE_HOST=600 ISSUER_HEARTBEAT_S=1 node "$ISSUER_DIR/server.mjs" > "$OUT/issuer.log" 2>&1 &
+  ISSUER_RATE_HOST=600 ISSUER_HEARTBEAT_S=1 ISSUER_TOKEN_TTL_S=15 node "$ISSUER_DIR/server.mjs" > "$OUT/issuer.log" 2>&1 &
 echo $! >> "$OUT/pids"
 python3 - "$ISSUER_PORT" <<'PYEOF' || echo "FAIL the issuer did not start"
 import sys, time, urllib.request
@@ -49,6 +52,7 @@ PYEOF
 COMMON=(--issuer-url="$ISSUER" --probe-timeout-s=45 --matches-root="$MATCHES" --result-quit-delay-s=1 --load-timeout-s=2)
 CODE1="$OUT/code1.txt"
 CODE2="$OUT/code2.txt"
+CODE3="$OUT/code3.txt"
 
 echo "--- part 1: late join; the host starts its room alone, bots play the free seats, a late player takes one"
 gd "$OUT/starter.log" -- "${COMMON[@]}" --probe=online_starter --online-mode=dedicated --probe-players=3 \
@@ -69,7 +73,30 @@ gd "$OUT/closed.log" -- "${COMMON[@]}" --probe=online_starter --online-mode=dedi
 wait_pid "$LAST_PID" 90
 wait_gone "match-ticket-file=$MATCHES" 15
 
-for r in starter late closed; do [ -f "$OUT/$r.log" ] || continue; grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$OUT/$r.log" | sed "s/^/$r: /"; done
+echo "--- part 3: a seat its player holds; a crash, another player, the same player back"
+gd "$OUT/keep.log" -- "${COMMON[@]}" --probe=online_keep --online-mode=dedicated --probe-players=3 --start-on-timeout=false \
+  --probe-code-file="$CODE3" --probe-wait-file="$OUT/go3" --issuer-install=lab-keep-install-001
+KEEP=$LAST_PID
+wait_line "$OUT/keep.log" "^PASS the online room is up" "$KEEP" 60
+gd "$OUT/hold.log" -- "${COMMON[@]}" --probe=online_hold --probe-code-file="$CODE3" --probe-seat-file="$OUT/seat3.txt" \
+  --issuer-install=lab-hold-install-001
+HOLD=$LAST_PID
+wait_line "$OUT/hold.log" "^PROBE online_hold seated" "$HOLD" 60
+## The host's heartbeat (every second here) tells the issuer the seat is held; then the game crashes.
+sleep 3
+for p in $(descendants "$HOLD" | sort -rn); do kill -9 "$p" 2>/dev/null; done
+## Past its reservation (2 x ISSUER_TOKEN_TTL_S = 30 s), inside its grace (60 s).
+sleep 32
+gd "$OUT/peek.log" -- "${COMMON[@]}" --probe=online_peek --probe-code-file="$CODE3" --probe-seat-file="$OUT/seat3.txt" \
+  --issuer-install=lab-peek-install-001
+wait_pid "$LAST_PID" 60
+gd "$OUT/back.log" -- "${COMMON[@]}" --probe=online_back --probe-code-file="$CODE3" --probe-seat-file="$OUT/seat3.txt" \
+  --probe-go-file="$OUT/go3" --issuer-install=lab-hold-install-001
+wait_pid "$LAST_PID" 60
+wait_pid "$KEEP" 60
+wait_gone "match-ticket-file=$MATCHES" 15
+
+for r in starter late closed keep hold peek back; do [ -f "$OUT/$r.log" ] || continue; grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$OUT/$r.log" | sed "s/^/$r: /"; done
 [ -f "$OUT/botseat.txt" ] && sed "s/^/botseat: /" "$OUT/botseat.txt"
 FAILS=0
 check() { if eval "$1"; then echo "PASS $2"; else echo "FAIL $2"; FAILS=$((FAILS + 1)); fi; }
@@ -84,6 +111,10 @@ check 'grep -q "^PASS the pawn is where the bot walked it" "$OUT/late.log" && gr
 check 'grep -q "^PROBE online_late PASS" "$OUT/late.log"' "the late player saw the match end"
 check 'grep -q "^PASS the started room left the issuer.s list" "$OUT/closed.log" && grep -q "^PASS a join of the started room is full" "$OUT/closed.log"' "without late join the started room left the list and handed out no more seats"
 check 'grep -q "^PROBE online_starter PASS" "$OUT/closed.log"' "the host of that room closed it cleanly"
+check 'grep -q "^PASS the issuer gave this player its own ticket" "$OUT/hold.log"' "a player took a seat and got its own ticket"
+check 'grep -q "^PASS it is not the seat of the player who is away" "$OUT/peek.log"' "while that player was away (past its reservation) another player never got its seat"
+check 'grep -q "^PASS the issuer gave back its own ticket" "$OUT/back.log" && grep -q "^PASS the same seat" "$OUT/back.log" && grep -q "^PASS the match let it back" "$OUT/back.log"' "the same player's game again got its own ticket and seat back, and the match let it in"
+check 'grep -q "^PROBE online_keep PASS" "$OUT/keep.log"' "the host of the held room closed it cleanly"
 check '! grep -q "refused" "$OUT/relay.log"' "the relay refused no token of this run"
 check '! grep -q "^SCRIPT ERROR" "$OUT"/*.log' "no script errors"
 check '[ "$(godots_with "$MATCHES")" = 0 ]' "no match process left"

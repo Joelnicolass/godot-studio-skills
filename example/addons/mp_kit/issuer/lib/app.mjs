@@ -30,12 +30,14 @@ const CREATE = WHO.extend({
   mode: z.enum(["dedicated", "listen"]),
   seats: z.array(TICKET).max(63).default([]),
 });
-const JOIN = WHO;
+/** `ticket`: the player's own seat ticket, to come back to that seat (from this machine or another). */
+const JOIN = WHO.extend({ ticket: TICKET.optional() });
 const TOKENS = z.object({ role: z.enum(["host", "client"]) });
 const HEARTBEAT = z.object({
   players: z.number().int().min(0).max(64),
   state: z.enum(["open", "playing"]),
   taken: z.array(TICKET).max(63).default([]),
+  held: z.array(TICKET).max(63).optional(),
 });
 
 /**
@@ -91,7 +93,7 @@ export async function createIssuer(config, { now = Date.now } = {}) {
     const body = parse(JOIN, req.body, res);
     if (!body) return;
     const asker = who(body, ipOf(req));
-    const seat = rooms.join(String(req.params.code), asker);
+    const seat = rooms.join(String(req.params.code), asker, body.ticket);
     if ("error" in seat) return refuse(res, seat);
     res.json({
       code: seat.room.code, room: seat.room.relayRoom, relay_url: config.relayUrl, ticket: seat.ticket,

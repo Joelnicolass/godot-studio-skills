@@ -73,3 +73,11 @@ func test_a_player_who_takes_the_seat_replaces_the_bot() -> void:
 	input._advance_remote()
 	check(not input.is_action_pressed(&"ui_left"), "the player left: the bot starts with no keys until it presses again")
 	input.get_parent().free()
+
+
+func test_the_issuer_seat_is_remembered_per_room() -> void:
+	check(MpIssuer.normalize_code(" k7f-3qx ") == "K7F3QX", "a code as typed reads as the issuer writes it")
+	MpIssuer._seat_tickets["K7F3QX"] = "SEAT22"
+	check(MpIssuer.seat_ticket("k7f-3qx") == "SEAT22", "this player's own ticket in that room")
+	check(MpIssuer.seat_ticket("ZZZZZZ").is_empty(), "no ticket in another room")
+	MpIssuer._seat_tickets.erase("K7F3QX")

@@ -82,6 +82,7 @@ enum StartWhen {
 	"banned": "This player cannot play online",
 	"network": "Cannot reach the online server",
 	"no_issuer": "This game has no online server (MpNetConfig.issuer_url)",
+	"bad_ticket": "That ticket is not a seat of this room",
 }
 @export var online_error_status: String = "Online error (%s)"
 ## Shown on a client while the host sends nothing (its game froze, its tab is hidden in a mobile browser, its link
@@ -344,27 +345,29 @@ func host_online(players: int = 0, online_room_name: String = "", listed: bool =
 	return online
 
 
-## Joins the online room `code` (as the player typed it): the issuer gives a seat, then the relay connects.
-func join_online(code: String) -> Error:
+## Joins the online room `code` (as the player typed it): the issuer gives a seat, then the relay connects. The seat's
+## ticket is this player's own: a later join_online of the same room in this process shows it again (its seat back), and
+## `ticket` (MpIssuer.seat_ticket from another machine) asks for that seat by it.
+func join_online(code: String, ticket: String = "") -> Error:
 	if not MpIssuer.is_configured():
 		_set_status(online_text("no_issuer"))
 		return ERR_UNCONFIGURED
 	_set_status(online_working_status)
 	## A room whose host is still getting on the relay answers room_starting: ask again for a few seconds.
-	var seat: Dictionary = await MpIssuer.join_room(get_tree(), code)
+	var seat: Dictionary = await MpIssuer.join_room(get_tree(), code, ticket)
 	var tries := 0
 	while not seat["ok"] and str(seat["error"]) == "room_starting" and tries < 30:
 		tries += 1
 		await get_tree().create_timer(0.5, true).timeout
-		seat = await MpIssuer.join_room(get_tree(), code)
+		seat = await MpIssuer.join_room(get_tree(), code, ticket)
 	if not seat["ok"]:
 		_set_status(online_text(str(seat["error"]), seat["data"]))
 		return ERR_UNAVAILABLE
 	var data: Dictionary = seat["data"]
 	## The relay for this connection only (use_relay_room): MpKit.transport stays the game's, for LAN afterwards.
 	MpTransport.use_relay_room(str(data.get("room", "")), str(data.get("token", "")), str(data.get("relay_url", "")))
-	var ticket: Variant = data.get("ticket", null)
-	var err := MpKit.join(str(data.get("code", code)), MpKit.port, str(ticket) if ticket != null else "")
+	var seat_ticket: Variant = data.get("ticket", null)
+	var err := MpKit.join(str(data.get("code", code)), MpKit.port, str(seat_ticket) if seat_ticket != null else "")
 	_set_status(join_fail_status if err != OK else joining_status % str(data.get("code", code)))
 	return err
 
