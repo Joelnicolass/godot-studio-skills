@@ -6,6 +6,7 @@ Dos ejemplos, cada uno con su `boot.tscn` (abrilo y apretá F6):
 
 - `examples/minimal_2d/`: lo mínimo, exactamente lo que escribe el asistente de abajo (2D, dos jugadores, ENet, sin salas). Un menú, un mundo vacío y un jugador predicho que se mueve con las flechas y suma con Enter. Son los pasos 2 a 6 de esta página, ya hechos.
 - `examples/arena_2d/`: el completo, con disparos, una campana que toca cualquiera, salas online y partida privada.
+- `examples/bots_2d/`: una partida que espera en el mundo hasta que el host la arranca, con un bot en cada asiento libre y jugadores que entran tarde y toman el lugar de un bot.
 
 **El camino más corto**: con el plugin activo, **Proyecto › Herramientas › MpKit: Setup game...**. Elegís carpeta, 2D o 3D, jugadores, transporte y si querés salas online; el diálogo muestra los archivos que va a crear (`[+]`, y `[~]` si ya existen: entonces no escribe nada) y arma `game.tres`, boot, mundo, jugador predicho y salas. F5 y ya se juega solo, en LAN, dedicado u online. Los pasos de abajo son lo mismo a mano: un recurso, dos nodos de escena y tu jugador.
 
@@ -141,7 +142,7 @@ Para probar con red mala, agregá a cada proceso `--net-lag-ms=100 --net-jitter-
 - **Nada de `@rpc` a mano.** Una orden puntual del dueño: `net.to_server(&"x")` → `mp_sv_x()`. Un efecto en todos: `net.to_all(&"x")` → `mp_all_x()`. Un número de la partida: `Mp.state()`.
 - **Animá con la velocidad del kit:** `net.motion_velocity()` / `net.motion_speed()` (Vector2 en 2D, Vector3 en 3D) dicen cómo se mueve lo que se ve en cada máquina; la pose dibujada frame a frame no.
 - **Probá con red mala desde el principio:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` en cada proceso, y `Mp.net_quality()` para mostrarle al jugador cómo está su conexión.
-- **Un lobby dentro del mundo:** apagá `start_on_timeout` en el `MpFlow` y la partida espera hasta que estén todos o el host toque **Start now**. Con `late_join`, el host puede arrancar solo, un bot tuyo juega los asientos libres (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) y el que llega tarde toma ese peón (GUIDE 7.5).
+- **Un lobby dentro del mundo:** apagá `start_on_timeout` y prendé `host_can_start` en el `MpFlow`: la partida espera hasta que estén todos o el host toque **Start now**. Con `late_join`, el host puede arrancar solo, un bot tuyo juega los asientos libres (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) y el que llega tarde toma ese peón. Así lo hace `examples/bots_2d/` (GUIDE 7.5). Sin tocar nada, todo esto queda apagado.
 - **No toques el kit.** Nada de reglas en `mp_kit.gd` ni un fork: lo que hace tu juego va en tus escenas.
 
 ## Más allá de lo básico

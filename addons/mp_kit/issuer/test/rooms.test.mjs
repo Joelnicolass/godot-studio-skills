@@ -268,3 +268,18 @@ test("a held seat the host lets go (past its grace, or a bot's to take) is free 
   advance(10 * config.tokenTtlS * 1000);
   assert.equal(ok(rooms.join(old.code, who())).ticket, "TICKET2", "no held list: a connected seat is still kept");
 });
+
+test("a seat the host lets go is free at once, even while its player's reservation would still run", () => {
+  const { rooms } = setup();
+  const { room } = opened(rooms, who(), dedicated(2));
+  ok(rooms.join(room.code, who()));
+  rooms.heartbeat(room, { players: 2, state: "playing", taken: ["TICKET1"], held: ["TICKET1"] });
+  // Its player dropped and its grace ended within the reservation (2 x the token's life): the host no longer holds it.
+  rooms.heartbeat(room, { players: 1, state: "playing", taken: [], held: [] });
+  assert.equal(ok(rooms.join(room.code, who())).ticket, "TICKET1", "a late player gets it now, not room_full");
+  const { room: old } = opened(rooms, who(), dedicated(2));
+  ok(rooms.join(old.code, who()));
+  rooms.heartbeat(old, { players: 2, state: "open", taken: ["TICKET1"] });
+  rooms.heartbeat(old, { players: 1, state: "open", taken: [] });
+  assert.equal(rooms.join(old.code, who()).error, "room_full", "an older host (no held list): the reservation still keeps it, as before");
+});

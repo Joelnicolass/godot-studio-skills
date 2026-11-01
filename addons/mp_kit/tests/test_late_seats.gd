@@ -20,11 +20,15 @@ func test_an_expired_ticket_still_names_its_seat() -> void:
 
 func test_the_flow_says_how_a_match_on_this_pc_starts() -> void:
 	var flow := MpFlow.new()
-	flow.start_on_timeout = false
-	flow.late_join = true
 	var config := MpLobbyConfig.new()
 	flow.fill_match_start(config)
+	check(config.start_on_timeout and not config.late_join and config.starter_slot == 0, "by default a match on this PC starts as before: by time, no late join, no host start")
+	flow.start_on_timeout = false
+	flow.late_join = true
+	flow.host_can_start = true
+	flow.fill_match_start(config)
 	check(not config.start_on_timeout and config.late_join, "MpFlow's start_on_timeout and late_join go to the match's config")
+	check(config.starter_slot == 1, "host_can_start: its host (slot 1) may start it")
 	for field in ["start_on_timeout", "starter_slot", "late_join"]:
 		check(config.agent_fields.has(field), "%s travels to the match process as a flag" % field)
 	check(MpLobbyConfig.flag_for("start_on_timeout") == "--start-on-timeout", "the flag of start_on_timeout")

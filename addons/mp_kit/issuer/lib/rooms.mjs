@@ -169,7 +169,15 @@ export class Rooms {
       const handed = [...room.reservations.values()].find((r) => r.ticket === ticket);
       room.holders.set(ticket, handed ? handed.install : null);
     }
-    for (const ticket of [...room.holders.keys()]) if (!held.has(ticket)) room.holders.delete(ticket);
+    for (const ticket of [...room.holders.keys()]) {
+      if (held.has(ticket)) continue;
+      room.holders.delete(ticket);
+      // The host says nobody holds it any more (its grace is over): a reservation left from its player's join must not
+      // keep it either. Only when the host sends `held`: an older host reports connected seats only.
+      if (report.held !== undefined) {
+        for (const [key, r] of room.reservations) if (r.ticket === ticket) room.reservations.delete(key);
+      }
+    }
   }
 
   /** The host closed `room`. */
