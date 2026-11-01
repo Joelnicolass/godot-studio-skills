@@ -133,7 +133,7 @@ Every kit ships a **minimal example**: the smallest integration that works, to o
 
 | Kit | Minimal example | Full examples | README | Tests |
 |---|---|---|---|---|
-| MpKit | `addons/mp_kit/examples/minimal_2d/boot.tscn`: what *Setup game* writes (menu, world, predicted player) | `arena_2d/boot.tscn` | [QUICKSTART](addons/mp_kit/QUICKSTART.md) | `mpkit_lab/run/all.sh` |
+| MpKit | `addons/mp_kit/examples/minimal_2d/boot.tscn`: what *Setup game* writes (menu, world, predicted player) | `arena_2d/boot.tscn`, `bots_2d/boot.tscn` (the host starts, bots in the free seats, late join) | [QUICKSTART](addons/mp_kit/QUICKSTART.md) | `mpkit_lab/run/all.sh` |
 | FsmKit | `addons/fsm_kit/examples/minimal_2d/minimal_2d.tscn`: `Idle`, `Move`, `Hurt` with a payload | — | [README](addons/fsm_kit/README.md) | `fsmkit_lab/` |
 | PlatKit | `addons/plat_kit/examples/minimal_2d/minimal_2d.tscn`: a player and two ledges, no code | — | [README](addons/plat_kit/README.md) | `platkit_lab/` |
 | RtsKit | `addons/rts_kit/examples/minimal_2d/minimal_2d.tscn`: six soldiers and the command rig | `skirmish_3d`, `skirmish_2d` | [GUIDE](addons/rts_kit/GUIDE.md) | `rtskit_lab/` |
