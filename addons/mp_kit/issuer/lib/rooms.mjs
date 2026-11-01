@@ -18,7 +18,7 @@ export const RELAY_PREFIX = "p-";
 
 /**
  * A seat handed out but not seen taken yet: it is kept for that install until `until`.
- * @typedef {{ ticket: string | null, until: number }} Reservation
+ * @typedef {{ ticket: string | null, until: number, install: string }} Reservation
  */
 
 /**
@@ -36,7 +36,10 @@ export const RELAY_PREFIX = "p-";
  * @property {"dedicated" | "listen"} mode  dedicated: a match process hosts (every player is a relay client);
  *                                          listen: the host's game hosts and plays
  * @property {string[]} seats            dedicated: the admission tickets of the other seats, handed out one per player
- * @property {Set<string>} taken         dedicated: the tickets the host says are connected
+ * @property {Set<string>} taken         dedicated: the tickets the host says nobody else may get (connected, or closed)
+ * @property {Map<string, string | null>} holders  dedicated: each ticket the host says a player holds (connected or away
+ *                                       within its grace) -> the install it was handed to (null: unknown). Nobody else
+ *                                       gets it: only that install (its game restarted) or whoever presents the ticket
  * @property {number} players            what the host last reported (the host counts)
  * @property {"open" | "playing"} state
  * @property {boolean} live              the host's first heartbeat came (it is on the relay): only then is the room
@@ -120,7 +123,7 @@ export class Rooms {
     const room = {
       code, relayRoom: RELAY_PREFIX + code, game: who.game, version: who.version, platform: who.platform,
       hostInstall: who.install, hostIp: who.ip, name: ask.name, maxPlayers: ask.maxPlayers, listed: ask.listed,
-      mode: ask.mode, seats: [...ask.seats], taken: new Set(), players: 1, state: "open", live: false,
+      mode: ask.mode, seats: [...ask.seats], taken: new Set(), holders: new Map(), players: 1, state: "open", live: false,
       keyHash: sha256(key), createdAt: now, heardAt: now, reservations: new Map(),
     };
     this.#rooms.set(code, room);
@@ -146,10 +149,12 @@ export class Rooms {
   }
 
   /**
-   * The host is alive: how many players are in (the host counts), whether it plays, and (dedicated) which tickets are
-   * connected. Reported counts are clamped to the room.
+   * The host is alive: how many players are in (the host counts), whether it plays, and (dedicated) which tickets
+   * nobody else may get (`taken`) and which a player holds, connected or away within its grace (`held`; an older host
+   * sends none: then the taken ones). A held ticket is bound to the install it was handed to until the host stops
+   * reporting it. Reported counts are clamped to the room.
    * @param {Room} room
-   * @param {{ players: number, state: "open" | "playing", taken: string[] }} report
+   * @param {{ players: number, state: "open" | "playing", taken: string[], held?: string[] }} report
    */
   heartbeat(room, report) {
     room.heardAt = this.#now();
@@ -158,6 +163,13 @@ export class Rooms {
     room.players = Math.max(1, Math.min(room.maxPlayers, Math.floor(report.players)));
     room.state = report.state;
     room.taken = new Set(report.taken.filter((t) => room.seats.includes(t)));
+    const held = new Set((report.held ?? report.taken).filter((t) => room.seats.includes(t)));
+    for (const ticket of held) {
+      if (room.holders.has(ticket)) continue;
+      const handed = [...room.reservations.values()].find((r) => r.ticket === ticket);
+      room.holders.set(ticket, handed ? handed.install : null);
+    }
+    for (const ticket of [...room.holders.keys()]) if (!held.has(ticket)) room.holders.delete(ticket);
   }
 
   /** The host closed `room`. */
@@ -172,7 +184,7 @@ export class Rooms {
    * @param {Who} who
    * @returns {{ room: Room, ticket: string | null } | Refusal}
    */
-  join(code, who) {
+  join(code, who, /** @type {string | undefined} */ asked = undefined) {
     const game = this.#config.games.get(who.game);
     const refused = this.#refuseWho(who, game);
     if (refused) return refused;
@@ -184,6 +196,15 @@ export class Rooms {
     this.#expireReservations(room, now);
     const until = now + 2 * this.#config.tokenTtlS * 1000;
     const seatKey = `${who.install}/${who.session ?? ""}`;
+    if (asked !== undefined) {
+      if (room.mode !== "dedicated" || !room.seats.includes(asked)) return { error: "bad_ticket", status: 404 };
+      // A player's own ticket proves its seat, from this machine or another: it comes back to whoever presents it.
+      for (const [key, r] of room.reservations) if (r.ticket === asked && key !== seatKey) room.reservations.delete(key);
+      room.reservations.set(seatKey, { ticket: asked, until, install: who.install });
+      if (room.holders.has(asked)) room.holders.set(asked, who.install);
+      this.#log(`room ${room.code}: a seat back with its ticket for ${who.platform} ${ipTag(who.ip)}`);
+      return { room, ticket: asked };
+    }
     const mine = room.reservations.get(seatKey);
     if (mine) {
       mine.until = until;
@@ -192,13 +213,15 @@ export class Rooms {
     /** @type {string | null} */
     let ticket = null;
     if (room.mode === "dedicated") {
-      const held = new Set([...room.reservations.values()].map((r) => r.ticket));
-      ticket = room.seats.find((t) => !room.taken.has(t) && !held.has(t)) ?? null;
+      // The seat this install holds (its game restarted and lost the ticket): its own seat back, nobody else's.
+      const own = [...room.holders].find(([, install]) => install === who.install);
+      const reserved = new Set([...room.reservations.values()].map((r) => r.ticket));
+      ticket = own ? own[0] : room.seats.find((t) => !room.taken.has(t) && !room.holders.has(t) && !reserved.has(t)) ?? null;
       if (ticket === null) return { error: "room_full", status: 409 };
     } else if (this.#occupied(room) >= room.maxPlayers) {
       return { error: "room_full", status: 409 };
     }
-    room.reservations.set(seatKey, { ticket, until });
+    room.reservations.set(seatKey, { ticket, until, install: who.install });
     this.#log(`room ${room.code}: seat for ${who.platform} ${ipTag(who.ip)} (${this.#occupied(room)}/${room.maxPlayers})`);
     return { room, ticket };
   }
@@ -251,11 +274,11 @@ export class Rooms {
     return null;
   }
 
-  /** Seats in use: dedicated, the taken or reserved tickets plus the host's seat; listen, what the host reports or
+  /** Seats in use: dedicated, the taken, held or reserved tickets plus the host's seat; listen, what the host reports or
    * the host plus the live reservations (a reserved player may not be connected yet), whichever is more. */
   #occupied(/** @type {Room} */ room) {
     if (room.mode === "dedicated") {
-      const used = new Set(room.taken);
+      const used = new Set([...room.taken, ...room.holders.keys()]);
       for (const r of room.reservations.values()) if (r.ticket) used.add(r.ticket);
       return 1 + used.size;
     }

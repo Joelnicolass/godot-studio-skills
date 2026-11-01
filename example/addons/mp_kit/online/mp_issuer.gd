@@ -6,7 +6,9 @@ extends RefCounted
 ## the platform and this install's id (random, kept in user://); the issuer reads the IP itself. Each answers
 ## `{ok, status, data, error}`: `data` is the issuer's JSON, `error` its word ("room_full", "version_mismatch"…) or
 ## "network" when it could not be reached. Settings: `url` and `game`, from MpNetConfig (issuer_url, game_id) or
-## `--issuer-url=` / `--issuer-game=`. Not: the room's life (MpOnline) or the relay connection (MpTransport).
+## `--issuer-url=` / `--issuer-game=`. A seat the issuer hands out is this player's own ticket: it is remembered per room
+## and shown again on the next join of that room (a rejoin gets the same seat; nobody else can get it while the player
+## holds it). Not: the room's life (MpOnline) or the relay connection (MpTransport).
 
 const INSTALL_FILE := "user://mpkit_install_id"
 const TIMEOUT_S := 10.0
@@ -17,6 +19,8 @@ static var url: String = ""
 static var game: String = ""
 static var _install: String = ""
 static var _session: String = ""
+## Room code (as the issuer writes it) -> the seat ticket this process got there.
+static var _seat_tickets: Dictionary = {}
 
 
 ## The flags win over what an MpNetConfig set.
@@ -90,9 +94,35 @@ static func create_room(tree: SceneTree, max_players: int, room_name: String, li
 	return await request(tree, HTTPClient.METHOD_POST, "/v1/rooms", body)
 
 
-## A seat in room `code` (as typed: lower case and dashes are fine): its relay room, a token and (dedicated) the ticket.
-static func join_room(tree: SceneTree, code: String) -> Dictionary:
-	return await request(tree, HTTPClient.METHOD_POST, "/v1/rooms/%s/join" % code.strip_edges().uri_encode(), who())
+## A seat in room `code` (as typed: lower case and dashes are fine): its relay room, a token and (dedicated) the ticket,
+## this player's own. `ticket` (or, empty, the one this process got in that room before) asks for that seat back: the
+## issuer gives it to whoever shows it, from this machine or another.
+static func join_room(tree: SceneTree, code: String, ticket: String = "") -> Dictionary:
+	var room := normalize_code(code)
+	var body := who()
+	var own := ticket if not ticket.is_empty() else str(_seat_tickets.get(room, ""))
+	if not own.is_empty():
+		body["ticket"] = own
+	var answer: Dictionary = await request(tree, HTTPClient.METHOD_POST, "/v1/rooms/%s/join" % room.uri_encode(), body)
+	## A ticket remembered from an earlier room that had this code: ask for a seat as a newcomer.
+	if not answer["ok"] and str(answer["error"]) == "bad_ticket" and ticket.is_empty() and body.has("ticket"):
+		_seat_tickets.erase(room)
+		body.erase("ticket")
+		answer = await request(tree, HTTPClient.METHOD_POST, "/v1/rooms/%s/join" % room.uri_encode(), body)
+	if answer["ok"] and answer["data"].get("ticket") != null:
+		_seat_tickets[room] = str(answer["data"]["ticket"])
+	return answer
+
+
+## The seat ticket this process got in room `code` ("" if none): show it to let the player come back from another machine
+## (join_online(code, ticket)). It is a secret: whoever has it takes that seat.
+static func seat_ticket(code: String) -> String:
+	return str(_seat_tickets.get(normalize_code(code), ""))
+
+
+## A room code as the issuer writes it: upper case, no spaces or dashes ("k7f-3qx" -> "K7F3QX").
+static func normalize_code(code: String) -> String:
+	return code.strip_edges().to_upper().replace("-", "").replace(" ", "")
 
 
 ## The public rooms of this game and version with a free seat: `data.rooms` = [{code, name, players, max_players, state, platform, age_s}].
@@ -109,9 +139,11 @@ static func tokens(tree: SceneTree, code: String, key: String, role: String) -> 
 	return await request(tree, HTTPClient.METHOD_POST, "/v1/rooms/%s/tokens" % code, {"role": role}, key)
 
 
-## The host is alive: players in (the host counts), "open" or "playing", and (dedicated) the tickets connected.
-static func heartbeat(tree: SceneTree, code: String, key: String, players: int, state: String, taken: PackedStringArray = PackedStringArray()) -> Dictionary:
-	return await request(tree, HTTPClient.METHOD_PUT, "/v1/rooms/%s" % code, {"players": players, "state": state, "taken": Array(taken)}, key)
+## The host is alive: players in (the host counts), "open" or "playing", and (dedicated) the tickets nobody else may get
+## (`taken`: connected, or closed) and the ones a player holds, connected or away within its grace (`held`: the issuer
+## gives those to their own player only).
+static func heartbeat(tree: SceneTree, code: String, key: String, players: int, state: String, taken: PackedStringArray = PackedStringArray(), held: PackedStringArray = PackedStringArray()) -> Dictionary:
+	return await request(tree, HTTPClient.METHOD_PUT, "/v1/rooms/%s" % code, {"players": players, "state": state, "taken": Array(taken), "held": Array(held)}, key)
 
 
 static func close_room(tree: SceneTree, code: String, key: String) -> Dictionary:

@@ -92,14 +92,14 @@ Every player request says who asks: `game`, `version` (the game's), `kit` (MpKit
 | Route | Who | What |
 |---|---|---|
 | `POST /v1/rooms` | host | Body: who + `name`, `max_players`, `visibility` (`public`/`private`), `mode` (`dedicated`: a match process hosts, `seats` = one admission ticket per seat but the host's; `listen`: the host's game hosts, no tickets). `201` → `code`, `room` (`p-<code>`), `relay_url`, `host_token`, `room_key` (the host's proof, shown once), `heartbeat_s`, `token_ttl_s`, `max_players` |
-| `PUT /v1/rooms/:code` | host (`Authorization: Bearer <room_key>`) | Heartbeat: `players` (the host counts), `state` (`open`/`playing`), `taken` (the tickets connected). The first one makes the room **live**: before it, it is not listed and joins get `room_starting` |
+| `PUT /v1/rooms/:code` | host (`Authorization: Bearer <room_key>`) | Heartbeat: `players` (the host counts), `state` (`open`/`playing`), `taken` (the tickets nobody else may get: connected, or closed because the match started), `held` (optional: the tickets of a player, connected or away within its grace; without `held`, the `taken` ones). The first one makes the room **live**: before it, it is not listed and joins get `room_starting` |
 | `POST /v1/rooms/:code/tokens` | host (Bearer) | `{"role": "host"|"client"}` → a fresh token (a reconnecting host; the host player of a dedicated room) |
 | `DELETE /v1/rooms/:code` | host (Bearer) | Closes the room |
 | `GET /v1/rooms?<who>` | player | `rooms`: the live public rooms of that game and **version** with a free seat, newest first |
-| `POST /v1/rooms/:code/join` | player | Body: who. → `room`, `relay_url`, `token`, `ticket` (dedicated: the match admits it; `null` in listen), `mode`, `max_players`. The same process asking again gets the same seat while it is reserved (2 × the token's life) |
+| `POST /v1/rooms/:code/join` | player | Body: who, and optional `ticket` (the player's own ticket, to come back to its seat from this machine or another). → `room`, `relay_url`, `token`, `ticket` (dedicated: this player's own ticket, which the match admits; `null` in listen), `mode`, `max_players`. The same process asking again gets the same seat while it is reserved (2 × the token's life). A seat the host reports `held` is its player's: the issuer gives it to nobody else, only to the same install (its game restarted) or to whoever shows that ticket |
 | `GET /health` | | `ok` |
 
-Refusals: `bad_request` (400, with the `fields`), `banned` (403), `no_such_room` / `unknown_game` (404), `room_full` / `version_mismatch` (with `host_version`) / `room_starting` (409), `version_too_old` (426, with `min_version`), `too_many_rooms` / `rate_limited` (429), `no_room_left` (503), `too_large` (413). `MpFlow.online_texts` turns each into a sentence for the player.
+Refusals: `bad_request` (400, with the `fields`), `banned` (403), `no_such_room` / `unknown_game` / `bad_ticket` (404: a `ticket` that is no seat of that room), `room_full` / `version_mismatch` (with `host_version`) / `room_starting` (409), `version_too_old` (426, with `min_version`), `too_many_rooms` / `rate_limited` (429), `no_room_left` (503), `too_large` (413). `MpFlow.online_texts` turns each into a sentence for the player.
 
 ## 5. Tokens (the contract with the relay)
 

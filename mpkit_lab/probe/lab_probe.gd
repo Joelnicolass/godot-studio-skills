@@ -29,7 +29,10 @@ extends Node
 ## for the start by time instead, and `--probe-expect-closed` then checks the issuer hands out no more seats) | online_late
 ## (finds the room in the list once its match runs and takes a bot's seat with late join: the pawn as the bot left it, and
 ## its own keys move it) | botseat (server, a match process through `--match-args`: once the match starts a bot walks every
-## vacant seat right with MpInput.bot_press; a player who takes one is heard, joined_late). `--probe-no-quit`: a server
+## vacant seat right with MpInput.bot_press; a player who takes one is heard, joined_late) | online_keep (opens a room and
+## keeps it until `--probe-wait-file` exists) | online_hold (takes a seat, writes "slot ticket" to `--probe-seat-file` and
+## stays until the script kills it) | online_peek (asks the issuer for a seat in that room: never the held one) |
+## online_back (the killed player's game again, same install: its own seat and ticket back). `--probe-no-quit`: a server
 ## role keeps its process running when it is done; `--probe-copy-file=F`: every PASS / FAIL line also goes to F (a match process
 ## whose folder is gone when the match ends). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
@@ -158,6 +161,14 @@ func _run() -> void:
 			await _join_late_online()
 		"botseat":
 			await _bot_seats()
+		"online_keep":
+			await _keep_online()
+		"online_hold":
+			await _hold_online_seat()
+		"online_peek":
+			await _peek_online_seat()
+		"online_back":
+			await _back_to_online_seat()
 		_:
 			_check(false, "known role %s" % _role)
 	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -1055,6 +1066,78 @@ func _bot_seats() -> void:
 		return
 	var taken: MpInput = bots.get(int(late[0]))
 	await _until(func() -> bool: return taken != null and taken.has_player(), "seat %d's input is the player's now (has_player)" % int(late[0]))
+
+
+## A host that opens a room for `--probe-players` and keeps it until `--probe-wait-file` exists, then closes it.
+func _keep_online() -> void:
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var online := MpFlow.find_in_tree(self).host_online(int(MpBoot.user_value("probe-players", "3")), "Held room")
+	var codes: Array = []
+	online.room_ready.connect(func(c: String) -> void: codes.append(c))
+	if not await _until(func() -> bool: return not codes.is_empty(), "the online room is up (%s)" % online.mode):
+		return
+	var f := FileAccess.open(MpBoot.user_value("probe-code-file", "user://probe_code.txt"), FileAccess.WRITE)
+	f.store_string(str(codes[0]))
+	f.close()
+	var wait_file := MpBoot.user_value("probe-wait-file", "")
+	var end := Time.get_ticks_msec() + 150000
+	while not FileAccess.file_exists(wait_file) and Time.get_ticks_msec() < end:
+		await get_tree().create_timer(0.25).timeout
+	_check(FileAccess.file_exists(wait_file), "the script let the room close")
+	online.stop()
+	await _until(func() -> bool: return MpOnline.running(get_tree()) == null, "the room closed")
+
+
+func _code_from_file() -> String:
+	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
+	if not await _until(func() -> bool: return FileAccess.file_exists(path), "the host published its code"):
+		return ""
+	return FileAccess.get_file_as_string(path).strip_edges()
+
+
+## Takes a seat in the room and writes "slot ticket" to `--probe-seat-file`; then stays until the script kills it (a crash).
+func _hold_online_seat() -> void:
+	var code := await _code_from_file()
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	_check(await MpFlow.find_in_tree(self).join_online(code) == OK, "join_online connects")
+	if not await _until(_networked_slot, "the player got a seat"):
+		return
+	var ticket := MpIssuer.seat_ticket(code)
+	_check(not ticket.is_empty(), "the issuer gave this player its own ticket")
+	var f := FileAccess.open(MpBoot.user_value("probe-seat-file", "user://probe_seat.txt"), FileAccess.WRITE)
+	f.store_string("%d %s" % [MpKit.local_slot(), ticket])
+	f.close()
+	print("PROBE online_hold seated")
+	while true:
+		await get_tree().create_timer(1.0).timeout
+
+
+## Another player asks the issuer for a seat in the room while the first one is away: it never gets that player's ticket.
+func _peek_online_seat() -> void:
+	var code := await _code_from_file()
+	var held := FileAccess.get_file_as_string(MpBoot.user_value("probe-seat-file", "user://probe_seat.txt")).strip_edges().split(" ")
+	var seat: Dictionary = await MpIssuer.join_room(get_tree(), code)
+	_check(seat["ok"], "the issuer gave a seat (%s)" % seat.get("error", "ok"))
+	var got := str(seat["data"].get("ticket", ""))
+	_check(held.size() == 2 and not got.is_empty() and got != held[1], "it is not the seat of the player who is away (%s, held %s)" % [got, held[1] if held.size() == 2 else "?"])
+
+
+## The killed player's game again (same install, a new process): the issuer gives it its own seat, and the match lets it back.
+func _back_to_online_seat() -> void:
+	var code := await _code_from_file()
+	var held := FileAccess.get_file_as_string(MpBoot.user_value("probe-seat-file", "user://probe_seat.txt")).strip_edges().split(" ")
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	_check(await MpFlow.find_in_tree(self).join_online(code) == OK, "join_online connects again")
+	if not await _until(_networked_slot, "back in the room"):
+		return
+	_check(held.size() == 2 and MpIssuer.seat_ticket(code) == held[1], "the issuer gave back its own ticket (%s)" % MpIssuer.seat_ticket(code))
+	_check(held.size() == 2 and MpKit.local_slot() == int(held[0]), "the same seat (P%d)" % MpKit.local_slot())
+	_check(_rejected.is_empty(), "the match let it back (not turned away: %s)" % _rejected)
+	var go := MpBoot.user_value("probe-go-file", "")
+	if not go.is_empty():
+		var g := FileAccess.open(go, FileAccess.WRITE)
+		g.store_string("go")
+		g.close()
 
 
 func _until_ok(ok: bool, what: String) -> bool:

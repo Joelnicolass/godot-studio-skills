@@ -198,10 +198,13 @@ func _process(_delta: float) -> void:
 
 
 ## Players in (this one counts), "playing" once the match runs or every seat is taken, and (dedicated) the seats' tickets
-## nobody else may get: the connected ones, and once the match started without late join the ones nobody holds.
+## nobody else may get: the connected ones, and once the match started without late join the ones nobody holds; and the
+## held ones (in the match or away within the grace), which the issuer gives to their own player only. A seat away in its
+## grace counts as taken in the player count too.
 func _beat() -> void:
 	var players := 1
 	var taken := PackedStringArray()
+	var held := PackedStringArray()
 	var started := false
 	if mode == DEDICATED and _local and is_instance_valid(_local):
 		var slots := _local.connected_slots()
@@ -214,16 +217,19 @@ func _beat() -> void:
 		for slot in _local.closed_slots():
 			if _local.codes.has(slot) and not taken.has(str(_local.codes[slot])):
 				taken.append(str(_local.codes[slot]))
+		for slot in _local.held_slots():
+			if _local.codes.has(slot):
+				held.append(str(_local.codes[slot]))
 		players = maxi(players, 1)
 		started = _local.is_started()
 	elif mode == LISTEN:
-		players = 1 + multiplayer.get_peers().size()
+		players = 1 + maxi(multiplayer.get_peers().size(), MpKit.gate.held_slots().size())
 		started = MpKit.gate.phase == MpMatchGate.Phase.RUNNING
 		## This game is the match: once it started without late join, its free seats are gone.
 		if started and not MpKit.gate.late_join:
 			players = max_players
 	var state := "playing" if started or players >= max_players else "open"
-	var answer: Dictionary = await MpIssuer.heartbeat(get_tree(), code, _key, players, state, taken)
+	var answer: Dictionary = await MpIssuer.heartbeat(get_tree(), code, _key, players, state, taken, held)
 	## The issuer forgot the room (it restarted, or the host was silent too long): the match goes on, unlisted.
 	if not answer["ok"] and int(answer["status"]) == 404:
 		_beating = false
