@@ -6,7 +6,7 @@ Do **not** install for a 1P-only game.
 
 This guide is for **manual setup in the editor**. Code identifiers stay in English.
 
-**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Two examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes) and `examples/arena_2d/` (shots, a bell, rooms, private match). What follows is the reference of every piece.
+**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Three examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match) and `examples/bots_2d/` (the host starts the match, bots in the free seats, late join). What follows is the reference of every piece.
 
 ## Contents
 
@@ -507,7 +507,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `core/mp_lag_peer.gd` | a bad network on purpose for tests: `--net-lag-ms`, `--net-jitter-ms`, `--net-loss` wrap the peer (ENet or WS). Tests only |
 | `mp.gd` | `Mp`: the verbs of the match from any script (`play_solo`, `host`, `join`, `leave`, `open_rooms`, `is_server`, `is_online`, `me`, `player`, `state`, `current_match`, `finish`, `net_quality`); it calls the nodes that do the work |
 | `mp_game.gd` | `MpGame` (`.tres`): an `MpNetConfig` with the game's scenes; in `MpFlow.game` it fills `net_config` and every empty path |
-| `nodes/mp_start_button.gd` | `MpStartButton`: in the HUD; while the match waits for seats it starts it with the players already loaded (`Mp.gate().start_now()`), showing `loaded/expected`. A listen host sees it, and so does the player who opened a match on its PC (private or online, slot 1: its client asks the server to start); hidden otherwise |
+| `nodes/mp_start_button.gd` | `MpStartButton`: in the HUD; while the match waits for seats it starts it with the players already loaded (`Mp.gate().start_now()`), showing `loaded/expected`. A listen host sees it and, with `MpFlow.host_can_start`, so does the player who opened a match on its PC (private or online, slot 1: its client asks the server to start); hidden otherwise |
 | `nodes/mp_waiting_label.gd` | `MpWaitingLabel`: in the HUD; while the match waits for its seats it shows `loaded/expected` on every peer (the gate's counts, valid on clients); hidden otherwise |
 | `nodes/mp_local_seat.gd` | `MpLocalSeat`: who looks at this screen; `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo: show the match as another seat), `MpLocalSeat.of(node)` by group. HUD, audio, orders and the result take it by `@export` |
 | `nodes/mp_invite_label.gd` | `MpInviteLabel`: in the HUD; in a private match of this PC (`MpLocalServer`) it shows what friends type (`ip:port#CODE`), in an online room it hosts (`MpOnline`) the room's code; hidden otherwise. It finds them by group, without loading the rooms scripts |
@@ -536,6 +536,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `tests/` | the kit's own tests: `godot --headless --path <project> --script res://addons/mp_kit/tests/mp_test_runner.gd` |
 | `examples/minimal_2d/` | minimal example: what *Setup game* writes in 2D without rooms (boot, world, predicted player); `tests/test_examples.gd` keeps it that way and `mpkit_lab/run/minimal.sh` plays it over the network |
 | `examples/arena_2d/` | full example (boot, arena, player, shots, bell, lobby, room server); the lab's e2e fixture |
+| `examples/bots_2d/` | a match with a lobby in the world: the boot's `MpFlow` with `start_on_timeout` off, `host_can_start` and `late_join`; `world.gd` puts a bot in every free seat at the start (`Mp.gate().vacant_slots()`, solo: seats 2..4) and `bot.gd` walks by pressing the player's keys (`MpInput.bot_press`, while `has_player()` is false); a late player takes that pawn. It uses `minimal_2d`'s player; `tests/test_examples.gd` plays it solo |
 
 Role helpers on `MpKit`: `is_authority()` (solo or the server: where the rules run), `has_local_slot()` (this machine has a player with a known slot). `local_slot()` returns 0 on a client until the server assigns its slot (it used to guess). `MpSpawner.spawn_actor(scene, props, owner_slot)` instances on the server under `spawn_path` (the scene must be in the spawner's list). `MpFlow` can be a node in the boot scene: it moves itself under the root.
 
@@ -629,7 +630,7 @@ One value: `MpLobbyConfig.transport` or `--transport=enet|ws`. The server uses i
 - **Lobby**: the session has a token. If the link drops, the server keeps the seat for `resume_grace_s`. `MpLobbyClient.resume()` comes back with the same token (same session and seat). With `auto_resume = true` the client retries by itself every `resume_retry_s` for `resume_window_s` (match it to `resume_grace_s`) and emits `lobby_resuming(attempt)`; `lobby_lost("resume_window")` only when the window runs out.
 - **Match**: a player who dropped comes back to the same dedicated with **the same ticket** within `rejoin_grace_s` and gets their slot back (the game decides what to keep, e.g. their pawn). Past the grace, the seat counts as an abandon and the game decides the result. If the server has not noticed the drop yet, the ticket wins: the stale connection is dropped and the seat comes back as a rejoin. The start gate decides it (below), the same as on LAN.
 - `load_timeout_s`: how long the dedicated waits for every seat to load the world; what a seat that did not load means is up to the game.
-- `start_on_timeout`, `starter_slot`, `late_join`: whether it starts by time, which seat may start it (0 = none) and whether players come in after the start. They travel to each match as flags (`--late-join=true`). A match on the host's PC (`MpLocalServer`) takes `start_on_timeout` and `late_join` from the game's `MpFlow`, and `starter_slot` = 1.
+- `start_on_timeout`, `starter_slot`, `late_join`: whether it starts by time, which seat may start it (0 = none) and whether players come in after the start. They travel to each match as flags (`--late-join=true`). A match on the host's PC (`MpLocalServer`) takes `start_on_timeout`, `late_join` and, with `host_can_start`, `starter_slot` = 1 from the game's `MpFlow`. All off by default: it starts as it always did.
 
 ### Start gate (`MpMatchGate`)
 

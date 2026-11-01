@@ -6,6 +6,7 @@ Two examples, each with its `boot.tscn` (open it and press F6):
 
 - `examples/minimal_2d/`: the minimum, exactly what the wizard below writes (2D, two players, ENet, no rooms). A menu, an empty world and a predicted player that moves with the arrows and scores with Enter. It is steps 2 to 6 of this page, done.
 - `examples/arena_2d/`: the full one, with shots, a bell anyone can ring, online rooms and a private match.
+- `examples/bots_2d/`: a match that waits in the world until the host starts it, with a bot in every free seat and players who come in late and take a bot's place.
 
 **The shortest path**: with the plugin on, **Project › Tools › MpKit: Setup game...**. Pick a folder, 2D or 3D, players, transport and whether you want online rooms; the dialog lists the files it will create (`[+]`, and `[~]` if they exist: then it writes nothing) and builds `game.tres`, the boot, the world, a predicted player and the rooms. F5 and it plays solo, on LAN, dedicated or online. The steps below are the same by hand: one resource, two scene nodes and your player.
 
@@ -141,7 +142,7 @@ To test with a bad network, add `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=
 - **No hand-written `@rpc`.** A one-off order from the owner: `net.to_server(&"x")` → `mp_sv_x()`. An effect everywhere: `net.to_all(&"x")` → `mp_all_x()`. A match number: `Mp.state()`.
 - **Animate from the kit's velocity:** `net.motion_velocity()` / `net.motion_speed()` (a Vector2 in 2D, a Vector3 in 3D) tell how what is shown moves on each machine; the pose drawn frame by frame does not.
 - **Test on a bad network from the start:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` on every process, and `Mp.net_quality()` to show the player how their connection is.
-- **A lobby inside the world:** turn `start_on_timeout` off in the `MpFlow` and the match waits until everyone is in or the host presses **Start now**. With `late_join`, the host may start alone, a bot of yours plays the free seats (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) and a late player takes that pawn (GUIDE 7.5).
+- **A lobby inside the world:** turn `start_on_timeout` off and `host_can_start` on in the `MpFlow`: the match waits until everyone is in or the host presses **Start now**. With `late_join`, the host may start alone, a bot of yours plays the free seats (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) and a late player takes that pawn. `examples/bots_2d/` does it that way (GUIDE 7.5). Untouched, all of it stays off.
 - **Do not touch the kit.** No rules in `mp_kit.gd` and no fork: what your game does goes in your scenes.
 
 ## Beyond the basics

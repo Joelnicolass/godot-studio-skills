@@ -56,7 +56,7 @@ CODE3="$OUT/code3.txt"
 
 echo "--- part 1: late join; the host starts its room alone, bots play the free seats, a late player takes one"
 gd "$OUT/starter.log" -- "${COMMON[@]}" --probe=online_starter --online-mode=dedicated --probe-players=3 \
-  --late-join --start-on-timeout=false --probe-code-file="$CODE1" --probe-wait-file="$OUT/go1" \
+  --late-join --start-on-timeout=false --host-can-start=true --probe-code-file="$CODE1" --probe-wait-file="$OUT/go1" \
   --match-args="--probe=botseat,--probe-no-quit,--probe-timeout-s=60,--probe-copy-file=$OUT/botseat.txt" \
   --issuer-install=lab-starter-install-1
 STARTER=$LAST_PID
