@@ -1,8 +1,10 @@
 extends "res://addons/mp_kit/tests/mp_test.gd"
 
 ## MpMatchGate rules with an injected clock, no network: filling, full, need, the start, a newcomer after the start, a seat back
-## within the grace or past it, a seat held by a live peer, identity (ticket) mode, the load timeout, all_gone and reset; and the
-## server's own world (wait_host): a host that loads late, a client that reports late, solo (no seats) and the host's timeout.
+## within the grace or past it, a seat held by a live peer, identity (ticket) mode, the load timeout, all_gone and reset; the
+## server's own world (wait_host): a host that loads late, a client that reports late, solo (no seats) and the host's timeout;
+## and how a match starts and takes late players: a ticket's seat after the start (match_started, or late join), no start by
+## time, the starter seat, the vacant and closed seats.
 
 var _clock: Array[int] = [1000]
 var _events: Array[String] = []
@@ -24,6 +26,7 @@ func _gate(seats: Array[int], need: int = 0, identity: Callable = Callable(), ho
 		_events.append("abandoned %d %s %s" % [slot, why, gate.is_abandoned(slot)]))
 	gate.all_gone.connect(func() -> void: _events.append("all_gone"))
 	gate.turned_away.connect(func(_peer: int, reason: String) -> void: _events.append("turned %s" % reason))
+	gate.joined_late.connect(func(slot: int) -> void: _events.append("late %d" % slot))
 	gate.arm(seats, need, identity, hold)
 	return gate
 
@@ -340,4 +343,105 @@ func test_host_load_timeout() -> void:
 	_advance_s(2.0, gate)
 	check(gate.phase == MpMatchGate.Phase.RUNNING and not tree.paused and _events.back() == "started load_timeout",
 		"the host's world never said it loaded: past load_timeout_s it runs anyway: %s" % [_events])
+	_done(gate)
+
+
+func _tickets() -> Callable:
+	return func(_peer: int, ticket: String) -> int: return int(ticket.trim_prefix("t")) if ticket.begins_with("t") else 0
+
+
+func test_a_ticket_seat_nobody_took_hears_match_started() -> void:
+	var gate := _gate([1, 2, 3], 0, _tickets())
+	gate.admit(10, "t1")
+	gate.mark_loaded(1)
+	_advance_s(11.0, gate)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and _events.has("started load_timeout"), "the load timeout started it with seat 1")
+	var late := gate.admit(11, "t3")
+	check(late.slot == 0 and late.reason == MpMatchGate.MATCH_STARTED, "a ticket's seat nobody took, after the start: match_started (not rejected)")
+	check(gate.admit(12, "nope").reason == MpMatchGate.UNKNOWN, "a ticket that names no seat: still rejected")
+	check(gate.vacant_slots() == [2, 3] and gate.closed_slots() == [2, 3], "without late join the untaken seats are vacant and closed")
+	_done(gate)
+
+
+func test_without_start_on_timeout_it_waits_for_every_seat() -> void:
+	var gate := _gate([1, 2], 0, _tickets())
+	gate.start_on_timeout = false
+	gate.admit(10, "t1")
+	gate.mark_loaded(1)
+	_advance_s(30.0, gate)
+	check(gate.phase == MpMatchGate.Phase.FILLING and tree.paused, "no start by time: 30 s later it still waits")
+	gate.admit(11, "t2")
+	gate.mark_loaded(2)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and _events.has("started all_loaded"), "every seat loaded: it starts")
+	_done(gate)
+
+
+func test_the_starter_seat_starts_the_match() -> void:
+	var gate := _gate([1, 2, 3], 0, _tickets())
+	gate.start_on_timeout = false
+	gate.starter_slot = 1
+	check(not gate.start_by(1), "the starter is not in yet: no start")
+	gate.admit(10, "t1")
+	gate.mark_loaded(1)
+	check(not gate.start_by(1), "the starter alone, without late join: no start (nobody else could come)")
+	gate.admit(11, "t2")
+	gate.mark_loaded(2)
+	check(not gate.start_by(2), "another seat may not start it")
+	check(not gate.can_start_now(), "the dedicated itself has no «start now»: the starter's client has")
+	check(gate.start_by(1) and _events.has("started host_started"), "the starter with another seat loaded: it starts")
+	check(gate.admit(12, "t3").reason == MpMatchGate.MATCH_STARTED, "the third seat, after the start: match_started")
+	check(not gate.start_by(1), "a running match does not start again")
+	_done(gate)
+
+
+func test_late_join_lets_a_ticket_seat_in_after_the_start() -> void:
+	var gate := _gate([1, 2, 3], 0, _tickets())
+	gate.start_on_timeout = false
+	gate.starter_slot = 1
+	gate.late_join = true
+	gate.admit(10, "t1")
+	gate.mark_loaded(1)
+	check(gate.start_by(1), "with late join the starter may start alone (the rest may still come)")
+	check(gate.vacant_slots() == [2, 3] and gate.closed_slots().is_empty(), "two vacant seats, none closed: a bot may play them")
+	var late := gate.admit(11, "t3")
+	check(late.slot == 3 and _events.has("in 3") and _events.has("late 3"), "a ticket's seat taken after the start: joined_late")
+	check(gate.vacant_slots() == [2], "that seat is no longer vacant")
+	check(gate.admit(12, "t3").reason == MpMatchGate.SEAT_TAKEN, "its ticket from another peer: the seat is taken")
+	_done(gate)
+
+
+func test_late_join_frees_a_ticket_seat_past_the_grace() -> void:
+	var gate := _gate([1, 2], 0, _tickets())
+	gate.late_join = true
+	gate.admit(10, "t1")
+	gate.admit(11, "t2")
+	gate.mark_loaded(1)
+	gate.mark_loaded(2)
+	gate.mark_left(2)
+	_advance_s(6.0, gate)
+	check(_events.has("abandoned 2 grace_over true") and gate.vacant_slots() == [2], "past the grace: abandoned (the game hears it), then vacant")
+	var next := gate.admit(12, "t2")
+	check(next.slot == 2 and _events.has("late 2") and not _events.has("in 2 back"), "whoever has that ticket now takes it as a newcomer")
+	_done(gate)
+
+
+func test_the_load_timeout_with_late_join_keeps_ticket_seats_open() -> void:
+	var gate := _gate([1, 2, 3], 0, _tickets())
+	gate.late_join = true
+	gate.admit(10, "t1")
+	gate.mark_loaded(1)
+	_advance_s(11.0, gate)
+	check(_events.has("started load_timeout") and gate.vacant_slots() == [2, 3], "started by time: the untaken seats are vacant")
+	check(gate.admit(11, "t2").slot == 2 and _events.has("late 2"), "a ticket's seat after the timeout start: in, with late join")
+	_done(gate)
+
+
+func test_a_listen_host_with_late_join_may_start_alone() -> void:
+	var gate := _gate([2, 3])
+	gate.host_present = true
+	check(not gate.can_start_now(), "no client loaded, no late join: the host cannot start yet")
+	gate.late_join = true
+	check(gate.can_start_now() and gate.start_now(), "with late join the host starts alone")
+	check(gate.vacant_slots() == [2, 3], "both seats vacant (a bot may play them)")
+	check(gate.admit(10, "").slot == 2 and _events.has("late 2"), "a newcomer takes the first free seat: joined_late")
 	_done(gate)

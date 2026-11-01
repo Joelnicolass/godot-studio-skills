@@ -5,7 +5,8 @@ extends Node
 ## Add as autoload (after MpKit) or instance in the boot scene.
 ## Override `snapshot_for_joiner()` in a subclass for game state.
 ## Every path that hosts (Host LAN, a dedicated by hand, a room's dedicated) arms the match's start gate (MpKit.gate): free seats
-## are open until the match starts; after it only a seat that left comes back (rejoin), unless late_join. A dedicated by hand
+## are open until the match starts (every seat loaded, load_timeout_s, or the host starts it); after it only a seat that left comes
+## back (rejoin), unless late_join. A match on this player's PC (private or online: MpLocalServer) takes these knobs too. A dedicated by hand
 ## serves one match after another: when its match is over and the server is empty, it loads a fresh world and opens the
 ## seats again. Knobs: the "Match start" group.
 
@@ -94,11 +95,16 @@ enum StartWhen {
 ## Seconds after the first player sat that the match waits for the rest to load (`--load-timeout-s=`); then it starts with
 ## whoever loaded. The HUD says it waits (MpWaitingLabel). A room's match takes its MpLobbyConfig instead.
 @export var load_timeout_s: float = 15.0
+## Off: the match never starts by time, only once every seat loaded or its host starts it (MpStartButton: a listen host, or the
+## player who opened a match on its PC, private or online). `--start-on-timeout=false`. A room server's match: its MpLobbyConfig.
+@export var start_on_timeout: bool = true
 ## Clients that must load before the match starts, in Host LAN and a dedicated by hand; 0 = every seat, or whoever loaded
 ## once load_timeout_s passed (`--start-seats=`). A listen host may start sooner (MpStartButton, `Mp.gate().start_now()`).
 @export var start_seats: int = 0
-## After the start a newcomer still takes a free seat (`--late-join`). Off: only a seat that left comes back. Not for a room's
-## match (its ticket names every seat).
+## After the start a newcomer still takes a seat nobody holds (`--late-join`): a free one, or one abandoned past the grace, and
+## MpKit.gate.joined_late tells you (a bot of yours playing it hands it over). In a match on this PC (private or online) the
+## newcomer takes the seat its ticket names. Off: only a seat that left comes back; anybody else hears match_started. A room
+## server's match: its MpLobbyConfig.
 @export var late_join: bool = false
 ## The clients' world pauses too while the match waits for seats.
 @export var pause_clients: bool = true
@@ -569,9 +575,36 @@ func _arm_gate() -> void:
 	var gate := MpKit.gate
 	gate.rejoin_grace_s = float(MpBoot.user_value("rejoin-grace-s", str(rejoin_grace_s)))
 	gate.load_timeout_s = float(MpBoot.user_value("load-timeout-s", str(load_timeout_s)))
+	gate.start_on_timeout = effective_start_on_timeout()
+	gate.starter_slot = 0
 	gate.host_present = MpKit.is_listen_host()
-	gate.late_join = late_join or MpBoot.user_flag("late-join")
+	gate.late_join = effective_late_join()
 	gate.arm(MpKit.open_seats(), int(MpBoot.user_value("start-seats", str(start_seats))))
+
+
+## late_join, or `--late-join` (`--late-join=false` turns it off).
+func effective_late_join() -> bool:
+	var raw := MpBoot.user_value("late-join", "").to_lower()
+	if raw in ["false", "0", "off", "no"]:
+		return false
+	return late_join or MpBoot.user_flag("late-join")
+
+
+## start_on_timeout, or `--start-on-timeout=true|false`.
+func effective_start_on_timeout() -> bool:
+	var raw := MpBoot.user_value("start-on-timeout", "").to_lower()
+	if raw in ["false", "0", "off", "no"]:
+		return false
+	if raw in ["true", "1", "on", "yes"]:
+		return true
+	return start_on_timeout
+
+
+## A match on this PC (MpLocalServer, private or online) starts and takes late players as this flow says. `config` is an
+## MpLobbyConfig, untyped on purpose: this flow must not load the lobby scripts.
+func fill_match_start(config: Resource) -> void:
+	config.set("start_on_timeout", effective_start_on_timeout())
+	config.set("late_join", effective_late_join())
 
 
 ## A dedicated by hand (no ticket): it serves one match after another, so there is a next one when a match ends.
