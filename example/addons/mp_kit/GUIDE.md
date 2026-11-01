@@ -777,15 +777,68 @@ Quién simula es otra pregunta: `is_multiplayer_authority()` / `is_authority()` 
 
 ### 7.5 Inicio y fin: `MpMatch`
 
-Un `MpMatch` en el mundo dice cuándo empieza la partida, quién se fue y quién volvió, y la termina para todos. Lo que cuenta lo decide la **puerta de arranque** (`MpMatchGate`, en `/root/MpKit/Gate`, `Mp.gate()`), que el `MpFlow` arma en cada camino que hostea (Host LAN, dedicado a mano, dedicado de sala):
+Un `MpMatch` en el mundo dice cuándo empieza la partida, quién se fue y quién volvió, y la termina para todos. Lo que cuenta lo decide la **puerta de arranque** (`MpMatchGate`, en `/root/MpKit/Gate`, `Mp.gate()`), que el `MpFlow` arma en cada camino que hostea (Host LAN, dedicado a mano, una partida en la PC del host, privada u online, y el dedicado de un servidor de salas):
 
-- **Antes del arranque** los asientos libres están abiertos. El mundo queda **pausado en todos los peers** hasta que cargan los asientos que espera: todos por defecto (`start_seats` = 0, igual en Host LAN y en un dedicado a mano; en una partida de sala, todos los del ticket). `--start-seats=N` cambia ese número sin tocar la escena. Pasado `load_timeout_s` (15 s) desde el primero que entró, arranca con los que cargaron; mientras tanto el HUD dice que espera (`MpWaitingLabel`, `Hud/Waiting`: «Waiting for players (1/4)»). En Host LAN el host no tiene que esperar: el botón **Start now** del HUD (`MpStartButton`, en `Hud/Start` del `MpWorld`) arranca con los que ya cargaron.
-- **Después del arranque** solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`, al mismo slot (*rejoin*), salvo que esté prendido **`late_join`** (inspector del `MpFlow` o `--late-join`; apagado por defecto): entonces un recién llegado todavía toma un asiento libre, y un asiento abandonado pasada la gracia queda libre otra vez. Una partida de sala nunca tiene late join (el ticket nombra cada asiento). En LAN el cliente vuelve solo con la credencial que el servidor le dio al sentarlo (en memoria, por `host:puerto`); en una sala, con su ticket. Si el servidor todavía no notó que el cliente se cayó, gana la credencial (o el ticket): se suelta la conexión vieja y el asiento vuelve como rejoin. Cualquier otro peer se rechaza con un motivo: `match_started`, `full`, `grace_over`, `slot_taken`. El cliente recibe `admission_rejected(motivo)` y el flow lo muestra con `rejection_text(motivo)` (pisalo para traducir).
+- **Antes del arranque** los asientos libres están abiertos. El mundo queda **pausado en todos los peers** hasta que cargan los asientos que espera: todos por defecto (`start_seats` = 0, igual en Host LAN y en un dedicado a mano; en una partida con ticket, todos los del ticket). `--start-seats=N` cambia ese número sin tocar la escena. Pasado `load_timeout_s` (15 s) desde el primero que entró, arranca con los que cargaron; mientras tanto el HUD dice que espera (`MpWaitingLabel`, `Hud/Waiting`: «Waiting for players (1/4)»). Con **`start_on_timeout`** apagado (inspector del `MpFlow` o `--start-on-timeout=false`) nunca arranca por tiempo: espera a todos, o a que el host la arranque. El host no tiene que esperar: el botón **Start now** del HUD (`MpStartButton`, en `Hud/Start` del `MpWorld`) arranca con los que ya cargaron. Lo ve el listen host (Host LAN, un navegador que hospeda) y también el que abrió una partida en su PC (privada u online: es el slot 1, y el servidor lo chequea). Aparece cuando cargó otro asiento más, o enseguida si `late_join` está prendido (los demás pueden llegar después).
+- **Después del arranque** solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`, al mismo slot (*rejoin*), salvo que esté prendido **`late_join`** (inspector del `MpFlow` o `--late-join`; apagado por defecto): entonces un recién llegado todavía toma un asiento que nadie ocupa (uno libre, o uno abandonado pasada la gracia, que queda libre otra vez) y la puerta emite `joined_late(slot)`. En una partida con ticket (privada u online en la PC del host) el recién llegado entra al asiento que nombra su ticket; una sala online con late join sigue en la lista del emisor mientras tenga asientos libres. La partida de un servidor de salas toma `late_join` de su `MpLobbyConfig` (apagado). En LAN el cliente vuelve solo con la credencial que el servidor le dio al sentarlo (en memoria, por `host:puerto`); en una sala, con su ticket. Si el servidor todavía no notó que el cliente se cayó, gana la credencial (o el ticket): se suelta la conexión vieja y el asiento vuelve como rejoin. Cualquier otro peer se rechaza con un motivo: `match_started` (también un ticket válido cuyo asiento nadie tomó antes del arranque), `full`, `grace_over`, `slot_taken`, y `rejected` solo para un ticket que no nombra ningún asiento. El cliente recibe `admission_rejected(motivo)` y el flow lo muestra con `rejection_text(motivo)` (pisalo para traducir).
 - Un asiento que no vuelve a tiempo, o que nunca cargó, **abandona** (`player_abandoned`). Si se fueron todos en un dedicado, nadie abandona: la puerta espera y, cuando pasó la gracia de todos, emite `all_gone`. En un listen host el host sigue jugando: cada asiento que pasa la gracia abandona y no hay `all_gone`.
 - **Mientras un asiento no está**, su peón queda si el spawner lo conserva (`MpSlotSpawner.despawn_on_leave` apagado; prendido por defecto, se borra y se vuelve a crear en el rejoin): no tiene teclas apretadas y, con predicción, el servidor lo sigue simulando sin ninguna (la gravedad o un empujón siguen). Al volver, las teclas de la conexión nueva lo mueven al instante.
+- **Un asiento que nadie ocupa lo puede jugar un bot tuyo** (lo de abajo, «Bots en los asientos libres»): el peón de ese slot en el servidor, con las teclas de `MpInput.bot_press`. Si un jugador toma el asiento (late join, o el que vuelve), el peón queda como está y lo mueven sus teclas.
 - **Un dedicado a mano sirve una partida tras otra** (una VPS arrancada con `--dedicated`): cuando su partida termina (`Mp.finish()`) y se va el último jugador, o todos quedaron afuera pasada la gracia (`all_gone`), carga un mundo nuevo (puntos y actores desde cero) y abre otra vez todos los asientos. Un juego con pantalla de revancha puede llamar él mismo a `MpFlow.next_open_match()` cuando se fueron sus jugadores. **Si tu juego termina la partida a su manera** (no con `Mp.finish()`), avisale al kit en el servidor con `MpKit.broadcast_session_ended(result)`, o llamá a `MpFlow.next_open_match()` cuando terminó y quedó vacío; si no, la partida siguiente recién se abre cuando pasó la gracia de todos, y el que llega antes se rechaza (`match_started`). Los clientes reciben el estado de la puerta al ser admitidos y se pausan apenas cargan su mundo, así que su `MatchClock` arranca en 0.
 
-Los knobs están en el inspector del `MpFlow`, grupo **Match start** (`rejoin_grace_s`, `load_timeout_s`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). En una partida de sala, la gracia y el tiempo de carga salen del `MpLobbyConfig`. En el Remote del editor, `/root/MpKit/Gate` muestra `phase`, `expected`, `loaded` y `away`. En Host LAN el host puede arrancar con los que ya cargaron: `MpStartButton`, o `Mp.gate().can_start_now()` / `Mp.gate().start_now()` desde un botón propio.
+Los knobs están en el inspector del `MpFlow`, grupo **Match start** (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). Una partida en la PC del host (privada u online, `MpLocalServer`) toma `start_on_timeout` y `late_join` del `MpFlow` del juego; la gracia y el tiempo de carga, de su `MpLobbyConfig` (60 s cada uno). La partida de un servidor de salas toma todo de su `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`). En el Remote del editor, `/root/MpKit/Gate` muestra `phase`, `expected`, `loaded` y `away`. El host puede arrancar con los que ya cargaron: `MpStartButton`, o `Mp.gate().can_start_now()` / `Mp.gate().start_now()` desde un botón propio (en el cliente del slot 1 de una partida en su PC, `start_now()` le pide al servidor que arranque).
+
+#### Bots en los asientos libres
+
+El kit no trae IA: dice qué asientos nadie ocupa y deja que un bot tuyo los juegue con el mismo código de movimiento que un jugador. Del lado del servidor:
+
+| Nombre | Qué hace |
+|---|---|
+| `Mp.gate().vacant_slots()` | Los asientos que nadie ocupa: nunca tomados, o abandonados. No incluye uno ausente dentro de la gracia (su jugador puede volver) |
+| `Mp.gate().started(why)` | Arrancó la partida: el momento de poner los bots |
+| `Mp.gate().joined_late(slot)` | Con `late_join`, un jugador tomó un asiento que nadie ocupaba: el bot de ahí lo suelta |
+| `MpSlotSpawner.spawn_slot(slot)` | El peón de ese slot, sin jugador. Cuando alguien entra al slot, el spawner le da ese mismo peón (no crea otro) |
+| `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | Las teclas del bot: se leen igual que las de un jugador (`get_vector`, `is_action_just_pressed`, `mp_move`). Valen mientras nadie juega el asiento; cuando entra un jugador quedan sueltas y mandan las suyas |
+| `MpInput.has_player()` | Verdadero mientras un jugador juega ese asiento. Falso también mientras su jugador está ausente dentro de la gracia |
+
+```gdscript
+## arena.gd (el mundo): cuando arranca, un bot en cada asiento libre.
+@onready var players: MpSlotSpawner = $Players
+
+
+func _ready() -> void:
+	if not MpKit.is_authority():
+		return
+	## El peón queda en el mundo si su jugador se va: lo vuelve a jugar el bot.
+	players.despawn_on_leave = false
+	Mp.gate().started.connect(func(_why: String) -> void:
+		for slot in Mp.gate().vacant_slots():
+			players.spawn_slot(slot).add_child(Bot.new()))
+```
+
+```gdscript
+## bot.gd: hijo del peón, solo en el servidor. Decide teclas; el movimiento es el del jugador (mp_move).
+class_name Bot
+extends Node
+
+var input: MpInput
+
+
+func _ready() -> void:
+	input = get_parent().get_node("MpInput")
+
+
+func _physics_process(_delta: float) -> void:
+	if input.has_player():
+		return
+	var target := Vector2(800, 300)
+	var to_target: Vector2 = target - (get_parent() as Node2D).global_position
+	input.bot_press(&"ui_right" if to_target.x > 0 else &"ui_left", clampf(absf(to_target.x) / 100.0, 0.0, 1.0))
+```
+
+- En una partida con ticket, el jugador tarde entra al asiento que le dio el emisor (el primero libre): si ahí juega un bot, toma ese peón tal cual (posición, vida, lo sincronizado) y el `MpInput` sigue sus teclas desde el tick siguiente.
+- Solo no tiene asientos en la puerta (`vacant_slots()` vacío): ahí los bots los ponés vos, con `spawn_slot(2..N)`. `bot_press` anda igual.
+- Si tu bot no debe mover el peón de un jugador ausente dentro de la gracia, chequeá `Mp.gate().vacant_slots().has(slot)` además de `has_player()`.
 
 Señales:
 
@@ -1303,6 +1356,14 @@ for row in await flow.online_rooms():
 
 La sala vive mientras vive el host: cada 10 s le dice al emisor quién está, y la cierra cuando termina la partida o se va. Un host cuyo juego se cierra sin avisar (una pestaña cerrada) el emisor lo olvida a los 30 s.
 
+Cuándo arranca y quién entra después lo dicen los knobs **Match start** del `MpFlow` (7.5), los mismos en escritorio y en navegador:
+
+| Knob | En una sala online |
+|---|---|
+| `start_on_timeout` apagado | La partida espera a todos los asientos o a que el host la arranque con **Start now** (`MpStartButton`, o `Mp.gate().start_now()`): nunca por tiempo. Sirve para un lobby dentro del mundo |
+| `late_join` prendido | El host puede arrancar solo, y los asientos que nadie ocupa siguen en la lista del emisor (estado `playing`): el que llega toma uno, aunque lo esté jugando un bot tuyo (7.5, «Bots en los asientos libres») |
+| `late_join` apagado | Al arrancar, la sala sale de la lista y el emisor no reparte más asientos (`room_full`). Solo vuelve un asiento que se fue, dentro de la gracia |
+
 El transporte de tu juego no cambia: la conexión de la sala online va por el relay por su cuenta (`MpTransport.use_relay_room`), así que una partida LAN o un servidor local después usan ENet (o lo que diga tu `game.tres`) como antes.
 
 ### 10.6 Un navegador hospeda
@@ -1322,6 +1383,8 @@ Los navegadores de celular congelan del todo las pestañas en segundo plano; ah�
 | "You already host a room" | Una sala por instalación (`ISSUER_ROOMS_PER_INSTALL`): cerrala, o esperá 30 s después de un cierre inesperado |
 | "Cannot reach the online server" | La dirección del emisor, o (web) su `ISSUER_ORIGINS` no incluye el origen de la página: el navegador bloquea la llamada |
 | La sala nunca aparece en la lista | Todavía está arrancando (el host aún no está en el relay), es privada, o está llena |
+| La sala desaparece de la lista cuando arranca la partida | Así es sin `late_join`: después del arranque nadie nuevo puede entrar. Prendé `late_join` en el `MpFlow` para que sigan entrando |
+| "The match already started" al entrar a una sala | La partida arrancó antes de que el jugador llegara a su asiento y `late_join` está apagado |
 | El log del relay dice `refused for p-…: no RELAY_TOKEN_KEYS set` | El relay no tiene la clave pública del emisor: poné `RELAY_TOKEN_KEYS` y redesplegalo |
 | El log del relay dice `… bad token` | La clave pública del relay no es la del emisor (la hizo otra corrida de `keys.mjs`) |
 
@@ -1851,6 +1914,12 @@ El proceso de partida no pudo leer su ticket. Pasa si lo arrancaste a mano con `
 
 **"MpKit: setup failed (…)"** / el botón **Create** desactivado
 Algún archivo de la carpeta ya existe (`[~]`) o la carpeta no empieza con `res://`. Elegí otra carpeta.
+
+**"MpInput 'X': bot_press(y): not one of its actions"**
+El bot apretó una acción que no está en `MpInput › actions`. Agregala ahí: solo esas viajan y se leen en el servidor.
+
+**"WARNING: 1 ObjectDB instance was leaked at exit"** (al cerrar el juego)
+Es de Godot 4.7, no del kit ni de tu juego: cargar en un hilo un script que tiene un `const X := preload(...)` deja un objeto interno sin liberar al salir. El `MpFlow` carga el mundo en un hilo, así que aparece si algún script del mundo usa `preload` en una constante. Es inofensivo (pasa al cerrar). Si te molesta en el log, cambiá ese `preload` por un `@export var x: PackedScene` o un `load()` donde lo usás.
 
 ### Comportamientos
 

@@ -24,7 +24,14 @@ extends Node
 ## for a host that cannot write the code file, a browser) | online_refused (tries the code, or
 ## `--probe-room=`, and expects the issuer's `--probe-expect=` word) | online_stop (opens a room and closes it on
 ## purpose: no `failed`, `ended`, the match process gone, the issuer forgot it; `--probe-stop-early`: before the room is
-## up, from the boot: the scene stays). `--probe-linger-s=N` keeps a
+## up, from the boot: the scene stays) | online_starter (opens an online room and starts it itself with the HUD's Start button
+## once the start gate allows it, past the load timeout with `--start-on-timeout=false`; `--probe-start-by=timeout`: it waits
+## for the start by time instead, and `--probe-expect-closed` then checks the issuer hands out no more seats) | online_late
+## (finds the room in the list once its match runs and takes a bot's seat with late join: the pawn as the bot left it, and
+## its own keys move it) | botseat (server, a match process through `--match-args`: once the match starts a bot walks every
+## vacant seat right with MpInput.bot_press; a player who takes one is heard, joined_late). `--probe-no-quit`: a server
+## role keeps its process running when it is done; `--probe-copy-file=F`: every PASS / FAIL line also goes to F (a match process
+## whose folder is gone when the match ends). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
 
 ## Seconds each check may wait (`--probe-timeout-s=N` for a person opening a browser by hand).
@@ -145,9 +152,17 @@ func _run() -> void:
 			await _refused_online()
 		"online_stop":
 			await _stop_online()
+		"online_starter":
+			await _start_online()
+		"online_late":
+			await _join_late_online()
+		"botseat":
+			await _bot_seats()
 		_:
 			_check(false, "known role %s" % _role)
-	print("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
+	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
+	if MpBoot.user_flag("probe-no-quit"):
+		return
 	var linger := float(MpBoot.user_value("probe-linger-s", "0"))
 	if _fails == 0 and linger > 0.0:
 		await get_tree().create_timer(linger).timeout
@@ -899,6 +914,154 @@ func _stop_online() -> void:
 	_check(str(gone.get("error", "")) == "no_such_room", "the issuer forgot the room (%s)" % gone.get("error", "joined"))
 
 
+## A host who starts its own online room (MpStartButton, the start gate's starter seat) instead of waiting for every seat. With
+## `--start-on-timeout=false` the match still waits past the load timeout; with late join the host may start alone. Then a
+## bot plays each free seat (botseat, in the match process) and the host scores to win once `--probe-wait-file` exists.
+## `--probe-start-by=timeout`: the match starts by time instead (no button), and with `--probe-expect-closed` the room leaves
+## the issuer's list and its free seats are no longer handed out (no late join).
+func _start_online() -> void:
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var players := int(MpBoot.user_value("probe-players", "3"))
+	var online := flow.host_online(players, MpBoot.user_value("probe-room-name", "Lab room"))
+	var codes: Array = []
+	online.room_ready.connect(func(c: String) -> void: codes.append(c))
+	if not await _until(func() -> bool: return not codes.is_empty(), "the online room is up (%s)" % online.mode):
+		return
+	var code: String = codes[0]
+	var f := FileAccess.open(MpBoot.user_value("probe-code-file", "user://probe_code.txt"), FileAccess.WRITE)
+	f.store_string(code)
+	f.close()
+	await _until(func() -> bool: return MpKit.is_networked() and MpKit.has_local_slot() and _in_world("Actors") != null, "the host is in its own room's world")
+	var gate := MpKit.gate
+	await _until(func() -> bool: return gate.is_waiting(), "the match waits for its seats")
+	if MpBoot.user_value("probe-start-by", "") == "timeout":
+		await _until(func() -> bool: return not gate.is_waiting(), "the match started by time (the load timeout)")
+		if MpBoot.user_flag("probe-expect-closed"):
+			await _expect_closed(code)
+		return
+	var load_timeout := float(MpBoot.user_value("load-timeout-s", "2"))
+	await get_tree().create_timer(load_timeout + 2.0, true).timeout
+	_check(gate.is_waiting(), "%.0f s past the load timeout it still waits (start_on_timeout off)" % (load_timeout + 2.0))
+	var buttons: Array[MpStartButton] = []
+	await _until(func() -> bool:
+		buttons.assign(get_tree().current_scene.find_children("*", "MpStartButton", true, false))
+		return not buttons.is_empty() and buttons[0].visible, "the host sees the Start button (alone, with late join)")
+	if buttons.is_empty():
+		return
+	buttons[0].pressed.emit()
+	await _until(func() -> bool: return not gate.is_waiting() and not get_tree().paused, "the host started the match: it runs")
+	for slot in range(2, players + 1):
+		var bot := await _pawn(slot)
+		if bot == null:
+			return
+	var wait_file := MpBoot.user_value("probe-wait-file", "")
+	if not wait_file.is_empty():
+		await _until(func() -> bool: return FileAccess.file_exists(wait_file), "the script let the match go on")
+	var taps := 0
+	while MpKit.is_networked() and taps < 80:
+		await _tap(&"ui_accept")
+		await get_tree().create_timer(0.25).timeout
+		taps += 1
+	_check(not MpKit.is_networked(), "the host won and left the match (%d presses)" % taps)
+	await _until(func() -> bool: return MpOnline.running(get_tree()) == null, "the room closed on the issuer once the match ended")
+
+
+## The match started without late join: once the host told the issuer (a heartbeat), the room leaves the list and a join is full.
+func _expect_closed(code: String) -> void:
+	var flow := MpFlow.find_in_tree(self)
+	var end := Time.get_ticks_msec() + int(step_timeout_s * 1000.0)
+	var gone := false
+	while Time.get_ticks_msec() < end and not gone:
+		var rows: Array = await flow.online_rooms()
+		gone = rows.filter(func(r: Dictionary) -> bool: return r.get("code", "") == code).is_empty()
+		if not gone:
+			await get_tree().create_timer(0.5).timeout
+	_check(gone, "the started room left the issuer's list (no late join)")
+	var seat: Dictionary = await MpIssuer.join_room(get_tree(), code)
+	_check(str(seat.get("error", "")) == "room_full", "a join of the started room is full (%s)" % seat.get("error", "a seat was handed out"))
+	MpOnline.running(get_tree()).stop()
+	await _until(func() -> bool: return MpOnline.running(get_tree()) == null and not MpKit.is_networked(), "the host closed the room")
+
+
+## A late player: finds the room in the list once its match runs ("playing", still listed: late join) and takes a seat a bot
+## plays. Its pawn is the bot's, where the bot left it (not at the spawn point), and its own keys move it from then on.
+func _join_late_online() -> void:
+	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
+	if not await _until(func() -> bool: return FileAccess.file_exists(path), "the host published its code"):
+		return
+	var code := FileAccess.get_file_as_string(path).strip_edges()
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var finished: Array = []
+	flow.match_finished.connect(func(result: Dictionary) -> void: finished.append(result))
+	var found: Array = []
+	var end := Time.get_ticks_msec() + int(step_timeout_s * 1000.0)
+	while found.is_empty() and Time.get_ticks_msec() < end:
+		var rows: Array = await flow.online_rooms()
+		found = rows.filter(func(r: Dictionary) -> bool: return r.get("code", "") == code and r.get("state", "") == "playing")
+		if found.is_empty():
+			await get_tree().create_timer(0.25).timeout
+	_check(not found.is_empty(), "the running room is still in the list, as playing (late join)")
+	if found.is_empty():
+		return
+	var err: Error = await flow.join_online(code)
+	_check(err == OK, "join_online connects after the start")
+	await _until(_networked_slot, "the late player got a seat")
+	_check(_rejected.is_empty(), "the match let it in (not turned away: %s)" % _rejected)
+	var slot := MpKit.local_slot()
+	var pawn := await _pawn(slot)
+	if pawn == null:
+		return
+	await _until(func() -> bool: return MpActor.of(pawn).is_local(), "the bot's pawn is this player's now (P%d)" % slot)
+	var points := _in_world("SpawnPoints")
+	var spawn_x: float = (points.get_child((slot - 1) % points.get_child_count()) as Node2D).global_position.x
+	_check(pawn.global_position.x > spawn_x + 40.0, "the pawn is where the bot walked it (x %.0f, spawned at %.0f)" % [pawn.global_position.x, spawn_x])
+	var from_x: float = pawn.position.x
+	Input.action_press(&"ui_left")
+	await get_tree().create_timer(1.0).timeout
+	Input.action_release(&"ui_left")
+	_check(pawn.position.x < from_x - 40.0, "its own keys move it left (%.0f -> %.0f): the bot let go" % [from_x, pawn.position.x])
+	var go := MpBoot.user_value("probe-go-file", "")
+	if not go.is_empty():
+		var g := FileAccess.open(go, FileAccess.WRITE)
+		g.store_string("go")
+		g.close()
+	await _until(func() -> bool: return not finished.is_empty(), "the late player saw the match end")
+
+
+## Server, a match process (`--match-args`): once the match starts, a bot plays every vacant seat (the slot's pawn, walking
+## right with MpInput.bot_press); a player who takes one is heard (joined_late) and that pawn's input is the player's.
+func _bot_seats() -> void:
+	await _until(func() -> bool: return MpKit.is_server() and MpKit.gate.is_armed(), "this process is the match's server")
+	var gate := MpKit.gate
+	var started: Array = []
+	gate.started.connect(func(why: String) -> void: started.append(why))
+	var late: Array = []
+	gate.joined_late.connect(func(slot: int) -> void: late.append(slot))
+	await _until(func() -> bool: return gate.phase == MpMatchGate.Phase.RUNNING, "the match started")
+	var spawners := get_tree().current_scene.find_children("*", "MpSlotSpawner", true, false)
+	if not _until_ok(not spawners.is_empty(), "the world has an MpSlotSpawner"):
+		return
+	var bots := {}
+	for slot in gate.vacant_slots():
+		var pawn: Node = (spawners[0] as MpSlotSpawner).spawn_slot(slot)
+		var input := pawn.get_node("MpInput") as MpInput
+		input.bot_press(&"ui_right")
+		bots[slot] = input
+	_check(bots.size() > 0, "bots play the vacant seats %s (started: %s)" % [bots.keys(), started])
+	await _until(func() -> bool: return not late.is_empty(), "a player took a bot's seat (joined_late)")
+	if late.is_empty():
+		return
+	var taken: MpInput = bots.get(int(late[0]))
+	await _until(func() -> bool: return taken != null and taken.has_player(), "seat %d's input is the player's now (has_player)" % int(late[0]))
+
+
+func _until_ok(ok: bool, what: String) -> bool:
+	_check(ok, what)
+	return ok
+
+
 ## The issuer turns this join away with `--probe-expect=` (room_full, no_such_room…), and nothing connects.
 func _refused_online() -> void:
 	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
@@ -1205,9 +1368,22 @@ func _until(cond: Callable, what: String) -> bool:
 
 
 func _check(ok: bool, what: String) -> void:
-	print(("PASS " if ok else "FAIL ") + what)
+	_echo(("PASS " if ok else "FAIL ") + what)
 	if not ok:
 		_fails += 1
+
+
+## Prints `line`, and appends it to `--probe-copy-file` when given.
+func _echo(line: String) -> void:
+	print(line)
+	var copy := MpBoot.user_value("probe-copy-file", "")
+	if copy.is_empty():
+		return
+	var f := FileAccess.open(copy, FileAccess.READ_WRITE if FileAccess.file_exists(copy) else FileAccess.WRITE)
+	if f:
+		f.seek_end()
+		f.store_line(line)
+		f.close()
 
 
 ## Holds the owner's aim after the player script set it from the mouse (runs later in the frame).
