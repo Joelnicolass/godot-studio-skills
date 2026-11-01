@@ -445,3 +445,18 @@ func test_a_listen_host_with_late_join_may_start_alone() -> void:
 	check(gate.vacant_slots() == [2, 3], "both seats vacant (a bot may play them)")
 	check(gate.admit(10, "").slot == 2 and _events.has("late 2"), "a newcomer takes the first free seat: joined_late")
 	_done(gate)
+
+
+func test_held_seats_are_the_ones_a_player_has() -> void:
+	var gate := _gate([1, 2, 3], 0, _tickets())
+	gate.late_join = true
+	gate.admit(10, "t1")
+	gate.admit(11, "t2")
+	gate.mark_loaded(1)
+	gate.mark_loaded(2)
+	check(gate.held_slots() == [1, 2], "two players in: both seats held, the third is not")
+	gate.mark_left(2)
+	check(gate.held_slots() == [1, 2], "away within the grace: still held (its player may come back)")
+	_advance_s(6.0, gate)
+	check(gate.held_slots() == [1], "past the grace: no longer held (free again, with late join)")
+	_done(gate)

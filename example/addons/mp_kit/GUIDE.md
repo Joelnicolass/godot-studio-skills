@@ -1364,6 +1364,14 @@ When it starts and who comes in later is up to the `MpFlow`'s **Match start** kn
 | `late_join` on | The host may start alone, and the seats nobody holds stay in the issuer's list (state `playing`): whoever comes takes one, even one a bot of yours plays (7.5, "Bots in the free seats") |
 | `late_join` off | Once it starts, the room leaves the list and the issuer hands out no more seats (`room_full`). Only a seat that left comes back, within the grace |
 
+**Each player has its seat.** The ticket the issuer gives a player on joining is its own. While it is in the match or away within the grace, the issuer gives that seat to nobody else: not from the list, not with the room's code, not to a late player. The host tells the issuer in each heartbeat (`held`). To come back:
+
+- The same game (a network drop): `flow.join_online(code)` again. The kit remembers that room's ticket and shows it.
+- The game closed and opened again on the same PC: the same. The issuer knows the install and gives its seat back.
+- From another machine: `flow.join_online(code, ticket)` with the ticket read on the first one with `MpIssuer.seat_ticket(code)`. Whoever has that ticket takes the seat: it is the player's secret.
+
+Past the grace the seat is no longer its player's: with `late_join` it is free, without it closed.
+
 Your game's transport does not change: the online room's own connection goes through the relay (`MpTransport.use_relay_room`), so a LAN match or a private server afterwards uses ENet (or whatever your `game.tres` says) as before.
 
 ### 10.6 A browser hosts
@@ -1385,6 +1393,8 @@ Mobile browsers freeze background tabs entirely; there nothing keeps the host ru
 | The room never shows in the list | It is still coming up (the host is not on the relay yet), it is private, or it is full |
 | The room leaves the list when the match starts | That is how it is without `late_join`: after the start nobody new may come in. Turn `late_join` on in the `MpFlow` to let them |
 | "The match already started" when joining a room | The match started before the player reached its seat, and `late_join` is off |
+| "That ticket is not a seat of this room" (`bad_ticket`) | The ticket given to `join_online(code, ticket)` is another room's, or the room is gone |
+| A player comes back and does not get its seat | The grace passed (`rejoin_grace_s`), or it comes back from another machine without its ticket (`MpIssuer.seat_ticket`) |
 | The relay log says `refused for p-…: no RELAY_TOKEN_KEYS set` | The relay has no public key of the issuer: set `RELAY_TOKEN_KEYS` and redeploy it |
 | The relay log says `… bad token` | The relay's public key is not the issuer's (made by another `keys.mjs` run) |
 

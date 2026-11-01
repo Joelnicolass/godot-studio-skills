@@ -211,6 +211,18 @@ func closed_slots() -> Array[int]:
 	return out
 
 
+## The seats a player holds, in the match or away within its grace (from its state.json).
+func held_slots() -> Array[int]:
+	var out: Array[int] = []
+	if _launcher == null or _match_id.is_empty():
+		return out
+	var held: Variant = _launcher.state_of(_match_id).get("held", [])
+	if held is Array:
+		for slot in held:
+			out.append(int(slot))
+	return out
+
+
 ## The match's seats: slot -> connected (from its state.json; {} before it wrote one).
 func connected_slots() -> Dictionary:
 	if _launcher == null or _match_id.is_empty():
