@@ -6,8 +6,9 @@ extends Node
 ## any other; it keeps running if the window is minimized. Browser (it cannot start a process): this game hosts it
 ## itself and keeps simulating while its tab is hidden (MpWebKeepAlive). `--online-mode=listen|dedicated` picks one
 ## (tests). Friends join with the code (MpFlow.join_online) or from the list (MpFlow.online_rooms).
-## Lives under the root, tells the issuer every few seconds that the room is alive (players, seats taken) and closes
-## it when the match ends or this player leaves. One per process.
+## Lives under the root, tells the issuer every few seconds that the room is alive (players, seats taken, "playing" once
+## the match runs) and closes it when the match ends or this player leaves. One per process. A match that started without
+## late join hands out no more seats (it leaves the list); with late join (MpFlow) its free seats stay listed.
 ##   var online := MpOnline.start_on(get_tree(), 4, "Friday night")
 ##   online.room_ready.connect(func(code): show(code))
 ## `ticket`: the game's match ticket (world, mode, options, seed, picks…, `seats: [{slot, meta}]`). Desktop: it goes to
@@ -196,10 +197,12 @@ func _process(_delta: float) -> void:
 		_beat()
 
 
-## Players in (this one counts), "playing" once every seat is taken, and (dedicated) the seats' tickets taken.
+## Players in (this one counts), "playing" once the match runs or every seat is taken, and (dedicated) the seats' tickets
+## nobody else may get: the connected ones, and once the match started without late join the ones nobody holds.
 func _beat() -> void:
 	var players := 1
 	var taken := PackedStringArray()
+	var started := false
 	if mode == DEDICATED and _local and is_instance_valid(_local):
 		var slots := _local.connected_slots()
 		players = 0
@@ -208,10 +211,18 @@ func _beat() -> void:
 				players += 1
 				if _local.codes.has(slot):
 					taken.append(str(_local.codes[slot]))
+		for slot in _local.closed_slots():
+			if _local.codes.has(slot) and not taken.has(str(_local.codes[slot])):
+				taken.append(str(_local.codes[slot]))
 		players = maxi(players, 1)
+		started = _local.is_started()
 	elif mode == LISTEN:
 		players = 1 + multiplayer.get_peers().size()
-	var state := "playing" if players >= max_players else "open"
+		started = MpKit.gate.phase == MpMatchGate.Phase.RUNNING
+		## This game is the match: once it started without late join, its free seats are gone.
+		if started and not MpKit.gate.late_join:
+			players = max_players
+	var state := "playing" if started or players >= max_players else "open"
 	var answer: Dictionary = await MpIssuer.heartbeat(get_tree(), code, _key, players, state, taken)
 	## The issuer forgot the room (it restarted, or the host was silent too long): the match goes on, unlisted.
 	if not answer["ok"] and int(answer["status"]) == 404:

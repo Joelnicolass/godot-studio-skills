@@ -8,7 +8,10 @@ extends Node
 ## Extra values (an aim point, a cursor) go with `set_value` on the owner and come out of `get_value` on the server.
 ## With MpActor.predict the owner also simulates at once and keeps its frames to replay them (MpActor reconciles);
 ## `mp_move` then sees the same presses on the owner, on the server and while replaying (`is_replaying()` tells).
-## Not: what an action does (the actor), discrete orders (MpActor.to_server).
+## A seat nobody plays (never taken, or its player away) can be played by a bot of yours on the server: `bot_press` and
+## `bot_set_value` are its keys, read the same way, so players and bots share the movement code. A player who takes the
+## seat replaces them at once (`has_player()`).
+## Not: what an action does (the actor), discrete orders (MpActor.to_server), the bot's decisions (your game).
 
 ## Without prediction a frame is sent when the input changes, and at least this often.
 const KEEPALIVE_S := 0.1
@@ -55,6 +58,9 @@ var _extra: MpInputFrame
 var _extra_before: MpInputFrame
 ## Owner: no frame this tick (pacing down); MpActor simulates nothing new.
 var _skip: bool = false
+## Server: the bot's keys (strength per action) and values, read while no connection plays this seat.
+var _bot_keys: PackedFloat32Array = PackedFloat32Array()
+var _bot_values: Dictionary = {}
 
 
 func _ready() -> void:
@@ -70,6 +76,7 @@ func _ready() -> void:
 		_index[StringName(actions[i])] = i
 	_current = MpInputFrame.sized(actions.size())
 	_previous = _current
+	_bot_keys.resize(actions.size())
 	## Before the actor's own _physics_process: it reads this tick's input.
 	process_physics_priority = -100
 
@@ -79,7 +86,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if MpKit.is_networked() and not MpKit.is_server() and actor.is_local():
 		_sample_and_send(delta)
-	elif MpKit.is_server() and not actor.is_local():
+	elif MpKit.is_authority() and not actor.is_local():
 		_advance_remote()
 
 
@@ -160,6 +167,43 @@ func get_vector(left: StringName, right: StringName, up: StringName, down: Strin
 ## Owner side: a value the server reads with get_value (an aim point, a cursor). Ignored elsewhere.
 func set_value(key: StringName, value: Variant) -> void:
 	_values[key] = value
+
+
+## Server (and solo): true while a player plays this seat (its connection sends this input, or it is this machine's own
+## player). False: nobody does now (the seat was never taken, or its player is away): a bot of yours may (bot_press).
+func has_player() -> bool:
+	if actor == null:
+		return false
+	if reads_local():
+		return true
+	return actor.owner_slot > 0 and MpKit.peer_id_for(actor.owner_slot) != 0
+
+
+## Server (and solo), a bot of yours: hold `action` at `strength` (0..1) from the next tick on, until bot_release. Read like a
+## player's (is_action_just_pressed too). Ignored while a player plays the seat; a player who takes it starts with no keys.
+func bot_press(action: StringName, strength: float = 1.0) -> void:
+	var i: int = _index.get(action, -1)
+	if i < 0:
+		push_warning("MpInput '%s': bot_press(%s): not one of its actions" % [name, action])
+		return
+	_bot_keys[i] = clampf(strength, 0.0, 1.0)
+
+
+func bot_release(action: StringName) -> void:
+	var i: int = _index.get(action, -1)
+	if i >= 0:
+		_bot_keys[i] = 0.0
+
+
+## Server (and solo): the bot lets go of every key and forgets its values.
+func bot_release_all() -> void:
+	_bot_keys.fill(0.0)
+	_bot_values.clear()
+
+
+## Server (and solo), a bot of yours: a value get_value returns, as a player's set_value would (an aim point).
+func bot_set_value(key: StringName, value: Variant) -> void:
+	_bot_values[key] = value
 
 
 func get_value(key: StringName, default: Variant = null) -> Variant:
@@ -278,8 +322,10 @@ func _advance_remote() -> void:
 	_follow_owner_peer(MpKit.peer_id_for(actor.owner_slot))
 	_previous = _current
 	if _owner_peer == 0:
-		## Nobody plays this seat now (dropped, within its grace): no keys held, and with prediction the server goes on
-		## simulating it, so gravity, a knockback or a stun run their course (as an engine with no input does).
+		## Nobody plays this seat now (never taken, or dropped within its grace): the bot's keys (none unless a bot of yours
+		## presses them), and with prediction the server goes on simulating it, so gravity, a knockback or a stun run their
+		## course (as an engine with no input does).
+		_current = _bot_frame()
 		_tick_frames = []
 		if actor.predict:
 			_tick_frames.append(_current)
@@ -316,12 +362,24 @@ func rpc_frames(packet: PackedByteArray) -> void:
 			_latest = frame
 
 
-## Server: the seat's connection changed (a rejoin is a new one, whose frames count from 1 again; or it dropped):
-## start its input over, with no keys held. The kept actor then answers the new connection at once.
+## Server: this tick's input of a bot of yours (or of nobody: no keys), counting presses and releases as a player's.
+func _bot_frame() -> MpInputFrame:
+	var frame := _previous.next()
+	for i in actions.size():
+		var was := _previous.strengths[i] > 0.0
+		var now := _bot_keys[i] > 0.0
+		frame.record(i, _bot_keys[i], now and not was, was and not now)
+	frame.values = _bot_values.duplicate()
+	return frame
+
+
+## Server: the seat's connection changed (a rejoin or a newcomer is a new one, whose frames count from 1 again; or it
+## dropped): start its input over, with no keys held, the bot's either. The kept actor then answers the new connection at once.
 func _follow_owner_peer(peer: int) -> void:
 	if peer == _owner_peer:
 		return
 	_owner_peer = peer
+	bot_release_all()
 	_queue = _new_queue()
 	_latest = null
 	_tick_frames = []

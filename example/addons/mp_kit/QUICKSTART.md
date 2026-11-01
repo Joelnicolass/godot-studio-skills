@@ -141,6 +141,7 @@ Para probar con red mala, agregá a cada proceso `--net-lag-ms=100 --net-jitter-
 - **Nada de `@rpc` a mano.** Una orden puntual del dueño: `net.to_server(&"x")` → `mp_sv_x()`. Un efecto en todos: `net.to_all(&"x")` → `mp_all_x()`. Un número de la partida: `Mp.state()`.
 - **Animá con la velocidad del kit:** `net.motion_velocity()` / `net.motion_speed()` (Vector2 en 2D, Vector3 en 3D) dicen cómo se mueve lo que se ve en cada máquina; la pose dibujada frame a frame no.
 - **Probá con red mala desde el principio:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` en cada proceso, y `Mp.net_quality()` para mostrarle al jugador cómo está su conexión.
+- **Un lobby dentro del mundo:** apagá `start_on_timeout` en el `MpFlow` y la partida espera hasta que estén todos o el host toque **Start now**. Con `late_join`, el host puede arrancar solo, un bot tuyo juega los asientos libres (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) y el que llega tarde toma ese peón (GUIDE 7.5).
 - **No toques el kit.** Nada de reglas en `mp_kit.gd` ni un fork: lo que hace tu juego va en tus escenas.
 
 ## Más allá de lo básico
@@ -154,7 +155,7 @@ Dos escenas más, y anotarlas en `game.tres` (`lobby_scene`, `rooms_scene`); el 
 | Servidor (VPS o tu PC) | **MpRoomServer** en una escena propia, con un **MpLobbyConfig** (`.tres`: puerto, salas, rango de puertos de partida, tiempos) y opcional un **MpRoomRules** | Abre el lobby. Cuando una sala está llena y todos listos, lanza **un proceso dedicado por partida** con un ticket: solo entran los sentados. Toma la red del juego. Correlo con `godot --headless --path . -- --room-server`. Varias partidas a la vez = varios procesos; el tope es `max_matches` |
 | Cliente | **MpLobbyScreen** (`rooms/ui/mp_lobby_screen.tscn`) en una escena. Con `lobby_scene` en el juego, el menú muestra *Online rooms* y el botón Back vuelve al boot | Conectar con un nombre, ver salas, crear (pública o con código), sentarse, *listo*, chat. Al arrancar la partida se une solo y al terminar vuelve con el resultado |
 | Mundo | **MpMatch** | En el servidor: `all_loaded`, `player_joined`, `player_left`, `player_back`, `player_abandoned`. `finish(resultado)` termina la partida para todos (`finished` en cada peer) y le avisa a la sala |
-| (kit) | **MpMatchGate** | La puerta de arranque (`Mp.gate()`): el mundo espera pausado hasta que cargan los asientos; después del arranque solo vuelve el que se fue (dentro de `rejoin_grace_s`), al resto lo rechaza con un motivo. Knobs: grupo **Match start** del `MpFlow` |
+| (kit) | **MpMatchGate** | La puerta de arranque (`Mp.gate()`): el mundo espera pausado hasta que cargan los asientos, pasa el tiempo de carga o el host la arranca; después del arranque solo vuelve el que se fue (dentro de `rejoin_grace_s`), salvo con `late_join`; al resto lo rechaza con un motivo. Knobs: grupo **Match start** del `MpFlow` |
 
 El proceso de cada partida es tu mismo proyecto con `--dedicated` y un ticket: `MpFlow` arma solo el agente que valida el ticket. Reglas de sala propias (cuántos asientos según el modo, qué personajes valen):
 

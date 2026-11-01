@@ -4,7 +4,8 @@ extends Node
 ## A private match on the player's own PC with the same code as the VPS: one dedicated process (your project with
 ## `--dedicated` and a ticket), no room server. The host joins it like any client; each other seat gets a short
 ## code. Friends join with "address:port#CODE" in the menu's address field; a third player without a code is turned
-## away. Lives under the root (survives scene changes) and frees itself when the match ends or `stop()` is called.
+## away. The match starts and takes late players as the game's MpFlow says (start_on_timeout, late_join), and the host
+## (slot 1) may start it with whoever loaded (MpStartButton). Lives under the root (survives scene changes) and frees itself when the match ends or `stop()` is called.
 ## One per process: start_on() while one runs gives that one back (a second click never breaks the first match).
 ## `invites()` / `invite_text()` say what friends type; an MpInviteLabel in the HUD shows it during the match.
 ##   var server := MpLocalServer.start_on(get_tree(), 2)
@@ -109,6 +110,10 @@ func start(seats: int = 2, options: Dictionary = {}, join_host: bool = true, onl
 			config.relay_url = MpTransport.relay_url
 		if config.relay_room.is_empty():
 			config.relay_room = MpTransport.relay_room
+		if flow:
+			flow.fill_match_start(config)
+		## The player who opened it (slot 1) may start it with whoever loaded.
+		config.starter_slot = 1
 	## An online room is always hosted through the relay (its match hosts the issuer's room).
 	if online.has("room"):
 		config.transport = MpTransport.RELAY
@@ -184,6 +189,25 @@ static func new_code() -> String:
 	var out := ""
 	for byte in Crypto.new().generate_random_bytes(CODE_LENGTH):
 		out += CODE_CHARS[byte % CODE_CHARS.length()]
+	return out
+
+
+## True once the match runs (its start gate let it start), from its state.json.
+func is_started() -> bool:
+	if _launcher == null or _match_id.is_empty():
+		return false
+	return bool(_launcher.state_of(_match_id).get("started", false))
+
+
+## The seats nobody holds that nobody may take any more (the match started without late join), from its state.json.
+func closed_slots() -> Array[int]:
+	var out: Array[int] = []
+	if _launcher == null or _match_id.is_empty():
+		return out
+	var closed: Variant = _launcher.state_of(_match_id).get("closed", [])
+	if closed is Array:
+		for slot in closed:
+			out.append(int(slot))
 	return out
 
 

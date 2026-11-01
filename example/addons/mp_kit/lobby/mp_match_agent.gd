@@ -2,8 +2,9 @@ class_name MpMatchAgent
 extends Node
 
 ## Dedicated-match side of the launcher. Reads `--match-ticket-file`, names the seats of the token hashes (seat_of) and arms the
-## match's start gate with them (MpKit.gate: the wait for every seat, the rejoin grace), writes state.json as a heartbeat, writes
-## result.json when the match ends, and quits when nobody is left or the room server (`--room-pid`) is gone.
+## match's start gate with them (MpKit.gate: the wait for every seat, the rejoin grace, how it starts, late join), writes
+## state.json as a heartbeat (with whether the match started and the seats nobody may take any more), writes result.json when
+## the match ends, and quits when nobody is left or the room server (`--room-pid`) is gone.
 ## The glue starts the dedicated host (MpKit.host_dedicated) and calls `report_result()`. Not: the grace or the wait (the gate).
 ## The agent never sees the plain token: it compares sha256(presented) with the ticket.
 ## Rows of the ticket without `token_sha256` (bot seats) are ignored: they are never admitted.
@@ -114,15 +115,23 @@ func report_result(data: Dictionary) -> void:
 		MpKit.after_real(delay, func() -> void: get_tree().quit())
 
 
-## Arms MpKit.gate with the ticket's human seats: identity = seat_of, the grace and the load timeout of `config`. `--no-load-hold`
-## (tests whose clients never load the world) runs at once. Idempotent; MpFlow calls it right after hosting.
+## Arms MpKit.gate with the ticket's human seats: identity = seat_of, and from `config` the grace, the load timeout, whether it
+## starts by itself (start_on_timeout), who may start it (starter_slot) and late join. `--no-load-hold` (tests whose clients
+## never load the world) runs at once. Idempotent; MpFlow calls it right after hosting.
 func arm_gate() -> void:
 	if ticket.is_empty() or finished or not MpKit.is_server() or MpKit.gate.is_armed():
 		return
 	var gate := MpKit.gate
 	gate.rejoin_grace_s = config.rejoin_grace_s
 	gate.load_timeout_s = config.load_timeout_s
+	gate.start_on_timeout = config.start_on_timeout
+	gate.starter_slot = config.starter_slot
+	gate.late_join = config.late_join
 	gate.host_present = false
+	## state.json follows the start and the seats that close or free (an issuer room lists only what may still be taken).
+	for changed: Signal in [gate.started, gate.seat_abandoned, gate.joined_late]:
+		if not changed.is_connected(_on_gate_changed):
+			changed.connect(_on_gate_changed)
 	var slots: Array[int] = []
 	for slot in _seats.keys():
 		slots.append(int(slot))
@@ -164,19 +173,16 @@ func _check_idle() -> void:
 		report_result({"reason": "empty"})
 
 
-## The seat a presented token names: the slot whose sha256 matches, 0 for none, after the match ended, or for a seat never used
-## once its ticket expired. Only identity: whether the seat is free, away or past the grace is the gate's.
+## The seat a presented token names: the slot whose sha256 matches, 0 for none or after the match ended. Only identity: whether
+## the seat may still sit (the match started, late join, away, past the grace) is the gate's, so a seat nobody took hears
+## match_started, not rejected. The ticket's expiry only ends a match nobody ever joined (_check_idle).
 func seat_of(_peer_id: int, presented: String) -> int:
 	if finished:
 		return 0
 	var sha := MpMatchFiles.sha256(presented)
 	for slot in _seats.keys():
-		var seat: Dictionary = _seats[slot]
-		if seat["sha"] != sha:
-			continue
-		if not bool(seat["used"]) and MpMatchFiles.now_ms() > int(ticket.get("expires_ms", 0)):
-			return 0
-		return int(slot)
+		if _seats[slot]["sha"] == sha:
+			return int(slot)
 	return 0
 
 
@@ -197,13 +203,20 @@ func _on_peer_left(peer_id: int, slot: int) -> void:
 	_write_state()
 
 
+func _on_gate_changed(_a: Variant = null, _b: Variant = null) -> void:
+	_write_state()
+
+
 func _write_state() -> void:
 	var slots := {}
 	for slot in _seats.keys():
 		slots[str(slot)] = int(_seats[slot]["peer"]) != 0
 	var listening := MpKit.is_listening()
+	var gate := MpKit.gate
 	MpMatchFiles.write_json(MpMatchFiles.path_of(_root, match_id, MpMatchFiles.STATE), {
 		"match_id": match_id, "pid": OS.get_process_id(), "listening": listening,
 		"heartbeat_ms": MpMatchFiles.now_ms(), "started_ms": _started_ms,
 		"finished": finished, "slots": slots,
+		## The match runs (the gate let it start), and the seats nobody holds that no ticket may take any more.
+		"started": gate.phase == MpMatchGate.Phase.RUNNING, "closed": gate.closed_slots(),
 	})
