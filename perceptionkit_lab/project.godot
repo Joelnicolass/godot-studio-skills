@@ -1,0 +1,41 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="PerceptionKit Lab"
+run/main_scene="res://addons/perception_kit/examples/guards_3d/guards_3d.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_cast=1
+gdscript/warnings/unsafe_call_argument=1
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/perception_kit/plugin.cfg", "res://addons/perceptionkit_editor_check/plugin.cfg")
+
+[layer_names]
+
+2d_physics/layer_1="walls"
+3d_physics/layer_1="walls"
+2d_physics/layer_32="perception"
+3d_physics/layer_32="perception"

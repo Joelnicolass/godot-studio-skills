@@ -19,6 +19,7 @@ SKILL_NAMES=(
   godot-rts-kit
   godot-prop-kit
   godot-grass-kit
+  godot-perception-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -40,6 +41,7 @@ COMMAND_FILES=(
   add-rts-controls.md
   add-props.md
   add-grass.md
+  add-perception.md
   create-material.md
   research-feature.md
   manage-changes.md
