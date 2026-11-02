@@ -6,8 +6,9 @@ extends Area3D
 ## lamp's bulb). Its own sphere is internal (not saved with the scene).
 ##
 ## Its collision layer is its side: a sensor sees the targets on the layers of its collision mask.
-## Out of the box both are on layer 32, so every sensor sees every target; give each side of the
-## game a layer of its own (Project Settings › Layer Names › 3D Physics) and set the sensors' masks.
+## Out of the box both are on layer 1, like any area, so every sensor sees every target; give each
+## side of the game a layer of its own, apart from the world's (Project Settings › Layer Names ›
+## 3D Physics), and set the sensors' masks.
 
 ## Off, no sensor sees it (it keeps being remembered until forgotten).
 @export var enabled := true:
@@ -33,10 +34,16 @@ var _sphere: SphereShape3D
 
 
 func _init() -> void:
-	collision_layer = 1 << 31
+	# Only what the kit owns: a target detects nothing. Its layer (its side) is the scene's: Godot
+	# sets a node's own properties before its script, so this must not touch it.
 	collision_mask = 0
 	monitoring = false
-	monitorable = true
+
+
+## What the kit owns stays out of the inspector and of the scene's file.
+func _validate_property(property: Dictionary) -> void:
+	if property.name in ["collision_mask", "monitorable", "monitoring"]:
+		property.usage = PROPERTY_USAGE_NONE
 
 
 func _ready() -> void:

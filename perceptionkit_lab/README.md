@@ -11,5 +11,5 @@
   - las manijas del sensor 2D: un clic sobre una la agarra, el arrastre y el soltar la cambian en un paso que se deshace, un clic lejos queda para el editor.
 
   Trabaja sobre copias de los ejemplos en `scratch/editor_check/` (los archivos del addon quedan como están). Lo hace el plugin propio del lab, `addons/perceptionkit_editor_check`; sin esa variable no hace nada.
-- **Capas**: `project.godot` nombra la capa 1 «walls» y la capa 32 «perception» (donde están de entrada los objetivos y los sensores), en 2D y 3D.
+- **Capas**: `project.godot` nombra la capa 1 «world», en 2D y 3D. Los sensores y objetivos de los ejemplos quedan en ella, como vienen de entrada.
 - **Cómo se juega**: abrí el proyecto. F5 corre `guards_3d`; F6 sobre `minimal_3d` o `minimal_2d`.
