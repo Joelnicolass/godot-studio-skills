@@ -228,7 +228,7 @@
         "PlatKit: minimal_2d, no code",
         "RtsKit: minimal_2d, six soldiers and the command rig",
         "PropKit: minimal_3d, scatter around a camp, and batches",
-        "GrassKit: minimal_3d, a floor, a field and the ground shader"
+        "GrassKit: minimal_3d, a floor, a field and the ground shader", "PerceptionKit: minimal_3d and minimal_2d, a guard turning toward what it perceives"
       ]
     },
     {
