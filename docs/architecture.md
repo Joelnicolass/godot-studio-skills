@@ -23,6 +23,7 @@ flowchart TB
     rtskit[RtsKit addon]
     propkit[PropKit addon]
     grasskit[GrassKit addon]
+    perceptionkit[PerceptionKit addon]
   end
 
   subgraph playtest [godot-studio-playtest]
@@ -46,6 +47,7 @@ flowchart TB
   rtskit -.-> code
   propkit -.-> code
   grasskit -.-> code
+  perceptionkit -.-> code
 ```
 
 Roles (tool de subagentes — `Agent` en Claude Code, `Task` en Cursor — → `subagent_type`):
@@ -161,6 +163,7 @@ Cada kit es un addon que se copia al juego con `./install.sh --addon <proyecto> 
 | Selección y órdenes de un RTS | RtsKit | `/add-rts-controls` | `addons/rts_kit/examples/minimal_2d/` |
 | Props plantados y su navmesh | PropKit | `/add-props` | `addons/prop_kit/examples/minimal_3d/` |
 | Pasto 3D | GrassKit | `/add-grass` | `addons/grass_kit/examples/minimal_3d/` |
+| Enemigos o guardias que ven y oyen | PerceptionKit | `/add-perception` | `addons/perception_kit/examples/minimal_3d/` |
 
 El ejemplo mínimo es la integración más chica que anda; el README de cada kit explica su código y suma tips y recomendaciones. Lo que el kit no hace (las reglas, el puntaje, el movimiento de una unidad de RTS) queda en el juego.
 

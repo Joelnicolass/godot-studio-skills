@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/perception_kit/examples/minimal_2d/minimal_2d.gd" id="1_a00d1"]
+[ext_resource type="Script" path="res://addons/perception_kit/sensors/perception_sensor_2d.gd" id="2_kk2fw"]
+[ext_resource type="Script" path="res://addons/perception_kit/sensors/perception_target_2d.gd" id="3_0ikqw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8q370"]
+size = Vector2(36, 220)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r4mdb"]
+radius = 14.0
+
+[node name="Minimal2D" type="Node2D" unique_id=675352176]
+script = ExtResource("1_a00d1")
+
+[node name="Ground" type="Polygon2D" parent="." unique_id=1693753878]
+position = Vector2(640, 360)
+color = Color(0.2, 0.23, 0.2, 1)
+polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
+
+[node name="Wall" type="StaticBody2D" parent="." unique_id=1107152610]
+position = Vector2(470, 230)
+
+[node name="Shape" type="CollisionShape2D" parent="Wall" unique_id=612348620]
+shape = SubResource("RectangleShape2D_8q370")
+
+[node name="Look" type="Polygon2D" parent="Wall" unique_id=2004126027]
+color = Color(0.62, 0.6, 0.56, 1)
+polygon = PackedVector2Array(-18, -110, 18, -110, 18, 110, -18, 110)
+
+[node name="Guard" type="Node2D" parent="." unique_id=205088520]
+position = Vector2(260, 380)
+
+[node name="Body" type="Polygon2D" parent="Guard" unique_id=1363796560]
+color = Color(0.85, 0.3, 0.25, 1)
+polygon = PackedVector2Array(22, 0, -14, -16, -14, 16)
+
+[node name="Sensor" type="Area2D" parent="Guard" unique_id=1003684221]
+collision_layer = 0
+collision_mask = 2147483648
+monitorable = false
+script = ExtResource("2_kk2fw")
+sight_radius_px = 340.0
+lose_radius_px = 440.0
+view_angle_deg = 100.0
+near_radius_px = 50.0
+show_in_game = true
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=1651093723]
+position = Vector2(640, 200)
+motion_mode = 1
+
+[node name="Shape" type="CollisionShape2D" parent="Player" unique_id=395649488]
+shape = SubResource("CircleShape2D_r4mdb")
+
+[node name="Look" type="Polygon2D" parent="Player" unique_id=2112569532]
+color = Color(0.3, 0.55, 0.95, 1)
+polygon = PackedVector2Array(14, 0, 13.314792, 4.326238, 11.326238, 8.228993, 8.228993, 11.326238, 4.3262377, 13.314792, -6.119594e-07, 14, -4.3262386, 13.314791, -8.228992, 11.326238, -11.326239, 8.228992, -13.314791, 4.3262386, -14, -1.2239188e-06, -13.314792, -4.3262377, -11.326237, -8.228995, -8.228991, -11.32624, -4.326239, -13.314791, 1.6694833e-07, -14, 4.3262396, -13.314791, 8.228991, -11.32624, 11.326237, -8.228994, 13.314792, -4.326237)
+
+[node name="Target" type="Area2D" parent="Player" unique_id=2130913361]
+collision_layer = 2147483648
+collision_mask = 0
+monitoring = false
+script = ExtResource("3_0ikqw")
+
+[node name="Label" type="Label" parent="." unique_id=221867541]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 16.0
+offset_bottom = 12.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
