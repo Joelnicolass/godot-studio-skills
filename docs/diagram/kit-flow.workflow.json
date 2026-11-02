@@ -65,7 +65,8 @@
         "PlatKit: minimal_2d, sin código",
         "RtsKit: minimal_2d, seis soldados y el equipo de mando",
         "PropKit: minimal_3d, scatter alrededor de un campamento y lotes",
-        "GrassKit: minimal_3d, un piso, un campo y el shader del suelo"
+        "GrassKit: minimal_3d, un piso, un campo y el shader del suelo",
+        "PerceptionKit: minimal_3d y minimal_2d, un guardia que gira hacia lo que percibe"
       ]
     },
     {
