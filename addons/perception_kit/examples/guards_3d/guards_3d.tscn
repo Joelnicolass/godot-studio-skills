@@ -248,9 +248,6 @@ material_override = SubResource("StandardMaterial3D_58vub")
 mesh = SubResource("BoxMesh_8pme0")
 
 [node name="Sensor" type="Area3D" parent="Guard1/Head" unique_id=1595443045]
-collision_layer = 0
-collision_mask = 2147483648
-monitorable = false
 script = ExtResource("3_tcb8b")
 sight_radius_m = 14.0
 lose_radius_m = 18.0
@@ -284,9 +281,6 @@ material_override = SubResource("StandardMaterial3D_37ga7")
 mesh = SubResource("BoxMesh_gecjt")
 
 [node name="Sensor" type="Area3D" parent="Guard2/Head" unique_id=452378057]
-collision_layer = 0
-collision_mask = 2147483648
-monitorable = false
 script = ExtResource("3_tcb8b")
 sight_radius_m = 14.0
 lose_radius_m = 18.0
@@ -310,16 +304,10 @@ mesh = SubResource("CapsuleMesh_iqm2e")
 
 [node name="Target" type="Area3D" parent="Player" unique_id=28723627]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
-collision_layer = 2147483648
-collision_mask = 0
-monitoring = false
 script = ExtResource("4_les0p")
 
 [node name="Lamp" type="Area3D" parent="Player" unique_id=1509870880]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.1, -0.3)
-collision_layer = 2147483648
-collision_mask = 0
-monitoring = false
 script = ExtResource("4_les0p")
 kind = &"light"
 

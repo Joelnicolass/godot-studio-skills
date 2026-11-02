@@ -89,7 +89,7 @@ func _unhandled_input(event: InputEvent) -> void:
 | `enabled` | Apagado no percibe nada y olvida todo, sin señales |
 | `show_in_game` | Dibuja su vista en el juego: gris (nada), ámbar (recuerda algo que no ve), rojo (ve). Nunca en headless |
 
-**Los bandos son capas de física.** La capa de colisión de un objetivo es su bando; un sensor ve a los objetivos de las capas de su máscara de colisión. De entrada los dos están en la capa 32, así que todos ven a todos. Nombrá una capa por bando (Project Settings › Layer Names), poné cada objetivo en la capa de su bando y marcá los bandos que ve cada sensor: el motor de física los filtra gratis.
+**Los bandos son capas de física.** La capa de colisión de un objetivo es su bando; un sensor ve a los objetivos de las capas de su máscara de colisión. De entrada los dos están en la capa 1, como cualquier área, así que todos ven a todos. Nombrá una capa por bando (Project Settings › Layer Names), aparte de las del mundo, poné cada objetivo en la capa de su bando y marcá los bandos que ve cada sensor: el motor de física los filtra gratis. El inspector muestra solo la máscara de un sensor y la capa de un objetivo: lo que fija el kit (nada detecta a un sensor, un objetivo no detecta nada) ni se muestra ni se guarda.
 
 **Una mirada** toma los objetivos dentro de la esfera propia del sensor (de radio `reach_m()`, interna, no se guarda), y para cada uno:
 1. su radio: `lose_radius_m` si ya lo ve, si no `sight_radius_m`, por `sight_scale`, `reach_by_kind[target.kind]` y la `visibility` del objetivo;
@@ -179,7 +179,7 @@ Con muchos sensores, bajá primero `sense_hz`, después los radios (menos candid
 
 - **Primero las manijas.** Dale tamaño a un sensor con sus manijas en la escena del actor; todas las instancias toman esos valores, y un valor cambiado en una instancia es solo de esa.
 - **El sensor en la cabeza.** Girar la cabeza gira la vista; el cuerpo se encuentra solo.
-- **Una capa por bando.** De entrada todos ven a todos (capa 32).
+- **Una capa por bando.** De entrada todos ven a todos (capa 1), y las esferas de los sensores también se cruzan con los cuerpos del mundo que están en ella.
 - **En una máquina de estados, leé `latest()`, no las señales.** Las señales empiezan y terminan un estado; `latest()` dice adónde mirar mientras dura.
 - **Un ruido por fuente.** Dale a `hear()` un `source` (el slot de un jugador, un id de instancia): la misma fuente queda en un solo recuerdo, con su posición más nueva.
 - **La histéresis es el punto.** Dejá `lose_radius_m` un cuarto o un tercio por encima de `sight_radius_m`.
@@ -217,6 +217,7 @@ El resultado es `PERCEPTIONKIT TESTS PASS (n)`. Los tests cubren:
   - su esfera interna y no guardada, el aviso, nada dibujado en headless, cada sensor en su propio momento;
 - **el sensor 2D:** la vista apuntada con la rotación, el radio de pérdida y la memoria, muros y cercanía, ruidos, bandos y visibilidad;
 - **los arrastres de las manijas** en 3D (girado) y 2D (escalado);
+- **una escena guardada y cargada de nuevo** conserva la máscara de un sensor y la capa de un objetivo, y no guarda nada propio del kit;
 - **cada script carga; los sensores no usan cámara, imagen ni shader; no se nombra ningún otro kit;**
 - **los tres ejemplos, de punta a punta.**
 
