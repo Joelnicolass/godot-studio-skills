@@ -11,5 +11,5 @@
   - the 2D sensor's handles: a press on one grabs it, the drag and release change it as one step that undoes, a press away is left to the editor.
 
   It works on copies of the examples in `scratch/editor_check/` (the addon's files stay as they are). The lab's own plugin, `addons/perceptionkit_editor_check`, does it; without that variable it does nothing.
-- **Layers**: `project.godot` names layer 1 «walls» and layer 32 «perception» (where targets and sensors are out of the box), in 2D and 3D.
+- **Layers**: `project.godot` names layer 1 «world», in 2D and 3D. The examples' sensors and targets stay on it, as they come out of the box.
 - **How to play**: open the project. F5 runs `guards_3d`; F6 on `minimal_3d` or `minimal_2d`.

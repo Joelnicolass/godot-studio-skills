@@ -98,10 +98,16 @@ var _drawn := Color.TRANSPARENT
 
 
 func _init() -> void:
+	# Only what the kit owns: nothing detects a sensor. Its mask (the sides it sees) is the scene's:
+	# Godot sets a node's own properties before its script, so this must not touch it.
 	collision_layer = 0
-	collision_mask = 1 << 31
 	monitorable = false
-	monitoring = true
+
+
+## What the kit owns stays out of the inspector and of the scene's file.
+func _validate_property(property: Dictionary) -> void:
+	if property.name in ["collision_layer", "monitorable", "monitoring"]:
+		property.usage = PROPERTY_USAGE_NONE
 
 
 func _ready() -> void:

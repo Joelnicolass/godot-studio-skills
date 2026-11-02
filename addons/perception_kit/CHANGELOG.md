@@ -1,5 +1,13 @@
 # PerceptionKit changelog
 
+## 0.1.1
+
+- **The sides set in a scene stay when it loads** (found by El Eternauta). 0.1.0 put a new sensor's mask and a new target's layer on layer 32 in `_init()`. Godot sets a node's own properties before its script, so that `_init()` ran after the scene's values and overwrote them: a mask or layer set in the inspector was lost on the next load. Now `_init()` sets only what the kit owns (nothing detects a sensor, a target detects nothing), and the inspector shows a sensor's mask and a target's layer only; the rest is neither shown nor saved.
+- **Out of the box, layer 1**, like any area (0.1.0: layer 32). A scene saved with 0.1.0 keeps layer 32 written in it, so it plays the same.
+- **Tests:** 44 (`test_saved_scene`: a scene saved and loaded again in 2D and 3D, its sides, what is shown and saved).
+
+What to update: nothing in a scene made in the editor. A sensor or target made in code (`PerceptionSensor3D.new()`) is now on layer 1: set its mask or layer if it must meet ones saved with 0.1.0 (layer 32). A workaround putting `script =` first in a scene can go.
+
 ## 0.1.0
 
 The first version, asked for by El Eternauta (its enemies' perception, made generic).

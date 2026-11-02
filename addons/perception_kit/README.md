@@ -89,7 +89,7 @@ func _unhandled_input(event: InputEvent) -> void:
 | `enabled` | Off, it perceives nothing and forgets everything, without signals |
 | `show_in_game` | Draws its view in the game: grey (nothing), amber (remembers what it does not see), red (sees). Never headless |
 
-**Sides are physics layers.** A target's collision layer is its side; a sensor sees the targets on the layers of its collision mask. Out of the box both are on layer 32, so everything sees everything. Name a layer per side (Project Settings › Layer Names), put each target on its side's layer and tick the sides each sensor sees: the physics engine then filters them for free.
+**Sides are physics layers.** A target's collision layer is its side; a sensor sees the targets on the layers of its collision mask. Out of the box both are on layer 1, like any area, so everything sees everything. Name a layer per side (Project Settings › Layer Names), apart from the world's, put each target on its side's layer and tick the sides each sensor sees: the physics engine then filters them for free. The inspector shows a sensor's mask and a target's layer only: what the kit sets itself (nothing detects a sensor, a target detects nothing) is neither shown nor saved.
 
 **One look** takes the targets inside the sensor's own sphere (sized by `reach_m()`, internal, not saved), then for each:
 1. its radius: `lose_radius_m` if it sees it already, else `sight_radius_m`, times `sight_scale`, `reach_by_kind[target.kind]` and the target's `visibility`;
@@ -179,7 +179,7 @@ With many sensors, lower `sense_hz` first, then the radii (fewer candidates).
 
 - **The handles first.** Size a sensor with its handles in the actor's scene; every instance takes those values, and a value changed in one instance is that one's.
 - **The sensor on the head.** Turning the head turns the view; the body is found on its own.
-- **A layer per side.** Out of the box everything sees everything (layer 32).
+- **A layer per side.** Out of the box everything sees everything (layer 1), and the sensors' spheres also meet the world's bodies on it.
 - **Read `latest()`, not the signals, in a state machine.** The signals start and end a state; `latest()` says where to look while it lasts.
 - **A noise per source.** Give `hear()` a `source` (a player's slot, an instance id): the same source stays one memory and keeps its newest position.
 - **Hysteresis is the point.** Keep `lose_radius_m` a quarter or a third over `sight_radius_m`.
@@ -217,6 +217,7 @@ The result is `PERCEPTIONKIT TESTS PASS (n)`. The tests cover:
   - its sphere internal and unsaved, the warning, nothing drawn headless, each sensor at its own moment;
 - **the 2D sensor:** the view aimed by rotation, the lose radius and memory, walls and near, noises, sides and visibility;
 - **the handles' drags** in 3D (turned) and 2D (scaled);
+- **a scene saved and loaded again** keeps a sensor's mask and a target's layer, and saves nothing of the kit's own;
 - **every script loads; the sensors use no camera, picture or shader; no other kit is named;**
 - **the three examples, end to end.**
 
