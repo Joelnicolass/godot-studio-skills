@@ -15,8 +15,9 @@ extends Area3D
 ## `sees_any()`, `is_aware()`.
 ##
 ## It looks `sense_hz` times a second, each sensor at its own moment. It sees the targets on the
-## layers of its collision mask (layer 32 out of the box); its own sphere is internal (not saved),
-## sized by `reach_m()`. Off (`enabled = false`: a networked game's clients) it does nothing.
+## layers of its collision mask (layer 1 out of the box, like any area); its own sphere is internal
+## (not saved), sized by `reach_m()`. Off (`enabled = false`: a networked game's clients) it does
+## nothing.
 ##
 ## In the editor its view is drawn with handles to drag (the PerceptionKit plugin). In the game,
 ## `show_in_game` draws it in grey, amber (remembers something it does not see) or red (sees).
@@ -106,10 +107,16 @@ var _view_material: StandardMaterial3D
 
 
 func _init() -> void:
+	# Only what the kit owns: nothing detects a sensor. Its mask (the sides it sees) is the scene's:
+	# Godot sets a node's own properties before its script, so this must not touch it.
 	collision_layer = 0
-	collision_mask = 1 << 31
 	monitorable = false
-	monitoring = true
+
+
+## What the kit owns stays out of the inspector and of the scene's file.
+func _validate_property(property: Dictionary) -> void:
+	if property.name in ["collision_layer", "monitorable", "monitoring"]:
+		property.usage = PROPERTY_USAGE_NONE
 
 
 func _ready() -> void:

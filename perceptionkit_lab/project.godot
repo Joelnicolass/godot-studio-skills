@@ -35,7 +35,5 @@ enabled=PackedStringArray("res://addons/perception_kit/plugin.cfg", "res://addon
 
 [layer_names]
 
-2d_physics/layer_1="walls"
-3d_physics/layer_1="walls"
-2d_physics/layer_32="perception"
-3d_physics/layer_32="perception"
+2d_physics/layer_1="world"
+3d_physics/layer_1="world"
