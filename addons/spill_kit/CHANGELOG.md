@@ -1,5 +1,16 @@
 # SpillKit changelog
 
+## 0.2.0
+
+What El Eternauta found while planning its migration.
+
+- **The heavy spray is tuned on its own.** The type has a Heavy spray group with values of its own: `heavy_drop_size_m`, `heavy_drop_speed_m_s`, `heavy_spread_deg`, `heavy_rise_deg`, `heavy_drop_life_s`, `heavy_drop_scale_min`/`max`. It used to be the light one multiplied by `heavy_scale`, which is gone. The light drops' size range is the type's too (`drop_scale_min`/`max`, 0.6 to 1.4), and `rise_deg` goes from 50° to 51°.
+- **The floor's reach, per component.** `SpillSource3D.floor_reach_m`: how far under it the floor of its marks and puddle may be (0 = the pool's). A bug with its component at 0.8 m and a player at 1.25 m stop marking in the air at the same height over their feet. The pool's `spill()` and `puddle()` take an optional `reach_m`.
+- **The level's pool takes the place of one made on its own.** If a body entered before its world's pool (a persistent scene with the players and the level loaded later), the pool made with the default values kept the world and the level's drew nothing. Now the level's takes its place.
+- **Tests:** 42.
+
+What to update: if a type changed `heavy_scale`, move its values to the Heavy spray group. With the defaults, a heavy hit comes out as in 0.1 but a bit faster (3 m/s), longer (0.85 s), lower (45°) and with somewhat bigger drops (0.7 to 1.6), like El Eternauta's blood.
+
 ## 0.1.1
 
 - **A drops shader of your own that takes the particle's colour no longer warns** (found while reviewing El Eternauta's migration). Its `blood_drop.gdshader` uses `COLOR`, each drop's colour, and declares neither `albedo_tex` nor `albedo_color`. With it in `drop_material`, 0.1.0 warned that those uniforms were missing, though the drops drew fine. Now only a marks' or puddle's shader must declare them; a drops' shader gets the ones it declares.

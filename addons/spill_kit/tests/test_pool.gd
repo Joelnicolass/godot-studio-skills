@@ -178,3 +178,49 @@ func test_each_type_is_drawn_once_at_load_so_the_first_hit_does_not_stall() -> v
 		await tree.process_frame
 	check(pool.get_child_count(true) == built, "then it is gone")
 	camera.queue_free()
+
+
+func test_a_made_pool_gives_way_to_the_world_s_own() -> void:
+	box(Vector3.ZERO)
+	var type := new_type()
+	var source := new_body(type)
+	await physics()
+	var made := SpillPool3D.of(source.get_world_3d())
+	check(made != null, "a source with no pool makes one")
+	var own := new_pool()
+	check(SpillPool3D.of(source.get_world_3d()) == own, "a pool put in the world takes its place")
+	check(own._get_configuration_warnings().is_empty(), "with no warning")
+	source.spray()
+	check(own.sprays_played(type) == 1, "the source draws in it")
+	await tree.process_frame
+	check(not is_instance_valid(made), "the made one is gone")
+
+
+func test_the_heavy_spray_is_tuned_on_its_own() -> void:
+	var pool := new_pool()
+	var type := new_type({
+		"drops": 10, "heavy_drops": 30, "drop_life_s": 0.6, "heavy_drop_life_s": 0.85,
+		"drop_speed_m_s": 2.0, "heavy_drop_speed_m_s": 3.0, "heavy_drop_size_m": 0.12,
+		"heavy_rise_deg": 45.0, "heavy_spread_deg": 38.0, "heavy_drop_scale_min": 0.7,
+		"heavy_drop_scale_max": 1.6,
+	})
+	pool.prepare(type)
+	var light: CPUParticles3D = null
+	var heavy: CPUParticles3D = null
+	for child in pool.get_children(true):
+		var spray := child as CPUParticles3D
+		if spray != null and spray.amount == 10:
+			light = spray
+		elif spray != null and spray.amount == 30:
+			heavy = spray
+	check(light != null and heavy != null, "a light and a heavy spray")
+	if heavy == null or light == null:
+		return
+	check(near(heavy.lifetime, 0.85) and near(light.lifetime, 0.6), "each its own life")
+	check(near((heavy.initial_velocity_min + heavy.initial_velocity_max) * 0.5, 3.0), "the heavy one's own speed")
+	check(near((light.initial_velocity_min + light.initial_velocity_max) * 0.5, 2.0), "the light one's own speed")
+	check(near(heavy.scale_amount_min, 0.7) and near(heavy.scale_amount_max, 1.6), "the heavy one's own size range")
+	check(near(light.scale_amount_min, 0.6) and near(light.scale_amount_max, 1.4), "the light one's own size range")
+	check(near((heavy.mesh as QuadMesh).size.x, 0.12) and near(heavy.spread, 38.0), "the heavy one's drop size and spread")
+	check(near(heavy.direction, Vector3(0, sin(deg_to_rad(45.0)), -cos(deg_to_rad(45.0)))), "the heavy one's rise")
+	check(heavy.mesh.surface_get_material(0) == light.mesh.surface_get_material(0), "both drops look alike (one material)")

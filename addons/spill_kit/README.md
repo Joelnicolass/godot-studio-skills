@@ -37,7 +37,7 @@ Enable the **SpillKit** plugin for the cost line in the inspector. The nodes, th
 
 1. **Make a type.** In the FileSystem: right click → New Resource → `SpillType`, for instance `blood.tres`. Give it a colour: that alone already looks wet. Or copy one from `examples/types/`.
 2. **Add a `SpillSource3D`** to the body, where the drops leave (the chest, the shell), and give it the type.
-3. **Add a `SpillPool3D`** to the level (one per world) and list in `types` the types it uses. If it is missing, the first component makes one with the default values and warns.
+3. **Add a `SpillPool3D`** to the level (one per world) and list in `types` the types it uses. If it is missing, the first component makes one with the default values and warns; if the level brings its own later, the level's takes its place.
 4. **Call `hit(damage, max_hp, from)`** where the game takes HP off, and **`die()`** when the body dies.
 5. **Try it in the editor:** select the component and press **Spray**, **Heavy spray** or **Die (puddle)** in its "Try it" group. The drops, marks and puddle show in the 3D view, on your scene's floor.
 
@@ -102,11 +102,12 @@ One resource per substance. It only describes how it looks; when it bleeds is up
 | `specular` | How bright the highlights are |
 | `normal_scale` | How much the normal maps raise the surface (0 = flat) |
 | `alpha_scissor` | Above 0, cuts the pixels with less alpha: hard edges that never sort wrongly where marks overlap. 0 = soft edges, blended by alpha |
-| **Spray:** `drops`, `heavy_drops` | Drops of a light hit and of a heavy one |
+| **Spray:** `drops` | Drops of a light hit |
 | `drop_size_m`, `drop_speed_m_s` | Side of a drop; how fast it leaves (each one 25 % more or less) |
 | `spread_deg`, `rise_deg` | How wide the spray opens, and how far above the horizon it leaves |
 | `drop_life_s` | How long a drop flies (it falls through the floor: the marks are what it leaves) |
-| `heavy_scale` | A heavy hit's drops are this much bigger, faster and wider |
+| `drop_scale_min`, `drop_scale_max` | Each drop is `drop_size_m` times a size between these |
+| **Heavy spray:** `heavy_drops`, `heavy_drop_size_m`, `heavy_drop_speed_m_s`, `heavy_spread_deg`, `heavy_rise_deg`, `heavy_drop_life_s`, `heavy_drop_scale_min`, `heavy_drop_scale_max` | The same for a heavy hit, tuned on its own (32 drops of 0.12 m at 3 m/s, 38° wide, at 45°, 0.85 s, 0.7 to 1.6). Its drops look like the light ones: the Spray group's textures and material |
 | **Marks:** `marks_per_spray`, `marks_per_heavy` | Marks a light hit and a heavy one leave |
 | `mark_radius_m`, `mark_min_m`, `mark_max_m` | They fall anywhere this far around the body, between these sizes |
 | **Puddle:** `puddle_size_m`, `puddle_grow_s` | The side of a grown puddle (smaller where the floor is not flat), and how long it takes to grow |
@@ -124,6 +125,7 @@ It goes in the body, where the drops leave. The drops leave from its position, a
 |---|---|
 | `type` | What this body spills |
 | `pool` | The pool that draws it. Empty = its world's `SpillPool3D` |
+| `floor_reach_m` | How far under the component the floor of its marks and puddle may be; farther (in the air), none. 0 = the pool's `floor_reach_m`. A low component (a bug's shell) wants less than a chest |
 | **Rules:** `heavy_from` | A hit that takes at least this share of the max HP is heavy (0.4) |
 | `every_s` | Light sprays keep at least this far apart; the hits in between add up (0.25 s) |
 | `min_lost` | The damage (a share of the max HP) that has to add up before a light spray; a hit that comes alone (no other for `every_s`) bleeds anyway (0.05) |
@@ -159,8 +161,8 @@ One per world (a level). It builds everything once per type and reuses it: a hit
 
 | Method | What it does |
 |---|---|
-| `spill(type, at, away = ZERO, heavy = false, exclude = [])` | A spray with no component (a barrel that leaks oil). `away` is the way it flies, flat |
-| `puddle(type, at, exclude = [])` | A puddle under `at` |
+| `spill(type, at, away = ZERO, heavy = false, exclude = [], reach_m = 0)` | A spray with no component (a barrel that leaks oil). `away` is the way it flies, flat; `reach_m`, how far under it the floor may be (0 = `floor_reach_m`) |
+| `puddle(type, at, exclude = [], reach_m = 0)` | A puddle under `at` |
 | `clear()` | Takes everything off the floor and out of the air (a new round) |
 | `prepare(type)` / `refresh(type)` | Builds a type now / takes the type's values again, leaving what is on the floor |
 | `material_of(type, shape)` | The material it draws a type's drops, marks or puddles with (`SpillShapes.Shape.DROP`, `MARK`, `PUDDLE`) |
@@ -181,6 +183,8 @@ One per world (a level). It builds everything once per type and reuses it: a hit
 | Oil leaking from a barrel, with no body | `pool.spill(oil, barrel.global_position)` and `pool.puddle(oil, barrel.global_position)` |
 | A species that bleeds more easily | `heavy_from = 0.25` on its component |
 | Fewer marks on a slow machine | The pool's `marks_per_type`, or the type's `marks_per_spray` |
+| A low bug that leaves no mark when it jumps | Its component's `floor_reach_m`: the component's height plus what it tolerates in the air (0.8 + 0.6 = 1.4) |
+| A more violent heavy hit | The type's Heavy spray group: more `heavy_drops`, more `heavy_drop_speed_m_s` |
 | A network game | [Network](#network): `hit()` and `die()` on the server, `wound` synced |
 | Draw nothing on a dedicated server | Nothing: an export with the `dedicated_server` feature, or an export run headless, builds nothing. One run with the editor headless does draw: `pool.shown = false` there |
 | Change the material live | `pool.material_of(type, SpillShapes.Shape.MARK)`, or change the type and call `pool.refresh(type)` |
@@ -227,7 +231,7 @@ The inspector of the pool shows the cost per machine (`cost_text()`). With many 
 
 ## Tips and recommendations
 
-- **The component at the chest.** The drops leave from there, and the marks look for the floor under it, down to `floor_reach_m`. A body in the air sprays but leaves no mark.
+- **The component at the chest.** The drops leave from there, and the marks look for the floor under it, down to `floor_reach_m`. A body in the air sprays but leaves no mark. Bodies of different heights: each component's `floor_reach_m`.
 - **A layer for the floor.** `floor_mask` is what counts as floor. Bodies on another layer, or the body itself, which is found on its own, never get marks.
 - **Hard edges for many marks.** With `alpha_scissor` above 0, two marks that overlap never sort wrongly. Soft edges (`alpha_scissor` at 0, the example's slime) look better in small numbers.
 - **One type per species, not per body.** Every body of a type shares its sprays, its marks and its material.
@@ -258,13 +262,13 @@ The result is `SPILLKIT TESTS PASS (n)`. The tests cover:
   - a hit sprays and marks the floor under it; the drops fly away from where the hit came from;
   - a death grows a puddle, and a body that comes back dies again;
   - a machine that reads the value draws the same, under its own body; a late joiner draws nothing old;
-  - its own body never gets marks; none behind a wall or in the air;
+  - its own body never gets marks; none behind a wall or in the air; each component's floor reach;
   - with no pool one is made; a spray of the game's own; the warning with no type;
 - **the pool:**
-  - the ring of marks and their heights; the ring of puddles;
+  - the ring of marks and their heights; the ring of puddles; the heavy spray with values of its own;
   - a puddle on a slope and by a curb;
   - the player's option and a new round; built once per type, all internal; the cost;
-  - one pool per world and its warnings; spilling with no component;
+  - one pool per world and its warnings; a pool made on its own gives way to the level's; spilling with no component;
   - each type drawn once at load, tiny and in front of the camera, and then removed;
 - **the materials:**
   - a type with only its colour looks wet (the kit's normal maps);
