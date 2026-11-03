@@ -55,8 +55,9 @@ func test_a_puddle_shrinks_to_stay_off_a_curb() -> void:
 		var side := puddles[0].basis.x.length()
 		check(side < type.puddle_size_m and side >= pool.puddle_min_m, "smaller than puddle_size_m, at least puddle_min_m (%.2f)" % side)
 		check(side * pool.puddle_edge_share < 0.4, "its edge stays off the curb")
+	pool.puddle_seek_m = 0.0
 	pool.puddle(type, Vector3(0.3, 1, 0))
-	check(pool.puddles_of(type).size() == 1, "too close to the curb: no puddle")
+	check(pool.puddles_of(type).size() == 1, "too close to the curb, with puddle_seek_m 0: no puddle")
 
 
 func test_the_ring_of_puddles() -> void:
@@ -224,3 +225,58 @@ func test_the_heavy_spray_is_tuned_on_its_own() -> void:
 	check(near((heavy.mesh as QuadMesh).size.x, 0.12) and near(heavy.spread, 38.0), "the heavy one's drop size and spread")
 	check(near(heavy.direction, Vector3(0, sin(deg_to_rad(45.0)), -cos(deg_to_rad(45.0)))), "the heavy one's rise")
 	check(heavy.mesh.surface_get_material(0) == light.mesh.surface_get_material(0), "both drops look alike (one material)")
+
+
+func test_by_a_curb_the_puddle_moves_to_flat_floor() -> void:
+	box(Vector3.ZERO)
+	# A 7 cm curb from x 0.1 on: the body lies right by it.
+	box(Vector3(2.55, 0.07, 0), Vector3(4.9, 0.2, 10))
+	var pool := new_pool()
+	var type := new_type({"puddle_grow_s": 0.0})
+	await physics()
+	pool.puddle(type, Vector3(0, 0.8, 0))
+	var puddles := pool.puddles_of(type)
+	check(puddles.size() == 1, "a puddle (it used to be none)")
+	if puddles.size() == 1:
+		var side := puddles[0].basis.x.length()
+		check(puddles[0].origin.x + side * pool.puddle_edge_share < 0.1, "away from the curb, not into it (x %.2f, side %.2f)" % [puddles[0].origin.x, side])
+		check(near(puddles[0].origin.y, pool.puddle_lift_m, 0.001), "on the low floor, not on the curb")
+		check(side >= pool.puddle_min_m, "at least puddle_min_m")
+		check(Vector2(puddles[0].origin.x, puddles[0].origin.z).length() <= pool.puddle_seek_m + 0.001, "within puddle_seek_m of the body")
+
+
+func test_on_a_curb_s_bevel_the_puddle_moves_off_it() -> void:
+	box(Vector3.ZERO)
+	# A 15 cm curb for x under -0.2, and its bevel down to the floor at x -0.02 (its normal leans
+	# about 40 degrees, toward +x).
+	box(Vector3(-2.7, 0.15, 0), Vector3(5.0, 0.3, 10))
+	var bevel := Basis(Vector3(0, 0, 1), deg_to_rad(-40.5))
+	box(Vector3(-0.11, 0.075, 0), Vector3(0.24, 0.4, 10), 1, bevel)
+	var pool := new_pool()
+	var type := new_type({"puddle_grow_s": 0.0})
+	await physics()
+	pool.puddle(type, Vector3(-0.1, 0.8, 0))
+	var puddles := pool.puddles_of(type)
+	check(puddles.size() == 1, "a puddle (it used to be none)")
+	if puddles.size() == 1:
+		var side := puddles[0].basis.x.length()
+		check(puddles[0].origin.x > -0.02, "its middle off the bevel, on the floor below it (x %.2f)" % puddles[0].origin.x)
+		# Its edge toward the curb rises no more than puddle_flat_m, the rule of any puddle.
+		var edge := puddles[0].origin + Vector3.LEFT * side * pool.puddle_edge_share
+		var ray := PhysicsRayQueryParameters3D.create(edge + Vector3.UP, edge + Vector3.DOWN)
+		var under := pool.get_world_3d().direct_space_state.intersect_ray(ray)
+		check(not under.is_empty() and (under["position"] as Vector3).y <= pool.puddle_flat_m + 0.001, "its edge within puddle_flat_m of the floor (%.3f)" % (under["position"] as Vector3).y if not under.is_empty() else "its edge finds a floor")
+		check(near(puddles[0].origin.y, pool.puddle_lift_m, 0.001), "lying on the floor")
+		check(near(puddles[0].basis.y.normalized(), Vector3.UP, 0.001), "flat")
+
+
+func test_a_puddle_never_climbs_or_squeezes() -> void:
+	box(Vector3.ZERO)
+	# A 30 cm strip of floor between two 12 cm blocks: too narrow, and the flat tops are higher.
+	box(Vector3(-2.65, 0.12, 0), Vector3(5.0, 0.2, 10))
+	box(Vector3(2.65, 0.12, 0), Vector3(5.0, 0.2, 10))
+	var pool := new_pool()
+	var type := new_type({"puddle_grow_s": 0.0})
+	await physics()
+	pool.puddle(type, Vector3(0, 0.8, 0))
+	check(pool.puddles_of(type).is_empty(), "no puddle: none fits in the strip and it does not climb onto a block")

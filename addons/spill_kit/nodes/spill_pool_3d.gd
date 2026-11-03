@@ -17,6 +17,8 @@ const Shape := SpillShapes.Shape
 ## Keys of a floor ray's hit (PhysicsDirectSpaceState3D.intersect_ray).
 const HIT_POSITION := "position"
 const HIT_NORMAL := "normal"
+## The lay a sought puddle spot was checked with.
+const SPOT_LAY := "lay"
 ## A puddle's flatness probes look this far over and under its plane.
 const PROBE_M := 0.5
 ## Marks stack in this many heights, mark_lift_step_m apart, and start over.
@@ -101,8 +103,12 @@ class Puddle:
 @export_range(0.0, 0.5, 0.005, "suffix:m") var puddle_flat_m := 0.03
 ## Each try that does not fit shrinks the puddle by this.
 @export_range(0.1, 0.95, 0.05) var puddle_shrink := 0.8
-## Smallest side a puddle shrinks to; below this, no puddle.
+## Smallest side a puddle shrinks to; below this, no puddle there.
 @export_range(0.05, 5.0, 0.05, "suffix:m") var puddle_min_m := 0.4
+## Where the floor under the body is not flat enough even for puddle_min_m (by a curb, on its bevel),
+## the puddle looks for flat floor this far around, away from the slope first, never higher than
+## where the body lies (a liquid runs down, not up a curb). 0: no puddle there.
+@export_range(0.0, 3.0, 0.05, "suffix:m") var puddle_seek_m := 0.75
 @export_group("Try it")
 ## Takes every mark and puddle off the floor.
 @export_tool_button("Clear the floor", "Clear") var clear_button := clear
@@ -287,7 +293,14 @@ func puddle(type: SpillType, at: Vector3, exclude: Array[RID] = [], reach_m := 0
 	var lay := _flat_on(normal)
 	var side := _flat_side(point, lay, type.puddle_size_m, exclude)
 	if side <= 0.0:
-		return
+		var spot := _seek_flat(at, point, lay, type.puddle_size_m, exclude, reach_m)
+		if spot.is_empty():
+			return
+		point = spot[HIT_POSITION]
+		normal = spot[HIT_NORMAL]
+		lay = spot[SPOT_LAY]
+		# At least puddle_min_m fits there: the search checked it with this very lay.
+		side = maxf(_flat_side(point, lay, type.puddle_size_m, exclude), puddle_min_m)
 	var next := _puddles[_next_puddle]
 	_next_puddle = (_next_puddle + 1) % _puddles.size()
 	next.type = type
@@ -599,6 +612,59 @@ func _flat_side(at: Vector3, lay: Basis, size_m: float, exclude: Array[RID]) -> 
 			return side
 		side *= puddle_shrink
 	return 0.0
+
+
+# Flat floor near [param base] (the floor under [param at], too steep or broken for a puddle): in
+# rings puddle_min_m / 2 apart out to puddle_seek_m, the side away from the slope first. A spot is
+# taken when no wall stands between it and [param at], its floor is no higher than base (plus
+# puddle_flat_m) and a puddle_min_m puddle fits there. Its floor ray hit with the lay it was checked
+# with (SPOT_LAY), or empty.
+func _seek_flat(at: Vector3, base: Vector3, lay: Basis, size_m: float, exclude: Array[RID], reach_m: float) -> Dictionary:
+	if puddle_seek_m <= 0.0:
+		return {}
+	var away := Vector3(lay.y.x, 0.0, lay.y.z) - _uphill(base, lay, size_m * puddle_edge_share, exclude)
+	var ways: Array[Vector3] = []
+	for i in puddle_probes:
+		var turn := TAU * float(i) / float(puddle_probes)
+		ways.append(Vector3(cos(turn), 0.0, sin(turn)))
+	if away.length() > 0.001:
+		var downhill := away.normalized()
+		ways.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.dot(downhill) > b.dot(downhill))
+	var step := maxf(puddle_min_m * 0.5, 0.05)
+	var radius := step
+	while radius <= puddle_seek_m + 0.001:
+		for way in ways:
+			var spot := at + way * radius
+			if not _cast(at, spot, exclude).is_empty():
+				continue
+			var hit := _floor_under(spot, exclude, reach_m)
+			if hit.is_empty():
+				continue
+			var floor_at: Vector3 = hit[HIT_POSITION]
+			if floor_at.y > base.y + puddle_flat_m:
+				continue
+			var spot_lay := _flat_on(hit[HIT_NORMAL])
+			if _is_flat(floor_at, spot_lay, puddle_min_m * puddle_edge_share, exclude):
+				hit[SPOT_LAY] = spot_lay
+				return hit
+		radius += step
+	return {}
+
+
+# Which way the floor rises around [param base], flat: each probe of the ring at [param radius_m]
+# pulls toward its side by how high its floor stands over base's plane.
+func _uphill(base: Vector3, lay: Basis, radius_m: float, exclude: Array[RID]) -> Vector3:
+	var normal := lay.y.normalized()
+	var out := Vector3.ZERO
+	for i in puddle_probes:
+		var turn := TAU * float(i) / float(puddle_probes)
+		var way := lay * Vector3(cos(turn), 0.0, sin(turn))
+		var edge := base + way * radius_m
+		var hit := _cast(edge + normal * PROBE_M, edge - normal * PROBE_M, exclude)
+		if not hit.is_empty():
+			var floor_at: Vector3 = hit[HIT_POSITION]
+			out += way * normal.dot(floor_at - base)
+	return Vector3(out.x, 0.0, out.z)
 
 
 func _is_flat(at: Vector3, lay: Basis, radius_m: float, exclude: Array[RID]) -> bool:
