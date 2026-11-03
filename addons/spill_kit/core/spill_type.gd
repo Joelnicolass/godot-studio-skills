@@ -26,8 +26,6 @@ extends Resource
 @export_group("Spray")
 ## Drops of a light hit.
 @export_range(0, 128) var drops := 14
-## Drops of a heavy hit.
-@export_range(0, 256) var heavy_drops := 32
 ## Side of a drop.
 @export_range(0.005, 1.0, 0.005, "suffix:m") var drop_size_m := 0.09
 ## How fast the drops leave (each one 25 % more or less).
@@ -35,11 +33,12 @@ extends Resource
 ## How wide the spray opens around its way.
 @export_range(0.0, 180.0, 0.5, "degrees") var spread_deg := 28.0
 ## How far above the horizon the drops leave (90 = straight up).
-@export_range(-90.0, 90.0, 0.5, "degrees") var rise_deg := 50.0
+@export_range(-90.0, 90.0, 0.5, "degrees") var rise_deg := 51.0
 ## Seconds a drop flies (it falls through the floor: the marks are what it leaves).
 @export_range(0.05, 5.0, 0.05, "suffix:s") var drop_life_s := 0.7
-## A heavy hit's drops are this much bigger, faster and wider.
-@export_range(1.0, 4.0, 0.05) var heavy_scale := 1.35
+## Each drop is drop_size_m times a size between these.
+@export_range(0.05, 4.0, 0.05) var drop_scale_min := 0.6
+@export_range(0.05, 4.0, 0.05) var drop_scale_max := 1.4
 ## Its shape (alpha) and colour, multiplied by color. Null = the kit's round drop.
 @export var drop_albedo_texture: Texture2D
 ## Null = the kit's round drop's, or none with a drop_albedo_texture of yours.
@@ -50,6 +49,24 @@ extends Resource
 ## each drop's colour from COLOR (the particle's, this type's colour) and declare no uniform; the
 ## ones it declares (texture_parameter, color_parameter) are written too.
 @export var drop_material: Material
+
+@export_group("Heavy spray")
+## Drops of a heavy hit. The heavy spray is tuned on its own; its drops look like the light ones
+## (the Spray group's textures and material).
+@export_range(0, 256) var heavy_drops := 32
+## Side of a heavy hit's drop.
+@export_range(0.005, 1.0, 0.005, "suffix:m") var heavy_drop_size_m := 0.12
+## How fast they leave (each one 25 % more or less).
+@export_range(0.0, 20.0, 0.1, "suffix:m/s") var heavy_drop_speed_m_s := 3.0
+## How wide it opens around its way.
+@export_range(0.0, 180.0, 0.5, "degrees") var heavy_spread_deg := 38.0
+## How far above the horizon they leave.
+@export_range(-90.0, 90.0, 0.5, "degrees") var heavy_rise_deg := 45.0
+## Seconds a heavy hit's drop flies.
+@export_range(0.05, 5.0, 0.05, "suffix:s") var heavy_drop_life_s := 0.85
+## Each one is heavy_drop_size_m times a size between these.
+@export_range(0.05, 4.0, 0.05) var heavy_drop_scale_min := 0.7
+@export_range(0.05, 4.0, 0.05) var heavy_drop_scale_max := 1.6
 
 @export_group("Marks")
 ## Marks a light hit leaves on the floor.
@@ -100,6 +117,8 @@ func problems() -> PackedStringArray:
 	var out := PackedStringArray()
 	if mark_min_m > mark_max_m:
 		out.append("mark_min_m is above mark_max_m: every mark is mark_max_m.")
+	if drop_scale_min > drop_scale_max or heavy_drop_scale_min > heavy_drop_scale_max:
+		out.append("A drop_scale_min is above its drop_scale_max: the drops come out the same size.")
 	for surface: Array in [["drop_material", drop_material], ["mark_material", mark_material], ["puddle_material", puddle_material]]:
 		var shader_material := surface[1] as ShaderMaterial
 		if shader_material == null:

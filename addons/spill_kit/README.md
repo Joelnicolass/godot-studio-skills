@@ -37,7 +37,7 @@ Habilitá el plugin **SpillKit** para la línea de costo del inspector. Los nodo
 
 1. **Creá un tipo.** En el FileSystem: clic derecho → Nuevo recurso → `SpillType`, por ejemplo `blood.tres`. Ponele un color: con eso ya se ve húmedo. O copiá uno de `examples/types/`.
 2. **Agregá un `SpillSource3D`** en el cuerpo, donde salen las gotas (el pecho, el caparazón), y asignale el tipo.
-3. **Agregá un `SpillPool3D`** al nivel (uno por mundo) y listá en `types` los tipos que usa. Si falta, el primer componente arma uno con los valores de entrada y lo avisa.
+3. **Agregá un `SpillPool3D`** al nivel (uno por mundo) y listá en `types` los tipos que usa. Si falta, el primer componente arma uno con los valores de entrada y lo avisa; si el nivel trae el suyo más tarde, el del nivel toma su lugar.
 4. **Llamá `hit(daño, vida_máxima, desde)`** donde el juego saca vida, y **`die()`** cuando el cuerpo muere.
 5. **Probalo en el editor:** seleccioná el componente y apretá **Spray**, **Heavy spray** o **Die (puddle)** en su grupo «Try it». Las gotas, las manchas y el charco aparecen en la vista 3D, sobre el piso de tu escena.
 
@@ -102,11 +102,12 @@ Un recurso por sustancia. Solo describe cómo se ve; cuándo sangra lo decide el
 | `specular` | Qué tan brillantes son los reflejos |
 | `normal_scale` | Cuánto levantan la superficie los mapas de normales (0 = plano) |
 | `alpha_scissor` | Arriba de 0, corta los píxeles con menos alfa: bordes duros, sin problemas de orden donde se pisan manchas. 0 = bordes suaves, mezclados por alfa |
-| **Spray:** `drops`, `heavy_drops` | Gotas de un golpe liviano y de uno fuerte |
+| **Spray:** `drops` | Gotas de un golpe liviano |
 | `drop_size_m`, `drop_speed_m_s` | Lado de una gota; velocidad de salida (cada una un 25 % más o menos) |
 | `spread_deg`, `rise_deg` | Qué tan abierto sale el chorro, y cuánto sube sobre el horizonte |
 | `drop_life_s` | Lo que vuela una gota (atraviesa el piso: lo que deja son las manchas) |
-| `heavy_scale` | Las gotas de un golpe fuerte son así de más grandes, rápidas y abiertas |
+| `drop_scale_min`, `drop_scale_max` | Cada gota mide `drop_size_m` por un tamaño entre estos |
+| **Heavy spray:** `heavy_drops`, `heavy_drop_size_m`, `heavy_drop_speed_m_s`, `heavy_spread_deg`, `heavy_rise_deg`, `heavy_drop_life_s`, `heavy_drop_scale_min`, `heavy_drop_scale_max` | Lo mismo para un golpe fuerte, ajustado aparte (32 gotas de 0,12 m a 3 m/s, abiertas 38°, a 45°, 0,85 s, 0,7 a 1,6). Sus gotas se ven como las livianas: las texturas y el material del grupo Spray |
 | **Marks:** `marks_per_spray`, `marks_per_heavy` | Manchas que deja un golpe liviano y uno fuerte |
 | `mark_radius_m`, `mark_min_m`, `mark_max_m` | Caen en cualquier lugar a esta distancia del cuerpo, entre estos tamaños |
 | **Puddle:** `puddle_size_m`, `puddle_grow_s` | El lado del charco crecido (menos donde el piso no es plano), y lo que tarda en crecer |
@@ -124,6 +125,7 @@ Va en el cuerpo, donde salen las gotas. Las gotas salen de su posición, y las m
 |---|---|
 | `type` | Qué derrama este cuerpo |
 | `pool` | El pool que lo dibuja. Vacío = el `SpillPool3D` de su mundo |
+| `floor_reach_m` | Hasta dónde debajo del componente puede estar el piso de sus manchas y su charco; más lejos (en el aire), nada. 0 = el `floor_reach_m` del pool. Un componente bajo (el caparazón de un bicho) quiere menos que un pecho |
 | **Rules:** `heavy_from` | Un golpe que saca al menos esta parte de la vida máxima es fuerte (0,4) |
 | `every_s` | Las salpicaduras livianas quedan al menos así de separadas; los golpes del medio se suman (0,25 s) |
 | `min_lost` | El daño (parte de la vida máxima) que se tiene que sumar para una salpicadura liviana; un golpe que llega solo (ningún otro en `every_s`) sangra igual (0,05) |
@@ -159,8 +161,8 @@ Uno por mundo (un nivel). Arma todo una vez por tipo y lo reusa: un golpe no cre
 
 | Método | Qué hace |
 |---|---|
-| `spill(type, at, away = ZERO, heavy = false, exclude = [])` | Una salpicadura sin componente (un barril que pierde aceite). `away` es hacia dónde vuela, plano |
-| `puddle(type, at, exclude = [])` | Un charco debajo de `at` |
+| `spill(type, at, away = ZERO, heavy = false, exclude = [], reach_m = 0)` | Una salpicadura sin componente (un barril que pierde aceite). `away` es hacia dónde vuela, plano; `reach_m`, hasta dónde debajo puede estar el piso (0 = `floor_reach_m`) |
+| `puddle(type, at, exclude = [], reach_m = 0)` | Un charco debajo de `at` |
 | `clear()` | Saca todo del piso y del aire (una ronda nueva) |
 | `prepare(type)` / `refresh(type)` | Arma un tipo ya / le pasa de nuevo los valores del tipo, sin tocar lo que está en el piso |
 | `material_of(type, shape)` | El material con que dibuja las gotas, manchas o charcos de un tipo (`SpillShapes.Shape.DROP`, `MARK`, `PUDDLE`) |
@@ -181,6 +183,8 @@ Uno por mundo (un nivel). Arma todo una vez por tipo y lo reusa: un golpe no cre
 | Aceite que pierde un barril, sin cuerpo | `pool.spill(oil, barrel.global_position)` y `pool.puddle(oil, barrel.global_position)` |
 | Que una especie sangre más fácil | `heavy_from = 0.25` en su componente |
 | Menos manchas en una máquina lenta | `marks_per_type` del pool, o `marks_per_spray` del tipo |
+| Que un bicho bajo no manche cuando salta | `floor_reach_m` de su componente: la altura del componente más lo que tolera en el aire (0,8 + 0,6 = 1,4) |
+| Un golpe fuerte más violento | El grupo Heavy spray del tipo: más `heavy_drops`, más `heavy_drop_speed_m_s` |
 | Un juego en red | [Red](#red): `hit()` y `die()` en el servidor, `wound` sincronizado |
 | No dibujar en un servidor dedicado | Nada: un export con la feature `dedicated_server`, o un export corrido headless, no arma nada. Uno corrido con el editor headless sí dibuja: `pool.shown = false` ahí |
 | Cambiar el material en vivo | `pool.material_of(type, SpillShapes.Shape.MARK)`, o cambiá el tipo y llamá `pool.refresh(type)` |
@@ -227,7 +231,7 @@ El costo por máquina lo muestra el inspector del pool (`cost_text()`). Con much
 
 ## Tips y recomendaciones
 
-- **El componente en el pecho.** Las gotas salen de ahí, y las manchas buscan el piso debajo, hasta `floor_reach_m`. Un cuerpo en el aire salpica pero no mancha.
+- **El componente en el pecho.** Las gotas salen de ahí, y las manchas buscan el piso debajo, hasta `floor_reach_m`. Un cuerpo en el aire salpica pero no mancha. Cuerpos de alturas distintas: el `floor_reach_m` de cada componente.
 - **Una capa para el piso.** `floor_mask` es lo que cuenta como piso. Los cuerpos en otra capa, o el propio cuerpo, que se encuentra solo, nunca reciben manchas.
 - **Bordes duros para muchas manchas.** Con `alpha_scissor` arriba de 0, dos manchas que se pisan nunca se ordenan mal. Los bordes suaves (`alpha_scissor` en 0, la baba del ejemplo) se ven mejor de a pocas.
 - **Un tipo por especie, no por cuerpo.** Todos los cuerpos de un tipo comparten sus salpicaduras, sus manchas y su material.
@@ -258,13 +262,13 @@ El resultado es `SPILLKIT TESTS PASS (n)`. Los tests cubren:
   - un golpe salpica y mancha el piso debajo; las gotas vuelan lejos de donde vino el golpe;
   - una muerte hace crecer un charco, y un cuerpo que revive muere de nuevo;
   - una máquina que lee el valor dibuja lo mismo, debajo de su propio cuerpo; quien entra tarde no dibuja nada viejo;
-  - su propio cuerpo nunca recibe manchas; ninguna detrás de un muro ni en el aire;
+  - su propio cuerpo nunca recibe manchas; ninguna detrás de un muro ni en el aire; el alcance del piso de cada componente;
   - sin pool se arma uno; una salpicadura propia del juego; el aviso sin tipo;
 - **el pool:**
-  - el anillo de manchas y sus alturas; el anillo de charcos;
+  - el anillo de manchas y sus alturas; el anillo de charcos; la salpicadura fuerte con sus propios valores;
   - un charco sobre una pendiente y al lado de un cordón;
   - la opción del jugador y una ronda nueva; arma una vez por tipo, todo interno; el costo;
-  - un pool por mundo y sus avisos; salpicar sin componente;
+  - un pool por mundo y sus avisos; el pool que se armó solo deja su lugar al del nivel; salpicar sin componente;
   - cada tipo dibujado una vez al cargar, chico y frente a la cámara, y después borrado;
 - **los materiales:**
   - un tipo con solo su color se ve húmedo (las normales del kit);
