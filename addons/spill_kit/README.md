@@ -2,7 +2,7 @@
 
 Lo que derrama un cuerpo, en 3D: sangre, icor, aceite, baba, tinta.
 - **Cada golpe** salpica gotas y deja manchas en el piso, que quedan toda la partida.
-- **Al morir** crece un charco: sigue la pendiente del piso y se achica para no subirse a un cordón.
+- **Al morir** crece un charco: sigue la pendiente del piso, se achica para no subirse a un cordón y, si al lado del cordón no entra, se corre al piso plano más cercano.
 - **Cada sustancia es un tipo** (`SpillType`) en el inspector: su color, cómo vuelan sus gotas, sus manchas, su charco y cómo se ven. Puede tener el aspecto húmedo del kit (con normales propias), tus texturas PBR (albedo, normal, ORM) o el material de tu juego (un shader PS1).
 - **Las reglas son valores** del componente: golpe fuerte desde el 40 % de la vida, salpicaduras livianas cada 0,25 s como mucho, golpecitos que se suman.
 - **Una sola propiedad para la red:** `wound`. Cada máquina dibuja lo que cambió, y quien entra tarde no ve nada viejo.
@@ -156,7 +156,8 @@ Uno por mundo (un nivel). Arma todo una vez por tipo y lo reusa: un golpe no cre
 | `mark_lift_m`, `mark_lift_step_m` | Separación del piso, y un poco más por mancha para que dos que se pisan no titilen (64 alturas y vuelve a empezar) |
 | **Puddles:** `puddles` | Charcos guardados, todos los tipos juntos (12) |
 | `puddle_start_m`, `puddle_lift_m` | El lado con que empieza a crecer; su separación del piso (debajo de las manchas) |
-| `puddle_probes`, `puddle_edge_share`, `puddle_flat_m`, `puddle_shrink`, `puddle_min_m` | Antes de crecer, tira rayos alrededor del borde; si uno encuentra el piso más lejos que `puddle_flat_m` (un cordón, un escalón), lo achica hasta que entre. Debajo de `puddle_min_m` no hay charco |
+| `puddle_probes`, `puddle_edge_share`, `puddle_flat_m`, `puddle_shrink`, `puddle_min_m` | Antes de crecer, tira rayos alrededor del borde; si uno encuentra el piso más lejos que `puddle_flat_m` (un cordón, un escalón), lo achica hasta que entre. Debajo de `puddle_min_m` no entra ahí |
+| `puddle_seek_m` | Si no entra ni de `puddle_min_m` debajo del cuerpo (al lado de un cordón, sobre su bisel), busca piso plano hasta esta distancia, primero del lado contrario a la pendiente y nunca más alto que donde quedó el cuerpo: un líquido baja, no sube un cordón. 0 = ahí no hay charco (0,75) |
 | **Try it:** Clear the floor | Saca todas las manchas y charcos |
 
 | Método | Qué hace |
@@ -221,7 +222,7 @@ Nada se crea por golpe: cada tipo tiene sus salpicaduras (un anillo de CPUPartic
 | Qué | Costo |
 |---|---|
 | Una salpicadura (`spill()`: sus 1 o 3 manchas y sus rayos) | 9 µs |
-| Un charco (`puddle()`: con sus 8 rayos de borde) | 12 µs |
+| Un charco (`puddle()`: con sus 8 rayos de borde) | 12 µs; 0,16 ms al lado de un cordón, donde busca piso plano (0,19 ms si no encuentra) |
 | 2 tipos: 128 manchas, 12 charcos y 552 gotas en el aire | Dentro del ruido del cuadro (1,2 a 1,9 ms en total), en Compatibility y en Forward+ |
 | Compilar los shaders de un tipo nuevo | Unos 230 ms, mientras carga el nivel |
 
@@ -266,7 +267,7 @@ El resultado es `SPILLKIT TESTS PASS (n)`. Los tests cubren:
   - sin pool se arma uno; una salpicadura propia del juego; el aviso sin tipo;
 - **el pool:**
   - el anillo de manchas y sus alturas; el anillo de charcos; la salpicadura fuerte con sus propios valores;
-  - un charco sobre una pendiente y al lado de un cordón;
+  - un charco sobre una pendiente y al lado de un cordón; al lado de un cordón o sobre su bisel, el charco se corre al piso plano; nunca sube a un bloque ni se mete en un hueco angosto;
   - la opción del jugador y una ronda nueva; arma una vez por tipo, todo interno; el costo;
   - un pool por mundo y sus avisos; el pool que se armó solo deja su lugar al del nivel; salpicar sin componente;
   - cada tipo dibujado una vez al cargar, chico y frente a la cámara, y después borrado;

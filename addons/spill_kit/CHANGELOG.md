@@ -1,5 +1,12 @@
 # Changelog de SpillKit
 
+## 0.2.1
+
+- **Un cuerpo que muere junto a un cordón deja su charco** (lo encontró El Eternauta en el playtest de su migración: 2 de 6 muertes sin charco). Sobre el bisel de un cordón, o justo al lado, el piso no era plano ni para un charco de `puddle_min_m`, y el pool lo descartaba. Ahora busca piso plano alrededor, hasta `puddle_seek_m` (0,75 m), primero del lado contrario a la pendiente. Nunca lo pone más alto que donde quedó el cuerpo, ni donde un muro lo separa de él. Con `puddle_seek_m` en 0 se comporta como antes.
+- **Tests:** 45.
+
+Qué actualizar: nada.
+
 ## 0.2.0
 
 Lo que encontró El Eternauta al planificar su migración.
