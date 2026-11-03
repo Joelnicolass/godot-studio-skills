@@ -1,5 +1,14 @@
 # Changelog de SpillKit
 
+## 0.2.2
+
+- **El charco que se corre queda del lado del cuerpo** (lo encontró El Eternauta: un bicho muerto sobre el bisel de una vereda de 0,30 m dejaba el charco abajo, en la calle, a 0,6 m del cuerpo). La 0.2.1 no le ponía límite hacia abajo al piso nuevo, y su rayo de separación salía a la altura del componente, por encima del cordón. Ahora:
+  - el charco no queda más de `puddle_drop_m` (0,08 m) por debajo de donde quedó el cuerpo: puede bajar un poco por un bisel, pero no cae por un cordón;
+  - el rayo que une el piso del cuerpo con el del charco va a 5 cm del piso, así que el borde de un cordón o un muro bajo de por medio lo separan.
+- **Tests:** 48.
+
+Qué actualizar: nada. Para que un charco pueda bajar a la calle como en la 0.2.1, subí `puddle_drop_m`.
+
 ## 0.2.1
 
 - **Un cuerpo que muere junto a un cordón deja su charco** (lo encontró El Eternauta en el playtest de su migración: 2 de 6 muertes sin charco). Sobre el bisel de un cordón, o justo al lado, el piso no era plano ni para un charco de `puddle_min_m`, y el pool lo descartaba. Ahora busca piso plano alrededor, hasta `puddle_seek_m` (0,75 m), primero del lado contrario a la pendiente. Nunca lo pone más alto que donde quedó el cuerpo, ni donde un muro lo separa de él. Con `puddle_seek_m` en 0 se comporta como antes.

@@ -280,3 +280,68 @@ func test_a_puddle_never_climbs_or_squeezes() -> void:
 	await physics()
 	pool.puddle(type, Vector3(0, 0.8, 0))
 	check(pool.puddles_of(type).is_empty(), "no puddle: none fits in the strip and it does not climb onto a block")
+
+
+func test_on_a_sidewalk_s_bevel_the_puddle_stays_on_the_sidewalk() -> void:
+	# A street at y 0, a 30 cm sidewalk for x under -0.25, and its bevel at 40 degrees down to the
+	# street. The body dies near the bevel's top: its puddle stays up on the sidewalk.
+	box(Vector3.ZERO)
+	box(Vector3(-2.75, 0.30, 0), Vector3(5.0, 0.4, 10))
+	var run := 0.30 / tan(deg_to_rad(40.0))
+	var bevel := Basis(Vector3(0, 0, 1), deg_to_rad(-40.0))
+	box(Vector3(-0.25 + run * 0.5, 0.15, 0), Vector3(Vector2(run, 0.30).length(), 0.5, 10), 1, bevel)
+	var pool := new_pool()
+	var type := new_type({"puddle_grow_s": 0.0})
+	await physics()
+	pool.puddle(type, Vector3(-0.22, 1.1, 0))
+	var puddles := pool.puddles_of(type)
+	check(puddles.size() == 1, "a puddle")
+	if puddles.size() == 1:
+		check(near(puddles[0].origin.y, 0.30 + pool.puddle_lift_m, 0.002), "up on the sidewalk, not down on the street (y %.2f)" % puddles[0].origin.y)
+		check(puddles[0].origin.x < -0.25, "on the sidewalk's side (x %.2f)" % puddles[0].origin.x)
+
+
+func test_a_puddle_does_not_pass_a_low_wall() -> void:
+	# A body between a 7 cm curb and a 40 cm wall, 23 cm apart: too narrow, and flat floor behind
+	# the wall is the other side of it.
+	box(Vector3.ZERO)
+	box(Vector3(2.55, 0.07, 0), Vector3(4.9, 0.2, 10))
+	box(Vector3(-0.15, 0.4, 0), Vector3(0.04, 0.4, 10))
+	var pool := new_pool()
+	var type := new_type({"puddle_grow_s": 0.0})
+	await physics()
+	pool.puddle(type, Vector3(0, 0.8, 0))
+	var behind := 0
+	for each in pool.puddles_of(type):
+		if each.origin.x < -0.15:
+			behind += 1
+	check(behind == 0, "no puddle behind the wall")
+	check(pool.puddles_of(type).is_empty(), "and none fits in front of it")
+
+
+func test_a_puddle_never_drops_down_a_curb_to_the_street() -> void:
+	# The same sidewalk, but 25 cm wide against a building: no puddle fits on it. The street below
+	# has room, yet it is the other side of the curb: no puddle.
+	box(Vector3.ZERO)
+	box(Vector3(-0.375, 0.30, 0), Vector3(0.25, 0.4, 10))
+	box(Vector3(-3.0, 3.0, 0), Vector3(5.0, 3.0, 10))
+	var run := 0.30 / tan(deg_to_rad(40.0))
+	var bevel := Basis(Vector3(0, 0, 1), deg_to_rad(-40.0))
+	box(Vector3(-0.25 + run * 0.5, 0.15, 0), Vector3(Vector2(run, 0.30).length(), 0.5, 10), 1, bevel)
+	var pool := new_pool()
+	var type := new_type({"puddle_grow_s": 0.0})
+	await physics()
+	for i in 6:
+		pool.puddle(type, Vector3(-0.22, 1.1, 0))
+	check(_down_on_the_street(pool, type) == 0, "six deaths, no puddle down on the street (%d)" % _down_on_the_street(pool, type))
+	pool.puddle_drop_m = 0.5
+	pool.puddle(type, Vector3(-0.22, 1.1, 0))
+	check(_down_on_the_street(pool, type) == 1, "with puddle_drop_m 0.5 it may run down to the street")
+
+
+func _down_on_the_street(pool: SpillPool3D, type: SpillType) -> int:
+	var down := 0
+	for each in pool.puddles_of(type):
+		if each.origin.y < 0.2:
+			down += 1
+	return down
