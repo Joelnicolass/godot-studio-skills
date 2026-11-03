@@ -20,6 +20,7 @@ SKILL_NAMES=(
   godot-prop-kit
   godot-grass-kit
   godot-perception-kit
+  godot-spill-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -42,6 +43,7 @@ COMMAND_FILES=(
   add-props.md
   add-grass.md
   add-perception.md
+  add-spill.md
   create-material.md
   research-feature.md
   manage-changes.md

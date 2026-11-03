@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpillType" format=3]
+
+[ext_resource type="Texture2D" path="res://addons/spill_kit/examples/substances_3d/textures/mark_albedo.png" id="1_3p7fy"]
+[ext_resource type="Texture2D" path="res://addons/spill_kit/examples/substances_3d/textures/mark_normal.png" id="2_ted4q"]
+[ext_resource type="Texture2D" path="res://addons/spill_kit/examples/substances_3d/textures/mark_orm.png" id="3_cdx5v"]
+[ext_resource type="Texture2D" path="res://addons/spill_kit/examples/substances_3d/textures/puddle_albedo.png" id="4_r878p"]
+[ext_resource type="Texture2D" path="res://addons/spill_kit/examples/substances_3d/textures/puddle_normal.png" id="5_14dcd"]
+[ext_resource type="Texture2D" path="res://addons/spill_kit/examples/substances_3d/textures/puddle_orm.png" id="6_3p3w4"]
+[ext_resource type="Script" path="res://addons/spill_kit/core/spill_type.gd" id="7_tjydm"]
+
+[resource]
+resource_name = "Paint"
+script = ExtResource("7_tjydm")
+color = Color(0.95, 0.45, 0.08, 1)
+roughness = 1.0
+normal_scale = 1.2
+mark_albedo_texture = ExtResource("1_3p7fy")
+mark_normal_texture = ExtResource("2_ted4q")
+mark_orm_texture = ExtResource("3_cdx5v")
+puddle_albedo_texture = ExtResource("4_r878p")
+puddle_normal_texture = ExtResource("5_14dcd")
+puddle_orm_texture = ExtResource("6_3p3w4")

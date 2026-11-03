@@ -1,0 +1,14 @@
+# SpillKit API by piece
+
+Everything under `addons/spill_kit/`. Distances are metres (`_m`), times seconds (`_s`), angles degrees (`_deg`).
+
+| Class | What |
+|---|---|
+| `SpillSource3D` (@tool, Node3D) | `type: SpillType`, `pool: SpillPool3D` (empty: its world's). Rules: `heavy_from` (0.4), `every_s` (0.25), `min_lost` (0.05). "Try it" buttons: `spray_button`, `heavy_button`, `die_button`, `clear_button`. `wound: Vector4` (to sync; not saved). `hit(damage, max_hp, from = INF, heavy = false) -> bool`, `spray(heavy = false, from = INF)`, `die()`, `current_pool()`, `cost_text()`; static `body_above(node) -> PhysicsBody3D` |
+| `SpillPool3D` (@tool, Node3D) | `shown`, `types: Array[SpillType]`, `floor_mask`, `floor_reach_m`, `sprays_per_type`, `marks_per_type`, `mark_shade_min`, `mark_lift_m`, `mark_lift_step_m`, `puddles`, `puddle_start_m`, `puddle_lift_m`, `puddle_probes`, `puddle_edge_share`, `puddle_flat_m`, `puddle_shrink`, `puddle_min_m`; button `clear_button`. `spill(type, at, away = ZERO, heavy = false, exclude: Array[RID] = [])`, `puddle(type, at, exclude = [])`, `clear()`, `prepare(type)`, `refresh(type)`, `material_of(type, shape)`, `mark_count(type)`, `marks_of(type)`, `puddles_of(type)`, `sprays_played(type)`, `cost() -> Dictionary`, `cost_text()`; static `of(world)`, `for_node(node)`, `draws_here()`, `is_server(dedicated, display, editor)`; constants `WARM_FRAMES`, `WARM_SCALE`, `WARM_AHEAD_M` |
+| `SpillType` (@tool, Resource) | `color`, `roughness`, `metallic`, `specular`, `normal_scale`, `alpha_scissor`. Spray: `drops`, `heavy_drops`, `drop_size_m`, `drop_speed_m_s`, `spread_deg`, `rise_deg`, `drop_life_s`, `heavy_scale`. Marks: `marks_per_spray`, `marks_per_heavy`, `mark_radius_m`, `mark_min_m`, `mark_max_m`. Puddle: `puddle_size_m`, `puddle_grow_s`. Per surface (`drop_`, `mark_`, `puddle_`): `albedo_texture`, `normal_texture`, `orm_texture`, `material`. `texture_parameter` (`&"albedo_texture"`), `color_parameter` (`&"albedo_color"`). `problems() -> PackedStringArray`; static `uniforms(shader)` |
+| `SpillRules` | enum `Kind { NONE, LIGHT, HEAVY }`; static `kind_for(drop_share, lost_share, since_spray_s, since_hit_s, heavy_from, every_s, min_lost, heavy_blow = false)` |
+| `SpillWound` | static `pack(from, sprays, deaths, heavy) -> Vector4`, `from_of(wound)`, `sprays_of(wound)`, `deaths_of(wound)` (0 to 3), `is_heavy(wound)` |
+| `SpillShapes` | enum `Shape { DROP, MARK, PUDDLE }`; static `albedo(shape)`, `normal(shape)`, `heights(shape)`; constants `SIZES`, `RADII`, `RIMS`, `RISES` |
+| `SpillMaterials` | static `build(type, shape) -> Material`, `own_material(type, shape)`, `albedo_texture(type, shape)`, `normal_texture(type, shape)`, `orm_texture(type, shape)` |
+| Editor (plugin) | The cost line at the top of a pool's and a component's inspector (`editor/spill_inspector.gd`). The buttons and warnings are the nodes' own |

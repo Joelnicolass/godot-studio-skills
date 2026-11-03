@@ -1,0 +1,346 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/spill_kit/examples/substances_3d/substances_3d.gd" id="1_qjn5i"]
+[ext_resource type="Script" path="res://addons/spill_kit/nodes/spill_pool_3d.gd" id="2_e0haa"]
+[ext_resource type="Script" path="res://addons/spill_kit/core/spill_type.gd" id="3_6e3op"]
+[ext_resource type="Resource" path="res://addons/spill_kit/examples/types/blood.tres" id="4_28vbg"]
+[ext_resource type="Resource" path="res://addons/spill_kit/examples/types/oil.tres" id="5_k0a6u"]
+[ext_resource type="Resource" path="res://addons/spill_kit/examples/types/slime.tres" id="6_eiiex"]
+[ext_resource type="Resource" path="res://addons/spill_kit/examples/types/mercury.tres" id="7_l7u8h"]
+[ext_resource type="Resource" path="res://addons/spill_kit/examples/types/paint.tres" id="8_rc80i"]
+[ext_resource type="Resource" path="res://addons/spill_kit/examples/types/ink.tres" id="9_forv6"]
+[ext_resource type="Script" path="res://addons/spill_kit/nodes/spill_source_3d.gd" id="10_hcdfi"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_wod8t"]
+sky_top_color = Color(0.32, 0.42, 0.58, 1)
+sky_horizon_color = Color(0.62, 0.64, 0.66, 1)
+ground_bottom_color = Color(0.36, 0.35, 0.33, 1)
+ground_horizon_color = Color(0.62, 0.64, 0.66, 1)
+
+[sub_resource type="Sky" id="Sky_p82oh"]
+sky_material = SubResource("ProceduralSkyMaterial_wod8t")
+
+[sub_resource type="Environment" id="Environment_h0mph"]
+background_mode = 2
+sky = SubResource("Sky_p82oh")
+ambient_light_source = 3
+ambient_light_energy = 0.4
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hb33r"]
+size = Vector3(80, 1, 60)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_76tsw"]
+albedo_color = Color(0.26, 0.26, 0.25, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_fj05h"]
+material = SubResource("StandardMaterial3D_76tsw")
+size = Vector3(80, 1, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_m25qs"]
+size = Vector3(2.8, 0.4, 2.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l72i3"]
+albedo_color = Color(0.36, 0.35, 0.33, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_1kv0r"]
+material = SubResource("StandardMaterial3D_l72i3")
+size = Vector3(2.8, 0.4, 2.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_row7e"]
+size = Vector3(2.8, 1.2, 4.4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xf4j4"]
+albedo_color = Color(0.34, 0.32, 0.3, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_qfs48"]
+material = SubResource("StandardMaterial3D_xf4j4")
+size = Vector3(2.8, 1.2, 4.4)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hlcef"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g88vr"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_fu0uf"]
+material = SubResource("StandardMaterial3D_g88vr")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l3iaa"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o2dbw"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_y56wn"]
+material = SubResource("StandardMaterial3D_o2dbw")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jmpc7"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ddo6e"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_v3oo8"]
+material = SubResource("StandardMaterial3D_ddo6e")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s08iw"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2wt6d"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_rxvko"]
+material = SubResource("StandardMaterial3D_2wt6d")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7kav2"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ogd46"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_ibhc8"]
+material = SubResource("StandardMaterial3D_ogd46")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_o6dqs"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_from7"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_du4v5"]
+material = SubResource("StandardMaterial3D_from7")
+radius = 0.35
+height = 1.8
+
+[node name="Substances3D" type="Node3D" unique_id=161287450 node_paths=PackedStringArray("spills", "pivot", "camera", "lamp", "sun", "environment", "label")]
+script = ExtResource("1_qjn5i")
+spills = [NodePath("Blood/Spill"), NodePath("Oil/Spill"), NodePath("Slime/Spill"), NodePath("Mercury/Spill"), NodePath("Paint/Spill"), NodePath("Ink/Spill")]
+pivot = NodePath("Pivot")
+camera = NodePath("Pivot/Camera3D")
+lamp = NodePath("Pivot/Camera3D/Lamp")
+sun = NodePath("Sun")
+environment = NodePath("WorldEnvironment")
+label = NodePath("Label")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1332051424]
+environment = SubResource("Environment_h0mph")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1682883735]
+transform = Transform3D(0.81915206, 0.4262504, -0.38379753, 0, 0.66913056, 0.74314487, 0.57357645, -0.6087487, 0.54811966, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Pivot" type="Node3D" parent="." unique_id=840784531]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Pivot" unique_id=1495675795]
+transform = Transform3D(1, 0, 0, 0, 0.91192144, 0.41036466, 0, -0.41036466, 0.91192144, 0, 4.5, 10)
+fov = 50.0
+
+[node name="Lamp" type="SpotLight3D" parent="Pivot/Camera3D" unique_id=491987337]
+visible = false
+light_energy = 8.0
+shadow_enabled = true
+spot_range = 30.0
+spot_angle = 20.0
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1464866846]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="Shape" type="CollisionShape3D" parent="Floor" unique_id=775071547]
+shape = SubResource("BoxShape3D_hb33r")
+
+[node name="Mesh" type="MeshInstance3D" parent="Floor" unique_id=1162216493]
+mesh = SubResource("BoxMesh_fj05h")
+
+[node name="Curb" type="StaticBody3D" parent="." unique_id=2029868885]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, -0.049999997, -1.7)
+
+[node name="Shape" type="CollisionShape3D" parent="Curb" unique_id=1686573590]
+shape = SubResource("BoxShape3D_m25qs")
+
+[node name="Mesh" type="MeshInstance3D" parent="Curb" unique_id=1995006841]
+mesh = SubResource("BoxMesh_1kv0r")
+
+[node name="Ramp" type="StaticBody3D" parent="." unique_id=210014894]
+transform = Transform3D(1, 0, 0, 0, 0.9781476, -0.2079117, 0, 0.2079117, 0.9781476, 1.5, -0.23688862, -0.12474702)
+
+[node name="Shape" type="CollisionShape3D" parent="Ramp" unique_id=344512714]
+shape = SubResource("BoxShape3D_row7e")
+
+[node name="Mesh" type="MeshInstance3D" parent="Ramp" unique_id=1620374411]
+mesh = SubResource("BoxMesh_qfs48")
+
+[node name="SpillPool3D" type="Node3D" parent="." unique_id=502802845]
+script = ExtResource("2_e0haa")
+types = Array[ExtResource("3_6e3op")]([ExtResource("4_28vbg"), ExtResource("5_k0a6u"), ExtResource("6_eiiex"), ExtResource("7_l7u8h"), ExtResource("8_rc80i"), ExtResource("9_forv6")])
+
+[node name="Blood" type="StaticBody3D" parent="." unique_id=1808496062]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 0, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Blood" unique_id=1943719014]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_hlcef")
+
+[node name="Mesh" type="MeshInstance3D" parent="Blood" unique_id=1956294524]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_fu0uf")
+
+[node name="Spill" type="Node3D" parent="Blood" unique_id=1141645337]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+script = ExtResource("10_hcdfi")
+type = ExtResource("4_28vbg")
+
+[node name="Name" type="Label3D" parent="Blood" unique_id=1945357930]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "1  Blood"
+font_size = 48
+
+[node name="Oil" type="StaticBody3D" parent="." unique_id=146900054]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Oil" unique_id=1396516981]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_l3iaa")
+
+[node name="Mesh" type="MeshInstance3D" parent="Oil" unique_id=524102996]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_y56wn")
+
+[node name="Spill" type="Node3D" parent="Oil" unique_id=1761289784]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+script = ExtResource("10_hcdfi")
+type = ExtResource("5_k0a6u")
+
+[node name="Name" type="Label3D" parent="Oil" unique_id=1365633575]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "2  Oil"
+font_size = 48
+
+[node name="Slime" type="StaticBody3D" parent="." unique_id=2119792985]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Slime" unique_id=656520671]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_jmpc7")
+
+[node name="Mesh" type="MeshInstance3D" parent="Slime" unique_id=371991266]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_v3oo8")
+
+[node name="Spill" type="Node3D" parent="Slime" unique_id=803740358]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+script = ExtResource("10_hcdfi")
+type = ExtResource("6_eiiex")
+
+[node name="Name" type="Label3D" parent="Slime" unique_id=1648321900]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "3  Slime"
+font_size = 48
+
+[node name="Mercury" type="StaticBody3D" parent="." unique_id=1602415261]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.35, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Mercury" unique_id=491362933]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_s08iw")
+
+[node name="Mesh" type="MeshInstance3D" parent="Mercury" unique_id=98642472]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_rxvko")
+
+[node name="Spill" type="Node3D" parent="Mercury" unique_id=1337535175]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+script = ExtResource("10_hcdfi")
+type = ExtResource("7_l7u8h")
+
+[node name="Name" type="Label3D" parent="Mercury" unique_id=959266332]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "4  Mercury"
+font_size = 48
+
+[node name="Paint" type="StaticBody3D" parent="." unique_id=559540709]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Paint" unique_id=608005957]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_7kav2")
+
+[node name="Mesh" type="MeshInstance3D" parent="Paint" unique_id=581466997]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_ibhc8")
+
+[node name="Spill" type="Node3D" parent="Paint" unique_id=1840355526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+script = ExtResource("10_hcdfi")
+type = ExtResource("8_rc80i")
+
+[node name="Name" type="Label3D" parent="Paint" unique_id=2138370027]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "5  Paint"
+font_size = 48
+
+[node name="Ink" type="StaticBody3D" parent="." unique_id=1091237413]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 0, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Ink" unique_id=941508346]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_o6dqs")
+
+[node name="Mesh" type="MeshInstance3D" parent="Ink" unique_id=329836798]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_du4v5")
+
+[node name="Spill" type="Node3D" parent="Ink" unique_id=2147211078]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+script = ExtResource("10_hcdfi")
+type = ExtResource("9_forv6")
+
+[node name="Name" type="Label3D" parent="Ink" unique_id=1851354068]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+billboard = 1
+text = "6  Ink"
+font_size = 48
+
+[node name="Label" type="Label" parent="." unique_id=202143129]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 16.0
+offset_bottom = 12.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
