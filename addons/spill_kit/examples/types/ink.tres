@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SpillType" format=3 uid="uid://b5lr6mq4vl82h"]
+
+[ext_resource type="Shader" uid="uid://cg6hdm5bxlw82" path="res://addons/spill_kit/examples/types/flat_ink.gdshader" id="1_lgbws"]
+[ext_resource type="Script" uid="uid://bw0qot015ju0l" path="res://addons/spill_kit/core/spill_type.gd" id="2_ctp3u"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tbpeo"]
+render_priority = 0
+shader = ExtResource("1_lgbws")
+shader_parameter/albedo_color = null
+shader_parameter/alpha_cut = null
+shader_parameter/bands = null
+shader_parameter/billboard = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0ahli"]
+render_priority = 0
+shader = ExtResource("1_lgbws")
+shader_parameter/albedo_color = null
+shader_parameter/alpha_cut = null
+shader_parameter/bands = null
+shader_parameter/billboard = null
+
+[resource]
+resource_name = "Ink"
+script = ExtResource("2_ctp3u")
+color = Color(0.06, 0.08, 0.3, 1)
+drop_material = SubResource("ShaderMaterial_tbpeo")
+mark_material = SubResource("ShaderMaterial_0ahli")
+puddle_material = SubResource("ShaderMaterial_0ahli")
