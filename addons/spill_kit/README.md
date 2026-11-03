@@ -2,7 +2,7 @@
 
 What a body spills, in 3D: blood, ichor, oil, slime, ink.
 - **Every hit** sprays drops and leaves marks on the floor, which stay for the whole match.
-- **A death** grows a puddle: it follows the floor's slope, shrinks to stay off a curb and, if it does not fit by the curb, moves to the nearest flat floor.
+- **A death** grows a puddle: it follows the floor's slope, shrinks to stay off a curb and, if it does not fit by the curb, moves to the nearest flat floor on the body's side.
 - **Each substance is a type** (`SpillType`) in the inspector: its colour, how its drops fly, its marks, its puddle and how they look. It can have the kit's wet look (with normal maps of its own), your PBR textures (albedo, normal, ORM) or your game's material (a PS1 shader).
 - **The rules are values** of the component: heavy from 40 % of the HP, light sprays at most every 0.25 s, small hits adding up.
 - **One property for the network:** `wound`. Every machine draws what changed, and one that joins late sees nothing old.
@@ -157,7 +157,8 @@ One per world (a level). It builds everything once per type and reuses it: a hit
 | **Puddles:** `puddles` | Puddles kept, every type together (12) |
 | `puddle_start_m`, `puddle_lift_m` | The side it starts growing from; off the floor (under the marks) |
 | `puddle_probes`, `puddle_edge_share`, `puddle_flat_m`, `puddle_shrink`, `puddle_min_m` | Before it grows, it casts rays around its edge; if one finds the floor farther than `puddle_flat_m` (a curb, a step), it shrinks until it fits. Under `puddle_min_m`, it does not fit there |
-| `puddle_seek_m` | If not even a `puddle_min_m` puddle fits under the body (by a curb, on its bevel), it looks for flat floor this far around, away from the slope first and never higher than where the body lies: a liquid runs down, not up a curb. 0 = no puddle there (0.75) |
+| `puddle_seek_m` | If not even a `puddle_min_m` puddle fits under the body (by a curb, on its bevel), it looks for flat floor this far around, on the body's side: away from the slope first, never higher than where the body lies (a liquid does not climb a curb) and with nothing in between at floor level (a curb's edge, a low wall). 0 = no puddle there (0.75) |
+| `puddle_drop_m` | How much lower than the body that puddle may lie: down a bit of bevel, but not down a curb to the street (0.08) |
 | **Try it:** Clear the floor | Takes every mark and puddle off |
 
 | Method | What it does |
@@ -268,6 +269,7 @@ The result is `SPILLKIT TESTS PASS (n)`. The tests cover:
 - **the pool:**
   - the ring of marks and their heights; the ring of puddles; the heavy spray with values of its own;
   - a puddle on a slope and by a curb; by a curb or on its bevel, the puddle moves to flat floor; it never climbs onto a block or squeezes into a narrow gap;
+  - on a sidewalk's bevel, the puddle stays on the sidewalk and never drops to the street; it does not pass to the other side of a low wall;
   - the player's option and a new round; built once per type, all internal; the cost;
   - one pool per world and its warnings; a pool made on its own gives way to the level's; spilling with no component;
   - each type drawn once at load, tiny and in front of the camera, and then removed;
