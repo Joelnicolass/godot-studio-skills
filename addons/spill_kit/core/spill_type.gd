@@ -46,7 +46,9 @@ extends Resource
 @export var drop_normal_texture: Texture2D
 ## Occlusion (red), roughness (green), metallic (blue). Null = roughness and metallic alone.
 @export var drop_orm_texture: Texture2D
-## Replaces the kit's material on the drops: your game's own shader or material (see texture_parameter).
+## Replaces the kit's material on the drops: your game's own shader or material. A shader may take
+## each drop's colour from COLOR (the particle's, this type's colour) and declare no uniform; the
+## ones it declares (texture_parameter, color_parameter) are written too.
 @export var drop_material: Material
 
 @export_group("Marks")
@@ -85,9 +87,11 @@ extends Resource
 
 @export_group("Own material")
 ## On a ShaderMaterial of yours (drop_material, mark_material, puddle_material): the uniform that
-## gets the surface's albedo texture (yours, the material's own, or the kit's shape).
+## gets the surface's albedo texture (yours, the material's own, or the kit's shape). A marks' or
+## puddle's shader must declare it; a drops' shader may not.
 @export var texture_parameter: StringName = &"albedo_texture"
-## On a ShaderMaterial of yours: the uniform that gets color.
+## On a ShaderMaterial of yours: the uniform that gets color. A marks' or puddle's shader must
+## declare it; a drops' shader may not (its COLOR is the colour already).
 @export var color_parameter: StringName = &"albedo_color"
 
 
@@ -102,6 +106,9 @@ func problems() -> PackedStringArray:
 			continue
 		if shader_material.shader == null:
 			out.append("%s has no shader." % surface[0])
+			continue
+		# A drops' shader may take the colour from its particle (COLOR) and need no uniform.
+		if surface[0] == "drop_material":
 			continue
 		var names := uniforms(shader_material.shader)
 		for wanted: StringName in [texture_parameter, color_parameter]:
