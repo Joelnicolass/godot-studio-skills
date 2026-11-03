@@ -1,5 +1,12 @@
 # SpillKit changelog
 
+## 0.2.1
+
+- **A body that dies by a curb leaves its puddle** (found by El Eternauta in its migration's playtest: 2 of 6 deaths with no puddle). On a curb's bevel, or right beside it, the floor was not flat even for a `puddle_min_m` puddle, and the pool dropped it. Now it looks for flat floor around, out to `puddle_seek_m` (0.75 m), away from the slope first. It never puts it higher than where the body lies, nor where a wall stands between them. With `puddle_seek_m` at 0 it behaves as before.
+- **Tests:** 45.
+
+What to update: nothing.
+
 ## 0.2.0
 
 What El Eternauta found while planning its migration.
