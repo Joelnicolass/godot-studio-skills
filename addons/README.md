@@ -11,6 +11,7 @@ Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **ca
 | `prop_kit` | Props, 2D y 3D: scatter sobre cualquier suelo (grupos, zonas prohibidas, máscaras, variantes), dibujo en lotes (3D), el navmesh por zonas con los props como obstrucciones baratas y rehorneados parciales en hilos de trabajo. Sin red, sin el comportamiento del prop |
 | `grass_kit` | Pasto, 3D: hojas dibujadas en la GPU alrededor de la cámara en celdas que se mueven con ella, pintado a mano con pinceles en la vista 3D, un suelo leído de los colliders (alturas, normales, pendiente), claros, pisoteo, un look que cambia en el juego. Sin red, sin reglas del juego |
 | `perception_kit` | Percepción, 2D y 3D: un cono de vista con un radio de pérdida más lejano, conciencia de lo cercano, muros que tapan, ruidos, cualquier sentido propio del juego, una memoria que olvida, bandos como capas de física, manijas para arrastrar la vista en el editor. Sin red, sin estados ni combate |
+| `spill_kit` | Lo que derrama un cuerpo, 3D: sangre, icor, aceite, baba, tinta. Cada golpe salpica gotas y deja manchas en el piso que quedan; al morir crece un charco que sigue la pendiente. Cada sustancia es un tipo con el aspecto húmedo del kit, texturas PBR propias (albedo, normal, ORM) o el shader del juego. Reglas como valores, una sola propiedad para la red, Compatibility y WebGL 2, nada en un servidor dedicado. Sin vida, daño ni red |
 
 Cada addon trae un **ejemplo mínimo** (`examples/minimal_2d/` o `examples/minimal_3d/`: la integración más chica que anda, F6) y, en su README, ese código explicado con **tips y recomendaciones**. La tabla con todos está en el [README del repo](../README.md#ejemplos-de-cada-kit).
 
@@ -29,4 +30,5 @@ Instalar en un proyecto:
 ./install.sh --addon /path/to/godot-project prop_kit
 ./install.sh --addon /path/to/godot-project grass_kit
 ./install.sh --addon /path/to/godot-project perception_kit
+./install.sh --addon /path/to/godot-project spill_kit
 ```

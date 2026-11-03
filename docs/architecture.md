@@ -24,6 +24,7 @@ flowchart TB
     propkit[PropKit addon]
     grasskit[GrassKit addon]
     perceptionkit[PerceptionKit addon]
+    spillkit[SpillKit addon]
   end
 
   subgraph playtest [godot-studio-playtest]
@@ -48,6 +49,7 @@ flowchart TB
   propkit -.-> code
   grasskit -.-> code
   perceptionkit -.-> code
+  spillkit -.-> code
 ```
 
 Roles (tool de subagentes — `Agent` en Claude Code, `Task` en Cursor — → `subagent_type`):
@@ -164,6 +166,7 @@ Cada kit es un addon que se copia al juego con `./install.sh --addon <proyecto> 
 | Props plantados y su navmesh | PropKit | `/add-props` | `addons/prop_kit/examples/minimal_3d/` |
 | Pasto 3D | GrassKit | `/add-grass` | `addons/grass_kit/examples/minimal_3d/` |
 | Enemigos o guardias que ven y oyen | PerceptionKit | `/add-perception` | `addons/perception_kit/examples/minimal_3d/` |
+| Sangre, manchas y charcos (o aceite, baba, tinta) | SpillKit | `/add-spill` | `addons/spill_kit/examples/minimal_3d/` |
 
 El ejemplo mínimo es la integración más chica que anda; el README de cada kit explica su código y suma tips y recomendaciones. Lo que el kit no hace (las reglas, el puntaje, el movimiento de una unidad de RTS) queda en el juego.
 
