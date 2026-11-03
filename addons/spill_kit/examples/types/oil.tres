@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SpillType" format=3]
+
+[ext_resource type="Script" path="res://addons/spill_kit/core/spill_type.gd" id="1_xlvbe"]
+
+[resource]
+resource_name = "Oil"
+script = ExtResource("1_xlvbe")
+color = Color(0.03, 0.028, 0.025, 1)
+roughness = 0.04
+specular = 0.6
+drops = 10
+drop_speed_m_s = 1.3
+spread_deg = 22.0
+mark_min_m = 0.35
+mark_max_m = 0.6
+puddle_size_m = 2.2
+puddle_grow_s = 6.0

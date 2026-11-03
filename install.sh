@@ -31,6 +31,7 @@ SKILL_NAMES=(
   godot-prop-kit
   godot-grass-kit
   godot-perception-kit
+  godot-spill-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -65,10 +66,10 @@ Instalador del kit Godot studio (skills + commands + subagentes + addons).
   ./install.sh --all                Cursor y Claude Code
   ./install.sh --project            ./.cursor/ del cwd (./.claude/ con --claude; los dos con --all)
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|all]
                                     Copia el addon al proyecto Godot (default: mp_kit)
                                     agent_kit se instala desde godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|all]
                                     Solo el addon
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias de --addon GODOT_ROOT agent_kit
@@ -396,6 +397,12 @@ install_addon() {
       echo "Habilitá el plugin PerceptionKit (sin autoload; las manijas del editor). Un PerceptionSensor3D en la cabeza,"
       echo "un PerceptionTarget3D en lo que ve. Arrancá desde addons/perception_kit/examples/minimal_3d, minimal_2d o guards_3d."
       ;;
+    spill_kit)
+      copy_one_addon "$project" "spill_kit"
+      echo
+      echo "Habilitá el plugin SpillKit (sin autoload; el costo en el inspector). Un SpillSource3D en el pecho con su SpillType,"
+      echo "un SpillPool3D en el nivel; hit() y die() desde el juego. Arrancá desde addons/spill_kit/examples/minimal_3d o substances_3d."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -412,9 +419,11 @@ install_addon() {
       install_addon "$project" "grass_kit"
       echo
       install_addon "$project" "perception_kit"
+      echo
+      install_addon "$project" "spill_kit"
       ;;
     *)
-      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | all)" >&2
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -466,6 +475,7 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/prop_kit   (./install.sh --addon /path/to/godot-project prop_kit)"
   echo "  - addons/grass_kit  (./install.sh --addon /path/to/godot-project grass_kit)"
   echo "  - addons/perception_kit (./install.sh --addon /path/to/godot-project perception_kit)"
+  echo "  - addons/spill_kit  (./install.sh --addon /path/to/godot-project spill_kit)"
   echo
   echo "AgentKit / playtester (repo aparte, este instalador lo trae):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"
@@ -508,6 +518,7 @@ install_harness() {
     echo "  props:        godot-prop-kit"
     echo "  grass:        godot-grass-kit"
     echo "  perception:   godot-perception-kit"
+    echo "  spill:        godot-spill-kit"
     echo "  materiales:   godot-material-maker"
     echo "  investigar:   godot-feature-research"
   fi
@@ -517,7 +528,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /create-material, /research-feature, /create-prd, …"
+    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then

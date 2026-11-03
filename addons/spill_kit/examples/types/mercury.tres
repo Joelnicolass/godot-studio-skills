@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpillType" format=3]
+
+[ext_resource type="Script" path="res://addons/spill_kit/core/spill_type.gd" id="1_n2bfu"]
+
+[resource]
+resource_name = "Mercury"
+script = ExtResource("1_n2bfu")
+color = Color(0.78, 0.8, 0.83, 1)
+roughness = 0.06
+metallic = 1.0
+drops = 18
+drop_size_m = 0.06
+mark_min_m = 0.15
+mark_max_m = 0.3
+puddle_size_m = 1.2

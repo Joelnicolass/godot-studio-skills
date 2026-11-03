@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="SpillType" format=3]
+
+[ext_resource type="Script" path="res://addons/spill_kit/core/spill_type.gd" id="1_t1fms"]
+
+[resource]
+resource_name = "Blood"
+script = ExtResource("1_t1fms")
