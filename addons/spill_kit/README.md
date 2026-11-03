@@ -113,8 +113,8 @@ Un recurso por sustancia. Solo describe cómo se ve; cuándo sangra lo decide el
 | `drop_` / `mark_` / `puddle_albedo_texture` | Su forma (alfa) y su color, multiplicado por `color`. Vacío = la forma del kit |
 | `drop_` / `mark_` / `puddle_normal_texture` | Su mapa de normales. Vacío = el de la forma del kit, o ninguno con un albedo tuyo |
 | `drop_` / `mark_` / `puddle_orm_texture` | Oclusión (rojo), rugosidad (verde), metálico (azul). Vacío = `roughness` y `metallic` solos |
-| `drop_` / `mark_` / `puddle_material` | Reemplaza el material del kit en esa superficie: el shader o material de tu juego |
-| **Own material:** `texture_parameter`, `color_parameter` | En un ShaderMaterial tuyo, el uniform que recibe la textura de la superficie y el que recibe `color` (`albedo_texture`, `albedo_color`) |
+| `drop_` / `mark_` / `puddle_material` | Reemplaza el material del kit en esa superficie: el shader o material de tu juego. Un shader de gotas puede tomar el color de `COLOR` (el de la partícula) y no declarar ningún uniform |
+| **Own material:** `texture_parameter`, `color_parameter` | En un ShaderMaterial tuyo, el uniform que recibe la textura de la superficie y el que recibe `color` (`albedo_texture`, `albedo_color`). Un shader de manchas o de charco los tiene que declarar; uno de gotas, no |
 
 ## El componente (`SpillSource3D`)
 
@@ -195,7 +195,7 @@ Cada tipo dibuja tres superficies (las gotas, las manchas y el charco), y cada u
    - si es un ShaderMaterial, el kit escribe la textura de la superficie en `texture_parameter` y `color` en `color_parameter`, cuando el shader los declara;
    - si es un BaseMaterial3D, el kit escribe `albedo_texture` (si no tiene uno) y `albedo_color`.
 
-   La sombra de cada mancha llega como color de vértice (`COLOR` en un shader), igual que el color de cada gota. Un shader de gotas tiene que mirar a la cámara: ver `examples/types/flat_ink.gdshader`.
+   La sombra de cada mancha llega como color de vértice (`COLOR` en un shader), igual que el color de cada gota. Un shader de gotas tiene que mirar a la cámara (ver `examples/types/flat_ink.gdshader`); puede tomar su color de `COLOR` y no declarar ningún uniform.
 
 Todo eso anda en Compatibility y WebGL 2: los materiales del kit son StandardMaterial3D u ORMMaterial3D. En una pendiente, las normales del charco y de las manchas siguen al piso.
 
@@ -204,7 +204,7 @@ Todo eso anda en Compatibility y WebGL 2: los materiales del kit son StandardMat
 - Seleccioná un `SpillSource3D`. Arriba del inspector, el costo de un golpe y de una muerte; en «Try it», los botones **Spray**, **Heavy spray**, **Die (puddle)** y **Clear the floor**. Las gotas vuelan hacia donde mira el nodo (-Z), y las manchas y el charco caen sobre el piso de la escena (la física del editor lo encuentra). Cada botón toma primero los valores actuales del tipo, así que cambiar el tipo y apretar de nuevo muestra el cambio.
 - En la escena de un cuerpo sola (sin pool), el botón arma un pool ahí, que no se guarda.
 - Seleccioná el `SpillPool3D`: arriba, lo que guarda (gotas, manchas, charcos y los draw calls como mucho). Se actualiza al cambiar los valores.
-- El árbol de escena avisa por un componente sin tipo, por una `floor_mask` vacía, por un segundo pool en el mismo mundo, por un charco más chico que `puddle_min_m`, por `mark_min_m` arriba de `mark_max_m` y por un shader propio sin los uniforms de `texture_parameter` o `color_parameter`.
+- El árbol de escena avisa por un componente sin tipo, por una `floor_mask` vacía, por un segundo pool en el mismo mundo, por un charco más chico que `puddle_min_m`, por `mark_min_m` arriba de `mark_max_m` y por un shader propio de manchas o de charco sin los uniforms de `texture_parameter` o `color_parameter` (uno de gotas no los necesita).
 
 Lo que dibujan los botones nunca se guarda en la escena.
 
@@ -270,6 +270,7 @@ El resultado es `SPILLKIT TESTS PASS (n)`. Los tests cubren:
   - un tipo con solo su color se ve húmedo (las normales del kit);
   - el mapa de normales y el ORM de un tipo PBR llegan al material y a lo que dibuja el pool;
   - un ShaderMaterial y un StandardMaterial3D del juego, copiados, con su textura y su color;
+  - un shader de gotas que toma el color de la partícula, sin uniforms ni avisos;
   - las formas del kit suben como un líquido;
 - **una escena guardada y cargada de nuevo:** sus valores y nada de lo dibujado ni de `wound`;
 - **cada script carga; lo que corre en un servidor no usa cámara, pantalla ni material; no se nombra ningún otro kit;**

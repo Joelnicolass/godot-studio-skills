@@ -1,5 +1,12 @@
 # Changelog de SpillKit
 
+## 0.1.1
+
+- **Un shader de gotas propio que toma el color de la partícula ya no avisa** (lo encontré revisando la migración de El Eternauta). Su `blood_drop.gdshader` usa `COLOR`, el color de cada gota, y no declara `albedo_tex` ni `albedo_color`. Con eso en `drop_material`, la 0.1.0 avisaba que le faltaban esos uniforms, aunque las gotas se dibujaban bien. Ahora solo los pide un shader de manchas o de charco; uno de gotas recibe los que declare.
+- **Tests:** 39 (`test_a_drops_shader_that_takes_its_colour_from_the_particle`).
+
+Qué actualizar: nada.
+
 ## 0.1.0
 
 La primera versión, pedida por El Eternauta: la sangre de su RFC-041, hecha genérica para cualquier sustancia.
