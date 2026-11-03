@@ -1,5 +1,16 @@
 # Changelog de SpillKit
 
+## 0.2.0
+
+Lo que encontró El Eternauta al planificar su migración.
+
+- **La salpicadura fuerte se ajusta aparte.** El tipo tiene un grupo Heavy spray con sus propios valores: `heavy_drop_size_m`, `heavy_drop_speed_m_s`, `heavy_spread_deg`, `heavy_rise_deg`, `heavy_drop_life_s`, `heavy_drop_scale_min`/`max`. Antes era la liviana multiplicada por `heavy_scale`, que ya no existe. El rango de tamaño de las gotas livianas también es del tipo (`drop_scale_min`/`max`, 0,6 a 1,4), y `rise_deg` pasa de 50° a 51°.
+- **El alcance del piso, por componente.** `SpillSource3D.floor_reach_m`: hasta dónde debajo de él puede estar el piso de sus manchas y su charco (0 = el del pool). Un bicho con el componente a 0,8 m y un jugador a 1,25 m dejan de manchar en el aire a la misma altura sobre sus pies. `spill()` y `puddle()` del pool toman un `reach_m` opcional.
+- **El pool del nivel reemplaza al que se armó solo.** Si un cuerpo entraba antes que el pool de su mundo (una escena persistente con los jugadores y el nivel cargado después), el pool armado con los valores de entrada se quedaba con el mundo y el del nivel no dibujaba nada. Ahora el del nivel toma su lugar.
+- **Tests:** 42.
+
+Qué actualizar: si un tipo cambió `heavy_scale`, pasá sus valores al grupo Heavy spray. Con los de entrada, un golpe fuerte sale como en la 0.1 pero un poco más rápido (3 m/s), más largo (0,85 s), más bajo (45°) y con gotas algo más grandes (0,7 a 1,6), como la sangre de El Eternauta.
+
 ## 0.1.1
 
 - **Un shader de gotas propio que toma el color de la partícula ya no avisa** (lo encontré revisando la migración de El Eternauta). Su `blood_drop.gdshader` usa `COLOR`, el color de cada gota, y no declara `albedo_tex` ni `albedo_color`. Con eso en `drop_material`, la 0.1.0 avisaba que le faltaban esos uniforms, aunque las gotas se dibujaban bien. Ahora solo los pide un shader de manchas o de charco; uno de gotas recibe los que declare.
