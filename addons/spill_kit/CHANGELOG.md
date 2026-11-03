@@ -1,5 +1,12 @@
 # SpillKit changelog
 
+## 0.1.1
+
+- **A drops shader of your own that takes the particle's colour no longer warns** (found while reviewing El Eternauta's migration). Its `blood_drop.gdshader` uses `COLOR`, each drop's colour, and declares neither `albedo_tex` nor `albedo_color`. With it in `drop_material`, 0.1.0 warned that those uniforms were missing, though the drops drew fine. Now only a marks' or puddle's shader must declare them; a drops' shader gets the ones it declares.
+- **Tests:** 39 (`test_a_drops_shader_that_takes_its_colour_from_the_particle`).
+
+What to update: nothing.
+
 ## 0.1.0
 
 The first version, asked for by El Eternauta: the blood of its RFC-041, made generic for any substance.

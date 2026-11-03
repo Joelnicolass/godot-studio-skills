@@ -113,8 +113,8 @@ One resource per substance. It only describes how it looks; when it bleeds is up
 | `drop_` / `mark_` / `puddle_albedo_texture` | Its shape (alpha) and colour, multiplied by `color`. Empty = the kit's shape |
 | `drop_` / `mark_` / `puddle_normal_texture` | Its normal map. Empty = the kit's shape's, or none with an albedo of yours |
 | `drop_` / `mark_` / `puddle_orm_texture` | Occlusion (red), roughness (green), metallic (blue). Empty = `roughness` and `metallic` alone |
-| `drop_` / `mark_` / `puddle_material` | Replaces the kit's material on that surface: your game's shader or material |
-| **Own material:** `texture_parameter`, `color_parameter` | On a ShaderMaterial of yours, the uniform that gets the surface's texture and the one that gets `color` (`albedo_texture`, `albedo_color`) |
+| `drop_` / `mark_` / `puddle_material` | Replaces the kit's material on that surface: your game's shader or material. A drops' shader may take its colour from `COLOR` (the particle's) and declare no uniform |
+| **Own material:** `texture_parameter`, `color_parameter` | On a ShaderMaterial of yours, the uniform that gets the surface's texture and the one that gets `color` (`albedo_texture`, `albedo_color`). A marks' or puddle's shader must declare them; a drops' shader need not |
 
 ## The component (`SpillSource3D`)
 
@@ -195,7 +195,7 @@ Each type draws three surfaces (the drops, the marks and the puddle), and each o
    - on a ShaderMaterial, the kit writes the surface's texture into `texture_parameter` and `color` into `color_parameter`, when the shader declares them;
    - on a BaseMaterial3D, the kit writes `albedo_texture` (if it has none) and `albedo_color`.
 
-   Each mark's shade comes in as vertex colour (`COLOR` in a shader), like each drop's colour. A drops shader has to face the camera: see `examples/types/flat_ink.gdshader`.
+   Each mark's shade comes in as vertex colour (`COLOR` in a shader), like each drop's colour. A drops shader has to face the camera (see `examples/types/flat_ink.gdshader`); it may take its colour from `COLOR` and declare no uniform.
 
 All of that works in Compatibility and WebGL 2: the kit's materials are StandardMaterial3D or ORMMaterial3D. On a slope, the puddle's and the marks' normals follow the floor.
 
@@ -204,7 +204,7 @@ All of that works in Compatibility and WebGL 2: the kit's materials are Standard
 - Select a `SpillSource3D`. At the top of the inspector, the cost of a hit and of a death; under "Try it", the buttons **Spray**, **Heavy spray**, **Die (puddle)** and **Clear the floor**. The drops fly the way the node faces (-Z), and the marks and the puddle fall on the scene's floor (the editor's physics finds it). Each button takes the type's current values first, so changing the type and pressing again shows the change.
 - In a body's scene alone (with no pool), the button makes a pool there, which is not saved.
 - Select the `SpillPool3D`: at the top, what it keeps (drops, marks, puddles and the most draw calls). It follows the values as they change.
-- The scene tree warns for a component with no type, an empty `floor_mask`, a second pool in the same world, a puddle smaller than `puddle_min_m`, `mark_min_m` above `mark_max_m`, and a shader of your own without the uniforms of `texture_parameter` or `color_parameter`.
+- The scene tree warns for a component with no type, an empty `floor_mask`, a second pool in the same world, a puddle smaller than `puddle_min_m`, `mark_min_m` above `mark_max_m`, and a marks' or puddle's shader of your own without the uniforms of `texture_parameter` or `color_parameter` (a drops' one needs none).
 
 What the buttons draw is never saved in the scene.
 
@@ -270,6 +270,7 @@ The result is `SPILLKIT TESTS PASS (n)`. The tests cover:
   - a type with only its colour looks wet (the kit's normal maps);
   - a PBR type's normal map and ORM reach the material and what the pool draws;
   - a game's ShaderMaterial and StandardMaterial3D, copied, with their texture and colour;
+  - a drops' shader that takes the particle's colour, with no uniform and no warning;
   - the kit's shapes rise like a liquid;
 - **a scene saved and loaded again:** its values, and nothing drawn and no `wound`;
 - **every script loads; what runs on a server uses no camera, screen or material; no other kit is named;**

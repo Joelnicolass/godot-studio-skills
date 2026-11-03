@@ -33,7 +33,7 @@ Enable plugin **SpillKit** (the cost line in the inspector; the nodes, their but
 - **The person tries it in the editor.** Selecting the component and pressing Spray, Heavy spray or Die (puddle) under "Try it" draws in the 3D view on the scene's floor. Tell them how; the agent sets up the nodes and the type with starting values.
 - **One pool per level.** A `SpillPool3D` in the level, with the level's types in `types` (so their shaders compile at load and not on the first hit). Without it, the first component makes one with the default values.
 - **The floor is a layer.** The pool's `floor_mask`: the floor and what can be marked. Bodies on another layer; the body itself is found on its own and never gets marks.
-- **The look, in the type.** Colour only = the kit's wet look. PBR textures = `mark_` / `puddle_` / `drop_` + `albedo_texture`, `normal_texture`, `orm_texture` (as `GrassMesh`). The game's shader (PS1) = `mark_material` / `puddle_material` / `drop_material`, with `texture_parameter` and `color_parameter` for its uniforms' names.
+- **The look, in the type.** Colour only = the kit's wet look. PBR textures = `mark_` / `puddle_` / `drop_` + `albedo_texture`, `normal_texture`, `orm_texture` (as `GrassMesh`). The game's shader (PS1) = `mark_material` / `puddle_material` / `drop_material`, with `texture_parameter` and `color_parameter` for its uniforms' names (a drops' shader may take its colour from `COLOR` and declare none).
 - **No kit depends on another.** SpillKit has no network: a network game calls `hit()` and `die()` only on the authority and syncs `wound`.
 - **The pool's inspector tells the cost.** Drops, marks, puddles and draw calls; nothing is made per hit.
 

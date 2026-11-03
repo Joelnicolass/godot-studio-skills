@@ -4,6 +4,8 @@ extends "res://addons/spill_kit/tests/spill_test.gd"
 ## material.
 
 const Shape := SpillShapes.Shape
+## A drops' shader as a game writes one: it faces the camera and takes the particle's colour.
+const DROPS_SHADER := "shader_type spatial;\nrender_mode unshaded;\nvoid vertex() { MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]); }\nvoid fragment() { ALBEDO = COLOR.rgb; }\n"
 const OWN_SHADER := "shader_type spatial;\nuniform sampler2D albedo_tex : source_color;\nuniform vec4 albedo_color : source_color;\nvoid fragment() { ALBEDO = texture(albedo_tex, UV).rgb * albedo_color.rgb; }\n"
 
 
@@ -114,6 +116,39 @@ func test_a_shader_of_the_game_s_own() -> void:
 	check(warned.contains("albedo_texture"), "a uniform the shader lacks is warned")
 	var other := SpillMaterials.build(type, Shape.MARK) as ShaderMaterial
 	check(other.get_shader_parameter(&"albedo_texture") == null, "and nothing is written in it")
+
+
+## A drops' shader that takes each drop's colour from its particle (COLOR) declares no uniform: that
+## is no problem. A marks' shader without them still is.
+func test_a_drops_shader_that_takes_its_colour_from_the_particle() -> void:
+	box(Vector3.ZERO)
+	var pool := new_pool()
+	var drops_shader := Shader.new()
+	drops_shader.code = DROPS_SHADER
+	var drops := ShaderMaterial.new()
+	drops.shader = drops_shader
+	var marks_shader := Shader.new()
+	marks_shader.code = OWN_SHADER
+	var marks := ShaderMaterial.new()
+	marks.shader = marks_shader
+	var type := new_type({
+		"drop_material": drops, "mark_material": marks, "puddle_material": marks,
+		"texture_parameter": &"albedo_tex", "color": Color(0.3, 0.5, 0.1),
+	})
+	check(type.problems().is_empty(), "no problem: the drops take COLOR, the marks have their uniforms (%s)" % [type.problems()])
+	await physics()
+	pool.spill(type, Vector3(0, 1, 0), Vector3.RIGHT)
+	var sprays := flying(pool)
+	check(sprays.size() == 1, "it sprays")
+	if sprays.size() == 1:
+		var drawn := sprays[0].mesh.surface_get_material(0) as ShaderMaterial
+		check(drawn != null and drawn != drops and drawn.shader == drops_shader, "with a copy of the drops' shader")
+		check(sprays[0].color == type.color, "its particles in the type's colour, for COLOR")
+	var bare := ShaderMaterial.new()
+	bare.shader = drops_shader
+	type.mark_material = bare
+	var warned := "\n".join(type.problems())
+	check(warned.contains("mark_material") and not warned.contains("drop_material"), "a marks' shader without the uniforms is still warned, the drops' is not")
 
 
 func test_a_standard_material_of_the_game_s_own() -> void:
