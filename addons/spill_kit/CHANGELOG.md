@@ -1,5 +1,14 @@
 # SpillKit changelog
 
+## 0.2.2
+
+- **A puddle that moves stays on the body's side** (found by El Eternauta: a bug dead on the bevel of a 0.30 m sidewalk left its puddle down on the street, 0.6 m from the body). 0.2.1 set no limit below for the new floor, and its separation ray left at the component's height, over the curb. Now:
+  - the puddle lies no more than `puddle_drop_m` (0.08 m) below where the body lies: it can run down a bit of bevel, but not down a curb;
+  - the ray joining the body's floor and the puddle's runs 5 cm over the floor, so a curb's edge or a low wall in between keeps them apart.
+- **Tests:** 48.
+
+What to update: nothing. For a puddle that may run down to the street as in 0.2.1, raise `puddle_drop_m`.
+
 ## 0.2.1
 
 - **A body that dies by a curb leaves its puddle** (found by El Eternauta in its migration's playtest: 2 of 6 deaths with no puddle). On a curb's bevel, or right beside it, the floor was not flat even for a `puddle_min_m` puddle, and the pool dropped it. Now it looks for flat floor around, out to `puddle_seek_m` (0.75 m), away from the slope first. It never puts it higher than where the body lies, nor where a wall stands between them. With `puddle_seek_m` at 0 it behaves as before.

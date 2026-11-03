@@ -27,6 +27,9 @@ const LIFT_LAYERS := 64
 const SPEED_SPREAD := 0.25
 ## A mark that would land behind a wall lands this far in front of it.
 const WALL_GAP_M := 0.05
+## A sought puddle's floor and the body's are joined by a ray this far above them: what stands in
+## between (a curb's edge, a low wall) keeps the puddle on the body's side.
+const SIDE_RAY_M := 0.05
 ## The warm-up: frames it is drawn, how small, how far past the camera's near plane, and how many
 ## frames it waits for a camera.
 const WARM_FRAMES := 2
@@ -106,9 +109,13 @@ class Puddle:
 ## Smallest side a puddle shrinks to; below this, no puddle there.
 @export_range(0.05, 5.0, 0.05, "suffix:m") var puddle_min_m := 0.4
 ## Where the floor under the body is not flat enough even for puddle_min_m (by a curb, on its bevel),
-## the puddle looks for flat floor this far around, away from the slope first, never higher than
-## where the body lies (a liquid runs down, not up a curb). 0: no puddle there.
+## the puddle looks for flat floor this far around, on the body's side: away from the slope first,
+## never higher than where the body lies (a liquid runs down, not up a curb), no lower than
+## puddle_drop_m, and with nothing between (a curb's edge, a low wall). 0: no puddle there.
 @export_range(0.0, 3.0, 0.05, "suffix:m") var puddle_seek_m := 0.75
+## How much lower than where the body lies a sought puddle may lie: down a bit of bevel, not down a
+## curb to the street.
+@export_range(0.0, 1.0, 0.01, "suffix:m") var puddle_drop_m := 0.08
 @export_group("Try it")
 ## Takes every mark and puddle off the floor.
 @export_tool_button("Clear the floor", "Clear") var clear_button := clear
@@ -616,9 +623,9 @@ func _flat_side(at: Vector3, lay: Basis, size_m: float, exclude: Array[RID]) -> 
 
 # Flat floor near [param base] (the floor under [param at], too steep or broken for a puddle): in
 # rings puddle_min_m / 2 apart out to puddle_seek_m, the side away from the slope first. A spot is
-# taken when no wall stands between it and [param at], its floor is no higher than base (plus
-# puddle_flat_m) and a puddle_min_m puddle fits there. Its floor ray hit with the lay it was checked
-# with (SPOT_LAY), or empty.
+# taken when its floor is no higher than base (plus puddle_flat_m) nor lower than puddle_drop_m, a
+# ray just over both floors meets nothing (the body's side) and a puddle_min_m puddle fits there.
+# Its floor ray hit with the lay it was checked with (SPOT_LAY), or empty.
 func _seek_flat(at: Vector3, base: Vector3, lay: Basis, size_m: float, exclude: Array[RID], reach_m: float) -> Dictionary:
 	if puddle_seek_m <= 0.0:
 		return {}
@@ -634,14 +641,15 @@ func _seek_flat(at: Vector3, base: Vector3, lay: Basis, size_m: float, exclude: 
 	var radius := step
 	while radius <= puddle_seek_m + 0.001:
 		for way in ways:
-			var spot := at + way * radius
-			if not _cast(at, spot, exclude).is_empty():
-				continue
-			var hit := _floor_under(spot, exclude, reach_m)
+			var hit := _floor_under(at + way * radius, exclude, reach_m)
 			if hit.is_empty():
 				continue
 			var floor_at: Vector3 = hit[HIT_POSITION]
-			if floor_at.y > base.y + puddle_flat_m:
+			var rise := floor_at.y - base.y
+			if rise > puddle_flat_m or rise < -puddle_drop_m:
+				continue
+			var over := Vector3.UP * SIDE_RAY_M
+			if not _cast(base + over, floor_at + over, exclude).is_empty():
 				continue
 			var spot_lay := _flat_on(hit[HIT_NORMAL])
 			if _is_flat(floor_at, spot_lay, puddle_min_m * puddle_edge_share, exclude):
