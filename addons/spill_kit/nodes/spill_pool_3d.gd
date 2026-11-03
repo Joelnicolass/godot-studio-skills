@@ -21,9 +21,6 @@ const HIT_NORMAL := "normal"
 const PROBE_M := 0.5
 ## Marks stack in this many heights, mark_lift_step_m apart, and start over.
 const LIFT_LAYERS := 64
-## A drop's size varies between these.
-const DROP_SCALE_MIN := 0.6
-const DROP_SCALE_MAX := 1.4
 ## A drop's speed varies this much either way.
 const SPEED_SPREAD := 0.25
 ## A mark that would land behind a wall lands this far in front of it.
@@ -122,6 +119,8 @@ var _warm_frames_left := 0
 var _warm_wait_left := 0
 var _rng := RandomNumberGenerator.new()
 var _ray := PhysicsRayQueryParameters3D.new()
+# Made by for_node() because the world had none: a pool put in the world later takes its place.
+var _made := false
 
 
 ## The pool of [param world] (null: none yet).
@@ -131,7 +130,8 @@ static func of(world: World3D) -> SpillPool3D:
 
 
 ## The pool of [param node]'s world; if there is none, one with the default values, made in the
-## node's scene (the edited one in the editor, where it is not saved). Null on a dedicated server.
+## node's scene (the edited one in the editor, where it is not saved). A SpillPool3D put in the world
+## later (a level loaded after its bodies) takes the made one's place. Null on a dedicated server.
 static func for_node(node: Node3D) -> SpillPool3D:
 	if not node.is_inside_tree() or not draws_here():
 		return null
@@ -145,6 +145,7 @@ static func for_node(node: Node3D) -> SpillPool3D:
 		scene = tree.root
 	found = SpillPool3D.new()
 	found.name = "SpillPool3D"
+	found._made = true
 	_by_world[world] = found
 	if scene.is_node_ready():
 		scene.add_child(found, false, Node.INTERNAL_MODE_BACK)
@@ -170,8 +171,13 @@ static func is_server(dedicated: bool, display: String, editor: bool) -> bool:
 
 func _enter_tree() -> void:
 	var world := get_world_3d()
-	if of(world) == null:
+	var current := of(world)
+	if current == null:
 		_by_world[world] = self
+	elif current._made and not _made:
+		# A pool of the world's own takes the place of the one made for want of it.
+		_by_world[world] = self
+		current.queue_free()
 
 
 func _exit_tree() -> void:
@@ -246,8 +252,9 @@ func refresh(type: SpillType) -> void:
 
 ## Plays a spray of [param type] at [param at], flying along the flat [param away] (zero: any way),
 ## and leaves its marks on the floor under it. [param heavy]: the heavy spray. [param exclude]: the
-## bodies the floor rays go through (the body that spills).
-func spill(type: SpillType, at: Vector3, away := Vector3.ZERO, heavy := false, exclude: Array[RID] = []) -> void:
+## bodies the floor rays go through (the body that spills). [param reach_m]: how far under [param at]
+## the floor may be (0: floor_reach_m).
+func spill(type: SpillType, at: Vector3, away := Vector3.ZERO, heavy := false, exclude: Array[RID] = [], reach_m := 0.0) -> void:
 	if not shown or type == null or not is_inside_tree():
 		return
 	prepare(type)
@@ -257,21 +264,22 @@ func spill(type: SpillType, at: Vector3, away := Vector3.ZERO, heavy := false, e
 	_play(built, type, at, away, heavy)
 	for i in (type.marks_per_heavy if heavy else type.marks_per_spray):
 		var point := _inside_walls(at, _around(at, type.mark_radius_m), exclude)
-		var hit := _floor_under(point, exclude)
+		var hit := _floor_under(point, exclude, reach_m)
 		if not hit.is_empty():
 			_place_mark(built, type, hit[HIT_POSITION], hit[HIT_NORMAL])
 
 
 ## Starts a puddle of [param type] growing on the floor under [param at], as big as the floor is
 ## flat (at most the type's puddle_size_m). [param exclude]: the bodies the floor rays go through.
-func puddle(type: SpillType, at: Vector3, exclude: Array[RID] = []) -> void:
+## [param reach_m]: how far under [param at] the floor may be (0: floor_reach_m).
+func puddle(type: SpillType, at: Vector3, exclude: Array[RID] = [], reach_m := 0.0) -> void:
 	if not shown or type == null or not is_inside_tree():
 		return
 	prepare(type)
 	var built: Built = _built.get(type)
 	if built == null:
 		return
-	var hit := _floor_under(at, exclude)
+	var hit := _floor_under(at, exclude, reach_m)
 	if hit.is_empty():
 		return
 	var point: Vector3 = hit[HIT_POSITION]
@@ -497,25 +505,25 @@ func _dress(type: SpillType, built: Built) -> void:
 
 
 func _tune(spray: CPUParticles3D, type: SpillType, heavy: bool, material: Material) -> void:
-	var scale := type.heavy_scale if heavy else 1.0
+	var size := type.heavy_drop_size_m if heavy else type.drop_size_m
 	spray.amount = maxi(1, type.heavy_drops if heavy else type.drops)
-	spray.lifetime = type.drop_life_s
+	spray.lifetime = type.heavy_drop_life_s if heavy else type.drop_life_s
 	var quad := QuadMesh.new()
-	quad.size = Vector2.ONE * type.drop_size_m * scale
+	quad.size = Vector2.ONE * size
 	quad.material = material
 	spray.mesh = quad
 	spray.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	spray.emission_sphere_radius = type.drop_size_m * scale
-	var rise := deg_to_rad(type.rise_deg)
+	spray.emission_sphere_radius = size
+	var rise := deg_to_rad(type.heavy_rise_deg if heavy else type.rise_deg)
 	# The spray's way is its -Z, risen over the horizon.
 	spray.direction = Vector3(0.0, sin(rise), -cos(rise))
-	spray.spread = minf(type.spread_deg * scale, 180.0)
+	spray.spread = minf(type.heavy_spread_deg if heavy else type.spread_deg, 180.0)
 	spray.gravity = _gravity()
-	var speed := type.drop_speed_m_s * scale
+	var speed := type.heavy_drop_speed_m_s if heavy else type.drop_speed_m_s
 	spray.initial_velocity_min = speed * (1.0 - SPEED_SPREAD)
 	spray.initial_velocity_max = speed * (1.0 + SPEED_SPREAD)
-	spray.scale_amount_min = DROP_SCALE_MIN
-	spray.scale_amount_max = DROP_SCALE_MAX
+	spray.scale_amount_min = type.heavy_drop_scale_min if heavy else type.drop_scale_min
+	spray.scale_amount_max = type.heavy_drop_scale_max if heavy else type.drop_scale_max
 	spray.color = type.color
 
 
@@ -576,9 +584,10 @@ func _flat_on(normal: Vector3) -> Basis:
 	return Basis(Quaternion(Vector3.UP, normal.normalized())) * turn
 
 
-# The floor under [param point], down to floor_reach_m; empty when there is none (in the air).
-func _floor_under(point: Vector3, exclude: Array[RID]) -> Dictionary:
-	return _cast(point, point + Vector3.DOWN * floor_reach_m, exclude)
+# The floor under [param point], down to [param reach_m] (0: floor_reach_m); empty when there is none
+# (in the air).
+func _floor_under(point: Vector3, exclude: Array[RID], reach_m: float) -> Dictionary:
+	return _cast(point, point + Vector3.DOWN * (reach_m if reach_m > 0.0 else floor_reach_m), exclude)
 
 
 # The biggest side (from [param size_m], shrunk by puddle_shrink down to puddle_min_m) whose edge

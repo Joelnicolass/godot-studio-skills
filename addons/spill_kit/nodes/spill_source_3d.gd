@@ -17,6 +17,9 @@ extends Node3D
 		update_configuration_warnings()
 ## The pool that draws it. Empty: this world's SpillPool3D.
 @export var pool: SpillPool3D
+## How far under this node the floor may be for its marks and puddle; farther (in the air), none.
+## 0: the pool's floor_reach_m. A low source (a bug's shell) wants less than a chest.
+@export_range(0.0, 20.0, 0.05, "suffix:m") var floor_reach_m := 0.0
 @export_group("Rules")
 ## A hit that takes at least this share of the max HP spills heavy.
 @export_range(0.0, 1.0, 0.01) var heavy_from := 0.4
@@ -156,9 +159,9 @@ func _show() -> void:
 	if sprayed:
 		var from := SpillWound.from_of(wound)
 		var away := at - from if from.is_finite() else Vector3.ZERO
-		drawing.spill(type, at, away, SpillWound.is_heavy(wound), exclude)
+		drawing.spill(type, at, away, SpillWound.is_heavy(wound), exclude, floor_reach_m)
 	if died:
-		drawing.puddle(type, at, exclude)
+		drawing.puddle(type, at, exclude, floor_reach_m)
 
 
 static func _since_s(then_us: int, now_us: int) -> float:

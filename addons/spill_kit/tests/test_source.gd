@@ -222,3 +222,29 @@ func test_a_spray_of_the_game_s_own() -> void:
 	var warnings := bare._get_configuration_warnings()
 	bare.free()
 	check(warnings.size() == 1 and warnings[0].contains("type"), "with no type the editor warns")
+
+
+func test_a_low_source_has_its_own_floor_reach() -> void:
+	box(Vector3.ZERO)
+	var pool := new_pool()
+	var type := new_type({"mark_radius_m": 0.0})
+	# A bug's shell, 0.8 m up: the floor may be 1.4 m under it (0.6 under its feet).
+	var low := new_body(type)
+	low.position = Vector3(0, 0.8, 0)
+	low.floor_reach_m = 1.4
+	await physics()
+	low.spray()
+	check(pool.mark_count(type) == 1, "on the floor: a mark")
+	# The same bug in the air, 0.7 m over the floor: past its reach, though under the pool's 2 m.
+	var flying_bug := new_body(type, Vector3(4, 0.7, 0))
+	flying_bug.position = Vector3(0, 0.8, 0)
+	flying_bug.floor_reach_m = 1.4
+	await physics()
+	flying_bug.spray()
+	check(pool.mark_count(type) == 1, "in the air: no mark (%d)" % pool.mark_count(type))
+	flying_bug.floor_reach_m = 0.0
+	flying_bug.spray()
+	check(pool.mark_count(type) == 2, "0: the pool's floor_reach_m (2 m) finds the floor")
+	flying_bug.floor_reach_m = 1.4
+	flying_bug.die()
+	check(pool.puddles_of(type).is_empty(), "nor a puddle in the air")
