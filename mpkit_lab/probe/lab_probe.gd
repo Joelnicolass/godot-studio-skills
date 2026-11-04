@@ -184,6 +184,10 @@ func _run() -> void:
 			await _walk_while_waiting()
 		"lobbywatch":
 			await _watch_walk_while_waiting()
+		"respawner":
+			await _respawn_pawn()
+		"respawned":
+			await _see_respawn()
 		"finish_host":
 			await _finish_host()
 		"finish_friend":
@@ -1499,6 +1503,62 @@ func _finish_friend() -> void:
 		_check(not _server_lost, "that is the normal end: no «server lost» (%s)" % ("server_closed" if _server_closed else "a quiet host"))
 	await _until(func() -> bool: return get_tree().current_scene != null and get_tree().current_scene.name == "Boot", "back on the menu")
 	_check(_last_status != flow.server_lost_status and _last_status != flow.host_silent_status, "the menu says nothing was lost (%s)" % _last_status)
+
+
+## Server (respawner): P1's pawn dies (MpActor.despawn) and the game makes it again in the same frame (MpSlotSpawner.spawn_slot):
+## the new pawn enters once the old one is out, named Pawn_1. Once the player walked it, it dies for good and the seat closes
+## (close_seat); the player then leaves and the spawner, which forgot the freed pawn, has nothing to free.
+func _respawn_pawn() -> void:
+	await _until(func() -> bool: return MpKit.is_server(), "this process is the server")
+	var pawn := await _pawn(1)
+	if pawn == null:
+		return
+	var spawner := _in_world("Players") as MpSlotSpawner
+	await get_tree().create_timer(1.0).timeout
+	MpActor.of(pawn).despawn()
+	var again := spawner.spawn_slot(1)
+	_check(again != null and again != pawn and not again.is_inside_tree() and spawner.pawn_for(1) == again,
+		"despawn and spawn_slot in the same frame: a new pawn, waiting for the old one to leave")
+	await _until(func() -> bool: return is_instance_valid(again) and again.is_inside_tree(), "the new pawn entered")
+	_check(again.name == "Pawn_1" and _in_world("Actors").get_children().filter(func(n: Node) -> bool: return String(n.name).begins_with("Pawn_")).size() == 1,
+		"it is Pawn_1, the only pawn (not Pawn_2)")
+	var start_x: float = again.position.x
+	## Far enough that the client saw it move too before it dies again.
+	await _until(func() -> bool: return is_instance_valid(again) and again.position.x > start_x + 150.0, "its player walks the new pawn (server simulated)")
+	MpActor.of(again).despawn()
+	Mp.gate().close_seat(1)
+	await _until(func() -> bool: return spawner.pawn_for(1) == null, "it died for good: the spawner forgot it")
+	await _until(func() -> bool: return multiplayer.get_peers().is_empty(), "its player left")
+	_check(spawner.pawn_for(1) == null and _in_world("Actors/Pawn_1") == null, "nothing left to free, no new pawn")
+
+
+## Client (respawned): its pawn is made again by the server; the new one has the same name here, its keys move it, then it is
+## gone for good and the player leaves.
+func _see_respawn() -> void:
+	await _until(_networked_slot, "this client got a slot")
+	var first := await _pawn(1)
+	if first == null:
+		return
+	var first_id := first.get_instance_id()
+	var news: Array[Node] = []
+	await _until(func() -> bool:
+		var node := _in_world("Actors/Pawn_1")
+		if node and node.get_instance_id() != first_id:
+			news.append(node)
+		return not news.is_empty(), "the server made a new Pawn_1 (same name here)")
+	if news.is_empty():
+		return
+	var again := news[0]
+	_check(_in_world("Actors").get_children().filter(func(n: Node) -> bool: return String(n.name).begins_with("Pawn_")).size() == 1,
+		"only one pawn here")
+	var start_x: float = again.position.x
+	Input.action_press(&"ui_right")
+	await _until(func() -> bool: return is_instance_valid(again) and again.position.x > start_x + 30.0, "its keys move the new pawn")
+	await _until(func() -> bool: return _in_world("Actors/Pawn_1") == null, "the pawn died for good")
+	Input.action_release(&"ui_right")
+	await get_tree().create_timer(0.5).timeout
+	MpFlow.find_in_tree(self).leave_match()
+	await _until(func() -> bool: return not MpKit.is_networked(), "the player left")
 
 
 ## The server goes away: the client is told and lands on the menu.

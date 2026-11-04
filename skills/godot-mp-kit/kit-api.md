@@ -15,7 +15,7 @@ Files (`res://addons/mp_kit/`):
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — one tunnel channel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / optional lerp |
 | `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner that holds its scope per peer until that peer's spawner is ready; `spawn_here(data)`: spawn on the server or solo, `null` on a client |
-| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — one packed pawn per occupied slot |
+| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — one packed pawn per occupied slot; `spawn_slot(slot)`, `pawn_for(slot)` (`null` once freed: `MpActor.despawn`; `spawn_slot` makes another with the same name, even in the same frame) |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — drop-in lobby (`mp_boot_menu.tscn`) |
 | `mp_flow.gd` | `class_name MpFlow` — optional flow (scenes, host/join/1P, world catalog) |
 | `mp_world_ref.gd` | `class_name MpWorldRef` — one catalog world (`id` + scene) |

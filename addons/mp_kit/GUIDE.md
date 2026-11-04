@@ -827,7 +827,7 @@ The kit has no AI: it says which seats nobody holds and lets a bot of yours play
 | `Mp.gate().vacant_slots()` | The seats nobody holds: never taken, or abandoned. Not one away within its grace (its player may come back) |
 | `Mp.gate().started(why)` | The match started: the moment to put the bots in |
 | `Mp.gate().joined_late(slot)` | With `late_join`, a player took a seat nobody held: the bot there lets go |
-| `MpSlotSpawner.spawn_slot(slot)` | That slot's pawn, with no player. When someone takes the slot, the spawner gives them that same pawn (it makes no other) |
+| `MpSlotSpawner.spawn_slot(slot)` | That slot's pawn, with no player. When someone takes the slot, the spawner gives them that same pawn (it makes no other). If the one it had was freed (it died: `MpActor.despawn`), it makes a new one |
 | `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | The bot's keys: read like a player's (`get_vector`, `is_action_just_pressed`, `mp_move`). They count while nobody plays the seat; when a player comes in they are let go and theirs count |
 | `MpInput.has_player()` | True while a player plays that seat. Also false while its player is away within the grace |
 
@@ -880,6 +880,8 @@ func _on_pawn_out(slot: int) -> void:
 	players.pawn_for(slot).queue_free()
 	Mp.gate().close_seat(slot)
 ```
+
+If the pawn must come back instead (another life), close nothing: `players.spawn_slot(slot)` makes a new one, even in the same frame it died (it enters as soon as the old one is out, with the same name `Pawn_<slot>` on every peer). While it has no pawn, `players.pawn_for(slot)` gives `null`.
 
 | After `close_seat(slot)` | What happens |
 |---|---|
@@ -2016,6 +2018,9 @@ The gate already started the match: after the start only a seat that left comes 
 
 **When the match ends, the client goes back to the menu after 3 s (it used to say "Lost the server").**
 A ticketed match closes its process `result_quit_delay_s` after `MpMatch.finish`, and the client goes back to the lobby or the menu (`MpKit.server_closed`: the normal end, no status). For your end screen to wait for the player's click, set `stay_after_finish_s` on the `MpFlow` (**Match end** group) and leave with `leave_match()` or an `MpLeaveButton` (7.5, "An end screen that waits for the player").
+
+**After removing a connected player's pawn, the server says `Node not found: ".../Pawn_N/MpInput"` a few times.**
+Those are the keys its client sent before it heard the pawn is gone: the engine warns once for each. They last as long as the news takes to arrive (one round trip) and break nothing.
 
 **It moves, but the other players stutter.**
 Use `smoothing = BUFFERED` with `adaptive_buffer` on; if it stays, lower `late_tolerance` (0.01) or raise the `buffer_delay_s` cap (0.15, 0.2). If you lowered `send_hz`, raise it or leave it at 0.
