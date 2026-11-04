@@ -6,6 +6,7 @@ extends Node
 ## loaded their world, load_timeout_s after the first one sat (start_on_timeout), or when its host
 ## starts it (start_now). After the start only a seat that is away comes back, within rejoin_grace_s; anybody else is turned away
 ## with a reason, unless late_join keeps the seats nobody holds open (vacant_slots: a bot of yours may play them meanwhile).
+## close_seat() shuts one seat for the rest of the match (its pawn died or left the match): nobody sits there again.
 ## Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent), the bots (your game).
 ## MpKit owns it (`/root/MpKit/Gate`) and feeds it: admit() on each presentation, mark_loaded() when a seat loaded (on world_ready,
 ## or on MpKit.report_loaded with `loaded_on_world_ready` off), mark_host_loaded() for the server's own world, mark_left() on a drop.
@@ -33,6 +34,8 @@ signal turned_away(peer_id: int, reason: String)
 ## Server: after the start a player took a seat nobody held (late_join): a bot of yours playing it hands it over here (the seat's
 ## actor stays; its MpInput takes this player's keys).
 signal joined_late(slot: int)
+## Server: close_seat() shut `slot` for the rest of the match.
+signal seat_closed(slot: int)
 
 enum Phase { IDLE, FILLING, RUNNING }
 
@@ -42,6 +45,8 @@ const GRACE_OVER := "grace_over"
 const SEAT_TAKEN := "slot_taken"
 const UNKNOWN := "rejected"
 const NOT_LOADED := "not_loaded"
+## A seat close_seat() shut: its own player coming back hears it too.
+const SEAT_CLOSED := "seat_closed"
 
 ## Seconds a seat that dropped keeps its place.
 var rejoin_grace_s := 60.0
@@ -118,6 +123,8 @@ var _away_ms: Dictionary = {}
 var _given_up: Dictionary = {}
 ## slot -> why
 var _abandoned: Dictionary = {}
+## slot -> true: close_seat() shut it for the rest of the match.
+var _closed: Dictionary = {}
 
 
 class Admission:
@@ -208,6 +215,10 @@ func mark_left(slot: int) -> void:
 		return
 	_away_ms[slot] = _now()
 	seat_away.emit(slot)
+	## A closed seat never comes back: no grace to wait for.
+	if _closed.has(slot):
+		_away_ms[slot] = _now() - _grace_ms() - 1
+		poll()
 
 
 ## MpKit only: the live peer that still holds the seat `credential` names, when it is another one: a client back after a drop
@@ -259,30 +270,54 @@ func start_by(slot: int) -> bool:
 
 
 ## Server: the seats nobody holds: never taken, or out for good (abandoned). A bot of yours may play them; with late_join a newcomer
-## still takes one (joined_late). Not a seat away within its grace (its player may come back).
+## still takes one (joined_late). Not a seat away within its grace (its player may come back), nor a closed one (close_seat).
 func vacant_slots() -> Array[int]:
 	var out: Array[int] = []
 	for slot in _armed_seats:
-		if not _admitted.has(slot) or _abandoned.has(slot):
+		if (not _admitted.has(slot) or _abandoned.has(slot)) and not _closed.has(slot):
 			out.append(slot)
 	return out
 
 
 ## Server: the seats a player holds: in the match now, or away within its grace (its player may come back). An issuer room
-## hands each only to its own player.
+## hands each only to its own player. Not a closed seat (close_seat): its player, if still in, cannot come back to it.
 func held_slots() -> Array[int]:
 	var out: Array[int] = []
 	for slot in _armed_seats:
-		if _admitted.has(slot) and not _abandoned.has(slot):
+		if _admitted.has(slot) and not _abandoned.has(slot) and not _closed.has(slot):
 			out.append(slot)
 	return out
 
 
-## Server: the vacant seats nobody may take any more (the match started without late_join): an issuer room stops handing them out.
+## Server: the seats nobody may take any more: the closed ones (close_seat), and the vacant ones once the match started without
+## late_join. An issuer room stops handing them out.
 func closed_slots() -> Array[int]:
-	if phase != Phase.RUNNING or late_join:
-		return []
-	return vacant_slots()
+	var nobody_new := phase == Phase.RUNNING and not late_join
+	var vacant := vacant_slots()
+	var out: Array[int] = []
+	for slot in _armed_seats:
+		if _closed.has(slot) or (nobody_new and vacant.has(slot)):
+			out.append(slot)
+	return out
+
+
+## Server: nobody sits in `slot` again this match: not a newcomer (late_join), not a bot of yours (vacant_slots skips it), not its
+## own player once it left (turned away: seat_closed). Call it when the seat's pawn is out of the match for good (it died, it
+## escaped) and your game removed it. Its player, while still connected, stays: your game decides what it sees (a spectator
+## camera, its end screen). Once that player leaves the seat is abandoned at once (no grace: it cannot come back). Before the
+## start the match stops waiting for it. An issuer room stops handing it out (closed_slots).
+func close_seat(slot: int) -> void:
+	if phase == Phase.IDLE or not _armed_seats.has(slot) or _closed.has(slot):
+		return
+	_closed[slot] = true
+	seat_closed.emit(slot)
+	## Its player is away: it cannot come back, so there is no grace to wait for.
+	if _away_ms.has(slot):
+		_away_ms[slot] = _now() - _grace_ms() - 1
+		poll()
+	_check_start()
+	if phase == Phase.FILLING:
+		_set_waiting(true, true)
 
 
 ## The game gives up on `slot` (e.g. it never sent its pick): the match stops waiting for it, and it is abandoned (`why`) as soon
@@ -354,6 +389,7 @@ func reset() -> void:
 	_away_ms.clear()
 	_given_up.clear()
 	_abandoned.clear()
+	_closed.clear()
 	_waiting = false
 	_local_world_ready = false
 	_server_pause = false
@@ -406,12 +442,12 @@ func poll() -> void:
 		return
 	for slot in gone:
 		_away_ms.erase(slot)
-		var why := str(_given_up.get(slot, GRACE_OVER))
+		var why := str(_given_up.get(slot, SEAT_CLOSED if _closed.has(slot) else GRACE_OVER))
 		_abandoned[slot] = why
 		seat_abandoned.emit(slot, why)
 		## With late join a seat out for good is a free seat again (the game heard it was abandoned): open seats for anybody, a
-		## ticket's seat for whoever presents that ticket.
-		if late_join:
+		## ticket's seat for whoever presents that ticket. Never a closed seat.
+		if late_join and not _closed.has(slot):
 			_abandoned.erase(slot)
 			_free_seat(slot)
 
@@ -423,16 +459,20 @@ func _judge(peer_id: int, credential: String, out: Admission) -> String:
 		out.slot = int(_identity.call(peer_id, credential))
 		if out.slot <= 0 or not _seats.has(out.slot):
 			return UNKNOWN
+		if _closed.has(out.slot):
+			return SEAT_CLOSED
 		return _judge_known(peer_id, out.slot)
 	for slot in _credentials.keys():
 		if not credential.is_empty() and _credentials[slot] == credential:
 			out.slot = int(slot)
 			out.credential = credential
+			if _closed.has(out.slot):
+				return SEAT_CLOSED
 			return _judge_known(peer_id, out.slot)
 	if phase == Phase.RUNNING and not late_join:
 		return MATCH_STARTED
 	for slot in _seats:
-		if not _credentials.has(slot) and not _given_up.has(slot):
+		if not _credentials.has(slot) and not _given_up.has(slot) and not _closed.has(slot):
 			out.slot = slot
 			out.credential = _fresh_credential()
 			_credentials[slot] = out.credential
@@ -582,9 +622,10 @@ func _host_in() -> bool:
 	return _host_loaded or not wait_host
 
 
-## The seats the match still waits for (not given up, not abandoned).
+## The seats the match still waits for (not given up, not abandoned, not closed).
 func _required() -> Array[int]:
-	return _slots_where(func(slot: int) -> bool: return not _given_up.has(slot) and not _abandoned.has(slot))
+	return _slots_where(func(slot: int) -> bool:
+		return not _given_up.has(slot) and not _abandoned.has(slot) and not _closed.has(slot))
 
 
 ## How many loaded seats start the match.

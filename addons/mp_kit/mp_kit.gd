@@ -7,12 +7,16 @@ extends Node
 
 ## The kit's version (plugin.cfg says the same; a test checks it). An exported game has no plugin.cfg: this is what the
 ## MpKit issuer is told.
-const VERSION := "0.21.0"
+const VERSION := "0.22.0"
 
 signal peer_joined(peer_id: int, slot: int)
 signal peer_left(peer_id: int, slot: int)
 signal join_failed
+## Client: the connection to the server dropped while the match was on (the server crashed, the link broke).
 signal server_lost
+## Client: the server went away after it ended the match (session_ended came first): the normal end, not server_lost. MpFlow
+## goes back to the lobby or the menu without a word.
+signal server_closed
 signal client_world_ready(peer_id: int)
 signal load_world
 signal snapshot_received(data: Dictionary)
@@ -67,6 +71,8 @@ var tls_client: TLSOptions
 ## This connection's RTT, jitter and loss (and, on the server, every player's). Mp.net_quality() reads it.
 var net_quality: MpNetQuality
 var _listen_refused: bool = false
+## Client: the server said the session ended (session_ended) and no new world came since: its going away is server_closed.
+var _session_over: bool = false
 var _peer: MultiplayerPeer
 var _world_ready: Dictionary = {}
 var _broadcasting_custom: bool = false
@@ -298,6 +304,7 @@ func open_seats() -> Array[int]:
 
 func leave() -> void:
 	_last_beat_ms = 0
+	_session_over = false
 	_silent_since_ms = 0
 	if rooms:
 		rooms.reset()
@@ -581,8 +588,13 @@ func _on_server_disconnected() -> void:
 		leave()
 		admission_rejected.emit("dropped")
 		return
+	## After the match ended the server going away is how it ends (a match process quits once its players read the result).
+	var over := _session_over
 	leave()
-	server_lost.emit()
+	if over:
+		server_closed.emit()
+	else:
+		server_lost.emit()
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -660,6 +672,7 @@ func rpc_admission_rejected(reason: String) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func rpc_load_world() -> void:
+	_session_over = false
 	load_world.emit()
 
 
@@ -698,6 +711,7 @@ func rpc_snapshot(data: Dictionary) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func rpc_session_ended(data: Dictionary) -> void:
+	_session_over = true
 	session_ended.emit(data)
 
 

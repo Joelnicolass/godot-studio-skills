@@ -4,8 +4,8 @@ extends "res://addons/mp_kit/tests/mp_test.gd"
 ## within the grace or past it, a seat held by a live peer, identity (ticket) mode, the load timeout, all_gone and reset; the
 ## server's own world (wait_host): a host that loads late, a client that reports late, solo (no seats) and the host's timeout;
 ## and how a match starts and takes late players: a ticket's seat after the start (match_started, or late join), no start by
-## time, the starter seat, the vacant and closed seats; and a match that waits without pausing (a lobby the players walk), on the
-## server and on a client.
+## time, the starter seat, the vacant and closed seats; a match that waits without pausing (a lobby the players walk), on the
+## server and on a client; and a seat the game closes (close_seat: its pawn is out of the match).
 
 var _clock: Array[int] = [1000]
 var _events: Array[String] = []
@@ -29,6 +29,7 @@ func _gate(seats: Array[int], need: int = 0, identity: Callable = Callable(), ho
 	gate.all_gone.connect(func() -> void: _events.append("all_gone"))
 	gate.turned_away.connect(func(_peer: int, reason: String) -> void: _events.append("turned %s" % reason))
 	gate.joined_late.connect(func(slot: int) -> void: _events.append("late %d" % slot))
+	gate.seat_closed.connect(func(slot: int) -> void: _events.append("closed %d" % slot))
 	gate.arm(seats, need, identity, hold)
 	return gate
 
@@ -521,3 +522,95 @@ func test_a_client_pauses_only_when_the_server_asks() -> void:
 	client.reset()
 	client.free()
 
+
+func test_a_closed_seat_keeps_its_player_until_it_leaves() -> void:
+	var gate := _gate([2, 3])
+	var a := gate.admit(10, "")
+	gate.admit(11, "")
+	gate.mark_loaded(2)
+	gate.mark_loaded(3)
+	gate.close_seat(2)
+	check(_events.has("closed 2") and not gate.is_abandoned(2), "closed while its player is in: the player stays (spectating, an end screen)")
+	check(gate.held_slots() == [3] and gate.vacant_slots().is_empty() and gate.closed_slots() == [2],
+		"a closed seat is not held, not vacant (no bot plays it), and closed")
+	gate.mark_left(2)
+	check(_events.has("abandoned 2 seat_closed true"), "its player left: abandoned at once, no grace to wait (%s)" % [_events])
+	var back := gate.admit(20, a.credential)
+	check(back.slot == 0 and back.reason == MpMatchGate.SEAT_CLOSED and _events.has("turned seat_closed"),
+		"its own player coming back is turned away: seat_closed")
+	gate.close_seat(2)
+	check(_events.count("closed 2") == 1, "closing it again changes nothing")
+	_done(gate)
+
+
+func test_late_join_never_hands_out_a_closed_seat() -> void:
+	var gate := _gate([2, 3])
+	gate.late_join = true
+	gate.admit(10, "")
+	var b := gate.admit(11, "")
+	gate.mark_loaded(2)
+	gate.mark_loaded(3)
+	gate.mark_left(3)
+	gate.close_seat(3)
+	check(_events.has("abandoned 3 seat_closed true"), "closed while its player is away: abandoned at once")
+	_advance_s(6.0, gate)
+	check(gate.vacant_slots().is_empty() and gate.closed_slots() == [3], "past the grace it is not free again: no bot, nobody new")
+	var late := gate.admit(12, "")
+	check(late.slot == 0 and late.reason == MpMatchGate.FULL, "a newcomer with late join finds no seat: full")
+	check(gate.admit(13, b.credential).reason == MpMatchGate.SEAT_CLOSED, "its old credential: seat_closed")
+	_done(gate)
+
+
+func test_a_closed_ticket_seat_turns_its_ticket_away() -> void:
+	var gate := _gate([1, 2, 3], 2, _tickets())
+	gate.late_join = true
+	gate.admit(10, "t1")
+	gate.admit(11, "t2")
+	gate.mark_loaded(1)
+	gate.mark_loaded(2)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and gate.vacant_slots() == [3], "two of three loaded: it runs, seat 3 is vacant")
+	gate.close_seat(3)
+	check(gate.vacant_slots().is_empty() and gate.closed_slots() == [3], "a vacant seat closed: no bot, and an issuer room stops handing it out")
+	check(gate.admit(12, "t3").reason == MpMatchGate.SEAT_CLOSED, "its ticket, with late join: seat_closed")
+	gate.close_seat(2)
+	gate.mark_left(2)
+	check(gate.admit(13, "t2").reason == MpMatchGate.SEAT_CLOSED, "the ticket of a closed seat whose player left: seat_closed")
+	check(gate.closed_slots() == [2, 3] and gate.held_slots() == [1], "closed: 2 and 3; held: only 1")
+	_done(gate)
+
+
+func test_before_the_start_a_closed_seat_is_not_waited_for() -> void:
+	var gate := _gate([2, 3, 4])
+	gate.admit(10, "")
+	gate.close_seat(3)
+	check(gate.admit(11, "").slot == 4, "a newcomer skips the closed seat")
+	gate.mark_loaded(2)
+	check(gate.phase == MpMatchGate.Phase.FILLING and gate.expected_count() == 2, "it waits for 2 seats, not the closed one")
+	gate.mark_loaded(4)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and _events.back() == "started all_loaded", "both open seats loaded: it starts")
+	_done(gate)
+
+
+func test_a_closed_seat_it_waited_for_starts_the_match() -> void:
+	var gate := _gate([2, 3])
+	gate.admit(10, "")
+	gate.mark_loaded(2)
+	gate.close_seat(3)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and _events.back() == "started all_loaded", "the only seat still loading closed: it starts")
+	check(gate.admit(11, "").reason == MpMatchGate.MATCH_STARTED, "and a newcomer hears match_started")
+	_done(gate)
+
+
+func test_the_next_match_opens_every_seat_again() -> void:
+	var gate := _gate([2])
+	gate.close_seat(9)
+	check(not _events.has("closed 9"), "a seat the match does not have: nothing")
+	gate.admit(10, "")
+	gate.mark_loaded(2)
+	gate.close_seat(2)
+	gate.reset()
+	gate.close_seat(2)
+	check(_events.count("closed 2") == 1, "an idle gate closes nothing")
+	gate.arm([2])
+	check(gate.admit(11, "").slot == 2 and gate.closed_slots().is_empty(), "reset and arm: the next match has every seat")
+	_done(gate)

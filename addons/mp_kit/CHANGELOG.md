@@ -2,6 +2,21 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.22.0
+
+- **A seat that closes.** `Mp.gate().close_seat(slot)` (server): nobody sits in that seat again this match. Not a newcomer (`late_join`), not a bot of yours (`vacant_slots()` no longer gives it), not its own player once it left: it is turned away with `seat_closed`, and the flow shows it with `seat_closed_status`. Call it when the seat's pawn is out of the match for good (it died, it escaped) and your game removed it. Its player, while still connected, stays: your game decides what it sees (a spectator camera, its end screen). When it leaves, the seat is abandoned at once (`player_abandoned`, reason `seat_closed`): there is no grace to wait for. Before the start, the match stops waiting for it. An online or private room stops handing it out (`closed_slots()`), and `held_slots()` no longer counts it. New signal `seat_closed(slot)`. Asked for by El Eternauta: a player who died or escaped does not come back into a seat with no pawn.
+- **Ending is not "lost the server".** When the server goes away after the match ended (`MpMatch.finish`), the client no longer gets `MpKit.server_lost`: it gets the new signal `MpKit.server_closed`, and the `MpFlow` goes back to the lobby or the menu without the "Lost the server" status. The same if, after the end, the host goes quiet until `host_silent_timeout_s`. `server_lost` is kept for a real drop, with the match on.
+- **The end screen waits for the player.** New knob `stay_after_finish_s` on the `MpFlow` (new **Match end** group, `--stay-after-finish-s=`), 0 by default. Above 0, a finished match on the host's PC (private or online, `MpLocalServer`) stays up while its players are still in it: they read your end screen and leave on a click (`leave_match()`, `MpLeaveButton`). The process closes once the last one left, never before `result_quit_delay_s` and at most after `stay_after_finish_s`. At 0, as before: it closes `result_quit_delay_s` (3 s) after the result and whoever is still in goes back to the lobby or the menu. A room server's match takes it from its `MpLobbyConfig.stay_after_finish_s` (in `agent_fields`). Asked for by El Eternauta: its end screen stays until the player clicks.
+- **A finished match still up is not the running one.** `MpLocalServer.running()` no longer gives it back, `is_finished()` says it ended and `invites()` is empty. `MpLocalServer.start_on()` and `MpFlow.host_online()` close it and open a new one; whoever was still reading goes back to the menu without "lost the server". The online room hands out no more seats (`MpOnline.is_finished()`) and closes on the issuer once its match process is gone. `MpMatchLauncher.is_finished(id)`.
+- **Tests:** 144 of the kit:
+  - `close_seat`: the player stays until it leaves and is turned away after; the seat is never free again with late join; with a ticket; before the start; in the next match.
+  - `server_closed` against `server_lost`.
+  - `stay_after_finish_s` travels to the match.
+
+  `mpkit_lab/run/finish.sh`: a friend with its end screen, in four modes (`quit`, `leave`, `again`, `online`). It passes over ENet; `quit`, `leave` and `again` over WebSocket and the relay too; `online` through the run's issuer and relay. `private.sh`, `online.sh`, `late.sh`, `rooms.sh public`, `session.sh lost` and `arena.sh latejoin` are still green.
+
+What to update: `MpKit.VERSION` goes to 0.22.0, so the server and the clients must run the same build. If your game listened to `MpKit.server_lost` to know the match ended, listen to `MpMatch.finished` (or `MpKit.server_closed`). For an end screen that waits for the click, set `stay_after_finish_s` (for instance 120) and call `leave_match()` from your button.
+
 ## 0.21.0
 
 - **A lobby you walk.** New knob `pause_while_waiting` on the `MpFlow` (**Match start** group, `--pause-while-waiting=false`), on by default. Off, nobody pauses while the match waits for its seats: the players who loaded move their pawn, predicted, as after the start, while the others come in. The gate does not change: it counts the loads (with `world_reports_loaded` too), starts on `all_loaded`, Start now or `load_timeout_s`, and whoever comes in while it waits sits and walks. Asked for by El Eternauta: its shelter, with a map on a lectern, is walked while the others come in.

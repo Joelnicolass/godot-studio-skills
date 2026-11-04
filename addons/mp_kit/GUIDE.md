@@ -780,13 +780,13 @@ Who simulates is another question: `is_multiplayer_authority()` / `is_authority(
 An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone. What counts is decided by the **start gate** (`MpMatchGate`, at `/root/MpKit/Gate`, `Mp.gate()`), which the `MpFlow` arms on every path that hosts (Host LAN, a dedicated by hand, a match on the host's PC, private or online, and a room server's dedicated):
 
 - **Before the start** the free seats are open. The world stays **paused on every peer** (unless `pause_while_waiting` is off: see "A lobby you walk", below) until the seats it expects have loaded: every seat by default (`start_seats` = 0, in Host LAN and in a dedicated by hand alike; in a match with a ticket, every seat of the ticket). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` (15 s) has passed since the first one came in, it starts with those who loaded; meanwhile the HUD says it waits (`MpWaitingLabel`, `Hud/Waiting`: "Waiting for players (1/4)"). With **`start_on_timeout`** off (`MpFlow` inspector or `--start-on-timeout=false`) it never starts by time: it waits for everyone, or for the host to start it. The host does not have to wait: the HUD's **Start now** button (`MpStartButton`, in the `MpWorld`'s `Hud/Start`) starts with those already loaded. A listen host sees it (Host LAN, a browser that hosts) and, with **`host_can_start`** on (off by default, `--host-can-start=true`), so does the player who opened a match on its PC (private or online: it is slot 1, and the server checks it). It shows once another seat loaded, or at once with `late_join` on (the others may come later). With `start_on_timeout` off in a match on the host's PC, turn `host_can_start` on: otherwise nobody starts a match a seat never comes to.
-- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a seat nobody holds (a free one, or one abandoned past the grace, which is free again) and the gate emits `joined_late(slot)`. In a match with a ticket (private or online on the host's PC) the newcomer takes the seat its ticket names; an online room with late join stays in the issuer's list while it has free seats. A room server's match takes `late_join` from its `MpLobbyConfig` (off). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started` (also a valid ticket whose seat nobody took before the start), `full`, `grace_over`, `slot_taken`, and `rejected` only for a ticket that names no seat. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
+- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a seat nobody holds (a free one, or one abandoned past the grace, which is free again) and the gate emits `joined_late(slot)`. In a match with a ticket (private or online on the host's PC) the newcomer takes the seat its ticket names; an online room with late join stays in the issuer's list while it has free seats. A room server's match takes `late_join` from its `MpLobbyConfig` (off). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started` (also a valid ticket whose seat nobody took before the start), `full`, `grace_over`, `slot_taken`, `seat_closed` (a seat your game closed: "A seat that closes", below), and `rejected` only for a ticket that names no seat. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
 - A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`.
 - **While a seat is away** its pawn stays if the spawner keeps it (`MpSlotSpawner.despawn_on_leave` off; on by default it is removed and spawned again on the rejoin): it holds no keys and, with prediction, the server goes on simulating it with none (gravity, a knockback still run). Back, the new connection's keys move it at once.
 - **A seat nobody holds can be played by a bot of yours** (below, "Bots in the free seats"): that slot's pawn on the server, with the keys of `MpInput.bot_press`. When a player takes the seat (late join, or the one coming back), the pawn stays as it is and its keys move it.
 - **A dedicated by hand serves one match after another** (a VPS started with `--dedicated`): when its match ends (`Mp.finish()`) and the last player leaves, or everyone stayed away past the grace (`all_gone`), it loads a fresh world (score and actors from zero) and opens every seat again. A game with a rematch screen can call `MpFlow.next_open_match()` itself once its players left. **If your game ends the match its own way** (not with `Mp.finish()`), tell the kit on the server with `MpKit.broadcast_session_ended(result)`, or call `MpFlow.next_open_match()` when it is over and empty; otherwise the next match only opens once everyone's grace passed, and whoever arrives before is turned away (`match_started`). Clients get the gate's state when they are admitted and, with the pause, pause as soon as their world loads, so their `MatchClock` starts at 0.
 
-The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`). Everything new comes off: untouched, the match starts as it always did. A match on the host's PC (private or online, `MpLocalServer`) takes `start_on_timeout`, `late_join`, `host_can_start` and `pause_while_waiting` from the game's `MpFlow`; the grace and the load time, from its `MpLobbyConfig` (60 s each). A room server's match takes everything from its `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. The host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button (on the client of slot 1 of a match on its PC, with `host_can_start`, `start_now()` asks the server to start).
+The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`, `seat_closed_status`) and **Match end** group (`stay_after_finish_s`: "An end screen that waits for the player", below). Everything new comes off: untouched, the match starts as it always did. A match on the host's PC (private or online, `MpLocalServer`) takes `start_on_timeout`, `late_join`, `host_can_start` and `pause_while_waiting` from the game's `MpFlow`; the grace and the load time, from its `MpLobbyConfig` (60 s each). A room server's match takes everything from its `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. The host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button (on the client of slot 1 of a match on its PC, with `host_can_start`, `start_now()` asks the server to start).
 
 #### A lobby you walk
 
@@ -869,6 +869,45 @@ func _physics_process(_delta: float) -> void:
 - In a match with a ticket, the late player takes the seat the issuer gave it (the first free one): if a bot plays there, it takes that pawn as it is (position, health, what is synced) and the `MpInput` follows its keys from the next tick on.
 - Solo has no seats at the gate (`vacant_slots()` empty): there you put the bots in, with `spawn_slot(2..N)`. `bot_press` works the same.
 - If your bot must not move the pawn of a player away within the grace, check `Mp.gate().vacant_slots().has(slot)` besides `has_player()`.
+
+#### A seat that closes
+
+When a seat's pawn is out of the match for good (it died, it escaped) and your game removed it, close that seat on the server: nobody sits there again this match.
+
+```gdscript
+## world.gd (server): the slot's pawn died or escaped; its seat does not play again this match.
+func _on_pawn_out(slot: int) -> void:
+	players.pawn_for(slot).queue_free()
+	Mp.gate().close_seat(slot)
+```
+
+| After `close_seat(slot)` | What happens |
+|---|---|
+| Its player is still connected | It stays: your game decides what it sees (a spectator camera, its end screen) |
+| Its player leaves | The seat is abandoned at once (`player_abandoned`, reason `seat_closed`): there is no grace to wait for, it cannot come back |
+| Its player comes back (rejoin, or its ticket) | Turned away with `seat_closed`; the flow shows it with `seat_closed_status` |
+| A newcomer with `late_join` | Does not get that seat (if no other is left: `full`) |
+| Your bots | `vacant_slots()` no longer gives it; `seat_closed(slot)` tells you |
+| An online or private room | The issuer stops handing it out (`closed_slots()`), and `held_slots()` no longer counts it |
+| Before the start | The match stops waiting for it |
+| The next match (`reset`: a dedicated by hand) | Every seat open again |
+
+#### An end screen that waits for the player
+
+By default, a ticketed match (one on the host's PC, private or online, and a room server's) closes its process `result_quit_delay_s` (3 s) after `MpMatch.finish`, and whoever is still in goes back to the lobby or the menu. The server going away after the end is the normal end: the client gets `MpKit.server_closed` (not `server_lost`) and the flow goes back without saying "Lost the server".
+
+For your end screen to stay until the player clicks, set **`stay_after_finish_s`** (`MpFlow` inspector, **Match end** group, or `--stay-after-finish-s=120`). The finished match stays up while players are in it and closes once the last one left: never before `result_quit_delay_s`, at most after `stay_after_finish_s`. Each one leaves with an `MpLeaveButton` on your screen (or `leave_match()` from your button):
+
+```gdscript
+func _on_finished(result: Dictionary) -> void:
+	%Result.text = "%s wins!" % str(result.get("winner", "?")).to_upper()
+	%EndScreen.visible = true  # with an MpLeaveButton in it; Process › Mode = Always if the world is paused
+```
+
+- A match on the host's PC (private or online) takes `stay_after_finish_s` from the game's `MpFlow`; a room server's match, from its `MpLobbyConfig`.
+- While it stays up nobody else gets in (not even with their ticket), the online room hands out no seats and the invite leaves the HUD (`MpInviteLabel`).
+- If the host opens another match (`MpLocalServer.start_on`, `host_online`), the finished one gives way: whoever was still reading goes back to the menu, without "lost the server".
+- If the server goes anyway (`stay_after_finish_s` passed, the host's game closed), the client goes back to the lobby or the menu with no error status.
 
 Signals:
 
@@ -1311,10 +1350,11 @@ server.server_failed.connect(func(reason: String) -> void: print("failed: ", rea
 | `MpLocalServer.start_on(tree, seats, options, join_host)` | Creates the node under the root and starts. Slot 1 is you |
 | `server_ready(address, port, codes)` | Ready. `codes`: slot → code for every other seat |
 | `server_failed(reason)` | It could not start |
-| `server_ended(result)` | The match ended |
+| `server_ended(result)` | The match ended and its process closed |
 | `stop()` | Kills the match |
 | `invites()` / `invite_text()` | What friends type, one per free seat: `192.168.1.5:7801#K7P2QX` (through the relay, `:7801#K7P2QX`) |
-| `MpLocalServer.running(tree)` | The private server this process runs, or `null`. `start_on` with one running gives it back |
+| `is_finished()` | Its match ended (`MpMatch.finish`). With `stay_after_finish_s` the process stays up a while for its players; nobody else gets in |
+| `MpLocalServer.running(tree)` | The private server this process runs, or `null` (not one whose match ended). `start_on` with one running gives it back; a finished one gives way to the new one |
 
 It uses the times and ports of a default `MpLobbyConfig` (matches on 7800-7899) and the network of your `game.tres` (transport, relay, TLS). Through the relay it searches for a port from a random one in the range, and if the relay refuses it because another server uses it, it tries the next one.
 
@@ -1384,7 +1424,7 @@ for row in await flow.online_rooms():
 | `MpInviteLabel` | In the match HUD of the host it shows the code |
 | `MpNetConfig.can_host_online()` | True once `issuer_url` is set (every build may host, a browser too) |
 
-The room lives while the host does: the host tells the issuer every 10 s who is in, and closes the room when the match ends or it leaves. A host whose game closes without a word (a closed tab) is forgotten by the issuer 30 s later.
+The room lives while the host does: the host tells the issuer every 10 s who is in, and closes the room when the match ends or it leaves (with `stay_after_finish_s`, once the match process closes; meanwhile it hands out no seats). A host whose game closes without a word (a closed tab) is forgotten by the issuer 30 s later.
 
 When it starts and who comes in later is up to the `MpFlow`'s **Match start** knobs (7.5), the same on desktop and in a browser:
 
@@ -1973,6 +2013,9 @@ The server's log says `MpKit: the server turned peer N away (timeout)`: its tick
 
 **A second client does not get in: "The match already started" (`match_started`).**
 The gate already started the match: after the start only a seat that left comes back. For several to get in, have them load before the start (`start_seats` = 0 waits for every seat, `--start-seats=N`), or turn on `late_join` (`--late-join`) for a game people drop in and out of. On a dedicated by hand, the next match opens by itself once this one ends and everyone left.
+
+**When the match ends, the client goes back to the menu after 3 s (it used to say "Lost the server").**
+A ticketed match closes its process `result_quit_delay_s` after `MpMatch.finish`, and the client goes back to the lobby or the menu (`MpKit.server_closed`: the normal end, no status). For your end screen to wait for the player's click, set `stay_after_finish_s` on the `MpFlow` (**Match end** group) and leave with `leave_match()` or an `MpLeaveButton` (7.5, "An end screen that waits for the player").
 
 **It moves, but the other players stutter.**
 Use `smoothing = BUFFERED` with `adaptive_buffer` on; if it stays, lower `late_tolerance` (0.01) or raise the `buffer_delay_s` cap (0.15, 0.2). If you lowered `send_hz`, raise it or leave it at 0.
