@@ -113,7 +113,12 @@ enum StartWhen {
 ## newcomer takes the seat its ticket names. Off: only a seat that left comes back; anybody else hears match_started. A room
 ## server's match: its MpLobbyConfig.
 @export var late_join: bool = false
-## The clients' world pauses too while the match waits for seats.
+## On (the default): the world pauses while the match waits for its seats, so nobody walks ahead. Off: nobody pauses, and the
+## players who loaded walk while the rest come in, the way a lobby room is walked (`--pause-while-waiting=false`). Your game then
+## holds its own systems (a day clock, threats, bots) until the start: MpMatch.waiting / waiting_changed on every peer,
+## all_loaded on the server. The wait, its HUD (MpWaitingLabel, MpStartButton) and the start do not change.
+@export var pause_while_waiting: bool = true
+## The clients' world pauses too while the match waits for seats (with pause_while_waiting).
 @export var pause_clients: bool = true
 ## Shown on a client the server turned away because the match already started.
 @export var match_started_status: String = "The match already started"
@@ -568,6 +573,7 @@ func _arm_gate() -> void:
 		return
 	## Here and not only in _ready: play_solo / host_lan may run before it (a game that starts from its boot scene's _ready).
 	_apply_load_mode()
+	MpKit.gate.pause_while_waiting = effective_pause_while_waiting()
 	if not MpKit.is_networked():
 		MpKit.gate.load_timeout_s = float(MpBoot.user_value("load-timeout-s", str(load_timeout_s)))
 		MpKit.gate.arm([], 0)
@@ -589,6 +595,16 @@ func _arm_gate() -> void:
 	gate.host_present = MpKit.is_listen_host()
 	gate.late_join = effective_late_join()
 	gate.arm(MpKit.open_seats(), int(MpBoot.user_value("start-seats", str(start_seats))))
+
+
+## pause_while_waiting, or `--pause-while-waiting=false` / `=true`.
+func effective_pause_while_waiting() -> bool:
+	var raw := MpBoot.user_value("pause-while-waiting", "").to_lower()
+	if raw in ["false", "0", "off", "no"]:
+		return false
+	if raw in ["true", "1", "on", "yes"]:
+		return true
+	return pause_while_waiting
 
 
 ## late_join, or `--late-join` (`--late-join=false` turns it off).
@@ -617,11 +633,13 @@ func effective_host_can_start() -> bool:
 	return host_can_start or raw in ["true", "1", "on", "yes"] or MpBoot.user_flag("host-can-start")
 
 
-## A match on this PC (MpLocalServer, private or online) starts, takes late players and may be started by its host (slot 1)
-## as this flow says. `config` is an MpLobbyConfig, untyped on purpose: this flow must not load the lobby scripts.
+## A match on this PC (MpLocalServer, private or online) starts, takes late players, may be started by its host (slot 1) and
+## pauses while it waits as this flow says. `config` is an MpLobbyConfig, untyped on purpose: this flow must not load the lobby
+## scripts.
 func fill_match_start(config: Resource) -> void:
 	config.set("start_on_timeout", effective_start_on_timeout())
 	config.set("late_join", effective_late_join())
+	config.set("pause_while_waiting", effective_pause_while_waiting())
 	config.set("starter_slot", 1 if effective_host_can_start() else 0)
 
 

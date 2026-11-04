@@ -32,6 +32,11 @@ func test_the_flow_says_how_a_match_on_this_pc_starts() -> void:
 	for field in ["start_on_timeout", "starter_slot", "late_join"]:
 		check(config.agent_fields.has(field), "%s travels to the match process as a flag" % field)
 	check(MpLobbyConfig.flag_for("start_on_timeout") == "--start-on-timeout", "the flag of start_on_timeout")
+	check(config.pause_while_waiting, "by default a match on this PC pauses while it waits")
+	flow.pause_while_waiting = false
+	flow.fill_match_start(config)
+	check(not config.pause_while_waiting and config.agent_fields.has("pause_while_waiting"), "pause_while_waiting off goes to the match's config, and travels as a flag")
+	check(MpLobbyConfig.flag_for("pause_while_waiting") == "--pause-while-waiting", "the flag the match process and its flow read")
 	flow.free()
 
 

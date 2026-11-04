@@ -127,6 +127,7 @@ func arm_gate() -> void:
 	gate.start_on_timeout = config.start_on_timeout
 	gate.starter_slot = config.starter_slot
 	gate.late_join = config.late_join
+	gate.pause_while_waiting = config.pause_while_waiting
 	gate.host_present = false
 	## state.json follows the start and the seats that close, free or are held (an issuer room lists only what may still be
 	## taken, and gives a held seat to its own player only).

@@ -55,6 +55,7 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | `late_join`: un recién llegado después del arranque igual se sienta y juega | `arena.sh` latejoin **T** |
 | Timeouts de red con el reloj real: un servidor cuyo reloj de juego se adelanta (`--fixed-fps`) igual admite a un cliente a 150 ms | `arena.sh` fastclock **T** |
 | Pantalla de carga (`--world-reports-loaded`): el dedicado, el cliente y solo esperan a que su mundo avise que cargó, y después juegan | `arena.sh` reports **T** |
+| Un lobby que se camina (`--pause-while-waiting=false`): mientras la partida espera dos asientos, el primero mueve su peón con predicción y el servidor lo ve; el segundo entra, arranca por `all_loaded` y juegan; el control con la pausa queda quieto | `arena.sh` lobbywalk **T** |
 | Un dedicado a mano (`--dedicated`, asientos por defecto) sirve una partida tras otra: mundo nuevo después de una partida terminada cuando se fueron todos, y después de que todos se cayeron pasada la gracia | `arena.sh` survive **T** |
 | Reglas de la puerta (llenar, lleno, `need`, gracia, asiento vivo, ticket, `load_timeout`, `all_gone`, `reset`, `late_join`, una credencial o ticket que desplaza una conexión vieja, el mundo del propio servidor: `wait_host`, solo, su timeout) | `tests/test_match_gate.gd` |
 | `MpMatch.finish` llega a todos y a la sala | `rooms.sh` public **T TLS** |
