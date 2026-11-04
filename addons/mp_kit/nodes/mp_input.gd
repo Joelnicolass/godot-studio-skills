@@ -12,6 +12,7 @@ extends Node
 ## `bot_set_value` are its keys, read the same way, so players and bots share the movement code. A player who takes the
 ## seat replaces them at once (`has_player()`).
 ## Not: what an action does (the actor), discrete orders (MpActor.to_server), the bot's decisions (your game).
+## The frames travel through MpKit (route_key): a late frame for a pawn the server already freed is dropped without a word.
 
 ## Without prediction a frame is sent when the input changes, and at least this often.
 const KEEPALIVE_S := 0.1
@@ -61,6 +62,19 @@ var _skip: bool = false
 ## Server: the bot's keys (strength per action) and values, read while no connection plays this seat.
 var _bot_keys: PackedFloat32Array = PackedFloat32Array()
 var _bot_values: Dictionary = {}
+## This input's key for the frames MpKit routes (0 outside the tree).
+var _route_key: int = 0
+
+
+func _enter_tree() -> void:
+	if not Engine.is_editor_hint():
+		_route_key = MpKit.add_route(self)
+
+
+func _exit_tree() -> void:
+	if _route_key != 0:
+		MpKit.remove_route(_route_key, self)
+		_route_key = 0
 
 
 func _ready() -> void:
@@ -274,7 +288,7 @@ func _sample_and_send(delta: float) -> void:
 		return
 	_since_sent = 0.0
 	var one: Array[MpInputFrame] = [frame]
-	rpc_frames.rpc_id(MpAuthority.SERVER_PEER, MpInputPacket.encode(one))
+	MpKit.rpc_input_frames.rpc_id(MpAuthority.SERVER_PEER, _route_key, MpInputPacket.encode(one))
 
 
 ## Owner with prediction: every frame the server has not confirmed, at least REDUNDANCY, consecutive (a seq jump
@@ -287,7 +301,7 @@ func _send_unconfirmed() -> void:
 			and (_history.size() - from < REDUNDANCY or _history[from - 1].seq > acked_seq):
 		from -= 1
 	_since_sent = 0.0
-	rpc_frames.rpc_id(MpAuthority.SERVER_PEER, MpInputPacket.encode(_history.slice(from)))
+	MpKit.rpc_input_frames.rpc_id(MpAuthority.SERVER_PEER, _route_key, MpInputPacket.encode(_history.slice(from)))
 
 
 ## Owner: keep the server's buffer just full. Short of frames: sample one more this tick (same keys, simulated before
@@ -336,7 +350,7 @@ func _advance_remote() -> void:
 			_since_slack = 0.0
 			## Only once the owner has this node (a rejoining owner is still loading its world).
 			if actor.reaches(_owner_peer):
-				rpc_slack.rpc_id(_owner_peer, _queue.slack())
+				MpKit.rpc_input_slack.rpc_id(_owner_peer, _route_key, _queue.slack())
 		_tick_frames = _queue.take_for_tick(Time.get_ticks_usec() / 1000000.0)
 		if not _tick_frames.is_empty():
 			_current = _tick_frames[_tick_frames.size() - 1]
@@ -347,11 +361,10 @@ func _advance_remote() -> void:
 
 
 
-@rpc("any_peer", "call_remote", "unreliable_ordered")
-func rpc_frames(packet: PackedByteArray) -> void:
-	if not multiplayer.is_server() or actor == null:
+## MpKit only (server): frames `sender` sent for this input (MpKit.rpc_input_frames). Only its seat's player counts.
+func take_frames(sender: int, packet: PackedByteArray) -> void:
+	if not MpKit.is_server() or actor == null:
 		return
-	var sender := multiplayer.get_remote_sender_id()
 	if actor.owner_slot <= 0 or MpKit.slot_for_peer(sender) != actor.owner_slot:
 		return
 	_follow_owner_peer(sender)
@@ -396,8 +409,8 @@ func _new_queue() -> MpInputQueue:
 	return queue
 
 
-@rpc("authority", "call_remote", "unreliable")
-func rpc_slack(slack: int) -> void:
+## MpKit only (owner): the server's word on its buffer (MpKit.rpc_input_slack).
+func take_slack(slack: int) -> void:
 	_server_slack = clampi(slack, -64, 64)
 
 

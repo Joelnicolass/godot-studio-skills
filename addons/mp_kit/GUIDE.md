@@ -570,6 +570,7 @@ func mp_sv_recolor() -> void:
 
 - `net.to_server(&"nombre", arg1, arg2...)` corre `mp_sv_nombre(arg1, arg2...)` en el servidor.
 - En solo y en el servidor corre al toque.
+- Viaja por `MpKit`: si llega cuando el actor ya no está en el servidor (murió), se descarta sin error.
 - Solo se puede llamar un método que empiece con `mp_sv_` y que acepte esa cantidad de argumentos.
 - Quién puede pedirlo lo decide **MpActor › Owner › callers**: con `OWNER` (por defecto), solo el dueño; con `ANYONE`, cualquier jugador sentado.
 - Dentro de `mp_sv_*`, `net.sender_slot()` dice quién lo pidió (0 = el propio servidor; fuera de un `mp_sv_*` da -1).
@@ -2022,9 +2023,6 @@ La puerta ya arrancó la partida: después del arranque solo vuelve un asiento q
 
 **Al terminar la partida, el cliente vuelve al menú a los 3 s (antes decía «Lost the server»).**
 Una partida con ticket cierra su proceso `result_quit_delay_s` después de `MpMatch.finish`, y el cliente vuelve al lobby o al menú (`MpKit.server_closed`: el fin normal, sin aviso). Para que tu pantalla de fin espere el clic del jugador, poné `stay_after_finish_s` en el `MpFlow` (grupo **Match end**) y salí con `leave_match()` o un `MpLeaveButton` (7.5, «Una pantalla de fin que espera al jugador»).
-
-**Después de sacar el peón de un jugador conectado, el servidor dice unas veces `Node not found: ".../Pawn_N/MpInput"`.**
-Son las teclas que su cliente mandó antes de enterarse de que el peón ya no está: el motor avisa una vez por cada una. Duran lo que tarda en llegar el aviso (un viaje de ida y vuelta) y no rompen nada.
 
 **Se mueve, pero los otros jugadores tironean.**
 Usá `smoothing = BUFFERED` con `adaptive_buffer` prendido; si sigue, bajá `late_tolerance` (0.01) o subí el tope `buffer_delay_s` (0.15, 0.2). Si bajaste `send_hz`, subilo o dejalo en 0.

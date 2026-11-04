@@ -201,8 +201,9 @@ run_teleport() { # dedicated that teleports a walking predicted player with only
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL teleport: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
-run_respawn() { # dedicated: P1's pawn dies and is made again in the same frame (Pawn_1 again everywhere), then dies for good,
-  # its seat closes and its player leaves: no script errors, no packet for a node a peer lacks
+run_respawn() { # dedicated: P1's pawn dies and is made again in the same frame (Pawn_1 again everywhere), then dies for good
+  # while its player still presses keys, its seat closes and its player leaves: no script errors, no packet for a node a peer
+  # lacks (not even a late input frame)
   local dir="$OUT/respawn"
   mkdir -p "$dir"
   local common=(--transport="$TRANSPORT" --mp-port="$PORT")
@@ -221,17 +222,11 @@ run_respawn() { # dedicated: P1's pawn dies and is made again in the same frame 
   verdict "$dir/server.log" respawner "respawn: a pawn made again in the frame it died is Pawn_1, and a closed seat's player leaves cleanly"
   verdict "$dir/client.log" respawned "respawn: the client sees the new Pawn_1 and moves it"
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL respawn: script errors"; FAILS=$((FAILS + 1)); fi
-  ## The new Pawn_1 keeps its name, so the client never gets a packet for a node it does not have.
-  if grep -qE "Node not found|Failed to get cached path" "$dir/client.log"; then
-    echo "FAIL respawn: the client got a packet for a node it does not have"; grep -hE "Node not found|cached path" "$dir/client.log" | sort | uniq -c | head -3
+  ## The new Pawn_1 keeps its name, and the input frames and calls go through MpKit: no peer gets a packet for a node it does
+  ## not have, not even the frames its client sent before it heard its pawn died.
+  if grep -qE "Node not found|Failed to get cached|Requested node was not found" "$dir"/*.log; then
+    echo "FAIL respawn: a peer got a packet for a node it does not have"; grep -hE "Node not found|cached|Requested node" "$dir"/*.log | sort | uniq -c | head -3
     FAILS=$((FAILS + 1))
-  fi
-  ## Known, not a failure: the input frames the client sent before it heard its pawn died reach a server that no longer has it.
-  local late
-  late=$(grep -cE "Node not found: \"[^\"]*Pawn_1/MpInput\"" "$dir/server.log")
-  [ "$late" -gt 0 ] && echo "NOTE respawn: $late input frame(s) reached the server after the pawn died (the engine logs each one)"
-  if grep -E "Node not found|Failed to get cached path" "$dir/server.log" | grep -vqE "Pawn_1/MpInput|cached node from peer"; then
-    echo "FAIL respawn: the server got a packet for another node it does not have"; FAILS=$((FAILS + 1))
   fi
 }
 
