@@ -2,6 +2,15 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.21.0
+
+- **A lobby you walk.** New knob `pause_while_waiting` on the `MpFlow` (**Match start** group, `--pause-while-waiting=false`), on by default. Off, nobody pauses while the match waits for its seats: the players who loaded move their pawn, predicted, as after the start, while the others come in. The gate does not change: it counts the loads (with `world_reports_loaded` too), starts on `all_loaded`, Start now or `load_timeout_s`, and whoever comes in while it waits sits and walks. Asked for by El Eternauta: its shelter, with a map on a lectern, is walked while the others come in.
+- **What the game does:** hold its own systems (the day clock, the threats, the bots) until the start, with `MpMatch.waiting`, `waiting_changed` (every peer) and `all_loaded` (the server). Explained in [GUIDE 7.5](GUIDE.md#75-start-and-end-mpmatch), "A lobby you walk".
+- **It travels to each match:** a match on the host's PC (private or online) takes it from the game's `MpFlow`; a room server's match, from its `MpLobbyConfig` (`pause_while_waiting`, in `agent_fields`). `MpMatchGate.pause_while_waiting`; `pause_clients` only counts with the pause on.
+- **Tests:** 136 of the kit (the gate without the pause: it waits, starts by load, by the host and by time, solo; a client pauses only if the server asks; the knob travels to the match). `mpkit_lab/run/arena.sh lobbywalk`: a dedicated that waits for two seats without the pause, the first walks predicted while it waits, the second comes in and it starts; and the control with the pause. It passes over ENet, WebSocket and the relay.
+
+What to update: nothing. For a lobby you walk, turn `pause_while_waiting` off and hold what belongs to the match until `MpMatch.all_loaded`.
+
 ## 0.20.1
 
 - **The host starts its match only if the game asks for it.** New knob `host_can_start` on the `MpFlow` (**Match start** group, `--host-can-start=true`), off by default. On, the player who opened a match on its PC (private or online, slot 1) sees **Start now** and starts it with whoever loaded. In 0.19.0 and 0.20.0 that was always on; now, by default, a match on the host's PC starts as in 0.18: once every seat loaded or the load time passed. With `start_on_timeout` off turn `host_can_start` on too: otherwise nobody starts a match a seat never comes to. A listen host (Host LAN, a browser that hosts) may start as it always could.

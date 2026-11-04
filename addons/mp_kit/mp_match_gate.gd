@@ -1,8 +1,9 @@
 class_name MpMatchGate
 extends Node
 
-## The door of a match: who may sit and when it starts. Before the start every free seat is open; the match starts (the tree unpauses)
-## once the seats it waits for have loaded their world, load_timeout_s after the first one sat (start_on_timeout), or when its host
+## The door of a match: who may sit and when it starts. Before the start every free seat is open, and the tree is paused (unless
+## pause_while_waiting is off: a lobby the players walk); the match starts (the tree unpauses) once the seats it waits for have
+## loaded their world, load_timeout_s after the first one sat (start_on_timeout), or when its host
 ## starts it (start_now). After the start only a seat that is away comes back, within rejoin_grace_s; anybody else is turned away
 ## with a reason, unless late_join keeps the seats nobody holds open (vacant_slots: a bot of yours may play them meanwhile).
 ## Not: who wins, what an abandon means (the game listens), the room's tokens (MpMatchAgent), the bots (your game).
@@ -53,7 +54,12 @@ var start_on_timeout := true
 ## The seat whose player may start the match with whoever loaded, from its own client (MpStartButton, start_now): the player who
 ## opened a match on its own PC (MpLocalServer: slot 1). 0 = none (a listen host starts its match through host_present).
 var starter_slot := 0
-## The clients pause their world too while the match waits (nobody walks ahead).
+## True (the default): the tree pauses while the match waits (nobody walks ahead): the server's, and the clients' with
+## pause_clients. False: nobody pauses: the players who loaded walk their pawns (predicted, as when it runs) while the match waits
+## for the rest, the way a lobby room is walked; the game holds its own systems (a day clock, threats, bots) until the start
+## (MpMatch.waiting / waiting_changed, all_loaded on the server). The wait itself, its counts and the start do not change.
+var pause_while_waiting := true
+## The clients pause their world too while the match waits (nobody walks ahead); only with pause_while_waiting.
 var pause_clients := true
 ## True (the default): a seat counts as loaded when its world is ready (MpKit's world_ready). False: when its world says so
 ## (MpKit.report_loaded, e.g. after a loading screen). MpFlow sets it from `world_reports_loaded`.
@@ -504,7 +510,7 @@ func _free_seat(slot: int) -> void:
 func _set_waiting(on: bool, force_send: bool = false) -> void:
 	var changed := on != _waiting
 	_waiting = on
-	if on and _hold and not _paused_by_me and is_inside_tree() and not get_tree().paused:
+	if on and _hold and pause_while_waiting and not _paused_by_me and is_inside_tree() and not get_tree().paused:
 		_paused_by_me = true
 		get_tree().paused = true
 	elif not on and _paused_by_me:
@@ -522,7 +528,7 @@ func _send_state_to(peer_id: int) -> void:
 	if peer_id <= 0 or not _is_networked_server() or not multiplayer.get_peers().has(peer_id):
 		return
 	var may_start := _starter_may_start(_slot_of_peer(peer_id))
-	rpc_state.rpc_id(peer_id, _waiting, _loaded_count(), _target(), pause_clients, may_start)
+	rpc_state.rpc_id(peer_id, _waiting, _loaded_count(), _target(), pause_clients and pause_while_waiting, may_start)
 
 
 @rpc("authority", "call_remote", "reliable")

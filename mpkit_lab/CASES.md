@@ -55,6 +55,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | `late_join`: a newcomer after the start still sits and plays | `arena.sh` latejoin **T** |
 | Network timeouts on the real clock: a server whose game clock races ahead (`--fixed-fps`) still admits a client 150 ms away | `arena.sh` fastclock **T** |
 | Loading screen (`--world-reports-loaded`): the dedicated, the client and solo hold until their world reports itself loaded, then play | `arena.sh` reports **T** |
+| A lobby you walk (`--pause-while-waiting=false`): while the match waits for two seats, the first moves its pawn predicted and the server sees it; the second comes in, it starts on `all_loaded` and they play; the control with the pause holds still | `arena.sh` lobbywalk **T** |
 | A dedicated by hand (`--dedicated`, default seats) serves one match after another: a fresh world after a finished match once everyone left, and after everyone dropped past the grace | `arena.sh` survive **T** |
 | The gate's rules (filling, full, `need`, grace, a live seat, ticket, `load_timeout`, `all_gone`, `reset`, `late_join`, a credential or ticket displacing a stale connection, the server's own world: `wait_host`, solo, its timeout) | `tests/test_match_gate.gd` |
 | `MpMatch.finish` reaches everyone and the room | `rooms.sh` public **T TLS** |
