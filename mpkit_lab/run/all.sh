@@ -30,6 +30,7 @@ if [ "$QUICK" = 1 ]; then
   step "arena enet" env SCENARIOS="dedicated lag" bash "$HERE/arena.sh"
   step "rooms enet" env SCENARIOS=public bash "$HERE/rooms.sh"
   step "private enet" bash "$HERE/private.sh"
+  step "finish" bash "$HERE/finish.sh"
   step "online" env ONLINE_WEB=0 bash "$HERE/online.sh"
   step "late join" bash "$HERE/late.sh"
   step "wizard 2d" bash "$HERE/wizard.sh"
@@ -39,11 +40,14 @@ else
     step "arena $t" env TRANSPORT=$t bash "$HERE/arena.sh"
     step "rooms $t" env TRANSPORT=$t bash "$HERE/rooms.sh"
     step "private $t" env TRANSPORT=$t bash "$HERE/private.sh"
+    step "finish $t" env TRANSPORT=$t MODE="quit leave again" bash "$HERE/finish.sh"
   done
   step "rooms wss" env TLS=1 SCENARIOS=public bash "$HERE/rooms.sh"
   step "relay faults" bash "$HERE/relayfault.sh"
   ## Rooms players host (the issuer + the relay); its browser part needs Chrome / Chromium, else it skips that part.
   step "online" env PROBE_LIMIT_S=500 bash "$HERE/online.sh"
+  ## The end of an online room's match: a finished one still up for a friend gives way to the host's next room.
+  step "finish online" env MODE=online bash "$HERE/finish.sh"
   ## An online room started by its host, bots in its free seats, a late player taking one; without late join it closes.
   step "late join" bash "$HERE/late.sh"
   ## The web client opens in a headless Chrome / Chromium; without one it says SKIP (a person can run web.sh by hand).

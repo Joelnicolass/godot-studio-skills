@@ -4,7 +4,8 @@ extends Node
 ## Dedicated-match side of the launcher. Reads `--match-ticket-file`, names the seats of the token hashes (seat_of) and arms the
 ## match's start gate with them (MpKit.gate: the wait for every seat, the rejoin grace, how it starts, late join), writes
 ## state.json as a heartbeat (with whether the match started and the seats nobody may take any more), writes result.json when
-## the match ends, and quits when nobody is left or the room server (`--room-pid`) is gone.
+## the match ends, and quits when nobody is left or the room server (`--room-pid`) is gone. After the result it quits
+## result_quit_delay_s later or, with stay_after_finish_s, once its players left (they read the game's end screen).
 ## The glue starts the dedicated host (MpKit.host_dedicated) and calls `report_result()`. Not: the grace or the wait (the gate).
 ## The agent never sees the plain token: it compares sha256(presented) with the ticket.
 ## Rows of the ticket without `token_sha256` (bot seats) are ignored: they are never admitted.
@@ -33,6 +34,9 @@ var _empty_since_ms: int = 0
 var _ever_joined: bool = false
 ## slot -> {sha, meta, used: bool, peer: int}
 var _seats: Dictionary = {}
+## After the result, while the match stays up for its players (stay_after_finish_s): since when.
+var _staying: bool = false
+var _finished_ms: int = 0
 
 
 func _enter_tree() -> void:
@@ -93,7 +97,8 @@ func connected_slots() -> Array[int]:
 	return out
 
 
-## Writes result.json, tells the clients and quits after `result_quit_delay_s`. Only the first call counts.
+## Writes result.json, tells the clients and quits after `result_quit_delay_s`, or with `stay_after_finish_s` once its players
+## left (never before result_quit_delay_s, never after stay_after_finish_s). Only the first call counts.
 func report_result(data: Dictionary) -> void:
 	if finished:
 		return
@@ -107,8 +112,13 @@ func report_result(data: Dictionary) -> void:
 	_write_state()
 	MpKit.broadcast_session_ended(out)
 	result_reported.emit(out)
-	var delay := config.result_quit_delay_s if out["reason"] != "room_gone" and out["reason"] != PORT_IN_USE else 0.0
-	if delay <= 0.0:
+	var at_once: bool = out["reason"] == "room_gone" or out["reason"] == PORT_IN_USE
+	var delay := 0.0 if at_once else config.result_quit_delay_s
+	if not at_once and config.stay_after_finish_s > 0.0:
+		## It stays while its players read the result: _process quits once they left.
+		_staying = true
+		_finished_ms = MpMatchFiles.now_ms()
+	elif delay <= 0.0:
 		get_tree().quit()
 	else:
 		## Real time: the result must reach the room server and the players before the process goes.
@@ -131,7 +141,7 @@ func arm_gate() -> void:
 	gate.host_present = false
 	## state.json follows the start and the seats that close, free or are held (an issuer room lists only what may still be
 	## taken, and gives a held seat to its own player only).
-	for changed: Signal in [gate.started, gate.seat_abandoned, gate.joined_late, gate.seat_admitted]:
+	for changed: Signal in [gate.started, gate.seat_abandoned, gate.joined_late, gate.seat_admitted, gate.seat_closed]:
 		if not changed.is_connected(_on_gate_changed):
 			changed.connect(_on_gate_changed)
 	var slots: Array[int] = []
@@ -141,7 +151,10 @@ func arm_gate() -> void:
 
 
 func _process(delta: float) -> void:
-	if ticket.is_empty() or finished:
+	if ticket.is_empty():
+		return
+	if finished:
+		_stay_after_finish(delta)
 		return
 	arm_gate()
 	## Through the relay this port's room has another live host: say so, the launcher tries another port.
@@ -159,6 +172,27 @@ func _process(delta: float) -> void:
 			report_result({"reason": "room_gone"})
 			return
 	_check_idle()
+
+
+## A finished match that stays (stay_after_finish_s): the heartbeat goes on, and it quits once nobody is in (after
+## result_quit_delay_s, so the result reached everybody), once stay_after_finish_s passed, or when the room server is gone.
+func _stay_after_finish(delta: float) -> void:
+	if not _staying:
+		return
+	_hb_accum += delta
+	if _hb_accum >= config.heartbeat_s:
+		_hb_accum = 0.0
+		_write_state()
+	var room_gone := false
+	_parent_accum += delta
+	if _parent_accum >= config.parent_check_s:
+		_parent_accum = 0.0
+		room_gone = _room_pid > 0 and not MpProcessRunner.pid_alive(_room_pid)
+	var since_s := float(MpMatchFiles.now_ms() - _finished_ms) / 1000.0
+	var nobody := since_s >= config.result_quit_delay_s and connected_slots().is_empty()
+	if room_gone or nobody or since_s >= maxf(config.stay_after_finish_s, config.result_quit_delay_s):
+		_staying = false
+		get_tree().quit()
 
 
 func _check_idle() -> void:
