@@ -56,10 +56,13 @@ static func running(tree: SceneTree) -> MpOnline:
 
 
 ## Creates the node under the root and opens a room for `players` players (this one counts). One already running is
-## given back as it is.
+## given back as it is; one whose match finished (still up for its players) closes, and a new room opens.
 static func start_on(tree: SceneTree, players: int, room_name: String, listed: bool = true, match_ticket: Dictionary = {}) -> MpOnline:
 	var already := MpOnline.running(tree)
-	if already:
+	if already and already.is_finished():
+		already.remove_from_group(GROUP)
+		already._close()
+	elif already:
 		return already
 	var online := MpOnline.new()
 	online.name = "MpOnline"
@@ -86,9 +89,16 @@ func is_ready() -> bool:
 	return _ready_sent
 
 
-## For MpInviteLabel: the code friends type.
+## For MpInviteLabel: the code friends type. Empty once the match finished.
 func invite_text() -> String:
-	return code
+	return "" if is_finished() else code
+
+
+## True once the match of a desktop host's room reported a result (MpMatch.finish): the issuer hands out no more seats of it.
+## The room closes when its match process is gone (it may stay up a while for its players: MpFlow.stay_after_finish_s), or
+## when this player opens a new one.
+func is_finished() -> bool:
+	return mode == DEDICATED and _local != null and is_instance_valid(_local) and _local.is_finished()
 
 
 func start(players: int, room_name: String, listed: bool = true, match_ticket: Dictionary = {}) -> void:
@@ -222,6 +232,12 @@ func _beat() -> void:
 				held.append(str(_local.codes[slot]))
 		players = maxi(players, 1)
 		started = _local.is_started()
+		## A finished match may stay up a while for its players: nobody gets a seat of it.
+		if _local.is_finished():
+			started = true
+			for slot in _local.codes.keys():
+				if not taken.has(str(_local.codes[slot])):
+					taken.append(str(_local.codes[slot]))
 	elif mode == LISTEN:
 		players = 1 + maxi(multiplayer.get_peers().size(), MpKit.gate.held_slots().size())
 		started = MpKit.gate.phase == MpMatchGate.Phase.RUNNING

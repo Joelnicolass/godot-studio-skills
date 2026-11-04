@@ -6,7 +6,9 @@ extends Node
 ## code. Friends join with "address:port#CODE" in the menu's address field; a third player without a code is turned
 ## away. The match starts, takes late players and may be started by the host (slot 1, MpStartButton) as the game's MpFlow
 ## says (start_on_timeout, late_join, host_can_start). Lives under the root (survives scene changes) and frees itself when the match ends or `stop()` is called.
-## One per process: start_on() while one runs gives that one back (a second click never breaks the first match).
+## With the flow's stay_after_finish_s a finished match stays up while its players read the result (is_finished()).
+## One per process: start_on() while one runs gives that one back (a second click never breaks the first match); a finished
+## one still up gives way to the new match.
 ## `invites()` / `invite_text()` say what friends type; an MpInviteLabel in the HUD shows it during the match.
 ##   var server := MpLocalServer.start_on(get_tree(), 2)
 ##   server.server_ready.connect(func(address, port, codes): show(codes))
@@ -40,16 +42,16 @@ var _stopping: bool = false
 var online_code: String = ""
 
 
-## The private server this process runs, or null.
+## The private server this process runs, or null. Not one whose match finished (it may still be up for its players).
 static func running(tree: SceneTree) -> MpLocalServer:
 	for node in tree.get_nodes_in_group(GROUP):
-		if not node.is_queued_for_deletion():
+		if not node.is_queued_for_deletion() and not (node as MpLocalServer).is_finished():
 			return node as MpLocalServer
 	return null
 
 
 ## Creates the node under the root and starts a match with `seats` seats (slot 1 is this player). One already
-## running is returned as it is (nothing new starts).
+## running is returned as it is (nothing new starts); one whose match finished is stopped first (start()).
 static func start_on(tree: SceneTree, seats: int = 2, options: Dictionary = {}, join_host: bool = true, online: Dictionary = {}, ticket: Dictionary = {}) -> MpLocalServer:
 	var already := MpLocalServer.running(tree)
 	if already:
@@ -70,11 +72,17 @@ func is_ready() -> bool:
 	return port > 0
 
 
+## True once its match reported a result (MpMatch.finish). With the flow's stay_after_finish_s the match process stays up a
+## while for its players; nobody may join it any more.
+func is_finished() -> bool:
+	return _launcher != null and not _match_id.is_empty() and _launcher.is_finished(_match_id)
+
+
 ## What friends type to join, one per free seat: "192.168.1.5:7801#K7P2QX" (":7801#K7P2QX" through the relay);
-## online, the room's code.
+## online, the room's code. Empty once the match finished.
 func invites() -> PackedStringArray:
 	var out := PackedStringArray()
-	if not is_ready():
+	if not is_ready() or is_finished():
 		return out
 	if not online_code.is_empty():
 		out.append(online_code)
@@ -97,6 +105,10 @@ func invite_text() -> String:
 func start(seats: int = 2, options: Dictionary = {}, join_host: bool = true, online: Dictionary = {}, ticket: Dictionary = {}) -> Error:
 	_join_host = join_host
 	online_code = str(online.get("code", ""))
+	## One match process per game: a finished match still up for its players gives way.
+	for node in get_tree().get_nodes_in_group(GROUP):
+		if node != self and not node.is_queued_for_deletion() and (node as MpLocalServer).is_finished():
+			(node as MpLocalServer).stop()
 	_forget_dead_servers()
 	if config == null:
 		config = MpLobbyConfig.new()

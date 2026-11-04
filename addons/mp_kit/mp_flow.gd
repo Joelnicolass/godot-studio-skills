@@ -8,7 +8,8 @@ extends Node
 ## are open until the match starts (every seat loaded, load_timeout_s, or the host starts it); after it only a seat that left comes
 ## back (rejoin), unless late_join. A match on this player's PC (private or online: MpLocalServer) takes these knobs too. A dedicated by hand
 ## serves one match after another: when its match is over and the server is empty, it loads a fresh world and opens the
-## seats again. Knobs: the "Match start" group.
+## seats again. Knobs: the "Match start" and "Match end" groups. The server going away after a match ended (MpMatch.finish) is the normal
+## end (MpKit.server_closed): back to the lobby or the menu with no "lost" status.
 
 signal status_changed(text: String)
 signal world_loading
@@ -122,8 +123,17 @@ enum StartWhen {
 @export var pause_clients: bool = true
 ## Shown on a client the server turned away because the match already started.
 @export var match_started_status: String = "The match already started"
+## Shown on a client whose seat the game closed (close_seat: its pawn is out of the match) when it tries to come back.
+@export var seat_closed_status: String = "Your seat in this match is closed"
 ## Shown for any other reason (`%s` = the reason code).
 @export var rejected_status: String = "The server turned this player away (%s)"
+
+@export_group("Match end")
+## Seconds a finished match on this player's PC (private or online: MpLocalServer) stays up while its players are still in it:
+## they read your end screen and leave on a click (leave_match(), MpLeaveButton); it closes once the last one left. 0 (the
+## default): it closes MpLobbyConfig.result_quit_delay_s (3 s) after MpMatch.finish, and whoever is still in goes back to the
+## lobby or the menu. `--stay-after-finish-s=`. A room server's match: its MpLobbyConfig.
+@export var stay_after_finish_s: float = 0.0
 @export_group("")
 
 const PORT_MIN := 1
@@ -138,6 +148,8 @@ var _match_from_lobby: bool = false
 ## A dedicated by hand: it loads the world at once (not with its first client), and its match ended (MpMatch.finish).
 var _dedicated_at_once: bool = false
 var _open_match_over: bool = false
+## Client: the server ended this match (session_ended); a silent host after it is a match process that closed.
+var _match_over: bool = false
 var _tree: SceneTree
 ## Where this flow came from (its scene, or an autoload): two flows of different origins is a setup mistake.
 var _origin: String = ""
@@ -306,7 +318,8 @@ func _exit_tree() -> void:
 ## What the flow listens to on MpKit and its gate: [signal, handler].
 func _kit_links() -> Array:
 	return [[MpKit.load_world, goto_world], [MpKit.peer_joined, _on_peer_joined], [MpKit.join_failed, _on_join_failed],
-		[MpKit.server_lost, _on_server_lost], [MpKit.snapshot_received, _on_flow_snapshot], [MpKit.session_ended, _on_session_ended],
+		[MpKit.server_lost, _on_server_lost], [MpKit.server_closed, leave_match], [MpKit.snapshot_received, _on_flow_snapshot],
+		[MpKit.session_ended, _on_session_ended],
 		[MpKit.admission_rejected, _on_admission_rejected], [MpKit.peer_left, _on_peer_left],
 		[MpKit.session_ended_sent, _on_session_ended_sent], [MpKit.gate.all_gone, _on_all_gone],
 		[MpKit.host_silent, _on_host_silent], [MpKit.host_back, _on_host_back]]
@@ -479,6 +492,7 @@ func in_world() -> bool:
 
 func goto_world() -> void:
 	_in_world = true
+	_match_over = false
 	_adopt()
 	world_loading.emit()
 	_before_world_load()
@@ -563,6 +577,8 @@ func world_ids() -> PackedStringArray:
 func rejection_text(reason: String) -> String:
 	if reason == MpMatchGate.MATCH_STARTED:
 		return match_started_status
+	if reason == MpMatchGate.SEAT_CLOSED:
+		return seat_closed_status
 	return rejected_status % reason
 
 
@@ -625,6 +641,12 @@ func effective_start_on_timeout() -> bool:
 	return start_on_timeout
 
 
+## stay_after_finish_s, or `--stay-after-finish-s=`.
+func effective_stay_after_finish_s() -> float:
+	var raw := MpBoot.user_value("stay-after-finish-s", "")
+	return maxf(raw.to_float(), 0.0) if raw.is_valid_float() else stay_after_finish_s
+
+
 ## host_can_start, or `--host-can-start=true|false`.
 func effective_host_can_start() -> bool:
 	var raw := MpBoot.user_value("host-can-start", "").to_lower()
@@ -633,14 +655,15 @@ func effective_host_can_start() -> bool:
 	return host_can_start or raw in ["true", "1", "on", "yes"] or MpBoot.user_flag("host-can-start")
 
 
-## A match on this PC (MpLocalServer, private or online) starts, takes late players, may be started by its host (slot 1) and
-## pauses while it waits as this flow says. `config` is an MpLobbyConfig, untyped on purpose: this flow must not load the lobby
-## scripts.
+## A match on this PC (MpLocalServer, private or online) starts, takes late players, may be started by its host (slot 1),
+## pauses while it waits and stays after the result as this flow says. `config` is an MpLobbyConfig, untyped on purpose: this
+## flow must not load the lobby scripts.
 func fill_match_start(config: Resource) -> void:
 	config.set("start_on_timeout", effective_start_on_timeout())
 	config.set("late_join", effective_late_join())
 	config.set("pause_while_waiting", effective_pause_while_waiting())
 	config.set("starter_slot", 1 if effective_host_can_start() else 0)
+	config.set("stay_after_finish_s", effective_stay_after_finish_s())
 
 
 ## A dedicated by hand (no ticket): it serves one match after another, so there is a next one when a match ends.
@@ -723,12 +746,17 @@ func _on_join_failed() -> void:
 
 ## The host stopped sending: say so, and give up after host_silent_timeout_s unless it comes back.
 func _on_host_silent(_seconds: float) -> void:
-	_set_status(host_silent_status)
+	if not _match_over:
+		_set_status(host_silent_status)
 	var since := Time.get_ticks_msec()
 	MpKit.after_real(maxf(host_silent_timeout_s - MpKit.host_silent_after_s, 0.0), func() -> void:
 		if MpKit.is_host_silent() and MpKit.host_silent_since_ms() <= since:
 			MpKit.leave()
-			_on_server_lost())
+			## After the match ended a host that went quiet closed its match: the normal end (as MpKit.server_closed).
+			if _match_over:
+				leave_match()
+			else:
+				_on_server_lost())
 
 
 func _on_host_back() -> void:
@@ -746,6 +774,7 @@ func _on_server_lost() -> void:
 
 func _on_session_ended(result: Dictionary) -> void:
 	match_running = false
+	_match_over = true
 	match_finished.emit(result)
 
 
@@ -769,9 +798,11 @@ func _back_to_lobby() -> bool:
 	return true
 
 
-## Called by MpMatch (or the game) once the result was shown: leave the match, back to the lobby or the boot.
+## Called by the game once the result was shown (MpLeaveButton): leave the match, back to the lobby or the boot. Also what a
+## client does when the server goes away after the match ended (MpKit.server_closed).
 func leave_match() -> void:
 	match_running = false
+	_match_over = false
 	if _back_to_lobby():
 		return
 	return_to_boot()
