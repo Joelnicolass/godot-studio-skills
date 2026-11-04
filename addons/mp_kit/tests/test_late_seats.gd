@@ -1,7 +1,7 @@
 extends "res://addons/mp_kit/tests/mp_test.gd"
 
 ## The pieces around a seat taken late or played by a bot, without the network: a room match's ticket still names its seats
-## once it expired (the gate decides, MpMatchAgent.seat_of), the match-start settings that travel to a match on the player's PC
+## once it expired (the gate decides, MpMatchAgent.seat_of), the match-start and match-end settings that travel to a match on the player's PC
 ## (MpFlow.fill_match_start, MpLobbyConfig's forwarded fields), and a bot's keys on the server (MpInput.bot_press), which a
 ## player who takes the seat replaces.
 
@@ -37,6 +37,19 @@ func test_the_flow_says_how_a_match_on_this_pc_starts() -> void:
 	flow.fill_match_start(config)
 	check(not config.pause_while_waiting and config.agent_fields.has("pause_while_waiting"), "pause_while_waiting off goes to the match's config, and travels as a flag")
 	check(MpLobbyConfig.flag_for("pause_while_waiting") == "--pause-while-waiting", "the flag the match process and its flow read")
+	flow.free()
+
+
+func test_the_flow_says_how_long_a_finished_match_stays() -> void:
+	var flow := MpFlow.new()
+	var config := MpLobbyConfig.new()
+	flow.fill_match_start(config)
+	check(config.stay_after_finish_s == 0.0, "by default a finished match on this PC closes result_quit_delay_s after the result, as before")
+	flow.stay_after_finish_s = 120.0
+	flow.fill_match_start(config)
+	check(config.stay_after_finish_s == 120.0 and config.agent_fields.has("stay_after_finish_s"),
+		"stay_after_finish_s goes to the match's config, and travels as a flag")
+	check(MpLobbyConfig.flag_for("stay_after_finish_s") == "--stay-after-finish-s", "the flag the match process and its flow read")
 	flow.free()
 
 

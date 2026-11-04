@@ -81,12 +81,17 @@ extends Resource
 @export var parent_check_s: float = 2.0
 ## Delay between result.json and quit, so the result reaches the clients.
 @export var result_quit_delay_s: float = 3.0
+## Seconds a finished match stays up while its players are still in it (they read the game's end screen and leave on a click);
+## it quits once the last one left, never before result_quit_delay_s. 0 (the default): it quits result_quit_delay_s after the
+## result, and whoever is still in goes back to the lobby or the menu. A match on a player's PC (MpLocalServer) takes it from the
+## game's MpFlow.
+@export var stay_after_finish_s: float = 0.0
 ## Root of the per-match folders.
 @export var matches_root: String = "user://mp_matches"
 ## Fields the launcher forwards to the dedicated as `--field-name=value`.
 @export var agent_fields: PackedStringArray = PackedStringArray([
 	"transport", "tls_certificate_path", "tls_key_path", "relay_url", "relay_room", "heartbeat_s", "idle_no_players_s", "rejoin_grace_s", "load_timeout_s", "parent_check_s", "result_quit_delay_s",
-	"start_on_timeout", "starter_slot", "late_join", "pause_while_waiting",
+	"start_on_timeout", "starter_slot", "late_join", "pause_while_waiting", "stay_after_finish_s",
 ])
 
 

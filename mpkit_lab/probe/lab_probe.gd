@@ -36,7 +36,12 @@ extends Node
 ## while the match waits for another seat: with the server's `--pause-while-waiting=false` its world runs and its pawn walks,
 ## predicted, before the start; it prints `LOBBY WAITED`, then plays once the match started; `--probe-expect-hold`: the control
 ## with the pause, the world holds) | lobbywatch (server: that pawn walks here while the match waits and nothing is paused, or,
-## `--probe-expect-hold`, the tree holds; then the match starts as always, every seat loaded). `--probe-no-quit`: a server
+## `--probe-expect-hold`, the tree holds; then the match starts as always, every seat loaded) | finish_host (a private match on
+## this PC, played to the win; `--probe-finish=quit|leave|again`: with stay_after_finish_s 0 it closes after the result; with
+## `--stay-after-finish-s=` it stays while the friend is in and closes once the friend left, or gives way when the host opens a
+## new one; online: the same through an issuer room, MpOnline) | finish_friend (joins it with the code and keeps its end
+## screen up like a game that waits for a click: the
+## match process closing is the normal end, never «server lost»). `--probe-no-quit`: a server
 ## role keeps its process running when it is done; `--probe-copy-file=F`: every PASS / FAIL line also goes to F (a match process
 ## whose folder is gone when the match ends). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
@@ -49,6 +54,7 @@ var _fails := 0
 ## What the network told this process (session cases read them).
 var _join_failed := false
 var _server_lost := false
+var _server_closed := false
 var _rejected := ""
 var _ever_slot := 0
 var _last_status := ""
@@ -61,6 +67,7 @@ func _ready() -> void:
 	step_timeout_s = float(MpBoot.user_value("probe-timeout-s", "20"))
 	MpKit.join_failed.connect(func() -> void: _join_failed = true)
 	MpKit.server_lost.connect(func() -> void: _server_lost = true)
+	MpKit.server_closed.connect(func() -> void: _server_closed = true)
 	MpKit.admission_rejected.connect(func(reason: String) -> void: _rejected = reason)
 	MpKit.slot_assigned.connect(func(slot: int) -> void: _ever_slot = slot)
 	## `--probe-report-after=S` (with `--world-reports-loaded`): every world reports itself loaded S seconds after it enters, like
@@ -177,6 +184,10 @@ func _run() -> void:
 			await _walk_while_waiting()
 		"lobbywatch":
 			await _watch_walk_while_waiting()
+		"finish_host":
+			await _finish_host()
+		"finish_friend":
+			await _finish_friend()
 		_:
 			_check(false, "known role %s" % _role)
 	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -1317,6 +1328,8 @@ func _join_private(right_code: bool) -> void:
 	await _until(_networked_slot, "the friend got in with the code (typed in lower case)")
 	await _pawn(2)
 	await _until(func() -> bool: return not finished.is_empty(), "the friend saw the match end")
+	await _until(func() -> bool: return not MpKit.is_networked(), "the friend left the finished match")
+	_check(not _server_lost, "the match process closing after the result is no «server lost»")
 
 
 ## Joining an address nobody serves fails cleanly: the failure is reported and the menu still plays solo.
@@ -1356,6 +1369,136 @@ func _watch_leave_and_return() -> void:
 	await _pawn(1)
 	await _until(func() -> bool: return _in_world("Actors/Pawn_1") == null, "the pawn of a player who left is removed")
 	await _pawn(1)
+
+
+## A private match on this PC, played to the win (the example leaves 2 s after the result). `--probe-finish=`: quit (the match
+## closes result_quit_delay_s after the result), leave (with `--stay-after-finish-s=` it is still up past that while the friend
+## reads its end screen, and closes once the friend left, long before stay_after_finish_s), again (the host opens a new private
+## match while the friend still reads: the finished one gives way), online (again, through an issuer room: MpOnline).
+func _finish_host() -> void:
+	var mode := MpBoot.user_value("probe-finish", "quit")
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	var online: MpOnline = null
+	var server: MpLocalServer = null
+	var f := FileAccess.open(MpBoot.user_value("probe-code-file", "user://probe_code.txt"), FileAccess.WRITE)
+	if mode == "online":
+		online = flow.host_online(2, "Finish room", false)
+		var codes: Array = []
+		online.room_ready.connect(func(c: String) -> void: codes.append(c))
+		if not await _until(func() -> bool: return not codes.is_empty(), "the online room is up"):
+			return
+		f.store_string(codes[0])
+		f.close()
+		await _until(func() -> bool: return MpKit.is_networked() and MpKit.has_local_slot(), "the host plays in its own room")
+		server = MpLocalServer.running(get_tree())
+	else:
+		server = MpLocalServer.start_on(get_tree(), 2)
+		var info: Array = []
+		server.server_ready.connect(func(_address: String, p_port: int, codes: Dictionary) -> void: info.append([p_port, codes[2]]))
+		if not await _until(func() -> bool: return not info.is_empty(), "the private match process listens"):
+			return
+		f.store_string("%d %s" % info[0])
+		f.close()
+		await _until(_networked_slot, "the host joined its own private match")
+	if await _pawn(2) == null:
+		return
+	var finished: Array = []
+	flow.match_finished.connect(func(_result: Dictionary) -> void: finished.append(Time.get_ticks_msec()))
+	for i in 3:
+		await _tap(&"ui_accept")
+		await get_tree().create_timer(0.2).timeout
+	if not await _until(func() -> bool: return not finished.is_empty(), "the host won: the match finished"):
+		return
+	var ended_ms: int = finished[0]
+	if mode == "quit":
+		await _until(func() -> bool: return not MpKit.is_networked(), "the host left the finished match")
+		_check(not _server_lost, "the end is no «server lost» for the host")
+		await _until(func() -> bool: return get_tree().root.get_node_or_null("MpLocalServer") == null, "the private server cleaned up")
+		return
+	await get_tree().create_timer(1.5).timeout
+	_check(MpKit.is_networked(), "1.5 s after the result (result_quit_delay_s is 1) the match is still up for its players")
+	await _until(func() -> bool: return not MpKit.is_networked(), "the host left on its own (the example's 2 s)")
+	_check(not _server_lost and not _server_closed, "the host left by itself: no «server lost», no closed server")
+	_check(is_instance_valid(server) and not server.is_queued_for_deletion() and server.is_finished(),
+		"its private server is still up (the friend reads the end screen) and says its match finished")
+	_check(MpLocalServer.running(get_tree()) == null, "a finished private server is not a running one")
+	_check(server.invites().is_empty(), "nobody is invited to a finished match")
+	## By id: the server frees itself once its match process is gone.
+	var server_id := server.get_instance_id()
+	var server_gone := func() -> bool:
+		var node := instance_from_id(server_id)
+		return node == null or node.is_queued_for_deletion()
+	if mode == "leave":
+		await _until(server_gone, "the match process closed once the friend left")
+		var after_s := float(Time.get_ticks_msec() - ended_ms) / 1000.0
+		print("METRIC closed_after_result_s=%.1f" % after_s)
+		_check(after_s < 15.0, "it closed when the last player left (%.1f s after the result), not at stay_after_finish_s (30 s)" % after_s)
+		return
+	if mode == "online":
+		_check(online.is_finished() and online.invite_text().is_empty(), "its online room says its match finished and invites nobody")
+		_check(MpOnline.running(get_tree()) == online, "it is still this player's room until its match process is gone")
+		var online_id := online.get_instance_id()
+		var next := flow.host_online(2, "Finish room 2", false)
+		_check(next != online, "a new room while the finished one is still up: a new room")
+		await _until(func() -> bool:
+			var node := instance_from_id(online_id)
+			return node == null or node.is_queued_for_deletion(), "the finished room closed")
+		await _until(server_gone, "its match process gave way")
+		await _until(func() -> bool: return next.is_ready(), "the new room is up")
+		_check(MpOnline.running(get_tree()) == next, "the new room is the running one")
+		next.stop()
+		await _until(func() -> bool: return MpOnline.running(get_tree()) == null and get_tree().get_nodes_in_group(MpLocalServer.GROUP).is_empty(),
+			"no room and no private server left")
+		return
+	var again := MpLocalServer.start_on(get_tree(), 2, {}, false)
+	_check(again != server, "a new private match while the finished one is still up: a new server")
+	await _until(server_gone, "the finished one gave way")
+	await _until(func() -> bool: return again.is_ready(), "the new private match listens")
+	_check(MpLocalServer.running(get_tree()) == again, "the new one is the running one")
+	again.stop()
+	await _until(func() -> bool: return get_tree().get_nodes_in_group(MpLocalServer.GROUP).is_empty(), "no private server left")
+
+
+## A friend in that match who keeps its end screen up like a game that waits for a click (the example's own leave after the
+## result is taken away). leave: still in 4 s after the result, then it leaves on its click; quit / again: it stays until the
+## match process closes, which is the normal end (server_closed or a quiet host), never «server lost», back on the menu.
+func _finish_friend() -> void:
+	var mode := MpBoot.user_value("probe-finish", "quit")
+	var path := MpBoot.user_value("probe-code-file", "user://probe_code.txt")
+	if not await _until(func() -> bool: return FileAccess.file_exists(path), "the host published its code"):
+		return
+	var parts := FileAccess.get_file_as_string(path).strip_edges().split(" ")
+	await _until(func() -> bool: return MpFlow.find_in_tree(self) != null, "the boot scene has a flow")
+	var flow := MpFlow.find_in_tree(self)
+	flow.status_changed.connect(func(text: String) -> void: _last_status = text)
+	var finished: Array = []
+	flow.match_finished.connect(func(_result: Dictionary) -> void: finished.append(Time.get_ticks_msec()))
+	if mode == "online":
+		_check(await flow.join_online(parts[0]) == OK, "join_online(%s) connects" % parts[0])
+	else:
+		flow.join_address("127.0.0.1:%s#%s" % [parts[0], parts[1]])
+	await _until(_networked_slot, "the friend got in with the code")
+	if await _pawn(2) == null:
+		return
+	var scene := get_tree().current_scene
+	var match_node: MpMatch = scene.get_node("Match")
+	for link in match_node.finished.get_connections():
+		if (link["callable"] as Callable).get_object() == scene:
+			match_node.finished.disconnect(link["callable"])
+	if not await _until(func() -> bool: return not finished.is_empty(), "the friend saw the match end"):
+		return
+	var ended_ms: int = finished[0]
+	if mode == "leave":
+		await get_tree().create_timer(4.0).timeout
+		_check(MpKit.is_networked() and not _server_closed and not _server_lost, "4 s after the result its end screen is still in the match")
+		flow.leave_match()
+	else:
+		await _until(func() -> bool: return not MpKit.is_networked(), "the match process closed under the end screen")
+		print("METRIC closed_after_result_s=%.1f" % (float(Time.get_ticks_msec() - ended_ms) / 1000.0))
+		_check(not _server_lost, "that is the normal end: no «server lost» (%s)" % ("server_closed" if _server_closed else "a quiet host"))
+	await _until(func() -> bool: return get_tree().current_scene != null and get_tree().current_scene.name == "Boot", "back on the menu")
+	_check(_last_status != flow.server_lost_status and _last_status != flow.host_silent_status, "the menu says nothing was lost (%s)" % _last_status)
 
 
 ## The server goes away: the client is told and lands on the menu.
