@@ -64,6 +64,9 @@ extends Resource
 ## The game hears MpKit.gate.joined_late (a bot of yours there hands it over). A match on a player's PC (MpLocalServer) takes it
 ## from the game's MpFlow.
 @export var late_join: bool = false
+## Off: nobody's world pauses while the match waits for its seats, and the players who loaded walk (a lobby room); the game holds
+## its own systems until the start (MpMatch.waiting). A match on a player's PC (MpLocalServer) takes it from the game's MpFlow.
+@export var pause_while_waiting: bool = true
 @export var heartbeat_s: float = 2.0
 @export var heartbeat_stale_s: float = 10.0
 @export var idle_no_players_s: float = 60.0
@@ -83,7 +86,7 @@ extends Resource
 ## Fields the launcher forwards to the dedicated as `--field-name=value`.
 @export var agent_fields: PackedStringArray = PackedStringArray([
 	"transport", "tls_certificate_path", "tls_key_path", "relay_url", "relay_room", "heartbeat_s", "idle_no_players_s", "rejoin_grace_s", "load_timeout_s", "parent_check_s", "result_quit_delay_s",
-	"start_on_timeout", "starter_slot", "late_join",
+	"start_on_timeout", "starter_slot", "late_join", "pause_while_waiting",
 ])
 
 

@@ -2,6 +2,15 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.21.0
+
+- **Un lobby que se camina.** Nuevo knob `pause_while_waiting` en el `MpFlow` (grupo **Match start**, `--pause-while-waiting=false`), prendido por defecto. Apagado, nadie se pausa mientras la partida espera a sus asientos: los jugadores que ya cargaron mueven su peón, con predicción, igual que después del arranque, mientras llegan los demás. La puerta no cambia: cuenta las cargas (también con `world_reports_loaded`), arranca por `all_loaded`, Start now o `load_timeout_s`, y el que llega durante la espera se sienta y camina. Lo pidió El Eternauta: su refugio, con un mapa en un atril, se camina mientras llegan los demás.
+- **Lo que le toca al juego:** frenar sus propios sistemas (el reloj del día, las amenazas, los bots) hasta el arranque, con `MpMatch.waiting`, `waiting_changed` (todos los peers) y `all_loaded` (servidor). Explicado en [GUIDE 7.5](GUIDE.md#75-inicio-y-fin-mpmatch), «Un lobby que se camina».
+- **Viaja a cada partida:** una partida en la PC del host (privada u online) lo toma del `MpFlow` del juego; la de un servidor de salas, de su `MpLobbyConfig` (`pause_while_waiting`, en `agent_fields`). `MpMatchGate.pause_while_waiting`; `pause_clients` solo cuenta con la pausa prendida.
+- **Tests:** 136 del kit (la puerta sin pausa: espera, arranca por carga, por el host y por tiempo, solo; un cliente se pausa solo si el servidor lo pide; el knob viaja a la partida). `mpkit_lab/run/arena.sh lobbywalk`: un dedicado que espera dos asientos sin pausa, el primero camina con predicción mientras espera, el segundo entra y arranca; y el control con la pausa. Pasa por ENet, WebSocket y el relay.
+
+Qué actualizar: nada. Para un lobby que se camina, apagá `pause_while_waiting` y frená lo que es de la partida hasta `MpMatch.all_loaded`.
+
 ## 0.20.1
 
 - **El host arranca su partida solo si el juego lo pide.** Nuevo knob `host_can_start` en el `MpFlow` (grupo **Match start**, `--host-can-start=true`), apagado por defecto. Prendido, el que abrió una partida en su PC (privada u online, el slot 1) ve **Start now** y la arranca con los que ya cargaron. En 0.19.0 y 0.20.0 eso estaba siempre prendido; ahora, por defecto, una partida en la PC del host arranca como en 0.18: cuando cargaron todos o pasó el tiempo de carga. Con `start_on_timeout` apagado prendé también `host_can_start`: si no, nadie arranca una partida a la que un asiento nunca llega. El listen host (Host LAN, un navegador que hospeda) puede arrancar como siempre.
