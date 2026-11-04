@@ -362,9 +362,9 @@ func _rejoin(slot: int) -> void:
 	var host_pawn := _in_world("Actors/Pawn_1") if slot != 1 else null
 	if host_pawn == null:
 		return
-	## Bypass the client-side guard: send the RPC by hand for an actor this peer does not own.
+	## Bypass the client-side guard: send the routed call by hand for an actor this peer does not own.
 	var color: int = host_pawn.color_index
-	MpActor.of(host_pawn).rpc_server_call.rpc_id(1, &"recolor", [])
+	MpKit.rpc_actor_call.rpc_id(1, MpKit.route_key(MpActor.of(host_pawn)), &"recolor", [], 0.0)
 	await get_tree().create_timer(1.0).timeout
 	_check(host_pawn.color_index == color, "the server refused a to_server call from a peer that does not own the actor")
 

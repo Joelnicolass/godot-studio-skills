@@ -72,8 +72,9 @@ ENet's own peer cap is `max_players + max_pending_admission` (at most `MpKit.ENE
 
 ## Kit RPCs (closed list)
 
-Client → server: `rpc_world_ready`, `rpc_custom_to_server`  
-Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`  
+Client → server: `rpc_world_ready`, `rpc_custom_to_server`, `rpc_input_frames(key, packet)` (an `MpInput`'s frames), `rpc_actor_call(key, action, args, view)` (`MpActor.to_server`)  
+Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`, `rpc_input_slack(key, slack)` (an `MpInput`'s pacing)  
+`key` = `MpKit.route_key(node)` (the node's path, the same on every peer): what arrives for a node that is gone (it died) or not there yet is dropped with no error.  
 `MpRoomDirectory`: `rpc_assign_room` (authority → that peer; `room_id` travels as `String`)
 
 Pawn input and custom-dict meaning **outside** the kit.
