@@ -2,6 +2,13 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.22.1
+
+- **A pawn your game frees is forgotten.** Until now, after `MpActor.despawn()` (it died) the `MpSlotSpawner` kept the freed pawn. `pawn_for(slot)` and `spawn_slot(slot)` failed on the server (`Trying to return a previously freed instance`), and so did that player leaving (`despawn_on_leave`). Now `pawn_for` gives `null`, `spawn_slot` makes a new one and a player who leaves leaves nothing to free. A pawn that comes back in the same frame it died enters as soon as the old one is out (from the next frame) and keeps the name `Pawn_<slot>` on every peer; before, it came out `Pawn_3`. Found by El Eternauta: its dead player keeps watching and then leaves.
+- **Tests:** 148 of the kit (4 new in `test_slot_spawner.gd`; the 3 that touch the freed pawn fail with the 0.22.0 spawner). `mpkit_lab/run/arena.sh respawn`: a dedicated removes P1's pawn and makes it again in the same frame; the client sees the new `Pawn_1` and moves it; then it dies for good, the seat closes and the player leaves, with no errors. It passes over ENet, WebSocket and the relay; `dedicated`, `keeppawn`, `latejoin` and `late.sh` are still green.
+
+What to update: nothing. `MpKit.VERSION` goes to 0.22.1, so the server and the clients must run the same build.
+
 ## 0.22.0
 
 - **A seat that closes.** `Mp.gate().close_seat(slot)` (server): nobody sits in that seat again this match. Not a newcomer (`late_join`), not a bot of yours (`vacant_slots()` no longer gives it), not its own player once it left: it is turned away with `seat_closed`, and the flow shows it with `seat_closed_status`. Call it when the seat's pawn is out of the match for good (it died, it escaped) and your game removed it. Its player, while still connected, stays: your game decides what it sees (a spectator camera, its end screen). When it leaves, the seat is abandoned at once (`player_abandoned`, reason `seat_closed`): there is no grace to wait for. Before the start, the match stops waiting for it. An online or private room stops handing it out (`closed_slots()`), and `held_slots()` no longer counts it. New signal `seat_closed(slot)`. Asked for by El Eternauta: a player who died or escaped does not come back into a seat with no pawn.

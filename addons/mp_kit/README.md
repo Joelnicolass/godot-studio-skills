@@ -555,7 +555,7 @@ Low-level pieces:
 | `mp_world_ref.gd` | one world in the catalog |
 | `mp_replicate.gd` | authority + sync + freeze + proxy lerp |
 | `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready`; `spawn_actor(scene, props, owner_slot)`, `spawn_here(data)` (spawn on the server or solo, `null` on a client) |
-| `mp_slot_spawner.gd` | one packed pawn per occupied slot: on `client_world_ready`, and in `_ready` for peers already world-ready |
+| `mp_slot_spawner.gd` | one packed pawn per occupied slot: on `client_world_ready`, and in `_ready` for peers already world-ready. A pawn your game frees (`MpActor.despawn`) is forgotten: `pawn_for` gives `null` and `spawn_slot` makes another, `Pawn_<slot>` even in the frame the old one leaves |
 | `mp_boot_menu.gd` / `.tscn` | drop-in lobby |
 | `mp_custom_pipe.gd` | one tunnel channel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
