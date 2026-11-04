@@ -4,15 +4,17 @@ extends "res://addons/mp_kit/tests/mp_test.gd"
 ## within the grace or past it, a seat held by a live peer, identity (ticket) mode, the load timeout, all_gone and reset; the
 ## server's own world (wait_host): a host that loads late, a client that reports late, solo (no seats) and the host's timeout;
 ## and how a match starts and takes late players: a ticket's seat after the start (match_started, or late join), no start by
-## time, the starter seat, the vacant and closed seats.
+## time, the starter seat, the vacant and closed seats; and a match that waits without pausing (a lobby the players walk), on the
+## server and on a client.
 
 var _clock: Array[int] = [1000]
 var _events: Array[String] = []
 
 
-func _gate(seats: Array[int], need: int = 0, identity: Callable = Callable(), hold: bool = true, wait_host: bool = false) -> MpMatchGate:
+func _gate(seats: Array[int], need: int = 0, identity: Callable = Callable(), hold: bool = true, wait_host: bool = false, pause: bool = true) -> MpMatchGate:
 	var gate := MpMatchGate.new()
 	gate.wait_host = wait_host
+	gate.pause_while_waiting = pause
 	gate.name = "GateUnderTest"
 	tree.root.add_child(gate)
 	gate.now_ms = func() -> int: return _clock[0]
@@ -460,3 +462,62 @@ func test_held_seats_are_the_ones_a_player_has() -> void:
 	_advance_s(6.0, gate)
 	check(gate.held_slots() == [1], "past the grace: no longer held (free again, with late join)")
 	_done(gate)
+
+
+func test_without_pause_the_match_waits_and_the_tree_runs() -> void:
+	var gate := _gate([2, 3] as Array[int], 0, Callable(), true, false, false)
+	check(gate.phase == MpMatchGate.Phase.FILLING and gate.is_waiting(), "it waits for its seats, as with the pause")
+	check(not tree.paused, "but the tree runs: the players walk the lobby")
+	gate.admit(10, "")
+	gate.mark_loaded(2)
+	check(gate.phase == MpMatchGate.Phase.FILLING and gate.is_waiting() and not tree.paused, "one of two loaded: still waiting, still running")
+	gate.admit(11, "")
+	gate.mark_loaded(3)
+	check(gate.phase == MpMatchGate.Phase.RUNNING and not gate.is_waiting() and _events.back() == "started all_loaded",
+		"both loaded: it starts as always (%s)" % [_events])
+	check(not tree.paused, "and nothing was paused to unpause")
+	_done(gate)
+
+
+func test_without_pause_the_host_and_the_clock_still_start_it() -> void:
+	var by_host := MpMatchGate.new()
+	by_host.pause_while_waiting = false
+	by_host.host_present = true
+	tree.root.add_child(by_host)
+	by_host.arm([2, 3] as Array[int])
+	by_host.admit(10, "")
+	by_host.mark_loaded(2)
+	check(not tree.paused and by_host.start_now() and by_host.phase == MpMatchGate.Phase.RUNNING, "the host starts it (Start now)")
+	_done(by_host)
+	var by_time := _gate([2, 3] as Array[int], 0, Callable(), true, false, false)
+	by_time.admit(10, "")
+	by_time.mark_loaded(2)
+	_advance_s(11.0, by_time)
+	check(by_time.phase == MpMatchGate.Phase.RUNNING and _events.back() == "started load_timeout" and not tree.paused,
+		"past load_timeout_s it starts with whoever loaded")
+	_done(by_time)
+	var solo := _gate([], 0, Callable(), true, true, false)
+	check(solo.is_waiting() and not tree.paused, "solo waits for its world without pausing")
+	solo.mark_host_loaded()
+	check(solo.phase == MpMatchGate.Phase.RUNNING, "and runs once it loaded")
+	_done(solo)
+
+
+func test_a_client_pauses_only_when_the_server_asks() -> void:
+	var client := MpMatchGate.new()
+	tree.root.add_child(client)
+	var told: Array[bool] = []
+	client.waiting_changed.connect(func(waiting: bool, _loaded: int, _expected: int) -> void: told.append(waiting))
+	client.hold_local_world()
+	client.rpc_state(true, 1, 2, true, false)
+	check(client.is_waiting() and tree.paused, "the server pauses its clients while it waits: this one holds")
+	client.rpc_state(false, 2, 2, true, false)
+	check(not client.is_waiting() and not tree.paused, "the match started: it runs")
+	client.reset()
+	client.hold_local_world()
+	client.rpc_state(true, 1, 2, false, false)
+	check(client.is_waiting() and not tree.paused, "a server that does not pause while it waits: the client walks")
+	check(told == [true, false, true], "every state reaches waiting_changed, the game's cue (%s)" % [told])
+	client.reset()
+	client.free()
+

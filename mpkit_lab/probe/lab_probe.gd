@@ -32,7 +32,11 @@ extends Node
 ## vacant seat right with MpInput.bot_press; a player who takes one is heard, joined_late) | online_keep (opens a room and
 ## keeps it until `--probe-wait-file` exists) | online_hold (takes a seat, writes "slot ticket" to `--probe-seat-file` and
 ## stays until the script kills it) | online_peek (asks the issuer for a seat in that room: never the held one) |
-## online_back (the killed player's game again, same install: its own seat and ticket back). `--probe-no-quit`: a server
+## online_back (the killed player's game again, same install: its own seat and ticket back) | lobbywalk (a player who loaded
+## while the match waits for another seat: with the server's `--pause-while-waiting=false` its world runs and its pawn walks,
+## predicted, before the start; it prints `LOBBY WAITED`, then plays once the match started; `--probe-expect-hold`: the control
+## with the pause, the world holds) | lobbywatch (server: that pawn walks here while the match waits and nothing is paused, or,
+## `--probe-expect-hold`, the tree holds; then the match starts as always, every seat loaded). `--probe-no-quit`: a server
 ## role keeps its process running when it is done; `--probe-copy-file=F`: every PASS / FAIL line also goes to F (a match process
 ## whose folder is gone when the match ends). `--probe-linger-s=N` keeps a
 ## passing process alive N seconds. lag and observe print `METRIC name=value` lines.
@@ -169,6 +173,10 @@ func _run() -> void:
 			await _peek_online_seat()
 		"online_back":
 			await _back_to_online_seat()
+		"lobbywalk":
+			await _walk_while_waiting()
+		"lobbywatch":
+			await _watch_walk_while_waiting()
 		_:
 			_check(false, "known role %s" % _role)
 	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -224,6 +232,54 @@ func _play_basic(slot: int) -> void:
 		await _tap(&"ui_accept")
 		await _until(func() -> bool: return not finished.is_empty(), "the match finished (first to 3)")
 		await _until(func() -> bool: return not MpKit.is_networked(), "the player left after the result")
+
+
+## A player who loaded while the match waits for the rest: with the server's `--pause-while-waiting=false` its world runs and its
+## own pawn walks, predicted, before the start (a lobby room); `--probe-expect-hold`, the control: the world holds and the pawn
+## stays. Prints `LOBBY WAITED` (the runner then brings the second player in), and plays once the match started.
+func _walk_while_waiting() -> void:
+	await _until(_networked_slot, "the server gave this client a slot")
+	var slot := MpKit.local_slot()
+	var pawn := await _pawn(slot)
+	if pawn == null:
+		return
+	await _until(func() -> bool: return MpKit.gate.is_waiting(), "the match waits for the rest")
+	var start_x: float = pawn.position.x
+	Input.action_press(&"ui_right")
+	if MpBoot.user_flag("probe-expect-hold"):
+		await get_tree().create_timer(1.0).timeout
+		_check(get_tree().paused and MpKit.gate.is_waiting(), "the world holds while the match waits")
+		_check(absf(pawn.position.x - start_x) < 1.0, "P%d stays put while it waits" % slot)
+	else:
+		await _until(func() -> bool: return pawn.position.x > start_x + 60.0 and MpKit.gate.is_waiting(),
+			"P%d walks while the match waits (predicted, nothing paused)" % slot)
+		_check(not get_tree().paused, "nothing paused this world")
+	Input.action_release(&"ui_right")
+	print("LOBBY WAITED")
+	await _until(func() -> bool: return not MpKit.gate.is_waiting(), "the match started once the second player came in")
+	await _play_basic(slot)
+
+
+## Server, a match that waits for two seats: the first player's pawn walks here while it waits and nothing is paused, or,
+## `--probe-expect-hold`, the tree holds; then the match starts as always, once both seats loaded.
+func _watch_walk_while_waiting() -> void:
+	var started: Array[String] = []
+	MpKit.gate.started.connect(func(why: String) -> void: started.append(why))
+	await _until(func() -> bool: return MpKit.is_server() and MpKit.gate.is_waiting(), "the match waits for its seats")
+	if MpBoot.user_flag("probe-expect-hold"):
+		await _until(func() -> bool: return get_tree().paused, "the server's tree holds while the match waits")
+	else:
+		var slot := 2 if MpKit.is_listen_host() else 1
+		var pawn := await _pawn(slot)
+		if pawn == null:
+			return
+		var start_x: float = pawn.position.x
+		await _until(func() -> bool: return pawn.position.x > start_x + 30.0 and MpKit.gate.is_waiting(),
+			"P%d walked here while the match waited" % slot)
+		_check(not get_tree().paused, "nothing paused the server")
+	await _until(func() -> bool: return not started.is_empty(), "the match started")
+	_check(started == ["all_loaded"], "it started as always: every seat loaded (%s)" % [started])
+	_check(not get_tree().paused, "and it runs")
 
 
 ## The slot that rang the bell: the player, or 1 in solo / for the host (local_slot of the authority).

@@ -31,10 +31,13 @@
 #              after it enters; the gate holds until both did, then they play. Solo too: play_solo holds until the report.
 #   fastclock: a dedicated whose game clock runs far ahead of real time (`--fixed-fps 60` stops syncing to the clock) and a
 #              client 150 ms away: the admission timeout is real time, so the client still gets in and plays.
+#   lobbywalk: a dedicated that waits for two seats with `--pause-while-waiting=false` (a lobby room): the first player walks its
+#              pawn, predicted, while the match waits, and the server sees it; a second player comes in meanwhile, the match
+#              starts as always (every seat loaded) and both play. The control (pause on) holds both worlds while it waits.
 #   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
 #              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
 #              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports fastclock survive" (default all).
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports lobbywalk fastclock survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
@@ -43,7 +46,7 @@ LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports fastclock survive}"
+SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports lobbywalk fastclock survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -256,6 +259,37 @@ run_reports() { # --world-reports-loaded: the gate counts a world once it report
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL reports: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
+run_lobbywalk() { # --pause-while-waiting=false: the players walk while the match waits; the control (pause on) holds
+  local mode
+  for mode in walk hold; do
+    local dir="$OUT/lobby_$mode"
+    mkdir -p "$dir"
+    local common=(--transport="$TRANSPORT" --mp-port="$PORT")
+    local server_flags=(--dedicated --start-seats=2 --start-on-timeout=false)
+    local hold=()
+    if [ "$mode" = walk ]; then server_flags+=(--pause-while-waiting=false); else hold=(--probe-expect-hold); fi
+    gd "$dir/server.log" -- "${common[@]}" "${server_flags[@]}" --probe=lobbywatch "${hold[@]}" --probe-linger-s=3
+    local server=$LAST_PID
+    sleep 0.5
+    gd "$dir/first.log" -- "${common[@]}" --probe-join="127.0.0.1:$PORT" --probe=lobbywalk "${hold[@]}" --probe-timeout-s=30 --probe-linger-s=5
+    local first=$LAST_PID
+    wait_line "$dir/first.log" "^(LOBBY WAITED|PROBE lobbywalk (PASS|FAIL))" "$first" 60
+    gd "$dir/second.log" -- "${common[@]}" --probe-join="127.0.0.1:$PORT" --probe=basic --probe-timeout-s=30
+    wait_line "$dir/second.log" "^PROBE basic (PASS|FAIL)" "$LAST_PID" 60
+    wait_line "$dir/first.log" "^PROBE lobbywalk (PASS|FAIL)" "$first" 30
+    wait_line "$dir/server.log" "^PROBE lobbywatch (PASS|FAIL)" "$server" 15
+    for p in $first $server; do kill_tree "$p"; wait "$p" 2>/dev/null; done
+    echo "--- lobbywalk $mode ($TRANSPORT) ---"
+    for r in server first second; do
+      grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$dir/$r.log" | grep -E "FAIL|walk|hold|wait|start|runs|SCRIPT" | sed "s/^/$r: /" | head -n 10
+    done
+    verdict "$dir/server.log" lobbywatch "lobbywalk $mode: the server waited for both seats ($mode), then started as always"
+    verdict "$dir/first.log" lobbywalk "lobbywalk $mode: the first player $( [ "$mode" = walk ] && echo walked || echo held) while it waited, then played"
+    verdict "$dir/second.log" basic "lobbywalk $mode: a second player came in while it waited and played"
+    if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL lobbywalk $mode: script errors"; FAILS=$((FAILS + 1)); fi
+  done
+}
+
 run_fastclock() { # network timeouts run on the real clock: a server whose game time races ahead still admits a far client
   local dir="$OUT/fastclock"
   mkdir -p "$dir"
@@ -313,6 +347,7 @@ for s in $SCENARIOS; do
     flood) run_flood ;;
     latejoin) run_latejoin ;;
     reports) run_reports ;;
+    lobbywalk) run_lobbywalk ;;
     fastclock) run_fastclock ;;
     survive) run_survive ;;
   esac
