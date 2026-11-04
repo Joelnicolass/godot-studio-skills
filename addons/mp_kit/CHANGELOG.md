@@ -2,6 +2,13 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.22.1
+
+- **Un peón que tu juego libera se olvida.** Hasta acá, después de `MpActor.despawn()` (murió) el `MpSlotSpawner` guardaba el peón liberado. `pawn_for(slot)` y `spawn_slot(slot)` fallaban en el servidor (`Trying to return a previously freed instance`), y también cuando ese jugador se iba (`despawn_on_leave`). Ahora `pawn_for` da `null`, `spawn_slot` crea uno nuevo y el que se va no deja nada que liberar. Un peón que vuelve en el mismo frame en que murió entra apenas sale el viejo (desde el frame siguiente) y conserva el nombre `Pawn_<slot>` en todos los peers; antes salía `Pawn_3`. Lo encontró El Eternauta: su jugador muerto sigue mirando y después se va.
+- **Tests:** 148 del kit (4 nuevos en `test_slot_spawner.gd`; los 3 que tocan el peón liberado fallan con el spawner de 0.22.0). `mpkit_lab/run/arena.sh respawn`: un dedicado saca el peón de P1 y lo vuelve a crear en el mismo frame; el cliente ve el `Pawn_1` nuevo y lo mueve; después muere del todo, se cierra el asiento y el jugador se va, sin errores. Pasa por ENet, WebSocket y el relay; `dedicated`, `keeppawn`, `latejoin` y `late.sh` siguen en verde.
+
+Qué actualizar: nada. `MpKit.VERSION` pasa a 0.22.1, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.22.0
 
 - **Un asiento que se cierra.** `Mp.gate().close_seat(slot)` (servidor): nadie vuelve a sentarse en ese asiento en esta partida. Ni un recién llegado (`late_join`), ni un bot tuyo (`vacant_slots()` ya no lo da), ni su propio jugador cuando se fue: se lo rechaza con `seat_closed`, y el flow lo muestra con `seat_closed_status`. Llamalo cuando el peón de ese asiento quedó afuera de la partida para siempre (murió, escapó) y tu juego lo sacó. Su jugador, mientras siga conectado, se queda: tu juego decide qué ve (una cámara de espectador, su pantalla de fin). Cuando se va, el asiento abandona al instante (`player_abandoned`, motivo `seat_closed`): no hay gracia que esperar. Antes del arranque, la partida deja de esperarlo. Una sala online o privada deja de repartirlo (`closed_slots()`), y `held_slots()` ya no lo cuenta. Señal nueva `seat_closed(slot)`. Lo pidió El Eternauta: el que murió o escapó no vuelve a entrar a un asiento sin peón.

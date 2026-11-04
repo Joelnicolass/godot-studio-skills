@@ -37,7 +37,7 @@
 #   survive:   a dedicated started the way a VPS starts it (`--dedicated`, every seat by default) serves one match after
 #              another: a player wins (first to 3) and leaves, so the next match opens at once; a new player starts from a
 #              fresh world (score 0) and drops mid-match, so past the grace the next one opens; a third plays from zero too.
-# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports lobbywalk fastclock survive" (default all).
+# TRANSPORT=ws runs everything over WebSocket (TCP) instead of ENet (UDP). SCENARIOS="dedicated listen keeppawn lag lossy lagshot correct teleport respawn flood latejoin reports lobbywalk fastclock survive" (default all).
 # Prints PASS / FAIL lines and MPKIT ARENA PASS / MPKIT ARENA FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 3 "$@"
@@ -46,7 +46,7 @@ LIMIT_S="${PROBE_LIMIT_S:-300}"
 PROC_MAX=4
 TRANSPORT="${TRANSPORT:-enet}"
 PORT="${E2E_PORT:-7790}"
-SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lossy lagshot correct teleport flood latejoin reports lobbywalk fastclock survive}"
+SCENARIOS="${SCENARIOS:-dedicated listen keeppawn lag lossy lagshot correct teleport respawn flood latejoin reports lobbywalk fastclock survive}"
 SHOT_LAG_MS="${SHOT_LAG_MS:-100}"
 LAG_MS="${LAG_MS:-60}"
 JITTER_MS="${JITTER_MS:-30}"
@@ -201,6 +201,40 @@ run_teleport() { # dedicated that teleports a walking predicted player with only
   if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL teleport: script errors"; FAILS=$((FAILS + 1)); fi
 }
 
+run_respawn() { # dedicated: P1's pawn dies and is made again in the same frame (Pawn_1 again everywhere), then dies for good,
+  # its seat closes and its player leaves: no script errors, no packet for a node a peer lacks
+  local dir="$OUT/respawn"
+  mkdir -p "$dir"
+  local common=(--transport="$TRANSPORT" --mp-port="$PORT")
+  gd "$dir/server.log" -- --server "${common[@]}" --start-seats=1 --probe=respawner --probe-linger-s=3
+  local server=$LAST_PID
+  sleep 0.5
+  gd "$dir/client.log" -- --client1 "${common[@]}" --probe=respawned
+  local client=$LAST_PID
+  wait_line "$dir/client.log" "^PROBE respawned (PASS|FAIL)" "$client" 40
+  wait_line "$dir/server.log" "^PROBE respawner (PASS|FAIL)" "$server" 15
+  for p in $client $server; do kill_tree "$p"; done
+  echo "--- respawn ($TRANSPORT) ---"
+  for r in server client; do
+    grep -E "^(PASS|FAIL|SCRIPT ERROR)" "$dir/$r.log" | sed "s/^/$r: /" | head -n 12
+  done
+  verdict "$dir/server.log" respawner "respawn: a pawn made again in the frame it died is Pawn_1, and a closed seat's player leaves cleanly"
+  verdict "$dir/client.log" respawned "respawn: the client sees the new Pawn_1 and moves it"
+  if grep -qE "^SCRIPT ERROR" "$dir"/*.log; then echo "FAIL respawn: script errors"; FAILS=$((FAILS + 1)); fi
+  ## The new Pawn_1 keeps its name, so the client never gets a packet for a node it does not have.
+  if grep -qE "Node not found|Failed to get cached path" "$dir/client.log"; then
+    echo "FAIL respawn: the client got a packet for a node it does not have"; grep -hE "Node not found|cached path" "$dir/client.log" | sort | uniq -c | head -3
+    FAILS=$((FAILS + 1))
+  fi
+  ## Known, not a failure: the input frames the client sent before it heard its pawn died reach a server that no longer has it.
+  local late
+  late=$(grep -cE "Node not found: \"[^\"]*Pawn_1/MpInput\"" "$dir/server.log")
+  [ "$late" -gt 0 ] && echo "NOTE respawn: $late input frame(s) reached the server after the pawn died (the engine logs each one)"
+  if grep -E "Node not found|Failed to get cached path" "$dir/server.log" | grep -vqE "Pawn_1/MpInput|cached node from peer"; then
+    echo "FAIL respawn: the server got a packet for another node it does not have"; FAILS=$((FAILS + 1))
+  fi
+}
+
 run_flood() { # dedicated server + one client that floods the tunnel and to_server
   local dir="$OUT/flood"
   mkdir -p "$dir"
@@ -344,6 +378,7 @@ for s in $SCENARIOS; do
     lagshot) run_lagshot ;;
     correct) run_correct ;;
     teleport) run_teleport ;;
+    respawn) run_respawn ;;
     flood) run_flood ;;
     latejoin) run_latejoin ;;
     reports) run_reports ;;
