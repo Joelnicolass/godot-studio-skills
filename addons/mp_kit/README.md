@@ -557,7 +557,7 @@ Piezas de bajo nivel:
 | `mp_world_ref.gd` | un mundo del catálogo |
 | `mp_replicate.gd` | authority + freeze + lerp de proxy (el synchronizer vive en la escena) |
 | `mp_spawner.gd` | MultiplayerSpawner + hold por peer de su alcance + `room_id`; `spawn_actor(scene, props, owner_slot)`, `spawn_here(data)` (spawnea en el servidor o en solo, `null` en un cliente) |
-| `mp_slot_spawner.gd` | un pawn packed por slot ocupado: en `client_world_ready`, y en `_ready` para los peers que ya tenían el mundo listo |
+| `mp_slot_spawner.gd` | un pawn packed por slot ocupado: en `client_world_ready`, y en `_ready` para los peers que ya tenían el mundo listo. Un peón que tu juego libera (`MpActor.despawn`) se olvida: `pawn_for` da `null` y `spawn_slot` crea otro, `Pawn_<slot>` también en el frame en que se va el viejo |
 | `mp_boot_menu.gd` / `.tscn` | lobby drop-in |
 | `mp_custom_pipe.gd` | un canal del túnel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |

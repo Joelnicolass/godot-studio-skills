@@ -827,7 +827,7 @@ El kit no trae IA: dice qué asientos nadie ocupa y deja que un bot tuyo los jue
 | `Mp.gate().vacant_slots()` | Los asientos que nadie ocupa: nunca tomados, o abandonados. No incluye uno ausente dentro de la gracia (su jugador puede volver) |
 | `Mp.gate().started(why)` | Arrancó la partida: el momento de poner los bots |
 | `Mp.gate().joined_late(slot)` | Con `late_join`, un jugador tomó un asiento que nadie ocupaba: el bot de ahí lo suelta |
-| `MpSlotSpawner.spawn_slot(slot)` | El peón de ese slot, sin jugador. Cuando alguien entra al slot, el spawner le da ese mismo peón (no crea otro) |
+| `MpSlotSpawner.spawn_slot(slot)` | El peón de ese slot, sin jugador. Cuando alguien entra al slot, el spawner le da ese mismo peón (no crea otro). Si el que tenía se liberó (murió: `MpActor.despawn`), crea uno nuevo |
 | `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | Las teclas del bot: se leen igual que las de un jugador (`get_vector`, `is_action_just_pressed`, `mp_move`). Valen mientras nadie juega el asiento; cuando entra un jugador quedan sueltas y mandan las suyas |
 | `MpInput.has_player()` | Verdadero mientras un jugador juega ese asiento. Falso también mientras su jugador está ausente dentro de la gracia |
 
@@ -880,6 +880,8 @@ func _on_pawn_out(slot: int) -> void:
 	players.pawn_for(slot).queue_free()
 	Mp.gate().close_seat(slot)
 ```
+
+Si en vez de cerrar el asiento el peón tiene que volver (otra vida), no cierres nada: `players.spawn_slot(slot)` crea uno nuevo, también en el mismo frame en que murió (entra apenas sale el viejo, con el mismo nombre `Pawn_<slot>` en todos los peers). Mientras no tenga peón, `players.pawn_for(slot)` da `null`.
 
 | Después de `close_seat(slot)` | Pasa |
 |---|---|
@@ -2020,6 +2022,9 @@ La puerta ya arrancó la partida: después del arranque solo vuelve un asiento q
 
 **Al terminar la partida, el cliente vuelve al menú a los 3 s (antes decía «Lost the server»).**
 Una partida con ticket cierra su proceso `result_quit_delay_s` después de `MpMatch.finish`, y el cliente vuelve al lobby o al menú (`MpKit.server_closed`: el fin normal, sin aviso). Para que tu pantalla de fin espere el clic del jugador, poné `stay_after_finish_s` en el `MpFlow` (grupo **Match end**) y salí con `leave_match()` o un `MpLeaveButton` (7.5, «Una pantalla de fin que espera al jugador»).
+
+**Después de sacar el peón de un jugador conectado, el servidor dice unas veces `Node not found: ".../Pawn_N/MpInput"`.**
+Son las teclas que su cliente mandó antes de enterarse de que el peón ya no está: el motor avisa una vez por cada una. Duran lo que tarda en llegar el aviso (un viaje de ida y vuelta) y no rompen nada.
 
 **Se mueve, pero los otros jugadores tironean.**
 Usá `smoothing = BUFFERED` con `adaptive_buffer` prendido; si sigue, bajá `late_tolerance` (0.01) o subí el tope `buffer_delay_s` (0.15, 0.2). Si bajaste `send_hz`, subilo o dejalo en 0.
