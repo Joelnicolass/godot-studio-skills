@@ -2,6 +2,15 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.23.0
+
+- **Removing a connected player's pawn leaves no errors.** Until now, after `MpActor.despawn()` the server logged, per pawn, `Node not found: ".../Pawn_N/MpInput"`, `Failed to get cached node` and `Invalid packet received`. Those were the keys the client sent before it heard the pawn was gone. A host run with `--fail-on-error` (a CI, a test harness) stopped there, and the editor's debugger showed them in red each time a player died. Now `MpInput`'s input frames and `MpActor.to_server` calls travel through `MpKit`, which is always there, with a key per node (`MpKit.route_key`: its path, the same on every peer). What arrives for a node that is gone (it died) or not there yet is dropped without a word. Asked for by El Eternauta: its RFC-020A playtest runs with `--fail-on-error`.
+- **Nothing changes for your game:** `to_server`, `MpInput` and how you read it stay the same, and so do who may call (`callers`), the size cap and the call limit.
+- **Protocol change:** the internal RPCs `MpInput.rpc_frames` / `rpc_slack` and `MpActor.rpc_server_call` / `rpc_server_call_seen` become `MpKit.rpc_input_frames`, `rpc_input_slack` and `rpc_actor_call`. A 0.22 build and a 0.23 build do not understand each other.
+- **Tests:** 151 of the kit (`test_routes.gd`: each `MpInput` and `MpActor` takes its key as it enters and gives it back as it leaves; a frame, a call or a pacing word for a pawn that is gone is dropped with no error; a pawn made again with the same name takes the same key). `mpkit_lab/run/arena.sh respawn` now removes the pawn while its player presses keys and demands zero `Node not found` on the server and the client. All of `arena.sh` passes over ENet, and `dedicated`, `respawn`, `lag` and `flood` over WebSocket and the relay; so do `rooms.sh` (public, rejoin, abandon), `private.sh`, `finish.sh`, `online.sh`, `late.sh` and `session.sh`.
+
+What to update: `MpKit.VERSION` goes to 0.23.0, so the server and the clients must run the same build. If your game called `rpc_server_call` or `rpc_frames` by hand (they were not documented), use `to_server` and `MpInput`.
+
 ## 0.22.1
 
 - **A pawn your game frees is forgotten.** Until now, after `MpActor.despawn()` (it died) the `MpSlotSpawner` kept the freed pawn. `pawn_for(slot)` and `spawn_slot(slot)` failed on the server (`Trying to return a previously freed instance`), and so did that player leaving (`despawn_on_leave`). Now `pawn_for` gives `null`, `spawn_slot` makes a new one and a player who leaves leaves nothing to free. A pawn that comes back in the same frame it died enters as soon as the old one is out (from the next frame) and keeps the name `Pawn_<slot>` on every peer; before, it came out `Pawn_3`. Found by El Eternauta: its dead player keeps watching and then leaves.

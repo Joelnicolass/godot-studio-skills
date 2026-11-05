@@ -570,6 +570,7 @@ func mp_sv_recolor() -> void:
 
 - `net.to_server(&"name", arg1, arg2...)` runs `mp_sv_name(arg1, arg2...)` on the server.
 - Solo and on the server it runs at once.
+- It travels through `MpKit`: if it arrives once the actor is gone on the server (it died), it is dropped with no error.
 - Only a method starting with `mp_sv_` that takes that many arguments can be called.
 - Who may ask is decided by **MpActor › Owner › callers**: with `OWNER` (default), only the owner; with `ANYONE`, any seated player.
 - Inside `mp_sv_*`, `net.sender_slot()` says who asked (0 = the server itself; outside an `mp_sv_*` it gives -1).
@@ -2018,9 +2019,6 @@ The gate already started the match: after the start only a seat that left comes 
 
 **When the match ends, the client goes back to the menu after 3 s (it used to say "Lost the server").**
 A ticketed match closes its process `result_quit_delay_s` after `MpMatch.finish`, and the client goes back to the lobby or the menu (`MpKit.server_closed`: the normal end, no status). For your end screen to wait for the player's click, set `stay_after_finish_s` on the `MpFlow` (**Match end** group) and leave with `leave_match()` or an `MpLeaveButton` (7.5, "An end screen that waits for the player").
-
-**After removing a connected player's pawn, the server says `Node not found: ".../Pawn_N/MpInput"` a few times.**
-Those are the keys its client sent before it heard the pawn is gone: the engine warns once for each. They last as long as the news takes to arrive (one round trip) and break nothing.
 
 **It moves, but the other players stutter.**
 Use `smoothing = BUFFERED` with `adaptive_buffer` on; if it stays, lower `late_tolerance` (0.01) or raise the `buffer_delay_s` cap (0.15, 0.2). If you lowered `send_hz`, raise it or leave it at 0.
