@@ -2,6 +2,15 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.23.0
+
+- **Sacar el peón de un jugador conectado no deja errores.** Hasta acá, después de `MpActor.despawn()` el servidor escribía, por cada peón, `Node not found: ".../Pawn_N/MpInput"`, `Failed to get cached node` e `Invalid packet received`. Eran las teclas que el cliente mandó antes de enterarse de que el peón ya no estaba. Un host corrido con `--fail-on-error` (un CI, un harness de pruebas) se cortaba ahí, y el depurador del editor las mostraba en rojo cada vez que moría un jugador. Ahora los cuadros de entrada de `MpInput` y las llamadas `MpActor.to_server` viajan por `MpKit`, que vive siempre, con una clave por nodo (`MpKit.route_key`: su camino, igual en todos los peers). Lo que llega para un nodo que ya no está (murió) o que todavía no llegó se descarta sin decir nada. Lo pidió El Eternauta: su prueba de RFC-020A corre con `--fail-on-error`.
+- **Para tu juego no cambia nada:** `to_server`, `MpInput` y su lectura siguen igual, también la lista de quién puede llamar (`callers`), el tope de tamaño y el límite de llamadas.
+- **Cambio de protocolo:** los RPC internos `MpInput.rpc_frames` / `rpc_slack` y `MpActor.rpc_server_call` / `rpc_server_call_seen` pasan a `MpKit.rpc_input_frames`, `rpc_input_slack` y `rpc_actor_call`. Un build de 0.22 y uno de 0.23 no se entienden.
+- **Tests:** 151 del kit (`test_routes.gd`: cada `MpInput` y `MpActor` toma su clave al entrar y la devuelve al salir; un cuadro, una llamada o un aviso de pacing para un peón que ya no está se descarta sin error; un peón hecho de nuevo con el mismo nombre toma la misma clave). `mpkit_lab/run/arena.sh respawn` ahora saca el peón mientras su jugador aprieta teclas y exige cero `Node not found` en el servidor y en el cliente. Pasa todo `arena.sh` por ENet, y `dedicated`, `respawn`, `lag` y `flood` por WebSocket y el relay; también `rooms.sh` (public, rejoin, abandon), `private.sh`, `finish.sh`, `online.sh`, `late.sh` y `session.sh`.
+
+Qué actualizar: `MpKit.VERSION` pasa a 0.23.0, así que servidor y clientes tienen que ir con el mismo build. Si tu juego llamaba a mano a `rpc_server_call` o `rpc_frames` (no estaban documentados), usá `to_server` y `MpInput`.
+
 ## 0.22.1
 
 - **Un peón que tu juego libera se olvida.** Hasta acá, después de `MpActor.despawn()` (murió) el `MpSlotSpawner` guardaba el peón liberado. `pawn_for(slot)` y `spawn_slot(slot)` fallaban en el servidor (`Trying to return a previously freed instance`), y también cuando ese jugador se iba (`despawn_on_leave`). Ahora `pawn_for` da `null`, `spawn_slot` crea uno nuevo y el que se va no deja nada que liberar. Un peón que vuelve en el mismo frame en que murió entra apenas sale el viejo (desde el frame siguiente) y conserva el nombre `Pawn_<slot>` en todos los peers; antes salía `Pawn_3`. Lo encontró El Eternauta: su jugador muerto sigue mirando y después se va.

@@ -124,6 +124,8 @@ static var _checked_scenes: Dictionary = {}
 var _sender_slot: int = -1
 ## Inside an mp_sv_* call from a client: the server time that client was seeing (0 = unknown).
 var _call_view: float = 0.0
+## This actor's key for the to_server calls MpKit routes (0 outside the tree).
+var _route_key: int = 0
 ## Server, solo, and proxies without smoothing: the pose at the last physics tick, and how fast it moved since the one
 ## before (motion_velocity).
 var _tick_pos := Vector3.INF
@@ -142,11 +144,16 @@ static func of(node: Node) -> MpActor:
 
 func _enter_tree() -> void:
 	_editor_rebuild()
+	if not Engine.is_editor_hint():
+		_route_key = MpKit.add_route(self)
 
 
 func _exit_tree() -> void:
 	if not Engine.is_editor_hint() and _root:
 		MpLagComp.forget(_root)
+	if _route_key != 0:
+		MpKit.remove_route(_route_key, self)
+		_route_key = 0
 
 
 func _ready() -> void:
@@ -383,8 +390,9 @@ func to_server(action: StringName, ...args: Array) -> void:
 	if callers == Callers.OWNER and not is_local():
 		push_warning("MpActor '%s': to_server(%s) from a peer that does not own it (callers = OWNER)" % [_root.name, action])
 		return
-	## With what this player sees, so the server can rewind the others to it (lag compensation).
-	rpc_server_call_seen.rpc_id(MpAuthority.SERVER_PEER, action, args, MpNetClock.view_stamp())
+	## With what this player sees, so the server can rewind the others to it (lag compensation). Through MpKit: a call that
+	## arrives once this actor is gone on the server (it died) is dropped without a word.
+	MpKit.rpc_actor_call.rpc_id(MpAuthority.SERVER_PEER, _route_key, action, args, MpNetClock.view_stamp())
 
 
 ## Server only: run mp_all_<action>(args...) here and on every peer that has this node.
@@ -414,23 +422,18 @@ func sync_entries() -> PackedStringArray:
 	return MpActorSync.entries(self)
 
 
-@rpc("any_peer", "call_remote", "reliable")
-func rpc_server_call(action: StringName, args: Array) -> void:
-	if not multiplayer.is_server():
+## MpKit only (server): `sender` called to_server(action, args) on this actor (MpKit.rpc_actor_call), seeing the server time
+## `view` (lag compensation reads it as view_stamp()). Only a seated player, its owner with callers = OWNER, within the limits.
+func take_server_call(sender: int, action: StringName, args: Array, view: float) -> void:
+	if not MpKit.is_server():
 		return
-	var slot := MpKit.slot_for_peer(multiplayer.get_remote_sender_id())
+	var slot := MpKit.slot_for_peer(sender)
 	if slot <= 0 or (callers == Callers.OWNER and slot != owner_slot):
 		return
-	if var_to_bytes(args).size() > MAX_ARGS_BYTES or not server_calls.allow(multiplayer.get_remote_sender_id()):
+	if var_to_bytes(args).size() > MAX_ARGS_BYTES or not server_calls.allow(sender):
 		return
-	_run_sv(action, args, slot)
-
-
-## to_server with the server time the caller was seeing (lag compensation reads it as view_stamp()).
-@rpc("any_peer", "call_remote", "reliable")
-func rpc_server_call_seen(action: StringName, args: Array, view: float) -> void:
 	_call_view = view if is_finite(view) else 0.0
-	rpc_server_call(action, args)
+	_run_sv(action, args, slot)
 	_call_view = 0.0
 
 

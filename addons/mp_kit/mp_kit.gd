@@ -4,10 +4,12 @@ extends Node
 ## Listen-server: host() — hosting player is slot 1 / peer 1.
 ## Dedicated: host_dedicated() — peer 1 is not a player; same project as clients (VPS / --dedicated).
 ## Who may sit and when the match starts is the Gate's (MpMatchGate, `/root/MpKit/Gate`), once a flow armed it.
+## An actor's input frames and to_server calls travel through here (route_key), not to the actor's own node: one that arrives
+## for an actor that is gone (it died: MpActor.despawn) or not there yet is dropped without a word.
 
 ## The kit's version (plugin.cfg says the same; a test checks it). An exported game has no plugin.cfg: this is what the
 ## MpKit issuer is told.
-const VERSION := "0.22.1"
+const VERSION := "0.23.0"
 
 signal peer_joined(peer_id: int, slot: int)
 signal peer_left(peer_id: int, slot: int)
@@ -73,6 +75,8 @@ var net_quality: MpNetQuality
 var _listen_refused: bool = false
 ## Client: the server said the session ended (session_ended) and no new world came since: its going away is server_closed.
 var _session_over: bool = false
+## route_key -> the MpInput or MpActor here that takes the routed calls with that key.
+var _routes: Dictionary = {}
 var _peer: MultiplayerPeer
 var _world_ready: Dictionary = {}
 var _broadcasting_custom: bool = false
@@ -728,6 +732,61 @@ func rpc_custom_to_server(channel: String, data: Dictionary) -> void:
 	if var_to_bytes(data).size() > custom_max_bytes or not custom_limit.allow(sender):
 		return
 	custom_received.emit(name, data.duplicate(true), sender)
+
+
+## The key of `node` for the calls MpKit routes (input frames, to_server): its path, the same on every peer.
+static func route_key(node: Node) -> int:
+	return String(node.get_path()).hash()
+
+
+## MpInput and MpActor only: `node` takes the routed calls for its key (as it enters the tree).
+func add_route(node: Node) -> int:
+	var key := route_key(node)
+	_routes[key] = node
+	return key
+
+
+## MpInput and MpActor only: `node` leaves; a call for its key is dropped from now on.
+func remove_route(key: int, node: Node) -> void:
+	if _routes.get(key) == node:
+		_routes.erase(key)
+
+
+## The live node for `key`, or null (gone, being freed, or never here).
+func _route(key: int) -> Node:
+	var node: Variant = _routes.get(key)
+	if is_instance_valid(node) and not (node as Node).is_queued_for_deletion():
+		return node
+	return null
+
+
+## Owner -> server: input frames of the MpInput `key`. Nothing when the server no longer has it (its actor died).
+@rpc("any_peer", "call_remote", "unreliable_ordered")
+func rpc_input_frames(key: int, packet: PackedByteArray) -> void:
+	if not multiplayer.is_server():
+		return
+	var input := _route(key) as MpInput
+	if input:
+		input.take_frames(multiplayer.get_remote_sender_id(), packet)
+
+
+## Server -> owner: how many of its frames wait beyond the buffer (MpInput's pacing). Nothing when the owner has no such input.
+@rpc("authority", "call_remote", "unreliable")
+func rpc_input_slack(key: int, slack: int) -> void:
+	var input := _route(key) as MpInput
+	if input:
+		input.take_slack(slack)
+
+
+## Client -> server: MpActor.to_server(action, args) of the actor `key`, with the server time the caller was seeing (`view`).
+## Nothing when the server no longer has that actor.
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_actor_call(key: int, action: StringName, args: Array, view: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var actor := _route(key) as MpActor
+	if actor:
+		actor.take_server_call(multiplayer.get_remote_sender_id(), action, args, view)
 
 
 @rpc("authority", "call_remote", "reliable")

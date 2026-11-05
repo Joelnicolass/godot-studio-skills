@@ -72,8 +72,9 @@ El tope propio de ENet es `max_players + max_pending_admission` (máximo `MpKit.
 
 ## RPCs del kit (lista cerrada)
 
-Cliente → servidor: `rpc_world_ready`, `rpc_custom_to_server`  
-Servidor → clientes: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`  
+Cliente → servidor: `rpc_world_ready`, `rpc_custom_to_server`, `rpc_input_frames(key, packet)` (los frames de un `MpInput`), `rpc_actor_call(key, action, args, view)` (`MpActor.to_server`)  
+Servidor → clientes: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`, `rpc_input_slack(key, slack)` (el pacing de un `MpInput`)  
+`key` = `MpKit.route_key(node)` (el camino del nodo, igual en todos los peers): lo que llega para un nodo que ya no está (murió) o todavía no llegó se descarta sin error.  
 `MpRoomDirectory`: `rpc_assign_room` (authority → ese peer; `room_id` va como `String`)
 
 Input de pawn y semántica del dict custom **fuera** del kit.
