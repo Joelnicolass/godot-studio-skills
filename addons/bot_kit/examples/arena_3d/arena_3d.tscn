@@ -1,0 +1,616 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/bot_kit/examples/arena_3d/arena_3d.gd" id="1_dw4vv"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/arena_3d/pickup.gd" id="2_hkgok"]
+[ext_resource type="Script" path="res://addons/bot_kit/nodes/bot_goal_3d.gd" id="3_r5bqf"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/arena_3d/fighter.gd" id="4_eghrw"]
+[ext_resource type="Script" path="res://addons/bot_kit/nodes/bot_3d.gd" id="5_t6mi4"]
+[ext_resource type="Script" path="res://addons/bot_kit/core/bot_weapon.gd" id="6_2kxw2"]
+[ext_resource type="Resource" path="res://addons/bot_kit/examples/arena_3d/weapons/rifle.tres" id="7_pt6wc"]
+[ext_resource type="Resource" path="res://addons/bot_kit/examples/arena_3d/weapons/grenade.tres" id="8_3huuc"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/arena_3d/flee.gd" id="9_03j42"]
+
+[sub_resource type="Environment" id="Environment_sqf2a"]
+background_mode = 1
+background_color = Color(0.13, 0.15, 0.18, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.58, 0.65, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_vxjug"]
+vertices = PackedVector3Array(-14.25, 0.5, -6.75, -9.25, 0.5, -6.75, -9.25, 0.5, -8, -7.75, 0.5, -8.25, -7.75, 0.5, -14.25, -14.25, 0.5, -14.25, -6.5, 0.5, -8, -2.5, 0.5, -8.25, -2.25, 0.5, -10, 1, 0.5, -10, 1.25, 0.5, -14.25, 2.5, 0.5, -10, 8, 0.5, -9.75, 9, 0.5, -10, 9, 0.5, -14.25, 2.75, 0.5, -9, 8, 0.5, -8.75, 10.25, 0.5, -9.75, 10.25, 0.5, -8, 14.5, 0.5, -8, 14.5, 0.5, -14.25, 3.75, 0.5, 3.25, 2.25, 0.5, 3.75, 2.25, 0.5, 5.25, 6.75, 0.5, 6.25, 7.25, 0.5, 5.75, 7, 0.5, 3.25, 5.75, 0.5, 3, 7, 0.5, -3, 8.5, 0.5, -5.75, 8, 0.5, -6, 5.75, 0.5, -2.75, 2.25, 0.5, -7.75, 3.75, 0.5, -3.25, 0.75, 0.5, -7.75, 1, 0.5, -3.5, -5.5, 0.5, -2.75, -5.5, 0.5, -0.75, -3.5, 0.5, -0.75, -3.25, 0.5, -3.5, -6.5, 0.5, -6, -2.25, 0.5, -7.75, -7.25, 0.5, -5.5, -6.75, 0.5, -3, 7.5, 0.5, 2.75, 9.25, 0.5, 5.75, 7.5, 0.5, -2.75, 9.75, 0.5, -5.75, 9.5, 0.5, 7, 14.5, 0.5, 7, 10.25, 0.5, -6.25, -8.25, 2, -7.25, -8.25, 2, -6.75, -7.75, 2, -6.75, -7.75, 2, -7.25, -7.25, 0.5, -2.75, -9, 0.5, -5.5, -14.25, 0.5, 8, -11, 0.5, 8, -10.75, 0.5, 7, -7.25, 0.5, 7, -6.75, 0.5, 3.25, -7.25, 0.5, 3, -1, 1.25, 4.5, 1, 1.25, 4.5, 1, 1.5, 2.75, -1, 1.5, 2.75, -2.5, 1.5, 2.5, 2.5, 1.5, 2.5, 2.5, 1.5, -2.5, -2.5, 1.5, -2.5, -1.75, 0.5, 6.25, -2, 0.5, 3.75, -3.5, 0.5, 3.5, -6.75, 0.5, 7.75, -5.5, 0.5, 2.75, 1, 0.75, 6.25, -1, 0.75, 6.25, -6.75, 0.5, 8.75, 1.75, 0.75, 6.5, -6.75, 0.5, 14.5, 1.75, 0.5, 14.5, 2.25, 0.5, 6.25, 6.75, 0.5, 8.25, 8, 0.5, 14.5, 8, 0.5, 8.5, 7.75, 2, 6.75, 7.75, 2, 7.25, 8.25, 2, 7.25, 8.25, 2, 6.75, 9, 0.5, 8.5, 14.5, 0.5, 14.5, -10.75, 0.5, 9.25, -14.25, 0.5, 14.5, -7.25, 0.5, 9.25)
+polygons = [PackedInt32Array(2, 1, 0), PackedInt32Array(2, 4, 3), PackedInt32Array(0, 5, 2), PackedInt32Array(2, 5, 4), PackedInt32Array(8, 7, 6), PackedInt32Array(10, 9, 8), PackedInt32Array(6, 3, 8), PackedInt32Array(8, 3, 4), PackedInt32Array(8, 4, 10), PackedInt32Array(11, 9, 10), PackedInt32Array(13, 12, 14), PackedInt32Array(14, 12, 11), PackedInt32Array(14, 11, 10), PackedInt32Array(16, 15, 12), PackedInt32Array(12, 15, 11), PackedInt32Array(19, 18, 17), PackedInt32Array(14, 17, 13), PackedInt32Array(14, 20, 17), PackedInt32Array(17, 20, 19), PackedInt32Array(23, 22, 21), PackedInt32Array(25, 24, 26), PackedInt32Array(26, 24, 27), PackedInt32Array(27, 24, 21), PackedInt32Array(21, 24, 23), PackedInt32Array(29, 28, 30), PackedInt32Array(30, 28, 31), PackedInt32Array(31, 33, 30), PackedInt32Array(30, 33, 16), PackedInt32Array(16, 33, 32), PackedInt32Array(16, 32, 15), PackedInt32Array(34, 32, 35), PackedInt32Array(35, 32, 33), PackedInt32Array(27, 21, 31), PackedInt32Array(31, 21, 33), PackedInt32Array(37, 36, 38), PackedInt32Array(38, 36, 39), PackedInt32Array(7, 41, 6), PackedInt32Array(6, 41, 40), PackedInt32Array(40, 41, 39), PackedInt32Array(40, 39, 36), PackedInt32Array(42, 40, 43), PackedInt32Array(43, 40, 36), PackedInt32Array(34, 35, 41), PackedInt32Array(41, 35, 39), PackedInt32Array(26, 44, 25), PackedInt32Array(25, 44, 45), PackedInt32Array(28, 29, 46), PackedInt32Array(46, 29, 47), PackedInt32Array(49, 48, 45), PackedInt32Array(45, 44, 49), PackedInt32Array(49, 44, 46), PackedInt32Array(49, 46, 50), PackedInt32Array(49, 50, 19), PackedInt32Array(46, 47, 50), PackedInt32Array(50, 18, 19), PackedInt32Array(54, 53, 51), PackedInt32Array(51, 53, 52), PackedInt32Array(43, 55, 42), PackedInt32Array(42, 55, 56), PackedInt32Array(0, 1, 56), PackedInt32Array(59, 58, 57), PackedInt32Array(61, 60, 62), PackedInt32Array(62, 60, 59), PackedInt32Array(56, 55, 0), PackedInt32Array(0, 55, 62), PackedInt32Array(0, 62, 59), PackedInt32Array(0, 59, 57), PackedInt32Array(66, 65, 63), PackedInt32Array(63, 65, 64), PackedInt32Array(66, 67, 65), PackedInt32Array(65, 67, 68), PackedInt32Array(68, 67, 70), PackedInt32Array(68, 70, 69), PackedInt32Array(72, 71, 73), PackedInt32Array(73, 71, 61), PackedInt32Array(61, 71, 60), PackedInt32Array(60, 71, 74), PackedInt32Array(37, 38, 75), PackedInt32Array(75, 38, 73), PackedInt32Array(61, 75, 73), PackedInt32Array(77, 63, 76), PackedInt32Array(76, 63, 64), PackedInt32Array(78, 74, 71), PackedInt32Array(77, 76, 79), PackedInt32Array(77, 79, 71), PackedInt32Array(71, 79, 78), PackedInt32Array(78, 79, 80), PackedInt32Array(80, 79, 81), PackedInt32Array(23, 24, 82), PackedInt32Array(82, 24, 83), PackedInt32Array(83, 85, 84), PackedInt32Array(82, 83, 79), PackedInt32Array(79, 83, 81), PackedInt32Array(81, 83, 84), PackedInt32Array(89, 88, 86), PackedInt32Array(86, 88, 87), PackedInt32Array(48, 49, 90), PackedInt32Array(90, 49, 91), PackedInt32Array(90, 91, 84), PackedInt32Array(84, 85, 90), PackedInt32Array(58, 92, 57), PackedInt32Array(57, 92, 93), PackedInt32Array(94, 78, 80), PackedInt32Array(94, 80, 92), PackedInt32Array(92, 80, 93)]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
+agent_height = 1.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_88cn0"]
+albedo_color = Color(0.3, 0.33, 0.31, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_3xals"]
+material = SubResource("StandardMaterial3D_88cn0")
+size = Vector3(30, 1, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5aet5"]
+size = Vector3(30, 1, 30)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qx8ml"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_lqmje"]
+material = SubResource("StandardMaterial3D_qx8ml")
+size = Vector3(31, 2, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pkg2y"]
+size = Vector3(31, 2, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4r2kn"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_v8fmi"]
+material = SubResource("StandardMaterial3D_4r2kn")
+size = Vector3(31, 2, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pdayy"]
+size = Vector3(31, 2, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jfoj3"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_yvewp"]
+material = SubResource("StandardMaterial3D_jfoj3")
+size = Vector3(0.5, 2, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rdkpc"]
+size = Vector3(0.5, 2, 30)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cwaot"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_vnd1b"]
+material = SubResource("StandardMaterial3D_cwaot")
+size = Vector3(0.5, 2, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1ei2w"]
+size = Vector3(0.5, 2, 30)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jlpap"]
+albedo_color = Color(0.45, 0.47, 0.5, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_80iyl"]
+material = SubResource("StandardMaterial3D_jlpap")
+size = Vector3(6, 1, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xcbnh"]
+size = Vector3(6, 1, 6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kf74c"]
+albedo_color = Color(0.45, 0.47, 0.5, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_njtih"]
+material = SubResource("StandardMaterial3D_kf74c")
+size = Vector3(3, 0.2, 5.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ho4de"]
+size = Vector3(3, 0.2, 5.1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oon5c"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_fl1ju"]
+material = SubResource("StandardMaterial3D_oon5c")
+size = Vector3(0.5, 2, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eskbr"]
+size = Vector3(0.5, 2, 5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ccm87"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_4vjdh"]
+material = SubResource("StandardMaterial3D_ccm87")
+size = Vector3(0.5, 2, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gnokw"]
+size = Vector3(0.5, 2, 5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kex4g"]
+albedo_color = Color(0.6, 0.45, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_qn6vu"]
+material = SubResource("StandardMaterial3D_kex4g")
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qe20v"]
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y7sn7"]
+albedo_color = Color(0.6, 0.45, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_7jbqk"]
+material = SubResource("StandardMaterial3D_y7sn7")
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_c6ebp"]
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oc5qb"]
+albedo_color = Color(0.6, 0.45, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_ll10j"]
+material = SubResource("StandardMaterial3D_oc5qb")
+size = Vector3(3, 1.5, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5uarr"]
+size = Vector3(3, 1.5, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hvo0i"]
+albedo_color = Color(0.6, 0.45, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_tg1ua"]
+material = SubResource("StandardMaterial3D_hvo0i")
+size = Vector3(1, 1.5, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_w44tl"]
+size = Vector3(1, 1.5, 3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eqs60"]
+albedo_color = Color(0.6, 0.45, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_35xxw"]
+material = SubResource("StandardMaterial3D_eqs60")
+size = Vector3(4, 1.5, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ofwwa"]
+size = Vector3(4, 1.5, 1)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xcm6v"]
+radius = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_em03s"]
+albedo_color = Color(0.3, 0.9, 0.4, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_hxhcn"]
+material = SubResource("StandardMaterial3D_em03s")
+size = Vector3(0.6, 0.6, 0.6)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_l8oso"]
+radius = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xdehk"]
+albedo_color = Color(0.3, 0.9, 0.4, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_e3kn4"]
+material = SubResource("StandardMaterial3D_xdehk")
+size = Vector3(0.6, 0.6, 0.6)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_cq0ci"]
+radius = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kyug3"]
+albedo_color = Color(0.2, 0.2, 0.2, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_3xhle"]
+material = SubResource("StandardMaterial3D_kyug3")
+size = Vector3(0.6, 0.6, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0hb8r"]
+albedo_color = Color(0.95, 0.3, 0.25, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_q6hwk"]
+material = SubResource("StandardMaterial3D_0hb8r")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_mjvad"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qvrvd"]
+albedo_color = Color(0.12, 0.12, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_xqhsg"]
+material = SubResource("StandardMaterial3D_qvrvd")
+size = Vector3(0.5, 0.14, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_doymr"]
+albedo_color = Color(0.3, 0.5, 1, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_5m7g4"]
+material = SubResource("StandardMaterial3D_doymr")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wygu2"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n3run"]
+albedo_color = Color(0.12, 0.12, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_s6gi8"]
+material = SubResource("StandardMaterial3D_n3run")
+size = Vector3(0.5, 0.14, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ylg88"]
+albedo_color = Color(0.35, 0.85, 0.35, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_0etml"]
+material = SubResource("StandardMaterial3D_ylg88")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_m1ugy"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oi05c"]
+albedo_color = Color(0.12, 0.12, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_ywlx5"]
+material = SubResource("StandardMaterial3D_oi05c")
+size = Vector3(0.5, 0.14, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ittfe"]
+albedo_color = Color(0.95, 0.85, 0.25, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_x4jeb"]
+material = SubResource("StandardMaterial3D_ittfe")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wqv8m"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kmnaf"]
+albedo_color = Color(0.12, 0.12, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_mjl28"]
+material = SubResource("StandardMaterial3D_kmnaf")
+size = Vector3(0.5, 0.14, 0.3)
+
+[node name="Arena3D" type="Node3D" unique_id=1928700947]
+script = ExtResource("1_dw4vv")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1018644015]
+environment = SubResource("Environment_sqf2a")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1423342161]
+transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
+shadow_enabled = true
+
+[node name="CameraPivot" type="Node3D" parent="." unique_id=891644646]
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot" unique_id=605210531]
+transform = Transform3D(1, 0, 0, 0, 0.6097108, 0.79262394, 0, -0.79262394, 0.6097108, 0, 26, 20)
+current = true
+
+[node name="Level" type="NavigationRegion3D" parent="." unique_id=386143062]
+navigation_mesh = SubResource("NavigationMesh_vxjug")
+
+[node name="Floor" type="StaticBody3D" parent="Level" unique_id=1732511987]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Floor" unique_id=1881956698]
+mesh = SubResource("BoxMesh_3xals")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Floor" unique_id=1768841911]
+shape = SubResource("BoxShape3D_5aet5")
+
+[node name="WallNorth" type="StaticBody3D" parent="Level" unique_id=1345245526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -15.25)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/WallNorth" unique_id=1333585686]
+mesh = SubResource("BoxMesh_lqmje")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/WallNorth" unique_id=2013221475]
+shape = SubResource("BoxShape3D_pkg2y")
+
+[node name="WallSouth" type="StaticBody3D" parent="Level" unique_id=877815838]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 15.25)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/WallSouth" unique_id=1576501209]
+mesh = SubResource("BoxMesh_v8fmi")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/WallSouth" unique_id=1257079093]
+shape = SubResource("BoxShape3D_pdayy")
+
+[node name="WallWest" type="StaticBody3D" parent="Level" unique_id=1095098287]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.25, 1, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/WallWest" unique_id=246178312]
+mesh = SubResource("BoxMesh_yvewp")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/WallWest" unique_id=1416689473]
+shape = SubResource("BoxShape3D_rdkpc")
+
+[node name="WallEast" type="StaticBody3D" parent="Level" unique_id=616944900]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.25, 1, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/WallEast" unique_id=1770933754]
+mesh = SubResource("BoxMesh_vnd1b")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/WallEast" unique_id=1398093096]
+shape = SubResource("BoxShape3D_1ei2w")
+
+[node name="Platform" type="StaticBody3D" parent="Level" unique_id=360053267]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Platform" unique_id=406674436]
+mesh = SubResource("BoxMesh_80iyl")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Platform" unique_id=741065857]
+shape = SubResource("BoxShape3D_xcbnh")
+
+[node name="Ramp" type="StaticBody3D" parent="Level" unique_id=1168475455]
+transform = Transform3D(1, 0, 0, 0, 0.97978526, -0.200052, 0, 0.200052, 0.97978526, 0, 0.5, 5.45)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Ramp" unique_id=1724515812]
+mesh = SubResource("BoxMesh_njtih")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Ramp" unique_id=127265578]
+shape = SubResource("BoxShape3D_ho4de")
+
+[node name="Cover" type="StaticBody3D" parent="Level" unique_id=378254305]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 1, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Cover" unique_id=686190588]
+mesh = SubResource("BoxMesh_fl1ju")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Cover" unique_id=543780784]
+shape = SubResource("BoxShape3D_eskbr")
+
+[node name="Cover2" type="StaticBody3D" parent="Level" unique_id=1769226115]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Cover2" unique_id=204324547]
+mesh = SubResource("BoxMesh_4vjdh")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Cover2" unique_id=255085816]
+shape = SubResource("BoxShape3D_gnokw")
+
+[node name="Crate" type="StaticBody3D" parent="Level" unique_id=675976924]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.75, -7)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Crate" unique_id=630541731]
+mesh = SubResource("BoxMesh_qn6vu")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Crate" unique_id=1293875104]
+shape = SubResource("BoxShape3D_qe20v")
+
+[node name="Crate2" type="StaticBody3D" parent="Level" unique_id=1802279731]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.75, 7)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Crate2" unique_id=802759123]
+mesh = SubResource("BoxMesh_7jbqk")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Crate2" unique_id=1834830796]
+shape = SubResource("BoxShape3D_c6ebp")
+
+[node name="Crate3" type="StaticBody3D" parent="Level" unique_id=1324820645]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.75, 8)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Crate3" unique_id=40470409]
+mesh = SubResource("BoxMesh_ll10j")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Crate3" unique_id=571197757]
+shape = SubResource("BoxShape3D_5uarr")
+
+[node name="Crate4" type="StaticBody3D" parent="Level" unique_id=727811428]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.75, -8)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Crate4" unique_id=1293666482]
+mesh = SubResource("BoxMesh_tg1ua")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Crate4" unique_id=1002385222]
+shape = SubResource("BoxShape3D_w44tl")
+
+[node name="Crate5" type="StaticBody3D" parent="Level" unique_id=712007597]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -9)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Crate5" unique_id=638704814]
+mesh = SubResource("BoxMesh_35xxw")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Crate5" unique_id=858448664]
+shape = SubResource("BoxShape3D_ofwwa")
+
+[node name="Health" type="Area3D" parent="." unique_id=1390595351]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_hkgok")
+
+[node name="Shape" type="CollisionShape3D" parent="Health" unique_id=728887315]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("SphereShape3D_xcm6v")
+
+[node name="Mesh" type="MeshInstance3D" parent="Health" unique_id=1016286785]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_hxhcn")
+
+[node name="BotGoal3D" type="Node3D" parent="Health" unique_id=642519565]
+script = ExtResource("3_r5bqf")
+priority = 2.0
+reach_m = 25.0
+
+[node name="Health2" type="Area3D" parent="." unique_id=1006260439]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_hkgok")
+
+[node name="Shape" type="CollisionShape3D" parent="Health2" unique_id=1977012198]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("SphereShape3D_l8oso")
+
+[node name="Mesh" type="MeshInstance3D" parent="Health2" unique_id=380518963]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_e3kn4")
+
+[node name="BotGoal3D" type="Node3D" parent="Health2" unique_id=535104850]
+script = ExtResource("3_r5bqf")
+priority = 2.0
+reach_m = 25.0
+
+[node name="Grenades" type="Area3D" parent="." unique_id=735287087]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_hkgok")
+kind = 1
+
+[node name="Shape" type="CollisionShape3D" parent="Grenades" unique_id=1607239117]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("SphereShape3D_cq0ci")
+
+[node name="Mesh" type="MeshInstance3D" parent="Grenades" unique_id=674917879]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_3xhle")
+
+[node name="BotGoal3D" type="Node3D" parent="Grenades" unique_id=86804730]
+script = ExtResource("3_r5bqf")
+reach_m = 25.0
+
+[node name="Red" type="CharacterBody3D" parent="." unique_id=185933755 groups=["arena_fighter", "bot_target"]]
+transform = Transform3D(-0.70710677, 0, -0.70710677, 0, 1, 0, 0.70710677, 0, -0.70710677, -12, 0, -12)
+collision_layer = 2
+script = ExtResource("4_eghrw")
+
+[node name="Mesh" type="MeshInstance3D" parent="Red" unique_id=2019305713]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_q6hwk")
+
+[node name="Shape" type="CollisionShape3D" parent="Red" unique_id=137281566]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_mjvad")
+
+[node name="Head" type="Node3D" parent="Red" unique_id=197357783]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Visor" type="MeshInstance3D" parent="Red/Head" unique_id=1924199328]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
+mesh = SubResource("BoxMesh_xqhsg")
+
+[node name="Bot3D" type="Node3D" parent="Red" unique_id=734108817 node_paths=PackedStringArray("head")]
+script = ExtResource("5_t6mi4")
+head = NodePath("../Head")
+weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_3huuc")])
+
+[node name="Flee" type="Node" parent="Red/Bot3D" unique_id=1752415217]
+script = ExtResource("9_03j42")
+
+[node name="Blue" type="CharacterBody3D" parent="." unique_id=314424704 groups=["arena_fighter", "bot_target"]]
+transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 12, 0, 12)
+collision_layer = 2
+script = ExtResource("4_eghrw")
+
+[node name="Mesh" type="MeshInstance3D" parent="Blue" unique_id=1053136471]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_5m7g4")
+
+[node name="Shape" type="CollisionShape3D" parent="Blue" unique_id=2055549693]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_wygu2")
+
+[node name="Head" type="Node3D" parent="Blue" unique_id=131169534]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Visor" type="MeshInstance3D" parent="Blue/Head" unique_id=860598845]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
+mesh = SubResource("BoxMesh_s6gi8")
+
+[node name="Bot3D" type="Node3D" parent="Blue" unique_id=220170804 node_paths=PackedStringArray("head")]
+script = ExtResource("5_t6mi4")
+head = NodePath("../Head")
+weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_3huuc")])
+
+[node name="Flee" type="Node" parent="Blue/Bot3D" unique_id=555444367]
+script = ExtResource("9_03j42")
+
+[node name="Green" type="CharacterBody3D" parent="." unique_id=893506569 groups=["arena_fighter", "bot_target"]]
+transform = Transform3D(-0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, -0.70710677, 12, 0, -12)
+collision_layer = 2
+script = ExtResource("4_eghrw")
+
+[node name="Mesh" type="MeshInstance3D" parent="Green" unique_id=853559806]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_0etml")
+
+[node name="Shape" type="CollisionShape3D" parent="Green" unique_id=139410401]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_m1ugy")
+
+[node name="Head" type="Node3D" parent="Green" unique_id=103489340]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Visor" type="MeshInstance3D" parent="Green/Head" unique_id=376732987]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
+mesh = SubResource("BoxMesh_ywlx5")
+
+[node name="Bot3D" type="Node3D" parent="Green" unique_id=223982205 node_paths=PackedStringArray("head")]
+script = ExtResource("5_t6mi4")
+head = NodePath("../Head")
+weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_3huuc")])
+
+[node name="Flee" type="Node" parent="Green/Bot3D" unique_id=392752116]
+script = ExtResource("9_03j42")
+
+[node name="Yellow" type="CharacterBody3D" parent="." unique_id=128570293 groups=["arena_fighter", "bot_target"]]
+transform = Transform3D(0.70710677, 0, -0.70710677, 0, 1, 0, 0.70710677, 0, 0.70710677, -12, 0, 12)
+collision_layer = 2
+script = ExtResource("4_eghrw")
+
+[node name="Mesh" type="MeshInstance3D" parent="Yellow" unique_id=613729402]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_x4jeb")
+
+[node name="Shape" type="CollisionShape3D" parent="Yellow" unique_id=1574730575]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_wqv8m")
+
+[node name="Head" type="Node3D" parent="Yellow" unique_id=1689723601]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Visor" type="MeshInstance3D" parent="Yellow/Head" unique_id=444503495]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
+mesh = SubResource("BoxMesh_mjl28")
+
+[node name="Bot3D" type="Node3D" parent="Yellow" unique_id=122907131 node_paths=PackedStringArray("head")]
+script = ExtResource("5_t6mi4")
+head = NodePath("../Head")
+weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_3huuc")])
+
+[node name="Flee" type="Node" parent="Yellow/Bot3D" unique_id=672489462]
+script = ExtResource("9_03j42")
+
+[node name="Label" type="Label" parent="." unique_id=2031063779]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 16.0
+offset_bottom = 12.0

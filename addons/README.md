@@ -12,6 +12,7 @@ Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **ca
 | `grass_kit` | Pasto, 3D: hojas dibujadas en la GPU alrededor de la cámara en celdas que se mueven con ella, pintado a mano con pinceles en la vista 3D, un suelo leído de los colliders (alturas, normales, pendiente), claros, pisoteo, un look que cambia en el juego. Sin red, sin reglas del juego |
 | `perception_kit` | Percepción, 2D y 3D: un cono de vista con un radio de pérdida más lejano, conciencia de lo cercano, muros que tapan, ruidos, cualquier sentido propio del juego, una memoria que olvida, bandos como capas de física, manijas para arrastrar la vista en el editor. Sin red, sin estados ni combate |
 | `spill_kit` | Lo que derrama un cuerpo, 3D: sangre, icor, aceite, baba, tinta. Cada golpe salpica gotas y deja manchas en el piso que quedan; al morir crece un charco que sigue la pendiente. Cada sustancia es un tipo con el aspecto húmedo del kit, texturas PBR propias (albedo, normal, ORM) o el shader del juego. Reglas como valores, una sola propiedad para la red, Compatibility y WebGL 2, nada en un servidor dedicado. Sin vida, daño ni red |
+| `bot_kit` | Bots que juegan a tu personaje como una persona, 3D: aprietan las teclas de un jugador (un `Input` propio), ven al enemigo más cercano sin muros en el medio, apuntan con límites humanos, eligen el arma por la distancia, recorren el navmesh hacia metas y salen de donde se traban; conductas propias como nodos hijos, presets de dificultad. Sin red, sin armas ni vida |
 
 Cada addon trae un **ejemplo mínimo** (`examples/minimal_2d/` o `examples/minimal_3d/`: la integración más chica que anda, F6) y, en su README, ese código explicado con **tips y recomendaciones**. La tabla con todos está en el [README del repo](../README.md#ejemplos-de-cada-kit).
 
@@ -31,4 +32,5 @@ Instalar en un proyecto:
 ./install.sh --addon /path/to/godot-project grass_kit
 ./install.sh --addon /path/to/godot-project perception_kit
 ./install.sh --addon /path/to/godot-project spill_kit
+./install.sh --addon /path/to/godot-project bot_kit
 ```
