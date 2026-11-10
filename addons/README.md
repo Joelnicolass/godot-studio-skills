@@ -12,6 +12,7 @@ Reusable pieces of the framework. Copy them to `res://addons/<name>/` in **each*
 | `grass_kit` | Grass, 3D: blades drawn on the GPU around the camera in cells that move with it, painted by hand with brushes in the 3D view, a ground read from the colliders (heights, normals, slope), clearings, trampling, a look that changes in play. No network, no game rules |
 | `perception_kit` | Perception, 2D and 3D: a view cone with a farther lose radius, near awareness, walls that hide, noises, any sense of the game's own, a memory that forgets, sides as physics layers, handles to drag the view in the editor. No network, no states or combat |
 | `spill_kit` | What a body spills, 3D: blood, ichor, oil, slime, ink. Every hit sprays drops and leaves marks on the floor that stay; a death grows a puddle that follows the slope. Each substance is a type with the kit's wet look, PBR textures of its own (albedo, normal, ORM) or the game's shader. Rules as values, one synced property for the network, Compatibility and WebGL 2, nothing drawn on a dedicated server. No HP, damage or network |
+| `bot_kit` | Bots that play your character like a person, 3D: they press a player's keys (an `Input` of their own), see the nearest enemy with no wall in between, aim with a person's limits, pick the weapon by distance, walk the navmesh to goals and get out of where they are stuck; your own behaviours as child nodes, difficulty presets. No network, no weapons or health |
 
 Every addon ships a **minimal example** (`examples/minimal_2d/` or `examples/minimal_3d/`: the smallest integration that works, F6) and, in its README, that code explained with **tips and recommendations**. The table with all of them is in the [repo README](../README.md#each-kits-examples).
 
@@ -31,4 +32,5 @@ Install into a project:
 ./install.sh --addon /path/to/godot-project grass_kit
 ./install.sh --addon /path/to/godot-project perception_kit
 ./install.sh --addon /path/to/godot-project spill_kit
+./install.sh --addon /path/to/godot-project bot_kit
 ```

@@ -32,6 +32,7 @@ SKILL_NAMES=(
   godot-grass-kit
   godot-perception-kit
   godot-spill-kit
+  godot-bot-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -66,10 +67,10 @@ Godot studio kit installer (skills + commands + subagents + addons).
   ./install.sh --all                Cursor and Claude Code
   ./install.sh --project            ./.cursor/ of cwd (./.claude/ with --claude; both with --all)
   ./install.sh --dest DIR           Skills in DIR (commands and agents alongside)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|all]
                                     Copy the addon into the Godot project (default: mp_kit)
                                     agent_kit is installed from godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|all]
                                     Addon only
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias of --addon GODOT_ROOT agent_kit
@@ -403,6 +404,12 @@ install_addon() {
       echo "Enable the SpillKit plugin (no autoload; the cost in the inspector). A SpillSource3D at the chest with its SpillType,"
       echo "a SpillPool3D in the level; hit() and die() from the game. Start from addons/spill_kit/examples/minimal_3d or substances_3d."
       ;;
+    bot_kit)
+      copy_one_addon "$project" "bot_kit"
+      echo
+      echo "Enable the BotKit plugin (no autoload; its sight and handles in the editor). A Bot3D as a child of the character,"
+      echo "which reads bot.input where it read Input; enemies in the group bot_target; the navmesh baked. Start from addons/bot_kit/examples/minimal_3d or arena_3d."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -421,9 +428,11 @@ install_addon() {
       install_addon "$project" "perception_kit"
       echo
       install_addon "$project" "spill_kit"
+      echo
+      install_addon "$project" "bot_kit"
       ;;
     *)
-      echo "Unknown addon: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | all)" >&2
+      echo "Unknown addon: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -476,6 +485,7 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/grass_kit  (./install.sh --addon /path/to/godot-project grass_kit)"
   echo "  - addons/perception_kit (./install.sh --addon /path/to/godot-project perception_kit)"
   echo "  - addons/spill_kit  (./install.sh --addon /path/to/godot-project spill_kit)"
+  echo "  - addons/bot_kit    (./install.sh --addon /path/to/godot-project bot_kit)"
   echo
   echo "AgentKit / playtester (separate repo, this installer fetches it):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"
@@ -519,6 +529,7 @@ install_harness() {
     echo "  grass:        godot-grass-kit"
     echo "  perception:   godot-perception-kit"
     echo "  spill:        godot-spill-kit"
+    echo "  bots:         godot-bot-kit"
     echo "  materials:    godot-material-maker"
     echo "  research:     godot-feature-research"
   fi
@@ -528,7 +539,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Done (commands). In ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /create-material, /research-feature, /create-prd, …"
+    echo "Done (commands). In ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then

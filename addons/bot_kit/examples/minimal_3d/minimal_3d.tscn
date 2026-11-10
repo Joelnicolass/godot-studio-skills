@@ -1,0 +1,214 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/bot_kit/examples/minimal_3d/minimal_3d.gd" id="1_iawac"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/minimal_3d/you.gd" id="2_bgs5d"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/minimal_3d/robot.gd" id="3_1lw6q"]
+[ext_resource type="Script" path="res://addons/bot_kit/nodes/bot_3d.gd" id="4_guyrg"]
+
+[sub_resource type="Environment" id="Environment_w5lf2"]
+background_mode = 1
+background_color = Color(0.13, 0.15, 0.18, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.58, 0.65, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_vsvfg"]
+vertices = PackedVector3Array(-11.5, 0.5, -2, -7.5, 0.5, -2, -7.25, 0.5, -2.75, -11.5, 0.5, -11.5, 1.25, 0.5, -7.25, 2.75, 0.5, -7.25, 2.5, 0.5, -11.5, -0.75, 0.5, -2.75, 1, 0.5, -6, 7, 0.5, -7.25, 7.25, 0.5, -6.5, 11.5, 0.5, -6.5, 11.5, 0.5, -11.5, 6.75, 0.5, -5.5, 5.5, 0.5, -0.25, 5.5, 0.5, 1.75, 11.5, 0.5, 1.75, 4.75, 0.5, -5.5, 4.75, 0.5, -0.5, 1.25, 0.5, -5.5, -0.25, 0.5, -2.5, -0.75, 0.5, -1, -2.25, 0.5, -1, -2, 0.5, 4.75, 0, 0.5, 4.75, 0.25, 0.5, 5.5, 3.75, 0.5, 5.5, 3.75, 0.5, -0.25, -0.25, 0.5, -1.5, -7.25, 0.5, -1, -11.5, 0.5, 5.5, -6, 0.5, 5.5, -5.75, 0.5, 4.75, 5.5, 0.5, 6.25, 4.5, 0.5, 6.75, 4.5, 0.5, 11.5, 11.5, 0.5, 11.5, -3.75, 0.5, 11.5, -3.75, 0.5, 6.5, -5.75, 0.5, 6.5, -11.5, 0.5, 11.5, 3.75, 0.5, 6.5, -0.25, 0.5, 6.5)
+polygons = [PackedInt32Array(1, 0, 2), PackedInt32Array(2, 0, 3), PackedInt32Array(6, 5, 4), PackedInt32Array(4, 8, 7), PackedInt32Array(4, 7, 6), PackedInt32Array(6, 7, 2), PackedInt32Array(6, 2, 3), PackedInt32Array(11, 10, 9), PackedInt32Array(11, 9, 12), PackedInt32Array(12, 9, 6), PackedInt32Array(6, 9, 5), PackedInt32Array(10, 11, 13), PackedInt32Array(13, 11, 14), PackedInt32Array(14, 11, 15), PackedInt32Array(15, 11, 16), PackedInt32Array(18, 17, 14), PackedInt32Array(14, 17, 13), PackedInt32Array(20, 7, 19), PackedInt32Array(19, 7, 8), PackedInt32Array(22, 21, 23), PackedInt32Array(23, 21, 24), PackedInt32Array(25, 24, 26), PackedInt32Array(26, 24, 27), PackedInt32Array(27, 24, 21), PackedInt32Array(27, 21, 28), PackedInt32Array(20, 19, 28), PackedInt32Array(28, 19, 17), PackedInt32Array(28, 17, 27), PackedInt32Array(27, 17, 18), PackedInt32Array(0, 1, 29), PackedInt32Array(31, 30, 32), PackedInt32Array(32, 30, 29), PackedInt32Array(29, 30, 0), PackedInt32Array(23, 32, 22), PackedInt32Array(22, 32, 29), PackedInt32Array(35, 34, 33), PackedInt32Array(33, 15, 16), PackedInt32Array(35, 33, 36), PackedInt32Array(36, 33, 16), PackedInt32Array(39, 38, 37), PackedInt32Array(30, 31, 39), PackedInt32Array(30, 39, 40), PackedInt32Array(40, 39, 37), PackedInt32Array(25, 26, 41), PackedInt32Array(25, 41, 42), PackedInt32Array(42, 41, 34), PackedInt32Array(38, 42, 37), PackedInt32Array(37, 42, 34), PackedInt32Array(37, 34, 35)]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
+agent_height = 1.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_abgoo"]
+albedo_color = Color(0.32, 0.36, 0.33, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_xpcsx"]
+material = SubResource("StandardMaterial3D_abgoo")
+size = Vector3(24, 1, 24)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4moa1"]
+size = Vector3(24, 1, 24)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wib7r"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_04jf2"]
+material = SubResource("StandardMaterial3D_wib7r")
+size = Vector3(6, 2, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rgkxu"]
+size = Vector3(6, 2, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5gdso"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_1cg3p"]
+material = SubResource("StandardMaterial3D_5gdso")
+size = Vector3(0.5, 2, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5shxw"]
+size = Vector3(0.5, 2, 6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cane8"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_u35ho"]
+material = SubResource("StandardMaterial3D_cane8")
+size = Vector3(5, 2, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hg2xs"]
+size = Vector3(5, 2, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4ed64"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_qjp5t"]
+material = SubResource("StandardMaterial3D_4ed64")
+size = Vector3(5, 2, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qoaon"]
+size = Vector3(5, 2, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2k3dk"]
+albedo_color = Color(0.3, 0.55, 1, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_hiosu"]
+material = SubResource("StandardMaterial3D_2k3dk")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wccmu"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_16hid"]
+albedo_color = Color(0.95, 0.35, 0.3, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_k2i3g"]
+material = SubResource("StandardMaterial3D_16hid")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_v81ay"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lwbam"]
+albedo_color = Color(0.15, 0.15, 0.15, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_sg0gw"]
+material = SubResource("StandardMaterial3D_lwbam")
+size = Vector3(0.5, 0.14, 0.3)
+
+[node name="Minimal3D" type="Node3D" unique_id=1299876738]
+script = ExtResource("1_iawac")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1891085457]
+environment = SubResource("Environment_w5lf2")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1268760727]
+transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1449119461]
+transform = Transform3D(1, 0, 0, 0, 0.5449884, 0.8384436, 0, -0.8384436, 0.5449884, 0, 20, 13)
+current = true
+
+[node name="Level" type="NavigationRegion3D" parent="." unique_id=1119073179]
+navigation_mesh = SubResource("NavigationMesh_vsvfg")
+
+[node name="Floor" type="StaticBody3D" parent="Level" unique_id=1201464594]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Floor" unique_id=1269530941]
+mesh = SubResource("BoxMesh_xpcsx")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Floor" unique_id=1806434711]
+shape = SubResource("BoxShape3D_4moa1")
+
+[node name="Wall" type="StaticBody3D" parent="Level" unique_id=981942124]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1, -2)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Wall" unique_id=199750814]
+mesh = SubResource("BoxMesh_04jf2")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Wall" unique_id=1500872196]
+shape = SubResource("BoxShape3D_rgkxu")
+
+[node name="Wall2" type="StaticBody3D" parent="Level" unique_id=1244927078]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 1, 3)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Wall2" unique_id=1133425406]
+mesh = SubResource("BoxMesh_1cg3p")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Wall2" unique_id=1137097879]
+shape = SubResource("BoxShape3D_5shxw")
+
+[node name="Wall3" type="StaticBody3D" parent="Level" unique_id=1228929402]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 1, 5.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Wall3" unique_id=659958075]
+mesh = SubResource("BoxMesh_u35ho")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Wall3" unique_id=1640953619]
+shape = SubResource("BoxShape3D_hg2xs")
+
+[node name="Wall4" type="StaticBody3D" parent="Level" unique_id=582696648]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, -6.5)
+
+[node name="Mesh" type="MeshInstance3D" parent="Level/Wall4" unique_id=653613261]
+mesh = SubResource("BoxMesh_qjp5t")
+
+[node name="Shape" type="CollisionShape3D" parent="Level/Wall4" unique_id=367799739]
+shape = SubResource("BoxShape3D_qoaon")
+
+[node name="You" type="CharacterBody3D" parent="." unique_id=342669938 groups=["bot_target"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -2)
+collision_layer = 2
+script = ExtResource("2_bgs5d")
+
+[node name="Mesh" type="MeshInstance3D" parent="You" unique_id=1790547803]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_hiosu")
+
+[node name="Shape" type="CollisionShape3D" parent="You" unique_id=2023557722]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_wccmu")
+
+[node name="Robot" type="CharacterBody3D" parent="." unique_id=957529826]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -7)
+collision_layer = 2
+script = ExtResource("3_1lw6q")
+
+[node name="Mesh" type="MeshInstance3D" parent="Robot" unique_id=1786222859]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_k2i3g")
+
+[node name="Shape" type="CollisionShape3D" parent="Robot" unique_id=1111336735]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_v81ay")
+
+[node name="Head" type="Node3D" parent="Robot" unique_id=610284755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Visor" type="MeshInstance3D" parent="Robot/Head" unique_id=1291577149]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
+mesh = SubResource("BoxMesh_sg0gw")
+
+[node name="Bot3D" type="Node3D" parent="Robot" unique_id=1744516659 node_paths=PackedStringArray("head")]
+script = ExtResource("4_guyrg")
+head = NodePath("../Head")
+
+[node name="Label" type="Label" parent="." unique_id=668725910]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 16.0
+offset_bottom = 12.0
