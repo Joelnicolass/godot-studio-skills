@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BotDifficulty" format=3]
+
+[ext_resource type="Script" path="res://addons/bot_kit/core/bot_difficulty.gd" id="1_diff"]
+
+[resource]
+script = ExtResource("1_diff")
+display_name = "Normal"
+sight_m = 35.0
+reaction_s = 0.8
+turn_deg_s = 149.0
+aim_error_deg = 9.0
+fire_cone_deg = 6.0
+burst_s = 0.8
+burst_pause_s = 0.6
+move_scale = 0.78
+keep_m = 10.0
+chase_chance = 0.6
+goal_reach_scale = 1.0

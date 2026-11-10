@@ -21,6 +21,7 @@ SKILL_NAMES=(
   godot-grass-kit
   godot-perception-kit
   godot-spill-kit
+  godot-bot-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -44,6 +45,7 @@ COMMAND_FILES=(
   add-grass.md
   add-perception.md
   add-spill.md
+  add-bots.md
   create-material.md
   research-feature.md
   manage-changes.md
