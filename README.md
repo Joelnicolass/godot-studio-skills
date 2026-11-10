@@ -22,14 +22,14 @@ With the kit:
 - Standard Godot code: proven patterns (signals, `Events` bus, FSM, components…), real typing, `gdformat` / `gdlint`, and GUT + CI when there are tests (skill `godot-code-quality`).
 - One RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across sessions in Engram or `.studio/MEMORY.md` if needed.
-- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orchestrator        | `skills/godot-studio-workflow/`                                                | The chat agent: interview + `/implement-feature` (PRD/RFC optional)                              |
-| How to write Godot  | `skills/`                                                                      | Layers, composition, code quality, MpKit, FSM, 2D platformer, RTS controls, props and their navmesh, grass, perception, blood and other substances, juicy, materials, feature research, visual, memory, tests and CI, a determinism bench (with AgentKit) |
+| How to write Godot  | `skills/`                                                                      | Layers, composition, code quality, MpKit, FSM, 2D platformer, RTS controls, props and their navmesh, grass, perception, blood and other substances, bots, juicy, materials, feature research, visual, memory, tests and CI, a determinism bench (with AgentKit) |
 | Subagents           | `agents/`                                                                      | Tech lead, developer, reviewer; optional tester and visual. Playtester: playtest module         |
-| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/create-prd`, … |
+| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/add-bots`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer with nodes and no hand-written RPCs: the game in one `.tres` (`MpGame`), the world in one node (`MpWorld`), the match's verbs in `Mp`, plus `MpActor`, `MpInput`, `MpState`, `MpMatch`. Prediction, adaptive buffers, lag compensation and network quality; LAN, dedicated, online rooms, private matches, web, a relay for servers without a public IP (Railway), VPS deploy and a *Setup game* wizard. **Zero** gameplay. Start with `addons/mp_kit/QUICKSTART.md` (step by step: `GUIDE.md`); game-free checks in `mpkit_lab/run/all.sh`. |
 | AgentKit            | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | Agent CLI + harness. This kit installs it; it is not maintained here.                            |
 | FsmKit              | `addons/fsm_kit/`                                                              | `FsmMachine` + `FsmState`. No autoload.                                                          |
@@ -39,6 +39,7 @@ With the kit:
 | GrassKit            | `addons/grass_kit/`                                                            | Grass for 3D: blades drawn on the GPU around the camera in cells that move with it, painted by hand with brushes in the 3D view (where it grows, how tall, the ground's colour, flower patches), tiers that thin with distance without popping, a ground read from the colliders (exact heights, normals, slope fade), clearings, trampling, a look that changes in play. No network inside. Start with `addons/grass_kit/README.md`; tests in `grasskit_lab/`. |
 | PerceptionKit       | `addons/perception_kit/`                                                       | What an actor perceives, in 2D and 3D: a view cone that keeps seeing until farther, all-around awareness up close, walls that hide, noises heard, any sense of the game's own (light, alarms), a memory that forgets with the last position, sides as physics layers, and handles to drag the view in the editor. No network inside; no states or combat. Start with `addons/perception_kit/README.md`; tests in `perceptionkit_lab/`. |
 | SpillKit            | `addons/spill_kit/`                                                            | What a body spills, in 3D (blood, ichor, oil, slime, ink): every hit sprays and marks the floor, a death grows a puddle that follows the slope; each substance is a type with the kit's wet look, PBR textures of its own or the game's shader; rules as values, one synced property for the network, Compatibility and WebGL 2, buttons to try it in the editor |
+| BotKit              | `addons/bot_kit/`                                                              | Bots that play your character like a person, in 3D: a node that presses a player's keys (an `Input` of its own your character reads), sees the nearest enemy with no wall in between, aims with a person's limits (reaction, error, cone, bursts, leading and lobbing), picks the weapon by distance, walks the navmesh to pickups, to where it saw the enemy or anywhere, and gets out of where it is stuck; your own behaviours as child nodes, difficulty presets, its sight and handles in the editor. No network inside. Start with `addons/bot_kit/README.md`; tests in `botkit_lab/`. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -95,23 +96,24 @@ Short path (default):
 7. `/add-grass` — grass around the camera on the GPU, over the ground's colliders, painted by hand in the 3D view (GrassKit addon)
 8. `/add-perception` — actors that see, hear and remember, with a view cone dragged in the editor, 2D or 3D (PerceptionKit addon)
 9. `/add-spill` — blood and other substances: sprays, marks on the floor and a puddle on death, with PBR of their own or the game's shader, in 3D (SpillKit addon)
-10. `/new-mp-feature` — MpKit actor scaffold only
-11. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
-12. `/research-feature` — understand a mechanic of a similar game (web research, and decompiling it when it can be opened) before implementing it
-13. `/workflow-status`
+10. `/add-bots` — bots that play your character like a person: they see, aim, pick a weapon, walk the level, with difficulty presets, in 3D (BotKit addon)
+11. `/new-mp-feature` — MpKit actor scaffold only
+12. `/create-material` — procedural material / texture with [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
+13. `/research-feature` — understand a mechanic of a similar game (web research, and decompiling it when it can be opened) before implementing it
+14. `/workflow-status`
 
 Written contract, if you ask:
 
-14. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
-15. `/verify-prd` → `PRD-REVIEW.md`
-16. `/extract-features` → `FEATURES.md`
-17. `/generate-rules` → `RULES.md`
-18. `/create-visual-guide` → `VISUAL.md`
-19. `/generate-rfcs` → `RFCs/` + `RFCS.md`
-20. `/implement-rfc <id>`
-21. `/review-rfc <id>`
-22. `/manage-changes`
-23. `/test-strategy` — optional
+15. `/create-prd` → `PRD.md` (short **living** GDD, not the whole title)
+16. `/verify-prd` → `PRD-REVIEW.md`
+17. `/extract-features` → `FEATURES.md`
+18. `/generate-rules` → `RULES.md`
+19. `/create-visual-guide` → `VISUAL.md`
+20. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+21. `/implement-rfc <id>`
+22. `/review-rfc <id>`
+23. `/manage-changes`
+24. `/test-strategy` — optional
 
 ## Install addons in a Godot project
 
@@ -124,6 +126,7 @@ Written contract, if you ask:
 ./install.sh --addon /path/to/godot-project grass_kit  # GrassKit
 ./install.sh --addon /path/to/godot-project perception_kit  # PerceptionKit
 ./install.sh --addon /path/to/godot-project spill_kit  # SpillKit
+./install.sh --addon /path/to/godot-project bot_kit    # BotKit
 ./install.sh --addon /path/to/godot-project agent_kit  # AgentKit (fetched from the playtest repo)
 ```
 
@@ -147,6 +150,7 @@ Every kit ships a **minimal example**: the smallest integration that works, to o
 | GrassKit | `addons/grass_kit/examples/minimal_3d/minimal_3d.tscn`: a floor and a field, with the ground shader | `grass_3d` | [README](addons/grass_kit/README.md) | `grasskit_lab/` |
 | PerceptionKit | `addons/perception_kit/examples/minimal_3d/minimal_3d.tscn`: a guard turning its head toward what it perceives (and `minimal_2d`) | `guards_3d` | [README](addons/perception_kit/README.md) | `perceptionkit_lab/` |
 | SpillKit | `addons/spill_kit/examples/minimal_3d/minimal_3d.tscn`: a dummy that bleeds, marks the floor and leaves a puddle | `substances_3d` (six substances: the kit's look, PBR of their own, a shader of their own) | [README](addons/spill_kit/README.md) | `spillkit_lab/` |
+| BotKit | `addons/bot_kit/examples/minimal_3d/minimal_3d.tscn`: a robot that hunts you round some walls | `arena_3d` (four bots, rifle and grenades, pickups, fleeing when hurt) | [README](addons/bot_kit/README.md) | `botkit_lab/` |
 
 Each lab is a small Godot project with the kit as a symlink; its README says how to run the tests.
 
@@ -163,6 +167,7 @@ addons/prop_kit/
 addons/grass_kit/
 addons/perception_kit/
 addons/spill_kit/
+addons/bot_kit/
 mpkit_lab/                     # MpKit's tests, network runs and examples, no game
 fsmkit_lab/                    # FsmKit's tests and example, no game
 platkit_lab/                   # PlatKit's tests and example, no game
@@ -171,6 +176,7 @@ propkit_lab/                   # PropKit's tests and examples, no game
 grasskit_lab/                  # GrassKit's tests and examples, no game
 perceptionkit_lab/             # PerceptionKit's tests and examples, no game
 spillkit_lab/                  # SpillKit's tests and examples, no game
+botkit_lab/                    # BotKit's tests and examples, no game
 skills/
   godot-studio-workflow/
   godot-studio-memory/
@@ -189,6 +195,7 @@ skills/
   godot-grass-kit/
   godot-perception-kit/
   godot-spill-kit/
+  godot-bot-kit/
   godot-material-maker/
   godot-feature-research/
   godot-determinism/
