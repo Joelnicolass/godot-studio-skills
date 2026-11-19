@@ -6,8 +6,9 @@ description: >-
   el valor en el nodo que lo usa; Resources (.tres) solo para tipos que se
   comparten. Prioriza reutilizar componentes en shared/addons.
   Usar al crear o editar .tscn, GDScript, shaders (Godot Shaders / Shadertoy),
-  sprites 2D (Aseprite MCP), modelos 3D (Blender MCP), materiales
-  procedurales (Material Maker), FSM, HUD, o al decidir
+  sprites 2D (Aseprite MCP), fuentes pixel de imagen, modelos 3D (Blender MCP),
+  materiales procedurales (Material Maker), FSM, HUD, controles táctiles
+  (VirtualJoystick, TouchScreenButton, mirar arrastrando), o al decidir
   entre herencia, constantes, Resources e inspector.
 ---
 
@@ -78,6 +79,7 @@ Acciones semánticas en Project Settings → Input Map: `move_left`, `attack`, `
 - Movimiento continuo / hold: `_physics_process` + `Input.get_vector(...)`.
 - One-shot de gameplay (salto, ataque): `_unhandled_input` (la UI ya pudo consumir el evento).
 - `_input` solo para interceptar (pausa, remap).
+- Celular o tablet: `VirtualJoystick` y `TouchScreenButton` aprietan las mismas acciones; el juego no lee toques. Mostrarlos solo en teléfonos, mirar arrastrando en 3D y acciones de un toque: [touch.md](touch.md).
 
 El catcher de input llama `apply_*` (en red, el `MpInput` del actor manda las acciones y el servidor aplica); no spawnea ni puntúa.
 
