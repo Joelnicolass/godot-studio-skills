@@ -65,6 +65,61 @@ On macOS `uv` is often `/opt/homebrew/bin/uv`. Open a **new** session after savi
 
 If the MCP does not start: do not fake the sprite; say what is missing (Aseprite, path, uv) and use a `PlaceholderTexture2D` **only** until the user enables it.
 
+### A pixel font (from an image)
+
+For a pixel art game, the font can be an image: a grid of equal cells, one character per cell, that Godot imports as a `FontFile`. With the same OK as the art, it is drawn from Aseprite with a Lua script (no MCP), so it stays reproducible.
+
+1. **The glyphs as text.** Glyphs of 5×7 in cells of 6×8: the extra column and row are the space between letters and between lines.
+2. **The Aseprite script** draws each glyph in its cell and exports the PNG:
+
+   ```lua
+   -- pixel_font.lua: aseprite -b --script-param out=assets/fonts/pixel_font.png --script pixel_font.lua
+   local CW, CH, COLS = 6, 8, 16
+   local GLYPHS = {
+     A = {".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"},
+     ["Ñ"] = {".##.#", "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#"},
+     ["¡"] = {"..#..", ".....", "..#..", "..#..", "..#..", "..#..", "..#.."},
+     -- …one per character
+   }
+   local ORDER = {"A", "Ñ", "¡"}  -- the cells' order: the same as character_ranges
+   local rows = math.ceil(#ORDER / COLS)
+   local spr = Sprite(COLS * CW, rows * CH, ColorMode.RGB)
+   local img = Image(spr.width, spr.height, ColorMode.RGB)
+   local white = app.pixelColor.rgba(255, 255, 255, 255)
+   for i, key in ipairs(ORDER) do
+     local ox, oy = ((i - 1) % COLS) * CW, math.floor((i - 1) / COLS) * CH
+     for y, row in ipairs(GLYPHS[key]) do
+       for x = 1, #row do
+         if row:sub(x, x) == "#" then img:drawPixel(ox + x - 1, oy + y - 1, white) end
+       end
+     end
+   end
+   spr:newCel(spr.layers[1], spr.frames[1], img, Point(0, 0))
+   spr:saveCopyAs(app.params.out)
+   spr:close()
+   ```
+
+   White on transparent: the `Label` sets the colour (`font_color`, modulate).
+3. **The import** (the PNG's Import tab → *Font Data (Image Font)*, or the `.import`):
+
+   ```ini
+   importer="font_data_image"
+   [params]
+   character_ranges=PackedStringArray("32-127", "193", "201", "205", "211", "218", "209", "220", "225", "233", "237", "243", "250", "241", "252", "161", "191")
+   columns=16
+   rows=7
+   scaling_mode=1
+   ```
+
+   - `character_ranges` goes **in the cells' order**, not sorted by code: cell 96 is the first code after `32-127` (here Á, 193). That is how ÁÉÍÓÚÑÜáéíóúñü¡¿ come after the ASCII. A range (`"32-127"`) is consecutive cells.
+   - `columns` and `rows` give the cell's size: the image divided by them.
+   - `scaling_mode=1` scales by integers only: the font's own size is the cell's height (8), and another size uses the integer multiple below, with no blurred pixels.
+4. **In the game:** the font in the theme (or in the `Label`'s `theme_override_fonts/font`) with `font_size` equal to the cell's height or a multiple; the texture filter on Nearest (Project Settings › Rendering › Textures › Canvas Textures › Default Texture Filter).
+
+**Accents on capitals:** in an 8-row cell, the accent takes the top row and the letter drops to 6 rows (from 7). It shows by one pixel; for whole letters, taller cells (for example 6×9) and `rows` and the height in the script to match.
+
+Tested in Godot 4.7.2 with a PNG made this way: each character lands in its cell in the order of `character_ranges` (Ñ, 209, before ¡, 161), the font's size is 8 and each letter advances 6 px.
+
 ## 3D models (Blender MCP)
 
 Official source: [MCP Server — Blender](https://www.blender.org/lab/mcp-server/).
