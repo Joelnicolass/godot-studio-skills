@@ -65,6 +65,61 @@ En macOS el `uv` suele estar en `/opt/homebrew/bin/uv`. Sesión **nueva** despu�
 
 Si el MCP no arranca: no finjas el sprite; avisá qué falta (Aseprite, path, uv) y usá un placeholder `PlaceholderTexture2D` **solo** hasta que el usuario lo habilite.
 
+### Una fuente pixel (de imagen)
+
+Para un juego de pixel art, la fuente puede ser una imagen: una grilla de celdas iguales, un carácter por celda, que Godot importa como `FontFile`. Con el mismo OK del arte, se dibuja desde Aseprite con un script de Lua (sin el MCP), así queda reproducible.
+
+1. **Los glifos como texto.** Glifos de 5×7 en celdas de 6×8: la columna y la fila de más son el espacio entre letras y entre líneas.
+2. **El script de Aseprite** dibuja cada glifo en su celda y exporta el PNG:
+
+   ```lua
+   -- pixel_font.lua: aseprite -b --script-param out=assets/fonts/pixel_font.png --script pixel_font.lua
+   local CW, CH, COLS = 6, 8, 16
+   local GLYPHS = {
+     A = {".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"},
+     ["Ñ"] = {".##.#", "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#"},
+     ["¡"] = {"..#..", ".....", "..#..", "..#..", "..#..", "..#..", "..#.."},
+     -- …uno por carácter
+   }
+   local ORDER = {"A", "Ñ", "¡"}  -- el orden de las celdas: el mismo que character_ranges
+   local rows = math.ceil(#ORDER / COLS)
+   local spr = Sprite(COLS * CW, rows * CH, ColorMode.RGB)
+   local img = Image(spr.width, spr.height, ColorMode.RGB)
+   local white = app.pixelColor.rgba(255, 255, 255, 255)
+   for i, key in ipairs(ORDER) do
+     local ox, oy = ((i - 1) % COLS) * CW, math.floor((i - 1) / COLS) * CH
+     for y, row in ipairs(GLYPHS[key]) do
+       for x = 1, #row do
+         if row:sub(x, x) == "#" then img:drawPixel(ox + x - 1, oy + y - 1, white) end
+       end
+     end
+   end
+   spr:newCel(spr.layers[1], spr.frames[1], img, Point(0, 0))
+   spr:saveCopyAs(app.params.out)
+   spr:close()
+   ```
+
+   Blanco sobre transparente: el color lo pone el `Label` (`font_color`, modulate).
+3. **El import** (pestaña Import del PNG → *Font Data (Image Font)*, o el `.import`):
+
+   ```ini
+   importer="font_data_image"
+   [params]
+   character_ranges=PackedStringArray("32-127", "193", "201", "205", "211", "218", "209", "220", "225", "233", "237", "243", "250", "241", "252", "161", "191")
+   columns=16
+   rows=7
+   scaling_mode=1
+   ```
+
+   - `character_ranges` va **en el orden de las celdas**, no ordenado por código: la celda 96 es el primer código después de `32-127` (acá Á, 193). Así entran ÁÉÍÓÚÑÜáéíóúñü¡¿ después del ASCII. Un rango (`"32-127"`) son celdas seguidas.
+   - `columns` y `rows` dan el tamaño de la celda: la imagen dividida por ellos.
+   - `scaling_mode=1` escala solo en enteros: el tamaño propio de la fuente es el alto de la celda (8), y otro tamaño usa el múltiplo entero de abajo, sin píxeles borrosos.
+4. **En el juego:** la fuente en el tema (o en `theme_override_fonts/font` del `Label`) con `font_size` igual al alto de la celda o un múltiplo; el filtro de texturas en Nearest (Project Settings › Rendering › Textures › Canvas Textures › Default Texture Filter).
+
+**Las tildes en las mayúsculas:** en una celda de 8 filas, la tilde ocupa la fila de arriba y la letra baja a 6 filas (de 7). Se nota un píxel; para letras enteras, celdas más altas (por ejemplo 6×9) y `rows` y el alto en el script de acuerdo.
+
+Probado en Godot 4.7.2 con un PNG hecho así: cada carácter cae en su celda en el orden de `character_ranges` (Ñ, 209, antes de ¡, 161), el tamaño de la fuente es 8 y cada letra avanza 6 px.
+
 ## Modelos 3D (Blender MCP)
 
 Fuente oficial: [MCP Server — Blender](https://www.blender.org/lab/mcp-server/).
