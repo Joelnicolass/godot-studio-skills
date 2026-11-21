@@ -41,6 +41,8 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | Demora con que aparece el movimiento de otro jugador (`remote_delay_ms`; tope con `MAX_REMOTE_DELAY_MS`) | `arena.sh` lag **T** |
 | `Mp.net_quality()` mide el RTT, la pérdida y el jitter de la red simulada | `arena.sh` lag **T** |
 | Compensación de lag: disparos con anticipación a un blanco que camina aciertan; con `--lag-comp=off`, la mayoría erra | `arena.sh` lagshot **T** |
+| Un deportivo (`examples/sports_2d`) a 40 ms con jitter: la carrera y la barrida propias, predichas con su estado en `sync_extra`, se corrigen menos de un tick de su paso; las barridas que tocaron en la pantalla de quien barre ganan la pelota (6 de 6), sin compensación casi nunca | `sports.sh` (ENet y `TRANSPORT=ws`) **T** |
+| Con predicción, `sync_extra` viaja con la pose; una escena guardada antes avisa | `tests/test_actor_sync.gd`, `tests/test_examples.gd` |
 | Buffers adaptativos, calidad de red, historial de poses y frame con el momento visto | `tests/test_input_queue.gd`, `test_net_quality.gd`, `test_lag_comp.gd`, `test_input_frame_view.gd` |
 | Suavizado con buffer: el otro jugador se ve parejo | `arena.sh` lag (observe) **T** |
 | Inundación de túnel y de `mp_sv_*`: solo pasan las ráfagas | `arena.sh` flood **T** |

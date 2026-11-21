@@ -31,6 +31,7 @@ if [ "$QUICK" = 1 ]; then
   step "rooms enet" env SCENARIOS=public bash "$HERE/rooms.sh"
   step "private enet" bash "$HERE/private.sh"
   step "finish" bash "$HERE/finish.sh"
+  step "sports" env SPORTS_MODES=on bash "$HERE/sports.sh"
   step "online" env ONLINE_WEB=0 bash "$HERE/online.sh"
   step "late join" bash "$HERE/late.sh"
   step "wizard 2d" bash "$HERE/wizard.sh"
@@ -41,6 +42,10 @@ else
     step "rooms $t" env TRANSPORT=$t bash "$HERE/rooms.sh"
     step "private $t" env TRANSPORT=$t bash "$HERE/private.sh"
     step "finish $t" env TRANSPORT=$t MODE="quit leave again" bash "$HERE/finish.sh"
+  done
+  ## The sports example on a bad network: predicted running and slides, tackles with and without lag compensation.
+  for t in enet ws; do
+    step "sports $t" env TRANSPORT=$t bash "$HERE/sports.sh"
   done
   step "rooms wss" env TLS=1 SCENARIOS=public bash "$HERE/rooms.sh"
   step "relay faults" bash "$HERE/relayfault.sh"

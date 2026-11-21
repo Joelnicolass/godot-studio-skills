@@ -56,7 +56,7 @@ Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
-Ejemplos del addon: `addons/mp_kit/examples/minimal_2d/` (lo que escribe *Setup game*: un menú, un mundo y un jugador predicho; abrí `boot.tscn` y F6) y `examples/arena_2d/` (el completo). Partí del mínimo y sumá lo que pide la feature.
+Ejemplos del addon: `addons/mp_kit/examples/minimal_2d/` (lo que escribe *Setup game*: un menú, un mundo y un jugador predicho; abrí `boot.tscn` y F6), `examples/arena_2d/` (el completo) y `examples/sports_2d/` (un deportivo en tiempo real: dos contra dos, pelota, barrida predicha, quite con compensación de lag; GUIDE §7.8). Partí del mínimo y sumá lo que pide la feature; para un juego de pocos jugadores con pelota y contacto, partí de `sports_2d`.
 
 Guía humana (inspector, paso a paso, túnel custom, servidor de salas, salas hub y cola): `addons/mp_kit/README.md`.
 
@@ -80,6 +80,8 @@ El kit tiene que poder usarlo una persona **sin IA**. Por eso, en código nuevo,
 | Input del jugador | hijo **`MpInput`** + `input.get_vector(...)` en el servidor | un `submit_move` por frame |
 | Movimiento sin lag | `MpActor.predict` + `func mp_move(input, delta)` (solo movimiento; efectos detrás de `not input.is_replaying()`) | predicción o rollback propios |
 | Animación desde el movimiento (clip de correr, salto y caída, pasos) | `net.motion_speed()` / `net.motion_velocity()` (Vector2 en 2D, Vector3 en 3D; lo mismo en servidor, dueño y proxies; nunca una corrección que se desvanece) | velocidad estimada desde la pose del nodo frame a frame, una velocity sincronizada solo para animar |
+| Una acción que mueve (dash, barrida, salto con contador) sin correcciones | dentro de `mp_move`: arranca con `keys.is_action_just_pressed`, cuenta sus ticks ahí, y todo lo que `mp_move` lee va en `sync_extra` (con predicción viaja con la pose) | arrancarla en `_physics_process`, o dejar su contador fuera de `sync_extra` |
+| Un deportivo en tiempo real (pelota, quites, pocos jugadores) | `examples/sports_2d` y GUIDE §7.8: cada cosa que se mueve es un `MpActor` (la pelota del servidor, `BUFFERED`), la pelota propia dibujada en los pies predichos, el quite con `seen_position_of`, `start_seats` en 0 | un snapshot propio del estado entero cada N ticks con extrapolación, un `mp_move` que aproxima al motor o vuelve en el servidor, contactos contra el presente |
 | Stun, ralentización, empujón sobre un jugador predicho | el servidor escribe valores que `mp_move` lee (`stun_ticks`, `knock`) listados en `sync_extra`; las correcciones se desvanecen solas (`correction_smoothing_s`), un warp: `net.snap()` en el servidor después de moverlo | mover el nodo del dueño desde el servidor a mano, suavizar correcciones por tu cuenta |
 | Objetos suaves (criaturas, otros jugadores) | `MpActor` con `smoothing = BUFFERED` (por defecto) | un `MultiplayerSynchronizer` sobre `position` + un lerp propio |
 | Orden puntual del dueño | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
@@ -222,6 +224,10 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 - Fingir que `host()` LAN detrás de NAT es online.
 - Auto-broadcast del túnel custom (el servidor debe elegir).
 - Meter reglas de juego o `kind` de bala en el dict del túnel.
+- Un RPC propio que manda el estado entero del partido cada N ticks y un cliente que lo pega y lo extrapola: los cuerpos y la pelota son `MpActor` y se dibujan `BUFFERED`.
+- Un `mp_move` que aproxima el movimiento del servidor, o que vuelve sin mover en el servidor mientras otro código lee las teclas en vivo: la predicción y el servidor nunca coinciden. El movimiento es uno solo, en `mp_move`, también en el servidor.
+- Leer la pose de un nodo de red en `_process` antes que el kit (`process_priority` de 10000 o menos): se ve sin la corrección suavizada, a saltos.
+- Arrancar el partido a mano cuando carga el host, o `start_seats` en 1 en una partida por equipos: la puerta ya espera a todos (`MpMatch.all_loaded`).
 
 ## Checklist
 

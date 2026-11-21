@@ -1,0 +1,130 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/mp_kit/examples/sports_2d/pitch.gd" id="1_pitch"]
+[ext_resource type="PackedScene" path="res://addons/mp_kit/examples/sports_2d/ball.tscn" id="2_ball"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_world.gd" id="3_world"]
+[ext_resource type="PackedScene" path="res://addons/mp_kit/examples/sports_2d/player.tscn" id="4_player"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_slot_spawner.gd" id="5_spawner"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_state.gd" id="6_state"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_match.gd" id="7_match"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_leave_button.gd" id="8_leave"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_invite_label.gd" id="9_invite"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_start_button.gd" id="10_start"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_waiting_label.gd" id="11_waiting"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_long"]
+size = Vector2(920, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tall"]
+size = Vector2(20, 500)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_state"]
+properties/0/path = NodePath(".:values")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+
+[node name="Pitch" type="Node2D"]
+script = ExtResource("1_pitch")
+
+[node name="Walls" type="StaticBody2D" parent="."]
+
+[node name="Top" type="CollisionShape2D" parent="Walls"]
+position = Vector2(480, 30)
+shape = SubResource("RectangleShape2D_long")
+
+[node name="Bottom" type="CollisionShape2D" parent="Walls"]
+position = Vector2(480, 510)
+shape = SubResource("RectangleShape2D_long")
+
+[node name="Left" type="CollisionShape2D" parent="Walls"]
+position = Vector2(30, 270)
+shape = SubResource("RectangleShape2D_tall")
+
+[node name="Right" type="CollisionShape2D" parent="Walls"]
+position = Vector2(930, 270)
+shape = SubResource("RectangleShape2D_tall")
+
+[node name="Ball" parent="." instance=ExtResource("2_ball")]
+position = Vector2(480, 270)
+
+[node name="MpWorld" type="Node" parent="."]
+script = ExtResource("3_world")
+player_scene = ExtResource("4_player")
+
+[node name="SpawnPoints" type="Node2D" parent="MpWorld"]
+
+[node name="P1" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(220, 270)
+
+[node name="P2" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(740, 270)
+
+[node name="P3" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(220, 150)
+
+[node name="P4" type="Marker2D" parent="MpWorld/SpawnPoints"]
+position = Vector2(740, 390)
+
+[node name="Actors" type="Node2D" parent="MpWorld"]
+
+[node name="Players" type="MultiplayerSpawner" parent="MpWorld"]
+spawn_path = NodePath("../Actors")
+script = ExtResource("5_spawner")
+pawn_scene = ExtResource("4_player")
+spawn_points = NodePath("../SpawnPoints")
+
+[node name="State" type="Node" parent="MpWorld"]
+script = ExtResource("6_state")
+
+[node name="MpSync" type="MultiplayerSynchronizer" parent="MpWorld/State"]
+replication_config = SubResource("SceneReplicationConfig_state")
+
+[node name="Match" type="Node" parent="MpWorld"]
+script = ExtResource("7_match")
+
+[node name="Hud" type="CanvasLayer" parent="MpWorld"]
+
+[node name="Score" type="Label" parent="MpWorld/Hud"]
+offset_left = 430.0
+offset_top = 4.0
+offset_right = 530.0
+offset_bottom = 34.0
+theme_override_font_sizes/font_size = 22
+text = "0 - 0"
+horizontal_alignment = 1
+
+[node name="Help" type="Label" parent="MpWorld/Hud"]
+offset_left = 40.0
+offset_top = 508.0
+offset_right = 920.0
+offset_bottom = 534.0
+text = "Arrows: run   Space: slide (wins the ball)   Enter: kick"
+horizontal_alignment = 1
+
+[node name="Leave" type="Button" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 50.0
+offset_right = 16.0
+offset_bottom = 50.0
+script = ExtResource("8_leave")
+
+[node name="Invite" type="Label" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 90.0
+offset_right = 16.0
+offset_bottom = 90.0
+script = ExtResource("9_invite")
+
+[node name="Start" type="Button" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 130.0
+offset_right = 16.0
+offset_bottom = 130.0
+script = ExtResource("10_start")
+
+[node name="Waiting" type="Label" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 170.0
+offset_right = 16.0
+offset_bottom = 170.0
+script = ExtResource("11_waiting")

@@ -143,3 +143,34 @@ MpAuthority.ensure_sync(self, PackedStringArray([
 ```
 
 `add_child` bajo el `spawn_path`. `MpSpawner` revela el actor al peer cuando su spawner está listo (Godot manda spawn + sync). Un `MpSlotSpawner` hace el pawn por slot; no hace falta `ensure_pawn` en glue.
+
+## Un deportivo: una acción predicha y un contacto con lag
+
+`addons/mp_kit/examples/sports_2d/` (GUIDE §7.8). La barrida es movimiento: arranca y cuenta dentro de `mp_move`, y lo que `mp_move` lee va en `sync_extra` (`velocity`, `facing`, `slide_ticks`, `stun_ticks`), que con predicción viaja con la pose.
+
+```gdscript
+func mp_move(keys: MpInput, delta: float) -> void:
+	if slide_ticks > 0:
+		slide_ticks -= 1
+		velocity = velocity.move_toward(Vector2.ZERO, SLIDE_BRAKE * delta)
+	else:
+		var move := keys.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down")
+		if move.length() > 0.1:
+			facing = move.normalized()
+		velocity = velocity.move_toward(move * RUN, ACCEL * delta)
+		if keys.is_action_just_pressed(&"ui_select"):
+			slide_ticks = SLIDE_TICKS
+			velocity = facing * SLIDE_SPEED
+	move_and_slide()
+```
+
+El quite, en el servidor, contra donde el que se barre veía al que lleva la pelota:
+
+```gdscript
+var seen: Vector2 = slider.net.seen_position_of(carrier)
+if slider.slide_ticks > 0 and seen.distance_to(slider.position) <= TACKLE_REACH:
+	ball.kick((carrier.position - slider.position).normalized() * POKE_SPEED, slider.net.owner_slot)
+	carrier.knock(slider.position)   # escribe stun_ticks y velocity: su pantalla repite desde ahí
+```
+
+La pelota es un `MpActor` del servidor (`BUFFERED`); la pantalla del que la lleva la dibuja en sus pies predichos, en `_process` con `process_priority` mayor que 10000.

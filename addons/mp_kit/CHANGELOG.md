@@ -2,6 +2,20 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.24.0
+
+- **La predicción ya no se corrige en cada acción.** En un `MpActor` con predicción, cada valor de `sync_extra` que no era una pose ni una velocidad (un contador de dash o de barrida, un stun, la dirección) se mandaba cuando cambiaba, en otro paquete que la pose. La reconciliación volvía a la pose del servidor y repetía las teclas desde el estado de otro tick. Medido con un dash contado en `sync_extra`, a 40 ms con jitter: 35 px de corrección promedio (picos de 133 px) por ENet y por WebSocket. Ahora, con predicción, todo `sync_extra` viaja con la pose en cada envío, y la corrección baja a 0,5-1,3 px. Lo encontró futbolito-match: sus barridas se veían tarde y su jugador se corregía todo el tiempo.
+- **Un deportivo en tiempo real.** Ejemplo nuevo `examples/sports_2d/`: dos contra dos, con una pelota del servidor dibujada `BUFFERED` y, en los pies del que la lleva, en su propia pantalla. La carrera y la barrida son predichas, con su estado en `sync_extra`. El quite se juzga contra donde el que se barre veía al rival (`seen_position_of`), y el partido arranca cuando entraron todos. La GUIDE suma §7.8, con el caso, las siete reglas y qué hacer con un motor central.
+- **Tests:** 154 del kit:
+  - con predicción, `sync_extra` va con la pose, y una escena vieja ya no coincide (avisa);
+  - el ejemplo guardado para predecir;
+  - un partido solo con barrida, gambeta, patada y gol.
+- **Lab:** `mpkit_lab/run/sports.sh` juega el ejemplo con un dedicado y dos clientes, a 40 ms por tramo con jitter, por ENet y por WebSocket:
+  - las barridas que tocaron en la pantalla de quien barre ganan la pelota 6 de 6 con compensación de lag, y entre 0 y 3 de 6 sin ella;
+  - la carrera y la barrida propias se corrigen menos de un tick de su paso (4 a 6 px). Con el envío viejo, la barrida propia se corregía 70 px.
+
+Qué actualizar: abrí en el editor cada escena con un `MpActor` con predicción y `sync_extra`, y guardala (MpKit avisa al jugar: «its saved MpSync is out of date»). Hasta que la guardes, sigue mandando esos valores aparte. Cambia lo que se manda, así que `MpKit.VERSION` pasa a 0.24.0: servidor y clientes tienen que ir con el mismo build.
+
 ## 0.23.0
 
 - **Sacar el peón de un jugador conectado no deja errores.** Hasta acá, después de `MpActor.despawn()` el servidor escribía, por cada peón, `Node not found: ".../Pawn_N/MpInput"`, `Failed to get cached node` e `Invalid packet received`. Eran las teclas que el cliente mandó antes de enterarse de que el peón ya no estaba. Un host corrido con `--fail-on-error` (un CI, un harness de pruebas) se cortaba ahí, y el depurador del editor las mostraba en rojo cada vez que moría un jugador. Ahora los cuadros de entrada de `MpInput` y las llamadas `MpActor.to_server` viajan por `MpKit`, que vive siempre, con una clave por nodo (`MpKit.route_key`: su camino, igual en todos los peers). Lo que llega para un nodo que ya no está (murió) o que todavía no llegó se descarta sin decir nada. Lo pidió El Eternauta: su prueba de RFC-020A corre con `--fail-on-error`.
