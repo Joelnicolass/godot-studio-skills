@@ -192,6 +192,10 @@ func _run() -> void:
 			await _finish_host()
 		"finish_friend":
 			await _finish_friend()
+		"sports_carrier":
+			await _carry_the_ball()
+		"sports_tackler":
+			await _tackle_the_carrier()
 		_:
 			_check(false, "known role %s" % _role)
 	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -1235,6 +1239,137 @@ func _refused_online() -> void:
 
 
 ## Walks down and up at a steady speed, in legs of LEG_S: the lag shooter's moving target.
+## Sports example (examples/sports_2d), the carrier: takes the ball and runs up and down with it. Its own running is
+## predicted, so while nothing knocks it its own corrections stay small; a tackle knocks it (the server's word, replayed).
+func _carry_the_ball() -> void:
+	await _until(_networked_slot, "the carrier got a slot")
+	var me := await _pawn(MpKit.local_slot()) as Node2D
+	var ball := get_tree().current_scene.get_node_or_null(^"Ball") as Node2D
+	if me == null or ball == null:
+		_check(false, "the pitch has the carrier and the ball")
+		return
+	var actor := MpActor.of(me)
+	var seconds := float(MpBoot.user_value("probe-seconds", "40"))
+	var end := Time.get_ticks_msec() + int(seconds * 1000.0)
+	var free_frames := 0
+	var worst := 0.0
+	var knocks := 0
+	var was_down := false
+	var leg_s := 0.0
+	var up := true
+	while Time.get_ticks_msec() < end:
+		await get_tree().physics_frame
+		var down := int(me.get(&"stun_ticks")) > 20
+		if down and not was_down:
+			knocks += 1
+		was_down = down
+		## Measured while it runs with the ball, nothing knocking it, a second after it first took it (the start aside).
+		var free := int(me.get(&"stun_ticks")) == 0 and int(me.get(&"slide_ticks")) == 0
+		var holding := int(ball.get(&"holder")) == MpKit.local_slot()
+		free_frames = free_frames + 1 if free and holding else 0
+		if free_frames > 60:
+			worst = maxf(worst, actor.last_correction())
+		if int(ball.get(&"holder")) != MpKit.local_slot():
+			_steer(me.position, ball.position)
+			continue
+		leg_s += get_physics_process_delta_time()
+		if leg_s > 1.0 or (up and me.position.y < 110.0) or (not up and me.position.y > 430.0):
+			leg_s = 0.0
+			up = not up
+		_steer(me.position, me.position + Vector2(0, -100 if up else 100))
+	_steer(Vector2.ZERO, Vector2.ZERO)
+	print("METRIC carrier_knocks=%d carrier_free_correction_px=%.2f" % [knocks, worst])
+	## At most about one tick of its running (230 px/s): the pacing's extra or missing frame, smoothed on screen.
+	_check(worst < float(MpBoot.user_value("probe-max-correction-px", "5")), "its own running, predicted, is barely corrected (%.2f px)" % worst)
+
+
+## Sports example, the tackler: chases the carrier it sees on its screen and slides into it. The server checks the
+## slide against where this player SAW the carrier (lag compensation), so a slide that touched on this screen wins the
+## ball. Its own slide is predicted with its state in the pose's packet: barely corrected.
+## `--probe-tackles=N` attempts; `--probe-expect-misses`: the server runs without lag compensation (report only).
+func _tackle_the_carrier() -> void:
+	await _until(_networked_slot, "the tackler got a slot")
+	var me := await _pawn(MpKit.local_slot()) as Node2D
+	var carrier := await _pawn(2 if MpKit.local_slot() == 1 else 1) as Node2D
+	var ball := get_tree().current_scene.get_node_or_null(^"Ball") as Node2D
+	if me == null or carrier == null or ball == null:
+		_check(false, "the pitch has both players and the ball")
+		return
+	var actor := MpActor.of(me)
+	var other := MpActor.of(carrier).owner_slot
+	await _until(func() -> bool: return int(ball.get(&"holder")) == other, "the carrier took the ball")
+	var tries := int(MpBoot.user_value("probe-tackles", "6"))
+	var won := 0
+	var made := 0
+	var worst := 0.0
+	var end := Time.get_ticks_msec() + int(float(MpBoot.user_value("probe-seconds", "40")) * 1000.0)
+	while made < tries and Time.get_ticks_msec() < end:
+		await get_tree().physics_frame
+		var holder := int(ball.get(&"holder"))
+		if holder == MpKit.local_slot():
+			## It has the ball: kick it back toward the carrier's side, then get out of the way.
+			Input.action_press(&"ui_accept")
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+			Input.action_release(&"ui_accept")
+			await _walk_off(me)
+			continue
+		if holder != other or int(me.get(&"stun_ticks")) > 0 or int(me.get(&"slide_ticks")) > 0:
+			_steer(Vector2.ZERO, Vector2.ZERO)
+			continue
+		var aim: Vector2 = carrier.position + (MpActor.of(carrier).motion_velocity() as Vector2) * 0.08
+		_steer(me.position, aim)
+		if me.position.distance_to(carrier.position) > 26.0:
+			continue
+		made += 1
+		_steer(Vector2.ZERO, Vector2.ZERO)
+		Input.action_press(&"ui_select")
+		var took := false
+		for i in 36:
+			await get_tree().physics_frame
+			if i == 2:
+				Input.action_release(&"ui_select")
+			if int(me.get(&"slide_ticks")) > 0:
+				worst = maxf(worst, actor.last_correction())
+			took = took or int(ball.get(&"holder")) != other
+		if took:
+			won += 1
+		await _walk_off(me)
+	_steer(Vector2.ZERO, Vector2.ZERO)
+	print("METRIC tackles_won=%d tackles_made=%d slide_correction_px=%.2f" % [won, made, worst])
+	_check(made >= tries, "it slid into the carrier %d times" % made)
+	## At most about one tick of its slide (520 px/s): the pacing's extra or missing frame, smoothed on screen.
+	_check(worst < float(MpBoot.user_value("probe-max-correction-px", "10")), "its own slide, predicted, is barely corrected (%.2f px)" % worst)
+	if not MpBoot.user_flag("probe-expect-misses"):
+		_check(won * 10 >= made * 6, "the slides that touched on its screen won the ball (%d of %d)" % [won, made])
+
+
+## Presses the arrows that walk from `from` toward `to` (none closer than a few pixels; Vector2.ZERO twice: none).
+func _steer(from: Vector2, to: Vector2) -> void:
+	var d := to - from
+	for pair: Array in [[&"ui_left", &"ui_right", d.x], [&"ui_up", &"ui_down", d.y]]:
+		var amount: float = pair[2]
+		if amount < -4.0:
+			Input.action_press(pair[0])
+			Input.action_release(pair[1])
+		elif amount > 4.0:
+			Input.action_press(pair[1])
+			Input.action_release(pair[0])
+		else:
+			Input.action_release(pair[0])
+			Input.action_release(pair[1])
+
+
+## Walks back toward its own goal for a second, so the carrier takes the ball again.
+func _walk_off(me: Node2D) -> void:
+	var back := Vector2(160, me.position.y)
+	var end := Time.get_ticks_msec() + 1200
+	while Time.get_ticks_msec() < end:
+		_steer(me.position, back)
+		await get_tree().physics_frame
+	_steer(Vector2.ZERO, Vector2.ZERO)
+
+
 func _walk_as_target() -> void:
 	await _until(_networked_slot, "the target got a slot")
 	var pawn := await _pawn(MpKit.local_slot())

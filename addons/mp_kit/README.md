@@ -6,7 +6,7 @@ Do **not** install for a 1P-only game.
 
 This guide is for **manual setup in the editor**. Code identifiers stay in English.
 
-**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Three examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match) and `examples/bots_2d/` (the host starts the match, bots in the free seats, late join). What follows is the reference of every piece.
+**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Four examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match), `examples/bots_2d/` (the host starts the match, bots in the free seats, late join) and `examples/sports_2d/` (two against two with a ball: a predicted slide, a lag-compensated tackle, the match waits for everyone; GUIDE §7.8). What follows is the reference of every piece.
 
 ## Contents
 
@@ -537,6 +537,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `examples/minimal_2d/` | minimal example: what *Setup game* writes in 2D without rooms (boot, world, predicted player); `tests/test_examples.gd` keeps it that way and `mpkit_lab/run/minimal.sh` plays it over the network |
 | `examples/arena_2d/` | full example (boot, arena, player, shots, bell, lobby, room server); the lab's e2e fixture |
 | `examples/bots_2d/` | a match with a lobby in the world: the boot's `MpFlow` with `start_on_timeout` off, `host_can_start` and `late_join`; `world.gd` puts a bot in every free seat at the start (`Mp.gate().vacant_slots()`, solo: seats 2..4) and `bot.gd` walks by pressing the player's keys (`MpInput.bot_press`, while `has_player()` is false); a late player takes that pawn. It uses `minimal_2d`'s player; `tests/test_examples.gd` plays it solo |
+| `examples/sports_2d/` | a real-time sports game, two against two: `player.gd` runs and slides in `mp_move` (predicted, with its state in `sync_extra`); `ball.gd` is the server's (`BUFFERED`), is drawn at its carrier's predicted feet and judges a tackle against where the slider saw the carrier (`seen_position_of`); `pitch.gd` scores the goal in `MpState` and kicks off again; the match waits for the four. `tests/test_examples.gd` plays it solo and `mpkit_lab/run/sports.sh` over a lagged network (GUIDE §7.8) |
 
 Role helpers on `MpKit`: `is_authority()` (solo or the server: where the rules run), `has_local_slot()` (this machine has a player with a known slot). `local_slot()` returns 0 on a client until the server assigns its slot (it used to guess). `MpSpawner.spawn_actor(scene, props, owner_slot)` instances on the server under `spawn_path` (the scene must be in the spawner's list). `MpFlow` can be a node in the boot scene: it moves itself under the root.
 

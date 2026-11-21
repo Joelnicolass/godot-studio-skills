@@ -443,7 +443,7 @@ So:
 3. Sounds and effects behind `if not keys.is_replaying():`.
 4. Jumps with `keys.is_action_just_pressed(&"jump")` **do** go inside: they look the same on the owner, on the server and when replayed.
 5. Points, damage, shots do **not** go there. They go in `_physics_process` behind `is_authority()`.
-6. **Inertia or gravity**: if `mp_move` uses the previous tick's velocity (accelerating, falling), add `velocity` to **MpActor › Sync › sync_extra**. The same with any other state `mp_move` reads (a dash counter, "on the floor"). It travels in the same packet as the pose, and reconciliation starts from that value. `net.last_correction()` tells you how much was corrected.
+6. **Inertia or gravity**: if `mp_move` uses the previous tick's velocity (accelerating, falling), add `velocity` to **MpActor › Sync › sync_extra**. The same with any other state `mp_move` reads (a dash counter, "on the floor"). With prediction, all of `sync_extra` travels in the same packet as the pose, every send, and reconciliation starts from that value. `net.last_correction()` tells you how much was corrected. A scene saved with MpKit 0.23 or older sent it apart, when it changed: open it in the editor and save it (the kit warns while playing).
 
 ```gdscript
 # With gravity: velocity in Sync › Extra.
@@ -1009,6 +1009,98 @@ With `world_reports_loaded` on, who counts changes:
 - **Solo** ("Play solo" or against the AI): the gate is armed too, with no seats and no network (`arm([], 0)`), and waits only for the host. The tree stays paused until the world reports, so the match clock and the AI do not run behind the screen. Without `world_reports_loaded` it starts at once, as before.
 
 If reading the world on the thread fails (a cold start right after an import, a request the engine refuses), the loader reads it on the main thread instead of staying without a world.
+
+### 7.8 A real-time sports game: few players, one ball, contact
+
+A two-against-two football, hockey or basketball: everyone fights for the same ball, slides and bumps. It is the hardest case for the network, because each player watches their own player, the others' and the ball at once. What feels right:
+
+- **your player answers at once**, also when it slides or kicks;
+- **the others and the ball move smoothly**, with no jumps or stalls;
+- **a slide that touched on your screen wins the ball**, even with a ping;
+- **the match starts once everyone is in.**
+
+All of that is already in the kit. `examples/sports_2d/` (two against two) puts it together in a few lines, and `mpkit_lab/run/sports.sh` tests it on a bad network.
+
+```
+Pitch (pitch.gd)                  # draws the pitch; a goal scores in MpState and kicks off again
+├── Walls (StaticBody2D)          # the edges: players collide with them, not with each other
+├── Ball (ball.gd)                # the server's: MpActor with no owner, BUFFERED; sync_extra: holder
+└── MpWorld                       # seats 4: 1 and 3 play on the left, 2 and 4 on the right
+    ├── SpawnPoints, Actors, Players (MpSlotSpawner: player.tscn)
+    ├── State (MpState: home, away), Match (MpMatch)
+    └── Hud                       # the score, Leave, Start, Waiting
+```
+
+**1. Everything that moves is an `MpActor`.** The players (predicted) and the ball (the server's, drawn `BUFFERED`). Do not send a whole state yourself every few ticks, paste it on arrival and stretch it with its velocity: that gives jumps and stalls, above all over WebSocket, where packets arrive in bursts. `BUFFERED` draws a little in the past, between two real states, with a buffer that measures the network by itself.
+
+**2. `mp_move` is the only movement, with the actions inside.** The server runs the same function, with the same keys, once per frame of the owner. A slide is movement: it starts with the key, counts its ticks inside, and everything `mp_move` reads goes in **Sync › sync_extra**. With prediction those values travel in the same packet as the pose, so the reconciliation replays from the right state.
+
+```gdscript
+# player.gd (the gist). sync_extra: velocity, facing, slide_ticks, stun_ticks
+func mp_move(keys: MpInput, delta: float) -> void:
+	if slide_ticks > 0:
+		slide_ticks -= 1
+		velocity = velocity.move_toward(Vector2.ZERO, SLIDE_BRAKE * delta)
+		if slide_ticks == 0:
+			stun_ticks = RECOVER_TICKS
+	elif stun_ticks > 0:
+		stun_ticks -= 1
+		velocity = velocity.move_toward(Vector2.ZERO, BRAKE * delta)
+	else:
+		var move := keys.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down")
+		if move.length() > 0.1:
+			facing = move.normalized()
+		velocity = velocity.move_toward(move * RUN, ACCEL * delta)
+		if keys.is_action_just_pressed(&"ui_select"):
+			slide_ticks = SLIDE_TICKS
+			velocity = facing * SLIDE_SPEED
+	move_and_slide()
+```
+
+**3. What the server decides goes in those same values.** A rival's slide knocks you down, a goal sends you back to your place: the server writes `stun_ticks` and `velocity` (or the position, and `net.snap()` for a jump), and your screen replays from there, with the correction smoothed. It is §6.2, with the stun and the knock.
+
+```gdscript
+func knock(from: Vector2) -> void:   # on the server
+	slide_ticks = 0
+	stun_ticks = KNOCKED_TICKS
+	velocity = (position - from).normalized() * KNOCK_SPEED
+```
+
+**4. Contacts are judged against what the one who made them saw.** You see the others a little in the past. If the server compared your slide with where the rival is now, the one that touched on your screen would miss. The server asks where the slider saw it (§6.8):
+
+```gdscript
+# ball.gd, on the server: an opponent who slides and reaches the carrier where it SAW it
+for node in get_tree().get_nodes_in_group(Player.GROUP):
+	var player := node as Player
+	if player.slide_ticks <= 0 or player.team() == feet.team():
+		continue
+	var seen: Vector2 = player.net.seen_position_of(feet)
+	if seen.distance_to(player.position) <= Player.TACKLE_REACH:
+		return player
+```
+
+Measured with `sports.sh`, at 40 ms each way with jitter: with compensation, the slides that touched on the slider's screen win the ball 6 out of 6; without it (`--lag-comp=off`), between 0 and 3 out of 6.
+
+**5. The ball at your feet is drawn at your feet.** The ball is the server's and shows in the past; your player is in the present. While you carry it, draw it where your predicted feet are, after the kit draws (`process_priority` above 10000). For the others it is still the server's.
+
+```gdscript
+# ball.gd
+func _process(_delta: float) -> void:
+	var mine := holder > 0 and holder == MpKit.local_slot() and not net.is_authority()
+	var feet := carrier() if mine else null
+	if feet != null:
+		$Body.global_position = feet.global_position + feet.facing * DRIBBLE
+	else:
+		$Body.position = Vector2.ZERO
+```
+
+**6. The match waits for everyone.** `MpFlow.start_seats` at 0 (the default) waits for every seat, and `MpMatch` keeps the world paused until then. Do not start the match by hand when the host loads: listen to `MpMatch.all_loaded`. To start anyway when someone does not come: `start_on_timeout` with `load_timeout_s`, or `MpStartButton` for the host.
+
+**7. What follows a network node is read after the kit.** A camera, the ball at the feet, a bar: `process_priority` above 10000. Before it, you read the pose without the smoothed correction, and it shows in jumps.
+
+**If your match is a central engine** (one step that moves every body together, deterministic): keep it on the server, but move one body's step into a pure function that both the engine and each seat's pawn `mp_move` use. The server moves that body with `mp_move` (not with keys read live in its own step), and the engine takes that position. Each body no seat drives, and the ball, is a server `MpActor` the engine writes.
+
+**What the example does not do:** predict the kick. After a pass or a shot, the ball leaves when the server's word arrives: one ping plus the ball's buffer (around 100 ms with a 60 ms ping, estimated). To predict it, the owner simulates it on the kick until the server's arrives, and replaces it. It does not compensate lag when taking a loose ball either: the server decides it with the present positions.
 
 ## 8. Testing
 
@@ -2010,6 +2102,11 @@ It is Godot 4.7's, not the kit's or your game's: loading on a thread a script th
 5. Is `sync_position` ticked? Did you save the player scene after ticking it?
 6. Does the `MpSlotSpawner` (the `MpWorld`'s `Players`) have `spawn_path` and `pawn_scene`?
 7. Is the match waiting for seats? The world is paused until the seats it expects load (`MpMatch.waiting`, `Mp.gate().is_waiting()`). It starts by itself once `load_timeout_s` passed; in Host LAN press **Start now** (`MpStartButton`), or try `--start-seats=1`.
+
+**My player is corrected every time it does an action (a dash, a slide, a jump with a counter).**
+1. Is everything `mp_move` reads (the counter, the direction, the velocity) in **Sync › sync_extra**? What is missing there, the reconciliation takes from your screen, not from the server.
+2. Was the scene saved with MpKit 0.24 or newer? Before, those values travelled apart from the pose and the replay started from the wrong tick (35 px of correction at 40 ms with jitter, against 1 px). The kit warns "its saved MpSync is out of date": open the scene and save it.
+3. Does the action start inside `mp_move` with `keys.is_action_just_pressed`, and not in `_physics_process`?
 
 **A client is turned away right away with `timeout`, only against a remote server or relay.**
 The server's log says `MpKit: the server turned peer N away (timeout)`: its ticket did not arrive in `admission_timeout_s`. The kit's network timeouts count real time, so a far server is fine. If the server runs your own timers for network things, use `MpKit.after_real(seconds, callable)`, not `create_timer`: with `--fixed-fps` (it stops syncing to the clock and can run thousands of frames a second) or `Engine.time_scale`, game time is not real time.
