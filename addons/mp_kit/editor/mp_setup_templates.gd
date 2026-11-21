@@ -88,7 +88,7 @@ static func player(is_3d: bool, script: Script) -> Node:
 	mp_input.name = "MpInput"
 	_add(root, mp_input)
 	var spawn_only := PackedStringArray(["MpActor:owner_slot"])
-	MpSyncBuilder.ensure(actor, "MpSync", ^"../..", MpActorSync.entries(actor), spawn_only, root)
+	MpSyncBuilder.ensure(actor, "MpSync", ^"../..", MpActorSync.entries(actor), spawn_only, root, MpActorSync.always(actor))
 	return root
 
 

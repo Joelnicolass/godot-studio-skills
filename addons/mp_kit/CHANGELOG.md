@@ -2,6 +2,20 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.24.0
+
+- **Prediction is no longer corrected on every action.** In an `MpActor` with prediction, each `sync_extra` value that was not a pose or a velocity (a dash or slide counter, a stun, the direction) was sent when it changed, in another packet than the pose. The reconciliation went back to the server's pose and replayed the keys from another tick's state. Measured with a dash counted in `sync_extra`, at 40 ms with jitter: 35 px of correction on average (peaks of 133 px) over ENet and over WebSocket. Now, with prediction, all of `sync_extra` travels with the pose on every send, and the correction drops to 0.5-1.3 px. Found by futbolito-match: its slides looked late and its player was corrected all the time.
+- **A real-time sports game.** New example `examples/sports_2d/`: two against two, with a server ball drawn `BUFFERED` and, on its carrier's own screen, at its feet. Running and sliding are predicted, with their state in `sync_extra`. A tackle is judged against where the slider saw the rival (`seen_position_of`), and the match starts once everyone is in. The GUIDE adds §7.8, with the case, the seven rules and what to do with a central engine.
+- **Tests:** 154 in the kit:
+  - with prediction, `sync_extra` rides with the pose, and an old scene no longer matches (it warns);
+  - the example saved for prediction;
+  - a solo match with a slide, a dribble, a kick and a goal.
+- **Lab:** `mpkit_lab/run/sports.sh` plays the example with a dedicated server and two clients, at 40 ms each way with jitter, over ENet and over WebSocket:
+  - the slides that touched on the slider's screen win the ball 6 out of 6 with lag compensation, and between 0 and 3 out of 6 without it;
+  - its own running and slide are corrected less than one tick of their step (4 to 6 px). With the old send, its own slide was corrected 70 px.
+
+What to update: open in the editor each scene with an `MpActor` with prediction and `sync_extra`, and save it (MpKit warns while playing: "its saved MpSync is out of date"). Until you save it, it still sends those values apart. What is sent changes, so `MpKit.VERSION` goes to 0.24.0: server and clients must run the same build.
+
 ## 0.23.0
 
 - **Removing a connected player's pawn leaves no errors.** Until now, after `MpActor.despawn()` the server logged, per pawn, `Node not found: ".../Pawn_N/MpInput"`, `Failed to get cached node` and `Invalid packet received`. Those were the keys the client sent before it heard the pawn was gone. A host run with `--fail-on-error` (a CI, a test harness) stopped there, and the editor's debugger showed them in red each time a player died. Now `MpInput`'s input frames and `MpActor.to_server` calls travel through `MpKit`, which is always there, with a key per node (`MpKit.route_key`: its path, the same on every peer). What arrives for a node that is gone (it died) or not there yet is dropped without a word. Asked for by El Eternauta: its RFC-020A playtest runs with `--fail-on-error`.

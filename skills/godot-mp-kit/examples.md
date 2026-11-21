@@ -144,3 +144,34 @@ MpAuthority.ensure_sync(self, PackedStringArray([
 ```
 
 `add_child` under `spawn_path`. `MpSpawner` reveals the actor to the peer once its spawner is ready (Godot sends spawn + sync). An `MpSlotSpawner` does the per-slot pawn; glue does not need `ensure_pawn`.
+
+## A sports game: a predicted action and a contact with lag
+
+`addons/mp_kit/examples/sports_2d/` (GUIDE §7.8). The slide is movement: it starts and counts inside `mp_move`, and what `mp_move` reads goes in `sync_extra` (`velocity`, `facing`, `slide_ticks`, `stun_ticks`), which with prediction rides with the pose.
+
+```gdscript
+func mp_move(keys: MpInput, delta: float) -> void:
+	if slide_ticks > 0:
+		slide_ticks -= 1
+		velocity = velocity.move_toward(Vector2.ZERO, SLIDE_BRAKE * delta)
+	else:
+		var move := keys.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down")
+		if move.length() > 0.1:
+			facing = move.normalized()
+		velocity = velocity.move_toward(move * RUN, ACCEL * delta)
+		if keys.is_action_just_pressed(&"ui_select"):
+			slide_ticks = SLIDE_TICKS
+			velocity = facing * SLIDE_SPEED
+	move_and_slide()
+```
+
+The tackle, on the server, against where the slider saw the carrier:
+
+```gdscript
+var seen: Vector2 = slider.net.seen_position_of(carrier)
+if slider.slide_ticks > 0 and seen.distance_to(slider.position) <= TACKLE_REACH:
+	ball.kick((carrier.position - slider.position).normalized() * POKE_SPEED, slider.net.owner_slot)
+	carrier.knock(slider.position)   # writes stun_ticks and velocity: its screen replays from there
+```
+
+The ball is a server `MpActor` (`BUFFERED`); its carrier's screen draws it at its predicted feet, in `_process` with `process_priority` above 10000.

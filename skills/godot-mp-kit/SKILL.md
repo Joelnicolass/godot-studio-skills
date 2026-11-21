@@ -56,7 +56,7 @@ If the project addon and a loose copy diverge, `res://addons/mp_kit/` in this pr
 
 API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / tunnel / scaffold: [editor.md](editor.md). Generic code: [examples.md](examples.md).
 
-The addon's examples: `addons/mp_kit/examples/minimal_2d/` (what *Setup game* writes: a menu, a world and a predicted player; open `boot.tscn` and F6) and `examples/arena_2d/` (the full one). Start from the minimal one and add what the feature asks for.
+The addon's examples: `addons/mp_kit/examples/minimal_2d/` (what *Setup game* writes: a menu, a world and a predicted player; open `boot.tscn` and F6), `examples/arena_2d/` (the full one) and `examples/sports_2d/` (a real-time sports game: two against two, a ball, a predicted slide, a lag-compensated tackle; GUIDE §7.8). Start from the minimal one and add what the feature asks for; for a game of few players with a ball and contact, start from `sports_2d`.
 
 Human guide (inspector, step-by-step, custom tunnel, room server, hub rooms and queue): `addons/mp_kit/README.md`.
 
@@ -80,6 +80,8 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | Player input | an **`MpInput`** child + `input.get_vector(...)` on the server | a `submit_move` per frame |
 | Lag-free movement | `MpActor.predict` + `func mp_move(input, delta)` (movement only; effects behind `not input.is_replaying()`) | your own prediction or rollback |
 | Animation from movement (run clip, jump and fall, footsteps) | `net.motion_speed()` / `net.motion_velocity()` (Vector2 in 2D, Vector3 in 3D; the same on server, owner and proxies; never a correction fading) | speed estimated from the node's pose frame to frame, a synced velocity just for animation |
+| An action that moves (a dash, a slide, a jump with a counter) with no corrections | inside `mp_move`: it starts with `keys.is_action_just_pressed`, counts its ticks there, and everything `mp_move` reads goes in `sync_extra` (with prediction it rides with the pose) | starting it in `_physics_process`, or leaving its counter out of `sync_extra` |
+| A real-time sports game (a ball, tackles, few players) | `examples/sports_2d` and GUIDE §7.8: every thing that moves is an `MpActor` (the ball the server's, `BUFFERED`), your own ball drawn at your predicted feet, the tackle with `seen_position_of`, `start_seats` at 0 | your own snapshot of the whole state every N ticks with extrapolation, an `mp_move` that approximates the engine or returns on the server, contacts against the present |
 | Stun, slow, knockback on a predicted player | the server writes values `mp_move` reads (`stun_ticks`, `knock`) listed in `sync_extra`; corrections fade by themselves (`correction_smoothing_s`), a warp: `net.snap()` on the server after moving it | moving the owner's node from the server by hand, smoothing corrections yourself |
 | Smooth objects (creatures, other players) | `MpActor` with `smoothing = BUFFERED` (default) | a `MultiplayerSynchronizer` on `position` + your own lerp |
 | A one-off order from the owner | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
@@ -222,6 +224,10 @@ Same collision and `submit_*` code (the local host does not send an RPC). Always
 - Pretending a LAN `host()` behind NAT is online.
 - Auto-broadcast of the custom tunnel (the server must choose).
 - Putting game rules or bullet `kind` in the tunnel dict.
+- An RPC of your own that sends the whole match state every N ticks and a client that pastes and extrapolates it: the bodies and the ball are `MpActor`s and are drawn `BUFFERED`.
+- An `mp_move` that approximates the server's movement, or returns without moving on the server while other code reads the keys live: prediction and server never agree. Movement is one, in `mp_move`, on the server too.
+- Reading a network node's pose in `_process` before the kit (`process_priority` 10000 or lower): it shows without the smoothed correction, in jumps.
+- Starting the match by hand when the host loads, or `start_seats` at 1 in a team match: the gate already waits for everyone (`MpMatch.all_loaded`).
 
 ## Checklist
 
