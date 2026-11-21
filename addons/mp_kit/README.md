@@ -6,7 +6,7 @@ Copia canónica: este repo (`addons/mp_kit`). Ayudas host-authoritative. **Cero 
 
 Esta guía es para **configuración manual en el editor**. Los identificadores de código quedan en inglés.
 
-**¿Primera vez?** Empezá por [QUICKSTART.md](QUICKSTART.md): seis pasos con los nodos `MpActor`, `MpInput` y `MpState`, sin escribir RPCs. Tres ejemplos corren solos, en LAN y dedicado: `examples/minimal_2d/` (lo mínimo, lo que escribe el asistente *Setup game*), `examples/arena_2d/` (disparos, campana, salas, partida privada) y `examples/bots_2d/` (el host arranca la partida, bots en los asientos libres, unirse tarde). Lo de abajo es la referencia de cada pieza.
+**¿Primera vez?** Empezá por [QUICKSTART.md](QUICKSTART.md): seis pasos con los nodos `MpActor`, `MpInput` y `MpState`, sin escribir RPCs. Cuatro ejemplos corren solos, en LAN y dedicado: `examples/minimal_2d/` (lo mínimo, lo que escribe el asistente *Setup game*), `examples/arena_2d/` (disparos, campana, salas, partida privada), `examples/bots_2d/` (el host arranca la partida, bots en los asientos libres, unirse tarde) y `examples/sports_2d/` (dos contra dos con pelota: barrida predicha, quite con compensación de lag, el partido espera a todos; GUIDE §7.8). Lo de abajo es la referencia de cada pieza.
 
 ## Índice
 
@@ -539,6 +539,7 @@ Nodos de alto nivel (lo que usa un humano; detalle y ejemplos en [QUICKSTART.md]
 | `examples/minimal_2d/` | ejemplo mínimo: lo que escribe *Setup game* en 2D sin salas (boot, mundo, jugador predicho); `tests/test_examples.gd` cuida que siga siéndolo y `mpkit_lab/run/minimal.sh` lo juega en red |
 | `examples/arena_2d/` | ejemplo completo (boot, arena, jugador, disparos, campana, lobby, servidor de salas); prueba e2e del laboratorio |
 | `examples/bots_2d/` | una partida con lobby en el mundo: el `MpFlow` del boot con `start_on_timeout` apagado, `host_can_start` y `late_join`; `world.gd` pone un bot en cada asiento libre al arrancar (`Mp.gate().vacant_slots()`, en solo los asientos 2..4) y `bot.gd` camina apretando las teclas del jugador (`MpInput.bot_press`, mientras `has_player()` es falso); el que entra tarde toma ese peón. Usa el jugador de `minimal_2d`; `tests/test_examples.gd` lo juega en solo |
+| `examples/sports_2d/` | un deportivo en tiempo real, dos contra dos: `player.gd` corre y se barre en `mp_move` (predicho, con su estado en `sync_extra`); `ball.gd` es del servidor (`BUFFERED`), se dibuja en los pies predichos de quien la lleva y juzga el quite contra donde lo veía el que se barre (`seen_position_of`); `pitch.gd` suma el gol en `MpState` y saca del medio; el partido espera a los cuatro. `tests/test_examples.gd` lo juega en solo y `mpkit_lab/run/sports.sh` en red con lag (GUIDE §7.8) |
 
 Helpers de rol en `MpKit`: `is_authority()` (solo o servidor: donde corren las reglas), `has_local_slot()` (hay un jugador en esta máquina con slot conocido). `local_slot()` devuelve 0 en un cliente hasta que el servidor le asigna slot (antes adivinaba). `MpSpawner.spawn_actor(escena, props, owner_slot)` instancia en el servidor bajo `spawn_path` (la escena tiene que estar en la lista del spawner). `MpFlow` se puede poner como nodo en la escena de boot: se muda solo a la raíz.
 

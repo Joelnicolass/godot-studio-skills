@@ -475,7 +475,7 @@ func _check_saved_sync() -> void:
 		return
 	_checked_scenes[scene] = true
 	var sync := get_node_or_null(SYNC_NAME) as MultiplayerSynchronizer
-	if sync and not MpSyncBuilder.matches(sync.replication_config, sync_entries(), MpActorSync.spawn_only(self)):
+	if sync and not MpSyncBuilder.matches(sync.replication_config, sync_entries(), MpActorSync.spawn_only(self), MpActorSync.always(self)):
 		push_warning("MpActor on '%s' (%s): its saved %s is out of date for this MpKit. Open the scene in the editor and save it." % [_root.name, scene, SYNC_NAME])
 
 
