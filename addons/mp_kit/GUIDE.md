@@ -1117,7 +1117,7 @@ func _process(_delta: float) -> void:
   ```
 - **`Smoothing › shared_timeline` on** in everything that moves (players, ball): they are drawn at one moment of the server, at the delay of the one that needs most.
 - **`adaptive_buffer` on** (the default): it draws only the delay the network asks for. A fixed `buffer_delay_s` adds all that time, always.
-- **`max_extrapolate_s`**: a late packet is guessed along its motion up to this long (0.1 s by default) and then it waits. At 0 it waits at once: a short stop instead of a guess that is corrected later.
+- **`max_extrapolate_s` at 0** in a ball game: a late packet waits at the newest state instead of being guessed along its motion (0.1 s by default) and corrected later. Measured in a two-against-two match at 80 ms each way with 2 % loss: the same key-to-screen lag (240-250 ms), never drawing past the newest state, and the ball with 0 or 1 hitches in 23 s against 2 with 0.1.
 - **An instant answer on your screen, cosmetic only**: a sound, the button's flash, the start of the kick animation. Never the body.
 
 Measured from the key to your player moving on your screen, at 80 ms each way with 2 % loss (160 ms round trip), with no acceleration:
