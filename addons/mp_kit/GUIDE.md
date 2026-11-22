@@ -1117,7 +1117,7 @@ func _process(_delta: float) -> void:
   ```
 - **`Smoothing › shared_timeline` prendido** en todo lo que se mueve (jugadores, pelota): se dibujan en un mismo momento del servidor, al retraso que necesite el que más necesita.
 - **`adaptive_buffer` prendido** (lo de entrada): dibuja solo el atraso que pide la red. Un `buffer_delay_s` fijo agrega todo ese tiempo siempre.
-- **`max_extrapolate_s`**: un paquete tarde se adivina siguiendo su movimiento hasta este tiempo (0,1 s de entrada) y después espera. En 0 espera enseguida: una frenadita en lugar de una adivinanza que después se corrige.
+- **`max_extrapolate_s` en 0** en un juego de pelota: un paquete tarde espera en el último estado en lugar de adivinarse siguiendo su movimiento (0,1 s de entrada), que después se corrige. Medido en un partido 2 contra 2 a 80 ms por tramo con 2 % de pérdida: el mismo lag de la tecla a la pantalla (240-250 ms), sin dibujar nunca más allá del último estado, y la pelota con 0 o 1 tirones en 23 s contra 2 con 0,1.
 - **Una respuesta instantánea en tu pantalla, solo cosmética**: un sonido, el flash del botón, el arranque de la animación de la patada. Nunca el cuerpo.
 
 Medido de la tecla a tu jugador moviéndose en tu pantalla, a 80 ms por tramo con 2 % de pérdida (160 ms de ida y vuelta), sin aceleración:
