@@ -1104,7 +1104,17 @@ func _process(_delta: float) -> void:
 
 **Without prediction: everything on one timeline.** With prediction your player is in the present, and the ball and the rivals a little in the past. In a ball game that shows: you reach the ball on your screen and it is not yours until the server says so, and a tackle knocks you down out of nowhere. If you would rather feel the ping as key lag, steady and with no jumps (like LoL, which does not predict movement), turn prediction off and draw everything together:
 
-- **`MpActor › Prediction › predict` off** on your player: `mp_move` is not called, the server moves it in `_physics_process` behind `is_authority()` (reading `input`), and your screen draws it like the others. The server applies the newest keys it got: without prediction there is no key queue to wait in.
+- **`MpActor › Prediction › predict` off** on your player (and save the scene: the kit rebuilds its `MpSync`). The kit no longer calls `mp_move`: the server runs it itself in `_physics_process`, and your screen draws your player like the others. The server applies the newest keys it got: without prediction there is no key queue to wait in.
+
+  ```gdscript
+  # player.gd of examples/sports_2d: the same mp_move, with and without prediction
+  func _physics_process(delta: float) -> void:
+  	if not net.is_authority():
+  		return
+  	if not net.predict:
+  		mp_move(input, delta)   # without prediction, the server moves here
+  	# ...the player's rules, as always
+  ```
 - **`Smoothing › shared_timeline` on** in everything that moves (players, ball): they are drawn at one moment of the server, at the delay of the one that needs most.
 - **`adaptive_buffer` on** (the default): it draws only the delay the network asks for. A fixed `buffer_delay_s` adds all that time, always.
 - **`max_extrapolate_s`**: a late packet is guessed along its motion up to this long (0.1 s by default) and then it waits. At 0 it waits at once: a short stop instead of a guess that is corrected later.
