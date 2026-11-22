@@ -352,6 +352,8 @@ Transforms (and `velocity`) always travel, in the same packet as the pose; the r
 | `buffer_delay_s` | With `BUFFERED`: the furthest in the past it may draw (the cap). More = hides worse networks | 0.1 |
 | `adaptive_buffer` | With `BUFFERED`: measures how often states arrive and how late, and draws only as far back as needed, up to `buffer_delay_s`. On a good network a few ticks; on a bad one, more. Off = always `buffer_delay_s` | on |
 | `late_tolerance` | With `adaptive_buffer`: the share of states that may arrive late (3% = the 97th percentile, as Photon Fusion). Less = steadier on a bad network, a little further behind | 0.03 |
+| `shared_timeline` | With `adaptive_buffer`: drawn at the same moment of the server as every other actor with it on, at the largest delay any of them needs. Turn it on in everything that moves in a ball game (§7.8). `net.draw_delay()` says how far back it is drawn | off |
+| `max_extrapolate_s` | With `BUFFERED`: past the newest state (a late packet), how long it goes on along its motion before it waits. 0 = it waits at once | 0.1 |
 | `follow_speed` | With `FOLLOW`: how fast it chases | 14.0 |
 | `freeze_rigid_if_proxy` | If the parent is a `RigidBody`, freezes it on clients (physics runs on the server) | on |
 
@@ -1024,14 +1026,14 @@ All of that is already in the kit. `examples/sports_2d/` (two against two) puts 
 ```
 Pitch (pitch.gd)                  # draws the pitch; a goal scores in MpState and kicks off again
 ├── Walls (StaticBody2D)          # the edges: players collide with them, not with each other
-├── Ball (ball.gd)                # the server's: MpActor with no owner, BUFFERED; sync_extra: holder
+├── Ball (ball.gd)                # the server's: MpActor with no owner, BUFFERED, shared_timeline; sync_extra: holder
 └── MpWorld                       # seats 4: 1 and 3 play on the left, 2 and 4 on the right
     ├── SpawnPoints, Actors, Players (MpSlotSpawner: player.tscn)
     ├── State (MpState: home, away), Match (MpMatch)
     └── Hud                       # the score, Leave, Start, Waiting
 ```
 
-**1. Everything that moves is an `MpActor`.** The players (predicted) and the ball (the server's, drawn `BUFFERED`). Do not send a whole state yourself every few ticks, paste it on arrival and stretch it with its velocity: that gives jumps and stalls, above all over WebSocket, where packets arrive in bursts. `BUFFERED` draws a little in the past, between two real states, with a buffer that measures the network by itself.
+**1. Everything that moves is an `MpActor`.** The players (predicted) and the ball (the server's, drawn `BUFFERED`). Do not send a whole state yourself every few ticks, paste it on arrival and stretch it with its velocity: that gives jumps and stalls, above all over WebSocket, where packets arrive in bursts. `BUFFERED` draws a little in the past, between two real states, with a buffer that measures the network by itself. With `shared_timeline` on all of them, the ball and the players are drawn at one moment of the server.
 
 **2. `mp_move` is the only movement, with the actions inside.** The server runs the same function, with the same keys, once per frame of the owner. A slide is movement: it starts with the key, counts its ticks inside, and everything `mp_move` reads goes in **Sync › sync_extra**. With prediction those values travel in the same packet as the pose, so the reconciliation replays from the right state.
 
@@ -1099,6 +1101,24 @@ func _process(_delta: float) -> void:
 **7. What follows a network node is read after the kit.** A camera, the ball at the feet, a bar: `process_priority` above 10000. Before it, you read the pose without the smoothed correction, and it shows in jumps.
 
 **If your match is a central engine** (one step that moves every body together, deterministic): keep it on the server, but move one body's step into a pure function that both the engine and each seat's pawn `mp_move` use. The server moves that body with `mp_move` (not with keys read live in its own step), and the engine takes that position. Each body no seat drives, and the ball, is a server `MpActor` the engine writes.
+
+**Without prediction: everything on one timeline.** With prediction your player is in the present, and the ball and the rivals a little in the past. In a ball game that shows: you reach the ball on your screen and it is not yours until the server says so, and a tackle knocks you down out of nowhere. If you would rather feel the ping as key lag, steady and with no jumps (like LoL, which does not predict movement), turn prediction off and draw everything together:
+
+- **`MpActor › Prediction › predict` off** on your player: `mp_move` is not called, the server moves it in `_physics_process` behind `is_authority()` (reading `input`), and your screen draws it like the others. The server applies the newest keys it got: without prediction there is no key queue to wait in.
+- **`Smoothing › shared_timeline` on** in everything that moves (players, ball): they are drawn at one moment of the server, at the delay of the one that needs most.
+- **`adaptive_buffer` on** (the default): it draws only the delay the network asks for. A fixed `buffer_delay_s` adds all that time, always.
+- **`max_extrapolate_s`**: a late packet is guessed along its motion up to this long (0.1 s by default) and then it waits. At 0 it waits at once: a short stop instead of a guess that is corrected later.
+- **An instant answer on your screen, cosmetic only**: a sound, the button's flash, the start of the kick animation. Never the body.
+
+Measured from the key to your player moving on your screen, at 80 ms each way with 2 % loss (160 ms round trip), with no acceleration:
+
+| Buffer | WebSocket | ENet |
+|---|---|---|
+| fixed `buffer_delay_s` at 0.1 | 290 ms | 283 ms |
+| adaptive (the default) | 235 ms | 234 ms |
+| fixed at 0 | 200 ms, guessing every late packet | 199 ms |
+
+What is left above the round trip with no buffer (about 40 ms) is waiting for the next tick on each machine: the key, the server and the drawing. Over WebSocket (TCP), a lost packet holds the ones after it until it is resent: with loss, the adaptive buffer grows to cover it, or the stop shows.
 
 **What the example does not do:** predict the kick. After a pass or a shot, the ball leaves when the server's word arrives: one ping plus the ball's buffer (around 100 ms with a 60 ms ping, estimated). To predict it, the owner simulates it on the kick until the server's arrives, and replaces it. It does not compensate lag when taking a loose ball either: the server decides it with the present positions.
 
