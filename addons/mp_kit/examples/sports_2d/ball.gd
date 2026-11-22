@@ -3,8 +3,9 @@ extends Node2D
 ## The ball: the server's (MpActor, owner 0). The server moves it, sticks it to its carrier's feet, lets a player take it
 ## when it rolls close, gives it away to a slide that reaches its carrier (where the slider SAW the carrier: lag
 ## compensation), bounces it off the touchlines and says when it goes in a goal. Every peer draws it smoothly,
-## a little in the past (MpActor › Smoothing BUFFERED), like any thing of the server. The carrier's own screen draws it
-## at its own predicted feet instead, so dribbling never lags behind its legs.
+## a little in the past (MpActor › Smoothing BUFFERED), like any thing of the server, at the same moment as the players
+## (shared_timeline, on in both). The carrier's own screen draws it at its own predicted feet instead, so dribbling
+## never lags behind its legs.
 
 ## A team scored (0: home, in the right goal; 1: away, in the left one). Server.
 signal scored(team: int)

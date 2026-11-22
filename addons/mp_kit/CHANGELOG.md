@@ -2,6 +2,17 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.25.0
+
+- **Una sola línea de tiempo.** `MpActor › Smoothing › shared_timeline`: todo actor `BUFFERED` con esto prendido se dibuja en el mismo momento del servidor, al retraso adaptativo más grande que necesite alguno (sube y baja de a poco, como el de uno solo). Antes cada actor calculaba el suyo, y la pelota podía verse un tick corrida de los pies que la tocan. Apagado por defecto. Lo pidió futbolito-match.
+- **Sin adivinar.** `MpActor › Smoothing › max_extrapolate_s` (0,1 s, como antes): pasado el último estado, cuánto sigue un proxy con su movimiento antes de esperar. En 0 espera enseguida.
+- `MpActor.draw_delay()`: cuánto atrás se dibuja un proxy ahora.
+- **GUIDE §7.8, «Sin predicción: todo en una línea de tiempo»**: cuándo conviene en un juego de pelota (el ping como lag de las teclas, sin saltos), cómo se configura, y el lag medido de la tecla a la pantalla a 80 ms por tramo con 2 % de pérdida: 290 ms con un buffer fijo de 0,1 s, 235 ms adaptativo y 200 ms sin buffer. Sin predicción, el servidor aplica las teclas más nuevas: no hay cola de teclas que acortar.
+- `examples/sports_2d`: la pelota y los jugadores con `shared_timeline`.
+- **Tests:** 156 del kit (dos proxies que comparten se dibujan al mismo retraso, el que cubre al más lento; uno que no comparte sigue con el suyo; con `max_extrapolate_s` en 0 espera en el último estado). `mpkit_lab/run/sports.sh` comprueba por red que la pelota y el portador se dibujan en el mismo momento (0 s de diferencia), y ahora pide que la carrera y la barrida propias se corrijan menos de dos ticks de su paso (con más corridas se vieron 5,4 px corriendo y 9 px en la barrida: un frame que el servidor tuvo que suponer, en un giro).
+
+Qué actualizar: nada; lo nuevo está apagado por defecto. `MpKit.VERSION` pasa a 0.25.0, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.24.0
 
 - **La predicción ya no se corrige en cada acción.** En un `MpActor` con predicción, cada valor de `sync_extra` que no era una pose ni una velocidad (un contador de dash o de barrida, un stun, la dirección) se mandaba cuando cambiaba, en otro paquete que la pose. La reconciliación volvía a la pose del servidor y repetía las teclas desde el estado de otro tick. Medido con un dash contado en `sync_extra`, a 40 ms con jitter: 35 px de corrección promedio (picos de 133 px) por ENet y por WebSocket. Ahora, con predicción, todo `sync_extra` viaja con la pose en cada envío, y la corrección baja a 0,5-1,3 px. Lo encontró futbolito-match: sus barridas se veían tarde y su jugador se corregía todo el tiempo.
