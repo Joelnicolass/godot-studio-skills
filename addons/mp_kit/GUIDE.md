@@ -1104,7 +1104,17 @@ func _process(_delta: float) -> void:
 
 **Sin predicción: todo en una línea de tiempo.** Con predicción tu jugador va en el presente, y la pelota y los rivales un poco en el pasado. En un juego de pelota eso se nota: llegás a la pelota en tu pantalla y no es tuya hasta que lo dice el servidor, y un quite te tira de golpe. Si preferís que el ping se sienta como lag de las teclas, constante y sin saltos (como LoL, que no predice el movimiento), apagá la predicción y dibujá todo junto:
 
-- **`MpActor › Prediction › predict` apagado** en tu jugador: `mp_move` no se llama, el servidor lo mueve en `_physics_process` detrás de `is_authority()` (leyendo `input`), y tu pantalla lo dibuja como a los demás. El servidor aplica las teclas más nuevas que le llegaron: sin predicción no hay cola de teclas que esperar.
+- **`MpActor › Prediction › predict` apagado** en tu jugador (y guardá la escena: el kit rehace su `MpSync`). El kit ya no llama a `mp_move`: el servidor lo corre él mismo en `_physics_process`, y tu pantalla dibuja tu jugador como a los demás. El servidor aplica las teclas más nuevas que le llegaron: sin predicción no hay cola de teclas que esperar.
+
+  ```gdscript
+  # player.gd de examples/sports_2d: el mismo mp_move, con y sin predicción
+  func _physics_process(delta: float) -> void:
+  	if not net.is_authority():
+  		return
+  	if not net.predict:
+  		mp_move(input, delta)   # sin predicción, el servidor mueve acá
+  	# ...las reglas del jugador, como siempre
+  ```
 - **`Smoothing › shared_timeline` prendido** en todo lo que se mueve (jugadores, pelota): se dibujan en un mismo momento del servidor, al retraso que necesite el que más necesita.
 - **`adaptive_buffer` prendido** (lo de entrada): dibuja solo el atraso que pide la red. Un `buffer_delay_s` fijo agrega todo ese tiempo siempre.
 - **`max_extrapolate_s`**: un paquete tarde se adivina siguiendo su movimiento hasta este tiempo (0,1 s de entrada) y después espera. En 0 espera enseguida: una frenadita en lugar de una adivinanza que después se corrige.
