@@ -159,7 +159,11 @@ static func request(tree: SceneTree, method: int, path: String, body: Dictionary
 	http.timeout = TIMEOUT_S
 	## A match pauses the tree while it waits for its seats: the call that brings them must go on.
 	http.process_mode = Node.PROCESS_MODE_ALWAYS
-	tree.root.add_child(http)
+	## Deferred: called from a scene's _ready (the boot scene listing rooms at start) the root is still busy setting up
+	## its children, add_child would fail and the request would never leave (ERR_UNCONFIGURED).
+	tree.root.add_child.call_deferred(http)
+	## ready, not tree_entered: its timeout timer (a child) must be in the tree too.
+	await http.ready
 	var headers := PackedStringArray(["Accept: application/json"])
 	var text := ""
 	if method != HTTPClient.METHOD_GET and not body.is_empty():

@@ -42,6 +42,7 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | `Mp.net_quality()` measures the simulated network's RTT, loss and jitter | `arena.sh` lag **T** |
 | Lag compensation: led shots at a walking target hit; with `--lag-comp=off`, most miss | `arena.sh` lagshot **T** |
 | A sports game (`examples/sports_2d`) at 40 ms with jitter: its own running and slide, predicted with their state in `sync_extra`, are corrected less than two ticks of their step; the ball and the players are drawn at one moment (`shared_timeline`); the slides that touched on the slider's screen win the ball (6 out of 6), almost never without compensation | `sports.sh` (ENet and `TRANSPORT=ws`) **T** |
+| Asking for the room list (or any issuer call) from the boot scene's `_ready`: the request leaves | `probe/issuer_at_ready.tscn` (all.sh) |
 | With prediction, `sync_extra` rides with the pose; a scene saved before warns | `tests/test_actor_sync.gd`, `tests/test_examples.gd` |
 | Adaptive buffers, network quality, pose history and the frame's view time | `tests/test_input_queue.gd`, `test_net_quality.gd`, `test_lag_comp.gd`, `test_input_frame_view.gd` |
 | Buffered smoothing: the other player looks steady | `arena.sh` lag (observe) **T** |

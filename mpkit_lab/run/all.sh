@@ -24,6 +24,7 @@ step() { # step <name> <command…>
 run_godot --headless --path "$LAB" --import > /dev/null 2>&1
 step tests run_godot --headless --path "$LAB" --script res://addons/mp_kit/tests/mp_test_runner.gd
 step solo run_godot --headless --path "$LAB" -- --probe=solo
+step "issuer at ready" run_godot --headless --path "$LAB" res://probe/issuer_at_ready.tscn
 step minimal bash "$HERE/minimal.sh"
 step relay bash "$HERE/relay.sh"
 if [ "$QUICK" = 1 ]; then
