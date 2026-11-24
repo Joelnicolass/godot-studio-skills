@@ -1,0 +1,45 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://addons/grid_kit/examples/minimal_3d/minimal_3d.gd" id="1_main"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_board.gd" id="2_board"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_view_3d.gd" id="3_view"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_cursor.gd" id="4_cursor"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/plain.tscn" id="5_plain"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/forest.tscn" id="6_forest"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/mountain.tscn" id="7_mountain"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/water.tscn" id="8_water"]
+
+[node name="Minimal3D" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 7.5, 9.5)
+current = true
+fov = 50.0
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 6, 0)
+
+[node name="Board" type="Node" parent="."]
+script = ExtResource("2_board")
+radius = 4
+
+[node name="View" type="Node3D" parent="Board"]
+script = ExtResource("3_view")
+tiles = Dictionary[StringName, PackedScene]({
+&"forest": ExtResource("6_forest"),
+&"mountain": ExtResource("7_mountain"),
+&"plain": ExtResource("5_plain"),
+&"water": ExtResource("8_water")
+})
+default_tile = ExtResource("5_plain")
+
+[node name="Selection" type="Node3D" parent="Board/View"]
+script = ExtResource("4_cursor")
+color = Color(1, 0.89, 0.48, 0.6)
+lift = 0.04
+
+[node name="Hover" type="Node3D" parent="Board/View"]
+script = ExtResource("4_cursor")
+color = Color(1, 1, 1, 0.3)
+lift = 0.03

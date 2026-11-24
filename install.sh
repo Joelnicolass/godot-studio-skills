@@ -67,10 +67,10 @@ Instalador del kit Godot studio (skills + commands + subagentes + addons).
   ./install.sh --all                Cursor y Claude Code
   ./install.sh --project            ./.cursor/ del cwd (./.claude/ con --claude; los dos con --all)
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|all]
                                     Copia el addon al proyecto Godot (default: mp_kit)
                                     agent_kit se instala desde godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|all]
                                     Solo el addon
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias de --addon GODOT_ROOT agent_kit
@@ -410,6 +410,12 @@ install_addon() {
       echo "Habilitá el plugin BotKit (sin autoload; la vista y las manijas del editor). Un Bot3D hijo del personaje,"
       echo "que lee bot.input donde leía Input; enemigos en el grupo bot_target; el navmesh horneado. Arrancá desde addons/bot_kit/examples/minimal_3d o arena_3d."
       ;;
+    grid_kit)
+      copy_one_addon "$project" "grid_kit"
+      echo
+      echo "Habilitá el plugin GridKit (sin autoload). Las reglas usan HexGrid (datos puros); en la escena, un GridBoard"
+      echo "con un GridView3D hijo (una escena por valor de casilla) y GridCursor para marcar. Arrancá desde addons/grid_kit/examples/minimal_3d."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -430,9 +436,11 @@ install_addon() {
       install_addon "$project" "spill_kit"
       echo
       install_addon "$project" "bot_kit"
+      echo
+      install_addon "$project" "grid_kit"
       ;;
     *)
-      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | all)" >&2
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -486,6 +494,7 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/perception_kit (./install.sh --addon /path/to/godot-project perception_kit)"
   echo "  - addons/spill_kit  (./install.sh --addon /path/to/godot-project spill_kit)"
   echo "  - addons/bot_kit    (./install.sh --addon /path/to/godot-project bot_kit)"
+  echo "  - addons/grid_kit   (./install.sh --addon /path/to/godot-project grid_kit)"
   echo
   echo "AgentKit / playtester (repo aparte, este instalador lo trae):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"
