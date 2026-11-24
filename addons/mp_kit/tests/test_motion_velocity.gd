@@ -79,3 +79,47 @@ func test_a_vector3_in_3d() -> void:
 	var velocity: Variant = actor.motion_velocity()
 	check(velocity is Vector3 and (velocity as Vector3).z > 0.0, "in 3D, a Vector3 (%s)" % velocity)
 	parent.free()
+
+
+## Proxies with `shared` draw at one delay, the largest any of them needs; one without keeps its own.
+func test_shared_proxies_draw_at_one_delay() -> void:
+	MpProxyMotion.reset_shared()
+	var nodes: Array[Node2D] = [Node2D.new(), Node2D.new(), Node2D.new()]
+	var fast := MpProxyMotion.new(nodes[0], true)
+	var slow := MpProxyMotion.new(nodes[1], true)
+	var alone := MpProxyMotion.new(nodes[2], true)
+	fast.shared = true
+	slow.shared = true
+	for motion: MpProxyMotion in [fast, slow, alone]:
+		motion.delay_s = 0.3
+	## The fast one gets a state every tick; the slow one every 0.1 s (a lower send rate): it needs more.
+	for frame in 240:
+		var t := MpNetClock.server_time()
+		fast.draw(1.0 / 60.0, t, Vector3(frame, 0, 0), Quaternion.IDENTITY)
+		slow.draw(1.0 / 60.0, floorf(t * 10.0) / 10.0, Vector3(frame, 0, 0), Quaternion.IDENTITY)
+		alone.draw(1.0 / 60.0, t, Vector3(frame, 0, 0), Quaternion.IDENTITY)
+		await tree.physics_frame
+	var shared_fast := fast.current_delay()
+	var shared_slow := slow.current_delay()
+	check(is_equal_approx(shared_fast, shared_slow), "both shared proxies draw at the same delay (%.3f, %.3f)" % [shared_fast, shared_slow])
+	check(shared_slow >= slow.target_delay() - 0.005, "which covers what the slower one needs (%.3f >= %.3f)" % [shared_slow, slow.target_delay()])
+	check(alone.current_delay() < shared_fast - 0.02, "one that does not share keeps its own, shorter (%.3f)" % alone.current_delay())
+	MpProxyMotion.reset_shared()
+	for node in nodes:
+		node.free()
+
+
+## max_extrapolate_s 0: past the newest state it waits there, no guess along its motion.
+func test_no_extrapolation_waits_at_the_newest_state() -> void:
+	var node := Node2D.new()
+	var motion := MpProxyMotion.new(node, true)
+	motion.adaptive = false
+	motion.delay_s = 0.0
+	var now := MpNetClock.server_time()
+	motion.draw(0.016, now - 0.2, Vector3(0, 0, 0), Quaternion.IDENTITY)
+	motion.draw(0.016, now - 0.1, Vector3(10, 0, 0), Quaternion.IDENTITY)
+	check(node.position.x > 10.5, "by default a late state is guessed ahead along its motion (%.1f)" % node.position.x)
+	motion.max_extrapolate_s = 0.0
+	motion.draw(0.016, now - 0.1, Vector3(10, 0, 0), Quaternion.IDENTITY)
+	check(is_equal_approx(node.position.x, 10.0), "with 0 it waits at the newest state (%.1f)" % node.position.x)
+	node.free()

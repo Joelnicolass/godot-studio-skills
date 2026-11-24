@@ -68,6 +68,13 @@ static var server_calls := MpRateLimit.new(60.0, 120.0)
 ## BUFFERED, adaptive: share of states allowed to come too late to be drawn on time (3 % = the 97th percentile, as
 ## Photon Fusion). Lower = smoother on a bad network, a little more behind.
 @export_range(0.0, 0.2, 0.005) var late_tolerance: float = 0.03
+## BUFFERED, adaptive: drawn at the same moment of the server as every other actor with it on, at the largest delay any
+## of them needs. A ball game turns it on in everything that moves (the ball, the players, your own without
+## prediction): on their own delays the ball could show a tick apart from the feet that touch it.
+@export var shared_timeline: bool = false
+## BUFFERED: past the newest state (a late packet), how long it goes on along its last motion before it waits. 0: it
+## waits at once (a short stop instead of a guess that may be corrected).
+@export_range(0.0, 0.5, 0.01) var max_extrapolate_s: float = 0.1
 ## FOLLOW: how fast proxies chase the newest state.
 @export var follow_speed: float = 14.0
 @export var freeze_rigid_if_proxy: bool = true
@@ -192,6 +199,8 @@ func _ready() -> void:
 	_motion.delay_s = buffer_delay_s
 	_motion.adaptive = adaptive_buffer
 	_motion.late_tolerance = late_tolerance
+	_motion.shared = shared_timeline
+	_motion.max_extrapolate_s = max_extrapolate_s
 	_motion.follow_speed = follow_speed
 	_motion.move_position = sync_position
 	_motion.move_rotation = sync_rotation
@@ -283,6 +292,14 @@ func is_authority() -> bool:
 ## Owner with prediction: how far the drawn node still is from the real one, while a correction fades (0 = none).
 func correction_offset() -> float:
 	return _smoother.offset() if _smoother else 0.0
+
+
+## How far in the past this node is drawn now, in seconds: a BUFFERED proxy's delay (with `shared_timeline`, the one it
+## shares). 0 on the server, for the predicted owner, and with FOLLOW or NONE.
+func draw_delay() -> float:
+	if _motion == null or is_authority() or smoothing != Smoothing.BUFFERED or (predict and is_local()):
+		return 0.0
+	return _motion.current_delay()
 
 
 ## Owner with prediction: how far the last server correction moved this node (0 = the prediction was right).

@@ -129,3 +129,27 @@ func test_sports_2d_solo_slide_dribble_and_goal() -> void:
 	await tree.physics_frame
 	check(ball.position.distance_to(Vector2(480, 270)) < 1.0 and player.position.distance_to(Vector2(220, 270)) < 1.0, "and a kickoff puts everybody back")
 	pitch.free()
+
+
+## The sports player with prediction off (GUIDE §7.8, "Sin predicción"): the server runs its mp_move itself, so it still
+## runs and slides in solo.
+func test_sports_2d_player_without_prediction() -> void:
+	var player := (load("res://addons/mp_kit/examples/sports_2d/player.tscn") as PackedScene).instantiate() as CharacterBody2D
+	var actor := player.get_node(^"MpActor") as MpActor
+	actor.predict = false
+	actor.owner_slot = 1
+	player.position = Vector2(300, 270)
+	tree.root.add_child(player)
+	await tree.physics_frame
+	var start := player.position
+	Input.action_press(&"ui_right")
+	for i in 30:
+		await tree.physics_frame
+	Input.action_release(&"ui_right")
+	check(player.position.x > start.x + 40.0, "it runs from the server's own step (%.0f px)" % (player.position.x - start.x))
+	Input.action_press(&"ui_select")
+	await tree.physics_frame
+	await tree.physics_frame
+	Input.action_release(&"ui_select")
+	check(int(player.get(&"slide_ticks")) > 0, "and slides")
+	player.free()

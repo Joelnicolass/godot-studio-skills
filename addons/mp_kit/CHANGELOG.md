@@ -2,6 +2,18 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.25.0
+
+- **One timeline.** `MpActor › Smoothing › shared_timeline`: every `BUFFERED` actor with it on is drawn at the same moment of the server, at the largest adaptive delay any of them needs (it rises and falls gently, as one actor's own does). Before, each actor worked out its own, and the ball could show a tick apart from the feet that touch it. Off by default. Asked for by futbolito-match.
+- **No guessing.** `MpActor › Smoothing › max_extrapolate_s` (0.1 s, as before): past the newest state, how long a proxy goes on along its motion before it waits. At 0 it waits at once.
+- `MpActor.draw_delay()`: how far in the past a proxy is drawn now.
+- **The room list from the start.** A call to the issuer (`MpFlow.online_rooms()`, `host_online()`, `join_online()`) made from the boot scene's `_ready` never left: the kit added its `HTTPRequest` to the root while the root was still setting up its children, and it failed with `ERR_UNCONFIGURED`. Now it adds it on the next frame and waits for it to be ready. Found by futbolito-match.
+- **GUIDE §7.8, "Without prediction: everything on one timeline"**: when it suits a ball game (the ping felt as key lag, with no jumps), how to set it up, and the key-to-screen lag measured at 80 ms each way with 2 % loss: 290 ms with a fixed 0.1 s buffer, 235 ms adaptive and 200 ms with no buffer. Without prediction the server applies the newest keys: there is no key queue to shorten.
+- `examples/sports_2d`: the ball and the players with `shared_timeline`. Its player also works with prediction off (the server runs the same `mp_move` in `_physics_process`): turn it off in the inspector, save the scene, and it is §7.8's "Without prediction" case.
+- **Tests:** 157 in the kit (the example's player without prediction runs and slides; two sharing proxies are drawn at the same delay, the one that covers the slower; one that does not share keeps its own; with `max_extrapolate_s` at 0 it waits at the newest state). `mpkit_lab/probe/issuer_at_ready.tscn` (in `all.sh`) calls the issuer from the boot scene's `_ready`, against a local stand-in issuer. `mpkit_lab/run/sports.sh` checks over the network that the ball and the carrier are drawn at the same moment (0 s apart), and now asks that its own running and slide be corrected less than two ticks of their step (more runs showed 5.4 px running and 9 px sliding: a frame the server had to guess, at a turn).
+
+What to update: nothing; what is new is off by default. `MpKit.VERSION` goes to 0.25.0, so server and clients must run the same build.
+
 ## 0.24.0
 
 - **Prediction is no longer corrected on every action.** In an `MpActor` with prediction, each `sync_extra` value that was not a pose or a velocity (a dash or slide counter, a stun, the direction) was sent when it changed, in another packet than the pose. The reconciliation went back to the server's pose and replayed the keys from another tick's state. Measured with a dash counted in `sync_extra`, at 40 ms with jitter: 35 px of correction on average (peaks of 133 px) over ENet and over WebSocket. Now, with prediction, all of `sync_extra` travels with the pose on every send, and the correction drops to 0.5-1.3 px. Found by futbolito-match: its slides looked late and its player was corrected all the time.
