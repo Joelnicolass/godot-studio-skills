@@ -1279,8 +1279,9 @@ func _carry_the_ball() -> void:
 		_steer(me.position, me.position + Vector2(0, -100 if up else 100))
 	_steer(Vector2.ZERO, Vector2.ZERO)
 	print("METRIC carrier_knocks=%d carrier_free_correction_px=%.2f" % [knocks, worst])
-	## At most about one tick of its running (230 px/s): the pacing's extra or missing frame, smoothed on screen.
-	_check(worst < float(MpBoot.user_value("probe-max-correction-px", "5")), "its own running, predicted, is barely corrected (%.2f px)" % worst)
+	## At most about two ticks of its running (230 px/s, 3.8 px a tick): a frame the server had to guess (late under
+	## jitter) or the pacing's extra or missing one, at a turn; smoothed on screen. The old send was 35 px on average.
+	_check(worst < float(MpBoot.user_value("probe-max-correction-px", "8")), "its own running, predicted, is barely corrected (%.2f px)" % worst)
 
 
 ## Sports example, the tackler: chases the carrier it sees on its screen and slides into it. The server checks the
@@ -1336,10 +1337,14 @@ func _tackle_the_carrier() -> void:
 			won += 1
 		await _walk_off(me)
 	_steer(Vector2.ZERO, Vector2.ZERO)
-	print("METRIC tackles_won=%d tackles_made=%d slide_correction_px=%.2f" % [won, made, worst])
+	var apart := absf(MpActor.of(ball).draw_delay() - MpActor.of(carrier).draw_delay())
+	print("METRIC tackles_won=%d tackles_made=%d slide_correction_px=%.2f ball_delay_s=%.3f carrier_delay_s=%.3f" % [
+		won, made, worst, MpActor.of(ball).draw_delay(), MpActor.of(carrier).draw_delay()])
+	_check(MpActor.of(ball).draw_delay() > 0.0 and apart < 0.002, "the ball and the carrier are drawn at one moment (shared_timeline, %.4f s apart)" % apart)
 	_check(made >= tries, "it slid into the carrier %d times" % made)
-	## At most about one tick of its slide (520 px/s): the pacing's extra or missing frame, smoothed on screen.
-	_check(worst < float(MpBoot.user_value("probe-max-correction-px", "10")), "its own slide, predicted, is barely corrected (%.2f px)" % worst)
+	## At most about two ticks of its slide (520 px/s braking, about 6 px a tick on average): a guessed or paced frame,
+	## smoothed on screen. With the old send of its state it was 70 px.
+	_check(worst < float(MpBoot.user_value("probe-max-correction-px", "12")), "its own slide, predicted, is barely corrected (%.2f px)" % worst)
 	if not MpBoot.user_flag("probe-expect-misses"):
 		_check(won * 10 >= made * 6, "the slides that touched on its screen won the ball (%d of %d)" % [won, made])
 

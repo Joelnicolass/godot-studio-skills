@@ -352,6 +352,8 @@ Las transformaciones (y `velocity`) viajan siempre, en el mismo paquete que la p
 | `buffer_delay_s` | Con `BUFFERED`: lo más en el pasado que puede dibujar (el tope). Más = tapa redes peores | 0.1 |
 | `adaptive_buffer` | Con `BUFFERED`: mide cada cuánto llegan los estados y con cuánto atraso, y dibuja solo lo necesario, hasta `buffer_delay_s`. En una red buena son pocos ticks; en una mala, más. Apagado = siempre `buffer_delay_s` | on |
 | `late_tolerance` | Con `adaptive_buffer`: qué parte de los estados puede llegar tarde (3% = percentil 97, como Photon Fusion). Menos = más parejo en una red mala, un poco más atrasado | 0.03 |
+| `shared_timeline` | Con `adaptive_buffer`: se dibuja en el mismo momento del servidor que todo otro actor con esto prendido, al retraso más grande que necesite alguno. Prendelo en todo lo que se mueve en un juego de pelota (§7.8). `net.draw_delay()` dice cuánto atrás se dibuja | apagado |
+| `max_extrapolate_s` | Con `BUFFERED`: pasado el último estado (un paquete tarde), cuánto sigue con su movimiento antes de esperar. 0 = espera enseguida | 0.1 |
 | `follow_speed` | Con `FOLLOW`: qué tan rápido persigue | 14.0 |
 | `freeze_rigid_if_proxy` | Si el padre es un `RigidBody`, lo congela en los clientes (la física corre en el servidor) | on |
 
@@ -1024,14 +1026,14 @@ Todo eso ya está en el kit. `examples/sports_2d/` (dos contra dos) lo arma con 
 ```
 Pitch (pitch.gd)                  # dibuja la cancha; un gol suma en MpState y saca del medio
 ├── Walls (StaticBody2D)          # los bordes: los jugadores chocan con ellos, no entre sí
-├── Ball (ball.gd)                # del servidor: MpActor sin dueño, BUFFERED; sync_extra: holder
+├── Ball (ball.gd)                # del servidor: MpActor sin dueño, BUFFERED, shared_timeline; sync_extra: holder
 └── MpWorld                       # seats 4: 1 y 3 juegan a la izquierda, 2 y 4 a la derecha
     ├── SpawnPoints, Actors, Players (MpSlotSpawner: player.tscn)
     ├── State (MpState: home, away), Match (MpMatch)
     └── Hud                       # el tanteador, Leave, Start, Waiting
 ```
 
-**1. Todo lo que se mueve es un `MpActor`.** Los jugadores (con predicción) y la pelota (del servidor, dibujada `BUFFERED`). No mandes vos un estado entero cada tantos ticks para pegarlo al llegar y estirarlo con la velocidad: eso da saltos y frenadas, sobre todo por WebSocket, donde los paquetes llegan en ráfagas. `BUFFERED` dibuja un poco en el pasado, entre dos estados reales, con un buffer que mide la red sola.
+**1. Todo lo que se mueve es un `MpActor`.** Los jugadores (con predicción) y la pelota (del servidor, dibujada `BUFFERED`). No mandes vos un estado entero cada tantos ticks para pegarlo al llegar y estirarlo con la velocidad: eso da saltos y frenadas, sobre todo por WebSocket, donde los paquetes llegan en ráfagas. `BUFFERED` dibuja un poco en el pasado, entre dos estados reales, con un buffer que mide la red sola. Con `shared_timeline` en todos, la pelota y los jugadores se dibujan en un mismo momento del servidor.
 
 **2. `mp_move` es el único movimiento, con las acciones adentro.** El servidor corre la misma función, con las mismas teclas, una vez por cada frame del dueño. Una barrida es movimiento: arranca con la tecla, cuenta sus ticks adentro, y todo lo que `mp_move` lee va en **Sync › sync_extra**. Con predicción, esos valores viajan en el mismo paquete que la pose, así que la reconciliación repite desde el estado correcto.
 
@@ -1099,6 +1101,34 @@ func _process(_delta: float) -> void:
 **7. Lo que sigue a un nodo de red se lee después del kit.** Una cámara, la pelota en los pies, una barra: `process_priority` mayor que 10000. Antes, leés la pose sin la corrección suavizada, y se ve a los saltos.
 
 **Si tu partido es un motor central** (un paso que mueve todos los cuerpos juntos, determinista): dejalo en el servidor, pero sacá el paso de un solo cuerpo a una función pura que usen el motor y el `mp_move` del peón de cada asiento. El servidor mueve ese cuerpo con `mp_move` (no con las teclas leídas en vivo en su propio paso), y el motor toma esa posición. Cada cuerpo que no maneja un asiento, y la pelota, son un `MpActor` del servidor que el motor escribe.
+
+**Sin predicción: todo en una línea de tiempo.** Con predicción tu jugador va en el presente, y la pelota y los rivales un poco en el pasado. En un juego de pelota eso se nota: llegás a la pelota en tu pantalla y no es tuya hasta que lo dice el servidor, y un quite te tira de golpe. Si preferís que el ping se sienta como lag de las teclas, constante y sin saltos (como LoL, que no predice el movimiento), apagá la predicción y dibujá todo junto:
+
+- **`MpActor › Prediction › predict` apagado** en tu jugador (y guardá la escena: el kit rehace su `MpSync`). El kit ya no llama a `mp_move`: el servidor lo corre él mismo en `_physics_process`, y tu pantalla dibuja tu jugador como a los demás. El servidor aplica las teclas más nuevas que le llegaron: sin predicción no hay cola de teclas que esperar.
+
+  ```gdscript
+  # player.gd de examples/sports_2d: el mismo mp_move, con y sin predicción
+  func _physics_process(delta: float) -> void:
+  	if not net.is_authority():
+  		return
+  	if not net.predict:
+  		mp_move(input, delta)   # sin predicción, el servidor mueve acá
+  	# ...las reglas del jugador, como siempre
+  ```
+- **`Smoothing › shared_timeline` prendido** en todo lo que se mueve (jugadores, pelota): se dibujan en un mismo momento del servidor, al retraso que necesite el que más necesita.
+- **`adaptive_buffer` prendido** (lo de entrada): dibuja solo el atraso que pide la red. Un `buffer_delay_s` fijo agrega todo ese tiempo siempre.
+- **`max_extrapolate_s` en 0** en un juego de pelota: un paquete tarde espera en el último estado en lugar de adivinarse siguiendo su movimiento (0,1 s de entrada), que después se corrige. Medido en un partido 2 contra 2 a 80 ms por tramo con 2 % de pérdida: el mismo lag de la tecla a la pantalla (240-250 ms), sin dibujar nunca más allá del último estado, y la pelota con 0 o 1 tirones en 23 s contra 2 con 0,1.
+- **Una respuesta instantánea en tu pantalla, solo cosmética**: un sonido, el flash del botón, el arranque de la animación de la patada. Nunca el cuerpo.
+
+Medido de la tecla a tu jugador moviéndose en tu pantalla, a 80 ms por tramo con 2 % de pérdida (160 ms de ida y vuelta), sin aceleración:
+
+| Buffer | WebSocket | ENet |
+|---|---|---|
+| `buffer_delay_s` fijo en 0,1 | 290 ms | 283 ms |
+| adaptativo (lo de entrada) | 235 ms | 234 ms |
+| fijo en 0 | 200 ms, adivinando cada paquete tarde | 199 ms |
+
+Lo que queda por encima de la ida y vuelta sin buffer (unos 40 ms) es esperar el tick siguiente en cada máquina: la tecla, el servidor y el dibujo. Por WebSocket (TCP), un paquete perdido frena a los que siguen hasta que se reenvía: con pérdida, el buffer adaptativo crece para taparlo, o se ve la frenada.
 
 **Lo que no hace el ejemplo:** predecir la patada. Después de un pase o un tiro, la pelota sale cuando llega la palabra del servidor: un ping más el buffer de la pelota (alrededor de 100 ms con 60 ms de ping, estimado). Para predecirla, el dueño la simula al patear hasta que llega la del servidor, y la reemplaza. Tampoco compensa el lag al tomar una pelota suelta: lo decide el servidor con las posiciones de ahora.
 

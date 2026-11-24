@@ -5,6 +5,8 @@ extends CharacterBody2D
 ## runs the same mp_move with the same keys, and what mp_move reads travels with its pose (MpActor › Sync › sync_extra:
 ## velocity, facing, slide_ticks, stun_ticks), so a slide is never corrected. What only the server can decide (a tackle
 ## that wins the ball, the knock) it writes into those same values, and its own screen replays from them.
+## With Prediction › predict off (the ping felt as key lag, everything on one timeline: GUIDE §7.8), the server runs the
+## same mp_move itself, here in _physics_process, and every screen, its owner's too, draws the player buffered.
 
 const RUN := 230.0
 const ACCEL := 1400.0
@@ -65,9 +67,12 @@ func mp_move(keys: MpInput, delta: float) -> void:
 
 
 ## Server and solo: the rules. Enter kicks the ball it carries (who has the ball, and a tackle, are the ball's rules).
-func _physics_process(_delta: float) -> void:
+## Without prediction it also moves here: the kit only calls mp_move when it predicts.
+func _physics_process(delta: float) -> void:
 	if not net.is_authority():
 		return
+	if not net.predict:
+		mp_move(input, delta)
 	var ball: Node2D = get_tree().get_first_node_in_group(&"sports_ball")
 	if ball != null and ball.holder == net.owner_slot and input.is_action_just_pressed(&"ui_accept"):
 		ball.kick(facing * KICK_SPEED, net.owner_slot)
