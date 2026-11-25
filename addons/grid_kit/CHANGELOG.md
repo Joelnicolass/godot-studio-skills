@@ -1,5 +1,11 @@
 # Cambios de GridKit
 
+## 0.7.0
+
+- **`GridView3D.cell_right_clicked(cell)`:** el clic derecho sobre una casilla, con la misma regla que `cell_clicked` (un arrastre no es un clic), `input_enabled` y la casilla alta de un tablero con alturas. Sirve para elegir con el izquierdo y ordenar con el derecho, como en Civilization. El botón del medio sigue siendo de la cámara, y el toque sigue siendo el izquierdo.
+
+Nada que actualizar en tu proyecto: `cell_clicked` sigue igual.
+
 ## 0.6.1
 
 - **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem. El emblema del kit está en su barra de la vista 3D.
