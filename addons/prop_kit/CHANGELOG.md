@@ -1,5 +1,11 @@
 # Changelog de PropKit
 
+## 0.2.4
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.3
 
 - **Ejemplo mínimo** `examples/minimal_3d/`: árboles plantados sobre un `PropFlatGround` alrededor de un campamento (`PropKeepOut`) y dibujados por un `PropBatch3D`. Espacio da otra semilla.

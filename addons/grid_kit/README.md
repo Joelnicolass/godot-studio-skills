@@ -1,4 +1,4 @@
-# GridKit
+# <img src="icons/grid_kit.svg" width="32" height="32" alt=""> GridKit
 
 Tableros de hexágonos **o de cuadrados** para juegos de estrategia, tácticos, de mesa o puzzles, con la misma API para las dos formas. Hay tres niveles:
 

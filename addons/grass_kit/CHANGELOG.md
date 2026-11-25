@@ -1,5 +1,11 @@
 # Changelog de GrassKit
 
+## 0.2.3
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem. El emblema del kit está en su barra de la vista 3D.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.2
 
 - **Un suelo pintado en el juego se libera.** `GrassGround` guardaba en una lista estática cada suelo pintado u horneado, para que el editor lo guardara con la escena, también en un juego exportado. Un suelo pintado en el juego (quemar pasto con `ground.paint`) nunca se liberaba, y al salir esa lista hacía caer el proceso (exit 134 en los tests). Ahora solo el editor la lleva, con referencias débiles (`GrassGround.edited_grounds()`, `GrassGround.mark_saved()`).

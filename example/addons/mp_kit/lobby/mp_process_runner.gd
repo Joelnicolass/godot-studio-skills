@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_process_runner.svg")
 class_name MpProcessRunner
 extends Resource
 

@@ -5,7 +5,7 @@ const WALLET := preload("res://addons/wallet_kit/nodes/wallet.gd")
 
 
 func _enter_tree() -> void:
-	add_custom_type("Wallet", "Node", WALLET, null)
+	add_custom_type("Wallet", "Node", WALLET, preload("res://addons/wallet_kit/icons/wallet.svg"))
 
 
 func _exit_tree() -> void:

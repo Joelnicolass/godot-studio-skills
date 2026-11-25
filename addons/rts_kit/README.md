@@ -1,4 +1,4 @@
-# RtsKit
+# <img src="icons/rts_kit.svg" width="32" height="32" alt=""> RtsKit
 
 La capa de mando de un juego de estrategia en tiempo real, para **2D y 3D**: unidades, selección y grupos, órdenes tipadas que se reparten en formación, la entrada que las da (clic derecho según el contexto, órdenes armadas, un menú o un panel de comandos opcionales), las señales del cursor y las cámaras de RTS. **Sin** red, **sin** reglas de juego, **sin** autoload. No mueve ninguna unidad ni pelea ninguna pelea: eso lo hace el juego con la orden que el kit le da a cada unidad.
 

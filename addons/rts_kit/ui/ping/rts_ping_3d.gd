@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_ping_3d.svg")
 class_name RtsPing3D
 extends Node3D
 

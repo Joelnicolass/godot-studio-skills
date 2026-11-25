@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_radial_layout.svg")
 class_name RtsRadialLayout
 extends Resource
 

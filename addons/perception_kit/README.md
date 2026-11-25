@@ -1,4 +1,4 @@
-# PerceptionKit
+# <img src="icons/perception_kit.svg" width="32" height="32" alt=""> PerceptionKit
 
 Lo que percibe un actor, en 2D y 3D:
 - **Vista:** un cono que empieza a ver a una distancia y sigue viendo hasta otra más lejana, conciencia de lo que tiene cerca en todas las direcciones, y muros que tapan.

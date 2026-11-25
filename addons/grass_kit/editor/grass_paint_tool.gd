@@ -32,6 +32,7 @@ const SHORTCUTS := (
 enum Item { BAKE, FIT, SET_UP, BAKE_COLOUR, FILL = 10, CLEAR, IMPORT, EXPORT, SHOW_MAP = 20, HELP }
 
 const OVERLAY_SHADER := preload("grass_map_overlay.gdshader")
+const EMBLEM := preload("res://addons/grass_kit/icons/grass_kit.svg")
 const CIRCLE := 64
 
 var field: GrassField3D
@@ -667,6 +668,7 @@ func _build() -> void:
 	_top = HBoxContainer.new()
 	_menu = MenuButton.new()
 	_menu.text = "GrassKit"
+	_menu.icon = EMBLEM
 	_menu.flat = false
 	_menu.theme_type_variation = &"FlatMenuButton"
 	_menu.tooltip_text = "GrassKit: the ground and its painted maps."

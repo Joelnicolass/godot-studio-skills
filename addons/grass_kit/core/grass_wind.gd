@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_wind.svg")
 class_name GrassWind
 extends Resource
 

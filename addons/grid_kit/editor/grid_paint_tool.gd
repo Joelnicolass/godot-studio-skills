@@ -8,6 +8,7 @@ extends Node
 ## the number next to it. None on: the editor behaves as usual.
 
 const GridStroke := preload("res://addons/grid_kit/editor/grid_stroke.gd")
+const EMBLEM := preload("res://addons/grid_kit/icons/grid_kit.svg")
 const NO_TOOL := -1
 const MARKER_LIFT := 0.04
 const POLL_SECONDS := 0.25
@@ -326,6 +327,10 @@ func unsaved_status(for_scene: String) -> String:
 
 func _build_bar() -> void:
 	_bar = HBoxContainer.new()
+	var emblem := TextureRect.new()
+	emblem.texture = EMBLEM
+	emblem.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	_bar.add_child(emblem)
 	var title := Label.new()
 	title.text = "GridKit"
 	_bar.add_child(title)

@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_match_agent.svg")
 class_name MpMatchAgent
 extends Node
 

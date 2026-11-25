@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_target_probe.svg")
 class_name RtsTargetProbe
 extends Node
 

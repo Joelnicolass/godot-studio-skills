@@ -1,5 +1,11 @@
 # Cambios de GridKit
 
+## 0.6.1
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem. El emblema del kit está en su barra de la vista 3D.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.6.0
 
 Alturas por casilla: mesetas, pozos, un marco de piedras más alto.

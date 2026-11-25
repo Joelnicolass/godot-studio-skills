@@ -1,4 +1,4 @@
-# FsmKit
+# <img src="icons/fsm_kit.svg" width="32" height="32" alt=""> FsmKit
 
 Máquina de estados por **composición**: un `FsmMachine` y hijos `FsmState`. **Cero** reglas de partida, puntaje o copy. No hay autoload.
 

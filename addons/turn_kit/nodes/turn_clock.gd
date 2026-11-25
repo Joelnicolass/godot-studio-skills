@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/turn_kit/icons/turn_clock.svg")
 class_name TurnClock
 extends Node
 

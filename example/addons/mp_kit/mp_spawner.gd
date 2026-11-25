@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_spawner.svg")
 class_name MpSpawner
 extends MultiplayerSpawner
 

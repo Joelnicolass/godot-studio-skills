@@ -2,6 +2,12 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.25.2
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Qué actualizar: nada en tu proyecto. `MpKit.VERSION` pasa a 0.25.2, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.25.1
 
 - **El asistente genera nombres únicos (`%`) en lugar de rutas `$`.** `Setup game...` escribe el script del jugador con `%MpActor`, `%MpInput` y `%Visual`, y marca esos nodos como nombre único en la escena (`unique_name_in_owner`). `examples/minimal_2d` queda igual a lo que genera. **MpKit: New session flow...** escribe `res://autoloads/session_flow.tscn` (más su `.gd`) en lugar de `res://glue/`, y las rutas de ejemplo del kit (`main/boot.tscn`, `levels/<nivel>/<nivel>.tscn`) siguen el layout por carpetas por tema. `examples/bots_2d`: el bot ya no busca el `MpInput` en su padre; `world.gd`, que lo crea, se lo pasa, y lleva su propio registro de peón a bot.

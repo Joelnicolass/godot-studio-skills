@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_lan_beacon.svg")
 class_name MpLanBeacon
 extends Node
 

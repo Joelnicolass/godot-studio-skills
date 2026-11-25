@@ -1,4 +1,4 @@
-# TurnKit
+# <img src="icons/turn_kit.svg" width="32" height="32" alt=""> TurnKit
 
 Turnos, rondas y ciclos para juegos de estrategia, de mesa, de cartas, tácticos o RPG por turnos. Hay dos niveles:
 

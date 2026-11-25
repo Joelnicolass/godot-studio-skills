@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_command_input.svg")
 class_name RtsCommandInput
 extends Node
 

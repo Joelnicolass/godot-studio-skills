@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_group_keys.svg")
 class_name RtsGroupKeys
 extends Node
 

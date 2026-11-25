@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/mp_kit/icons/mp_world.svg")
 class_name MpWorld
 extends Node
 

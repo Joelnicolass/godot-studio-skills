@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_look.svg")
 class_name GrassLook
 extends Resource
 

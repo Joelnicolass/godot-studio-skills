@@ -1,5 +1,11 @@
 # Cambios de WalletKit
 
+## 0.3.1
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.3.0
 
 - Nuevo: sustitutos con tasa. `Purse.add_substitute(key, covers, rate)`: `rate` de `key` pagan 1 de lo que falte de cualquiera de `covers` (vacío: cualquier otra clave). `substitutes()`, `substitutes_for(key)`, `clear_substitutes()`. El plan de pago es fijo y está en el README: primero lo propio de cada clave del costo, después los sustitutos en el orden de la lista.

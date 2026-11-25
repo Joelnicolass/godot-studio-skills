@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_command_card.svg")
 class_name RtsCommandCard
 extends GridContainer
 

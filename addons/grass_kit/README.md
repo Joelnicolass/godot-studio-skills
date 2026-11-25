@@ -1,4 +1,4 @@
-# GrassKit
+# <img src="icons/grass_kit.svg" width="32" height="32" alt=""> GrassKit
 
 Pasto para mundos 3D, dibujado en la GPU alrededor de la cámara:
 - **Pintado a mano:** pinceles en la vista 3D pintan dónde crece el pasto, qué tan alto, el color del suelo bajo él y dónde crece cada tipo de hoja (flores). Cada trazo se deshace.

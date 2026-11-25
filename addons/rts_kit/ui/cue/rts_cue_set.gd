@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_cue_set.svg")
 class_name RtsCueSet
 extends Resource
 

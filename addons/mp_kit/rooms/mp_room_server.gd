@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_room_server.svg")
 class_name MpRoomServer
 extends Node
 

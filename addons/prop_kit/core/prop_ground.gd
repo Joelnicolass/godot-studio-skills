@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_ground.svg")
 class_name PropGround
 extends Resource
 

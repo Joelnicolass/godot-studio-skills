@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_ray_ground.svg")
 class_name PropRayGround
 extends PropGround
 

@@ -1,5 +1,11 @@
 # Changelog de PerceptionKit
 
+## 0.1.2
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.1.1
 
 - **Los bandos puestos en una escena se mantienen al cargarla** (lo encontró El Eternauta). La 0.1.0 ponía la máscara de un sensor nuevo y la capa de un objetivo nuevo en la capa 32 en `_init()`. Godot aplica las propiedades propias de un nodo antes que su script, así que ese `_init()` corría después de los valores de la escena y los pisaba: una máscara o capa puesta en el inspector se perdía en la siguiente carga. Ahora `_init()` pone solo lo que es del kit (nada detecta a un sensor, un objetivo no detecta nada), y el inspector muestra solo la máscara de un sensor y la capa de un objetivo; el resto ni se muestra ni se guarda.

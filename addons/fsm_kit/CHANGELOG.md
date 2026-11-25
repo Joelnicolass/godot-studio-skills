@@ -1,5 +1,11 @@
 # Cambios de FsmKit
 
+## 0.2.2
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.1
 
 - Ejemplo mínimo `examples/minimal_2d/`: un actor con `Idle`, `Move` y `Hurt` (payload y `apply_payload`), y un Label que sigue `state_changed`. Los tests lo juegan con input.
