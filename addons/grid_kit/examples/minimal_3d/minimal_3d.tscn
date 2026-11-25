@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://addons/grid_kit/examples/minimal_3d/minimal_3d.gd" id="1_main"]
 [ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_board.gd" id="2_board"]
 [ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_view_3d.gd" id="3_view"]
 [ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_cursor.gd" id="4_cursor"]
+[ext_resource type="Resource" path="res://addons/grid_kit/examples/minimal_3d/map.tres" id="9_map"]
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/plain.tscn" id="5_plain"]
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/forest.tscn" id="6_forest"]
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/mountain.tscn" id="7_mountain"]
@@ -22,7 +23,7 @@ transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0
 
 [node name="Board" type="Node" parent="."]
 script = ExtResource("2_board")
-radius = 4
+layout = ExtResource("9_map")
 
 [node name="View" type="Node3D" parent="Board"]
 script = ExtResource("3_view")

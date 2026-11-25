@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://addons/command_kit/examples/minimal/minimal.gd" id="1_main"]
-[ext_resource type="Script" path="res://addons/command_kit/nodes/command_bus.gd" id="2_bus"]
-[ext_resource type="Script" path="res://addons/command_kit/examples/minimal/place_stone.gd" id="3_stone"]
+[ext_resource type="Script" path="res://addons/command_kit/examples/minimal/stones.gd" id="2_stones"]
+[ext_resource type="Script" path="res://addons/command_kit/nodes/game_commands.gd" id="3_commands"]
 
 [node name="Minimal" type="Control"]
 layout_mode = 3
@@ -52,7 +52,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Replay"
 
-[node name="Commands" type="Node" parent="."]
+[node name="Stones" type="Node" parent="."]
 unique_name_in_owner = true
-script = ExtResource("2_bus")
-commands = Array[Script]([ExtResource("3_stone")])
+script = ExtResource("2_stones")
+
+[node name="Commands" type="Node" parent="." node_paths=PackedStringArray("game")]
+unique_name_in_owner = true
+script = ExtResource("3_commands")
+game = NodePath("../Stones")

@@ -1,39 +1,13 @@
 extends "res://addons/grid_kit/tests/grid_test.gd"
 
-## GridBoard, GridView3D and GridCursor in a tree: tiles per cell, redraw on change, picking and warnings.
+## GridView3D in a tree: tiles per cell, redraw on change, picking and warnings.
 
 const TILE := preload("res://addons/grid_kit/examples/minimal_3d/tiles/plain.tscn")
 const OTHER := preload("res://addons/grid_kit/examples/minimal_3d/tiles/water.tscn")
 
 
-func _build(radius: int) -> GridBoard:
-	var board := GridBoard.new()
-	board.radius = radius
-	var view := GridView3D.new()
-	view.name = "View"
-	view.default_tile = TILE
-	view.tiles = {&"water": OTHER}
-	board.add_child(view)
-	var cursor := GridCursor.new()
-	cursor.name = "Cursor"
-	view.add_child(cursor)
-	tree.root.add_child(board)
-	return board
-
-
-func test_board_from_inspector() -> void:
-	var board := _build(2)
-	check(board.cells().size() == 19, "radius 2: 19 cells")
-	board.radius = 0
-	board.columns = 3
-	board.rows = 2
-	check(board.cells().size() == 6, "radius 0 uses columns x rows: %d" % board.cells().size())
-	check(board._get_configuration_warnings().is_empty(), "no warnings with cells")
-	board.free()
-
-
 func test_view_draws_tiles() -> void:
-	var board := _build(2)
+	var board := build_board(2)
 	var view := board.get_node(^"View") as GridView3D
 	await tree.process_frame
 	check(view.tile_at(Vector2i.ZERO) != null, "a tile per cell")
@@ -45,22 +19,8 @@ func test_view_draws_tiles() -> void:
 	board.free()
 
 
-func test_use_external_grid() -> void:
-	var board := _build(1)
-	var view := board.get_node(^"View") as GridView3D
-	var game_grid := HexGrid.rect(2, 2)
-	game_grid.set_value(Vector2i(1, 1), &"terrain", &"water")
-	board.use_grid(game_grid)
-	await tree.process_frame
-	check(board.cells().size() == 4, "the board shows the game's grid")
-	check(view.tile_at(Vector2i(1, 1)).scene_file_path == OTHER.resource_path, "with its values")
-	game_grid.set_value(Vector2i(0, 0), &"terrain", &"water")
-	check(view.tile_at(Vector2i(0, 0)).scene_file_path == OTHER.resource_path, "changes in the game's grid redraw")
-	board.free()
-
-
 func test_click_and_drag() -> void:
-	var board := _build(3)
+	var board := build_board(3)
 	var view := board.get_node(^"View") as GridView3D
 	var eye := Camera3D.new()
 	tree.root.add_child(eye)
@@ -82,24 +42,8 @@ func test_click_and_drag() -> void:
 	_click(view, screen, screen)
 	check(clicked.size() == 1, "input_enabled off ignores clicks")
 	var far := eye.unproject_position(Vector3(500, 0, 0))
-	check(view.cell_at_screen(far) == HexGrid.NO_CELL, "off the board: NO_CELL")
+	check(view.cell_at_screen(far) == CellGrid.NO_CELL, "off the board: NO_CELL")
 	eye.free()
-	board.free()
-
-
-func test_cursor() -> void:
-	var board := _build(2)
-	var cursor := board.get_node(^"View/Cursor") as GridCursor
-	var ring := board.neighbors(Vector2i.ZERO)
-	cursor.highlight(ring)
-	var sorted_ring := ring.duplicate()
-	sorted_ring.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
-	check(cursor.highlighted() == sorted_ring, "the cursor marks the cells it gets, sorted")
-	cursor.highlight([Vector2i.ZERO, Vector2i(9, 9)] as Array[Vector2i])
-	var only: Array[Vector2i] = [Vector2i.ZERO]
-	check(cursor.highlighted() == only, "a new highlight replaces the old one, off-board cells ignored")
-	cursor.clear()
-	check(cursor.highlighted().is_empty(), "clear removes every marker")
 	board.free()
 
 
@@ -125,23 +69,48 @@ func _click(view: GridView3D, down: Vector2, up: Vector2) -> void:
 	view._unhandled_input(release)
 
 
-func test_cells_added_and_removed_in_play() -> void:
-	var board := _build(1)
+func test_view_cell_at_ray_and_squares() -> void:
+	var board := build_square_board(4, 4)
 	var view := board.get_node(^"View") as GridView3D
-	var cursor := board.get_node(^"View/Cursor") as GridCursor
 	await tree.process_frame
-	cursor.highlight([Vector2i(0, 0), Vector2i(1, 0)] as Array[Vector2i])
-	board.grid.add_cell(Vector2i(3, 0))
+	check(view.tile_at(Vector2i(3, 3)).position.is_equal_approx(Vector3(3, 0, 3)), "square tiles sit on a square grid")
+	var down := Vector3.DOWN
+	check(view.cell_at_ray(Vector3(2, 5, 1), down) == Vector2i(2, 1), "a ray down meets the cell under it")
+	check(view.cell_at_ray(Vector3(9, 5, 9), down) == CellGrid.NO_CELL, "off the board: NO_CELL")
+	check(view.cell_at_ray(Vector3(9, 5, 9), down, false) == Vector2i(9, 9), "or the cell there, if asked")
+	check(view.cell_at_ray(Vector3(0, 5, 0), Vector3.UP) == CellGrid.NO_CELL, "a ray away from the plane misses")
+	check(view.cell_at_ray(Vector3(0, 5, 0), Vector3.RIGHT) == CellGrid.NO_CELL, "a parallel ray misses")
+	view.position = Vector3(10, 1, 0)
+	check(view.cell_at_ray(Vector3(11, 5, 2), down) == Vector2i(1, 2), "the view's transform counts")
+	board.free()
+
+
+func test_view_erase_redraws_with_default() -> void:
+	var board := build_board(1)
+	var view := board.get_node(^"View") as GridView3D
 	await tree.process_frame
-	check(view.tile_at(Vector2i(3, 0)) != null, "a cell added in play gets its tile")
-	board.grid.remove_cell(Vector2i(1, 0))
+	board.set_value(Vector2i(0, 0), &"terrain", &"water")
+	check(view.tile_at(Vector2i(0, 0)).scene_file_path == OTHER.resource_path, "water")
+	board.grid.erase_value(Vector2i(0, 0), &"terrain")
+	check(view.tile_at(Vector2i(0, 0)).scene_file_path == TILE.resource_path, "erased: the default tile again")
+	board.grid.set_value(Vector2i(0, 0), &"other_key", 1)
+	check(view.tile_at(Vector2i(0, 0)).scene_file_path == TILE.resource_path, "other keys leave the tile alone")
+	board.free()
+
+
+func test_view_keeps_tiles_when_cells_come_and_go() -> void:
+	var board := build_board(1)
+	var view := board.get_node(^"View") as GridView3D
 	await tree.process_frame
-	check(view.tile_at(Vector2i(1, 0)) == null, "a removed cell loses its tile")
-	check(cursor.highlighted() == ([Vector2i(0, 0)] as Array[Vector2i]), "and its mark: %s" % [cursor.highlighted()])
-	board.cell_size = 2.0
-	var marker := cursor.get_child(cursor.get_child_count() - 1) as Node3D
+	var kept := view.tile_at(Vector2i(1, 0))
+	board.grid.add_cell(Vector2i(4, 0))
+	await tree.process_frame
+	check(view.tile_at(Vector2i(1, 0)) == kept, "a cell that stays keeps its tile node")
+	check(view.tile_at(Vector2i(4, 0)) != null, "the new cell gets one")
+	board.cell_size = 3.0
+	await tree.process_frame
 	check(
-		marker.position.is_equal_approx(board.cell_to_position(Vector2i(0, 0)) + Vector3.UP * cursor.lift),
-		"marks follow a new cell_size"
+		view.tile_at(Vector2i(1, 0)) == kept and kept.position.is_equal_approx(board.cell_to_position(Vector2i(1, 0))),
+		"cell_size moves the tiles, it does not remake them"
 	)
 	board.free()

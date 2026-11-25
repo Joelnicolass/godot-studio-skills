@@ -33,6 +33,10 @@ SKILL_NAMES=(
   godot-perception-kit
   godot-spill-kit
   godot-bot-kit
+  godot-grid-kit
+  godot-turn-kit
+  godot-wallet-kit
+  godot-command-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -413,26 +417,26 @@ install_addon() {
     grid_kit)
       copy_one_addon "$project" "grid_kit"
       echo
-      echo "Habilitá el plugin GridKit (sin autoload). Las reglas usan HexGrid (datos puros); en la escena, un GridBoard"
-      echo "con un GridView3D hijo (una escena por valor de casilla) y GridCursor para marcar. Arrancá desde addons/grid_kit/examples/minimal_3d."
+      echo "Habilitá el plugin GridKit (sin autoload). Las reglas usan HexGrid o SquareGrid (datos puros, la misma API) y el mapa se guarda en un GridLayout;"
+      echo "en la escena, un GridBoard con un GridView3D hijo, GridCursor para marcar y el pincel de la barra GridKit en la vista 3D. Arrancá desde addons/grid_kit/examples/minimal_3d (hexágonos) o squares_3d."
       ;;
     turn_kit)
       copy_one_addon "$project" "turn_kit"
       echo
-      echo "Habilitá el plugin TurnKit (sin autoload). Las reglas usan TurnCycle (datos puros); en la escena, un TurnClock"
-      echo "con un TurnSeat hijo por jugador. Arrancá desde addons/turn_kit/examples/minimal."
+      echo "Habilitá el plugin TurnKit (sin autoload). Las reglas usan TurnCycle (datos puros; fases, tiempo por turno y jugador inicial que rota son opcionales);"
+      echo "en la escena, un TurnClock con un TurnSeat hijo por jugador. Arrancá desde addons/turn_kit/examples/minimal."
       ;;
     wallet_kit)
       copy_one_addon "$project" "wallet_kit"
       echo
-      echo "Habilitá el plugin WalletKit (sin autoload). Las reglas usan Purse (datos puros: montos, topes, comodín); en la escena,"
-      echo "un Wallet con los valores en el inspector. Arrancá desde addons/wallet_kit/examples/minimal."
+      echo "Habilitá el plugin WalletKit (sin autoload). Las reglas usan Purse (datos puros: montos, topes, sustitutos con tasa con WalletSubstitute, payment_for);"
+      echo "en la escena, un Wallet con los valores en el inspector. Arrancá desde addons/wallet_kit/examples/minimal."
       ;;
     command_kit)
       copy_one_addon "$project" "command_kit"
       echo
-      echo "Habilitá el plugin CommandKit (sin autoload). Tus órdenes extienden GameCommand; las reglas usan CommandLog (datos puros)"
-      echo "y en la escena un CommandBus con los scripts de orden en el inspector. Arrancá desde addons/command_kit/examples/minimal."
+      echo "Habilitá el plugin CommandKit (sin autoload). Cada jugada es una función de tu juego, do_<nombre>(seat, args…), con can_<nombre> y undo_<nombre> opcionales;"
+      echo "un nodo GameCommands (o un CommandLog en tus reglas) las corre, las anota y las repite. Arrancá desde addons/command_kit/examples/minimal."
       ;;
     all)
       install_addon "$project" "mp_kit"
@@ -566,6 +570,10 @@ install_harness() {
     echo "  perception:   godot-perception-kit"
     echo "  spill:        godot-spill-kit"
     echo "  bots:         godot-bot-kit"
+    echo "  tableros:     godot-grid-kit"
+    echo "  turnos:       godot-turn-kit"
+    echo "  recursos:     godot-wallet-kit"
+    echo "  jugadas:      godot-command-kit"
     echo "  materiales:   godot-material-maker"
     echo "  investigar:   godot-feature-research"
   fi
@@ -575,7 +583,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /create-material, /research-feature, /create-prd, …"
+    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /add-grid, /add-turns, /add-wallet, /add-commands, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then

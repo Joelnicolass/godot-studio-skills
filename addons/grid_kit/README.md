@@ -1,12 +1,14 @@
 # GridKit
 
-Tableros hexagonales para juegos de estrategia, tácticos, de mesa o puzzles. Hay dos niveles:
+Tableros de hexágonos **o de cuadrados** para juegos de estrategia, tácticos, de mesa o puzzles, con la misma API para las dos formas. Hay tres niveles:
 
-- **`HexGrid`**: el tablero como datos puros (`RefCounted`, sin nodos ni escena). Guarda valores por casilla y responde vecinos, distancia, rango, caminos y flood. Las reglas de tu juego lo usan directo y se testea headless.
-- **Nodos para verlo**:
-  - `GridBoard` arma o muestra un `HexGrid`.
-  - `GridView3D` lo dibuja con una escena por casilla y reporta clics y hover.
+- **`CellGrid`** (`HexGrid` y `SquareGrid`): el tablero como datos puros (`RefCounted`, sin nodos ni escena). Guarda valores por casilla y responde vecinos, distancia, rango, caminos y flood. Las reglas de tu juego lo usan directo y se testea headless.
+- **`GridLayout`**: el mapa (la forma y los valores de cada casilla) como un `Resource` que se guarda en un `.tres`.
+- **Nodos para verlo y pintarlo**:
+  - `GridBoard` arma o muestra una grilla, desde el inspector o desde un `GridLayout`.
+  - `GridView3D` la dibuja con una escena por casilla y reporta clics y hover.
   - `GridCursor` marca casillas.
+  - Un **pincel en la vista 3D del editor** pinta los valores de las casillas y agrega o quita casillas.
 
 GridKit **no tiene** reglas de juego, unidades, niebla ni red, y no tiene autoload.
 
@@ -16,13 +18,17 @@ GridKit **no tiene** reglas de juego, unidades, niebla ni red, y no tiene autolo
 ./install.sh --addon /path/to/godot-project grid_kit
 ```
 
-Habilitá el plugin **GridKit** (tipos `GridBoard`, `GridView3D` y `GridCursor` en Create Node).
+Habilitá el plugin **GridKit** (tipos `GridBoard`, `GridView3D` y `GridCursor` en Create Node, y la barra del pincel en la vista 3D).
 
 ## En 3 pasos
 
-1. Agregá un `GridBoard` y elegí la forma en el inspector: `columns` × `rows`, o `radius` para un hexágono. Elegí también `cell_size`, el ancho de un hex de lado a lado.
+**Por el editor**
+
+1. Agregá un `GridBoard` y elegí la forma en el inspector: `shape` (Hexagons o Squares), `columns` × `rows`, o `radius`. Elegí también `cell_size`.
 2. Agregale un hijo `GridView3D`. En `tiles` poné una escena por valor (por ejemplo `plain`, `forest`, `water`) y en `value_key` la clave que elige la escena (por defecto `terrain`).
-3. Conectá `cell_clicked` y consultá el tablero:
+3. Seleccioná el `GridBoard` y pintá con la barra **GridKit** de la vista 3D. Guardá la escena: el mapa queda adentro. Si lo querés en su propio archivo, guardalo como `.tres` desde el inspector.
+
+**Por código**
 
 ```gdscript
 @onready var board: GridBoard = $Board
@@ -38,52 +44,122 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 	moves.highlight(board.neighbors(cell))
 ```
 
-## Ejemplo mínimo
+## Pintar el mapa en el editor
 
-`examples/minimal_3d/minimal_3d.tscn` (F6): un hexágono de radio 4 con agua en el borde, llanura, bosque y montaña. Un clic marca la casilla y sus 6 vecinas, y el puntero marca la casilla de abajo.
+Seleccioná un `GridBoard` (o su `GridView3D`) y arriba de la vista 3D aparece la barra **GridKit**:
+
+| Botón | Qué hace |
+| --- | --- |
+| Un botón por cada clave de `tiles` (por ejemplo `plain`, `water`) | Pinta esa loseta: escribe esa clave en el valor `value_key` de la casilla |
+| **Erase** | Borra el valor: la casilla vuelve a `default_tile` |
+| **Add cells** | Agrega casillas, también pegadas al borde del tablero |
+| **Remove cells** | Quita casillas y todos sus valores |
+| **Save shape as layout** | (No es una herramienta: es un botón.) Crea un `GridLayout` desde la forma actual y lo asigna a `layout`, sin pintar. Solo está habilitado si el tablero no tiene `layout`. Es un paso de deshacer |
+
+- **Una herramienta a la vez.** Con ninguna activa, el editor se comporta como siempre: la selección y los gizmos no cambian. Escape suelta la herramienta.
+- **Un trazo** es apretar el botón izquierdo, arrastrar y soltar. Se ve en vivo mientras arrastrás, y es **un solo paso** de deshacer y rehacer (Ctrl+Z) del editor. Repetir una casilla en el mismo trazo no cuenta dos veces. La cámara del editor (botón del medio o derecho) sigue andando.
+- **Dónde queda guardado.** Lo pintado se escribe en un `GridLayout`. Si el `GridBoard` no tenía `layout`, el primer trazo crea uno desde su forma actual y lo asigna (deshacer también lo saca). Así queda como sub-recurso dentro de la escena. Para guardarlo en su propio archivo: en el inspector, clic derecho sobre `layout` → *Save*.
+- **Guardar el mapa.** Un layout que es un archivo `.tres` se guarda en su archivo cuando guardás la escena (Ctrl+S), con Guardar todo o al correr el juego (F5, F6). Un layout que está dentro de la escena se guarda con ella. Si cerrás con un mapa pintado sin guardar, el editor pregunta. Solo se escribe un `.tres` que el pincel cambió de verdad: pintar y deshacer hasta el estado original no lo toca.
+- **Con `layout`, manda el layout.** `shape`, `diagonals`, `columns`, `rows` y `radius` quedan de solo lectura. Para pasar la forma actual a un layout sin pintar, usá el botón **Save shape as layout** de la barra.
+- **La barra se rearma** cuando cambian las losetas de `tiles`.
+- **Al jugar, el layout no se toca.** El `GridBoard` juega una copia: lo que el juego cambia con `set_value` no vuelve al `.tres`.
+
+## Ejemplos
+
+- `examples/minimal_3d/minimal_3d.tscn` (F6): un hexágono de radio 4 con agua en el borde, llanura, bosque y montaña, que sale de `map.tres` (un `GridLayout`). Un clic marca la casilla y sus 6 vecinas, y el puntero marca la casilla de abajo.
 
 ```
-Minimal3D                 # minimal_3d.gd: pinta el terreno y conecta las señales
+Minimal3D                 # minimal_3d.gd: solo conecta las señales
 ├── Camera, Sun
-└── Board                 # GridBoard: radius = 4
+└── Board                 # GridBoard: layout = map.tres
     └── View              # GridView3D: tiles = {plain, forest, mountain, water}
         ├── Selection     # GridCursor amarillo
         └── Hover         # GridCursor blanco
 ```
 
+- `examples/squares_3d/squares_3d.tscn` (F6): un tablero de cuadrados de 8 × 8 con dos losetas. Un clic marca las casillas a 2 pasos (`cells_in_range`) y el camino desde el clic anterior (`find_path`).
+
 ## Coordenadas
 
-- Hexágonos **pointy-top** en coordenadas **offset odd-r**: `Vector2i(columna, fila)`, con las filas impares corridas media casilla a la derecha.
+**Hexágonos**
+
+- **Pointy-top** en coordenadas **offset odd-r**: `Vector2i(columna, fila)`, con las filas impares corridas media casilla a la derecha.
 - Por dentro se calcula en coordenadas cúbicas (`HexGrid.to_cube` / `from_cube`).
-- En 3D el tablero está en el plano XZ: la columna avanza en X y la fila en Z.
-- `HexGrid.NO_CELL` significa "ninguna casilla", por ejemplo un clic fuera del tablero.
-- Las listas siempre vuelven en el mismo orden: por fila y después por columna. Los vecinos van en el orden fijo de `CUBE_DIRECTIONS`. Así los resultados no dependen del orden de un diccionario, y una partida con semilla se repite igual.
+- Vecinos, en orden fijo: este, noreste, noroeste, oeste, suroeste, sureste (`HexGrid.CUBE_DIRECTIONS`).
+- Distancia: pasos entre casillas (cúbica). `cell_size` es el ancho de lado a lado.
+
+**Cuadrados**
+
+- `Vector2i(columna, fila)`; el norte es la fila anterior (`fila - 1`).
+- Vecinos, en orden fijo: este, norte, oeste, sur y, con `diagonals`, después noreste, noroeste, suroeste, sureste.
+- Distancia: sin diagonales, **Manhattan** (4 vecinas); con diagonales, **Chebyshev** (8 vecinas, un paso en diagonal vale 1). `cells_in_range` usa la misma distancia. `cell_size` es el lado.
+
+**Las dos**
+
+- En 3D el tablero está en el plano XZ: la columna avanza en X y la fila en Z. El centro de la casilla (0, 0) está en el origen.
+- `CellGrid.NO_CELL` significa "ninguna casilla", por ejemplo un clic fuera del tablero.
+- Las listas siempre vuelven en el mismo orden: por fila y después por columna. Así los resultados no dependen del orden de un diccionario, y una partida con semilla se repite igual.
 
 ## API
 
-### `HexGrid` (RefCounted)
+### `CellGrid` (RefCounted): lo común a las dos formas
+
+| Miembro | Qué hace |
+| --- | --- |
+| `add_cell`, `remove_cell`, `has_cell`, `size()`, `cells()` | Las casillas del tablero. Agregar o quitar una emite `cells_changed` |
+| `add_cells(list)` / `remove_cells(list)` | Lo mismo para muchas casillas, con **un solo** `cells_changed` |
+| `set_value(cell, key, value)`, `get_value(cell, key, default)`, `values(cell)` | Valores por casilla y clave (`StringName`) |
+| `erase_value(cell, key)` | Saca un valor. Emite `value_changed` con `null` |
+| `neighbors(cell)` | Las vecinas que están en el tablero, en orden fijo |
+| `distance(a, b)` | Pasos entre dos casillas (método de la grilla: depende de la forma) |
+| `cells_in_range(cell, radius)` | Las casillas a `radius` pasos o menos, incluida `cell` |
+| `find_path(from, to, cost)` | El camino más barato (A*). `cost` es `func(from, to) -> float`; `INF` o un valor negativo es intransitable. Sin `cost`, cada paso vale 1 |
+| `flood(cell, accepts)` | Las casillas conectadas a `cell` que cumplen `accepts(cell) -> bool` |
+| `cell_to_local(cell, cell_size)` / `local_to_cell(point, cell_size)` | Del centro de una casilla al plano y del plano a una casilla |
+| `cell_outline(cell_size)` | Las esquinas de una casilla alrededor de su centro |
+| `shape_name()` | `&"hex"` o `&"square"` |
+| `to_dict()` / `CellGrid.from_dict(data)` | Datos planos para guardar o mandar por red. `from_dict` devuelve un `HexGrid` o un `SquareGrid` según `"shape"` y también lee el formato de 0.2 |
+| `CellGrid.NO_CELL` | "Ninguna casilla" |
+| señal `value_changed(cell, key, value)` | Cambió o se borró (`null`) un valor |
+| señal `cells_changed` | Se agregaron o se quitaron casillas |
+
+`to_dict()` devuelve `{"shape": "hex" | "square", "diagonals": bool (solo cuadrados), "cells": [[columna, fila, {clave: valor}], …]}`.
+
+### `HexGrid` (extiende `CellGrid`)
 
 | Miembro | Qué hace |
 | --- | --- |
 | `HexGrid.rect(columns, rows)` / `HexGrid.hexagon(radius)` | Tablero rectangular, o hexagonal centrado en (0, 0) |
-| `add_cell`, `remove_cell`, `has_cell`, `size()`, `cells()` | Las casillas del tablero. Agregar o quitar una emite `cells_changed` |
-| `set_value(cell, key, value)`, `get_value(cell, key, default)`, `values(cell)` | Valores por casilla y clave (`StringName`) |
-| `neighbors(cell)` | Las vecinas que están en el tablero |
-| `HexGrid.distance(a, b)` | Pasos entre dos casillas |
-| `cells_in_range(cell, radius)` | Las casillas a `radius` pasos o menos, incluida `cell` |
-| `find_path(from, to, cost)` | El camino más barato (A*). `cost` es `func(from, to) -> float`; `INF` o un valor negativo es intransitable. Sin `cost`, cada paso vale 1 |
-| `flood(cell, accepts)` | Las casillas conectadas a `cell` que cumplen `accepts(cell) -> bool` |
-| `HexGrid.cell_to_local(cell, cell_size)` / `local_to_cell(point, cell_size)` | Del centro de una casilla al plano y del plano a una casilla |
-| `to_dict()` / `HexGrid.from_dict(data)` | Datos planos para guardar o mandar por red |
-| señal `value_changed(cell, key, value)` | Cambió un valor |
-| señal `cells_changed` | Se agregó o se quitó una casilla |
+| `HexGrid.to_cube(cell)` / `from_cube(cube)` | Coordenadas cúbicas (estáticas) |
+| `HexGrid.CUBE_DIRECTIONS` | Las seis direcciones, en el orden de los vecinos |
+
+### `SquareGrid` (extiende `CellGrid`)
+
+| Miembro | Qué hace |
+| --- | --- |
+| `SquareGrid.rect(columns, rows, diagonals := false)` | Tablero rectangular, de (0, 0) a (columns - 1, rows - 1) |
+| `SquareGrid.disc(radius, diagonals := false)` | Todas las casillas a `radius` pasos de (0, 0): un rombo, o un cuadrado con diagonales |
+| `diagonals` | Apagado: 4 vecinas y distancia Manhattan. Encendido: 8 vecinas y distancia Chebyshev |
+
+### `GridLayout` (Resource)
+
+| Miembro | Qué hace |
+| --- | --- |
+| `shape` (`HEX` o `SQUARE`), `diagonals` | La forma (las diagonales solo para cuadrados) |
+| `cells` | `Dictionary[Vector2i, Dictionary]`: cada casilla y sus valores. La forma del mapa son sus claves |
+| `make_grid()` | Una grilla **nueva** con estas casillas y valores. Es una copia: el juego la cambia sin tocar el recurso. Devuelve un `CellGrid`; si tu estado tipa la forma, `layout.make_grid() as HexGrid` (o `as SquareGrid`) |
+| `read_grid(grid)` / `GridLayout.from_grid(grid)` | Copia la forma y los valores de una grilla al recurso |
+| `has_cell`, `add_cell`, `remove_cell` | Editan las casillas |
+| `set_value(cell, key, value)`, `erase_value(cell, key)`, `get_value(cell, key, default)` | Editan los valores (`set_value` agrega la casilla si no está) |
+| señal `changed` | Cada edición la emite (la del `Resource`) |
 
 ### `GridBoard` (Node)
 
-- **Inspector:** `columns`, `rows`, `radius` (si es mayor a 0, el tablero es hexagonal) y `cell_size`.
-- **Grilla:** `grid` es la `HexGrid` que muestra. `use_grid(grid)` muestra la grilla de tus reglas en vez de la propia y `use_own_grid()` vuelve a la del inspector.
-- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path` y `flood`, más `cell_to_position(cell) -> Vector3` y `position_to_cell(point) -> Vector2i`. Lo demás (`values`, `size`, `add_cell`, `remove_cell`, `to_dict`) va por `board.grid`.
-- **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma o `cell_size`, o una casilla agregada o quitada). Las vistas y los cursores se actualizan solos con ella.
+- **Inspector:** `layout`, `shape` (Hexagons o Squares), `diagonals` (solo cuadrados), `columns`, `rows`, `radius` (si es mayor a 0: todas las casillas a `radius` pasos de (0, 0), en las dos formas) y `cell_size`. Con `layout`, la grilla sale del layout y la forma del inspector no aplica. `save_shape_as_layout()` crea un layout desde la forma actual (en el editor, el botón de la barra GridKit hace lo mismo con deshacer).
+- **Grilla:** `grid` es la `CellGrid` que muestra. `use_grid(grid)` muestra la grilla de tus reglas en vez de la propia y `use_own_grid()` vuelve a la del layout o el inspector.
+- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path` y `flood`, más `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
+- **Editar de a muchas:** `paint(key, {casilla: valor})` (un valor `null` borra la clave) y `set_cells(add, remove, values)` (`values` es `{casilla: {clave: valor}}` para las casillas nuevas). En el editor, con `layout`, escriben también en el layout; al jugar, solo en la grilla.
+- **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma o `cell_size`, o casillas agregadas o quitadas). Las vistas y los cursores se actualizan solos con ella.
 
 ### `GridView3D` (Node3D, hijo de un `GridBoard`)
 
@@ -93,24 +169,41 @@ Minimal3D                 # minimal_3d.gd: pinta el terreno y conecta las señal
   - `input_enabled`.
   - `click_max_drag_px`: si el puntero se mueve más que esto entre apretar y soltar, es un arrastre y no un clic.
   - `camera`: si queda vacía, usa la cámara actual.
-- **Métodos:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)` y `board()`.
+- **Métodos:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)`, `cell_at_ray(origin, direction, on_board_only := true)` y `board()`.
 - **Señales:** `cell_clicked(cell)` (mouse o toque) y `cell_hovered(cell)` (`NO_CELL` al salir del tablero).
 - **Clics sin colliders:** el rayo de la cámara se cruza con el plano del tablero.
+- Cuando el tablero gana o pierde casillas, solo se dibujan o se liberan esas losetas. Al borrar un valor (`erase_value`), la casilla vuelve a `default_tile`.
 
 ### `GridCursor` (Node3D, hijo de un `GridView3D`)
 
 - **Inspector:**
-  - `marker`: la escena del marcador. Si queda vacía, dibuja un hexágono plano del `color` elegido.
+  - `marker`: la escena del marcador. Si queda vacía, dibuja un hexágono o un cuadrado plano (según la forma del tablero) del `color` elegido.
   - `color`, `lift` y `fill`.
 - **Métodos:** `highlight(cells)` (reemplaza la marca anterior), `clear()` y `highlighted()`.
-- Si el tablero cambia (`rebuilt`), las marcas sobre casillas que ya no están se borran y las demás se mueven a su lugar.
+- Si el tablero cambia (`rebuilt`), el cursor lo atiende **una vez por cuadro**: las marcas sobre casillas que ya no están se liberan y las demás se mueven a su lugar (no se recrean). El marcador por defecto comparte una malla y un material entre todas las marcas.
 - Usá un cursor por significado: movimientos válidos, selección, hover.
 
 ## Tips
 
-- **Las reglas usan `HexGrid`, no los nodos.** Guardá la grilla en el estado de tu partida y mostrala con `board.use_grid(state.grid)`. Así las reglas corren headless y la vista se actualiza sola con `value_changed`.
+- **Las reglas usan `CellGrid`, no los nodos.** Guardá la grilla en el estado de tu partida y mostrala con `board.use_grid(state.grid)`. Así las reglas corren headless y la vista se actualiza sola con `value_changed`. Sin ningún nodo: `layout.make_grid()` o `HexGrid.rect(…)` / `SquareGrid.rect(…)`.
 - **El arrastre de la cámara no es un clic.** Ajustá `click_max_drag_px`. Si tu cámara tiene su propio estado de arrastre, apagá `input_enabled` mientras arrastra.
-- **Losetas de otros packs.** Si vienen flat-top, rotalas 90° en su escena. `cell_size` es el ancho de lado a lado.
+- **Losetas de otros packs.** Si vienen flat-top, rotalas 90° en su escena. En hexágonos `cell_size` es el ancho de lado a lado; en cuadrados, el lado.
+- **Muchas casillas de golpe.** `add_cells` y `remove_cells` emiten una sola señal; `add_cell` en un bucle emite una por casilla (igual la vista y los cursores agrupan lo que dibujan en un cuadro).
+- **Un mapa tuyo.** Cargá el layout con `ResourceLoader.load` o asignalo en el inspector; para armar uno por código: `layout.set_value(cell, &"terrain", &"forest")`, o `GridLayout.from_grid(grid)` y `ResourceSaver.save(layout, "res://map.tres")`.
+
+## Migrar desde 0.2
+
+| Antes (0.2) | Ahora (0.3) |
+| --- | --- |
+| `HexGrid.distance(a, b)` (estático) | `grid.distance(a, b)` (de la grilla; el tablero también: `board.distance(a, b)`) |
+| `HexGrid.cell_to_local(cell, size)` / `local_to_cell(point, size)` (estáticos) | `grid.cell_to_local(cell, size)` / `grid.local_to_cell(point, size)` |
+| `GridBoard.grid` es un `HexGrid` | Es un `CellGrid` (un `HexGrid` o un `SquareGrid`) |
+| `to_dict()` con `"shape": 0` | `"shape": "hex"` (o `"square"`). `CellGrid.from_dict` lee el formato viejo |
+| `HexGrid.from_dict(data)` | `CellGrid.from_dict(data)` (devuelve lo que diga el dato; `HexGrid.from_dict` sigue andando) |
+| `HexGrid.NO_CELL`, `HexGrid.Shape` | `CellGrid.NO_CELL` (`HexGrid.NO_CELL` también anda); `shape_name()` reemplaza a `Shape` |
+| Un mapa propio (filas de letras, un diccionario) que se pinta en `_ready` | Un `GridLayout`: `layout.set_value(cell, &"terrain", …)` una vez, o `GridLayout.from_grid(grid)` y `ResourceSaver.save`; se asigna en `GridBoard.layout` |
+| `GridBoard.radius` solo hexágonos | Vale para las dos formas |
+| `GridView3D.cell_at_screen` | Sigue igual; `cell_at_ray(origin, direction)` es lo que usa por dentro |
 
 ## Tests
 
@@ -120,8 +213,13 @@ godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_te
 
 Sale `GRIDKIT TESTS PASS (n)`. Los tests cubren:
 
-- Formas y coordenadas, vecinos, distancia, rango, caminos con costo y flood.
-- `to_dict` y `cells_changed`.
-- Los nodos: losetas por casilla, redibujo, `use_grid`, casillas agregadas y quitadas en juego (losetas y marcas), clic, arrastre y avisos del editor.
-- El ejemplo jugado con eventos de mouse.
+- Hexágonos y cuadrados: formas y coordenadas, vecinos (4 y 8, en orden), distancia, rango, caminos con costo, con y sin diagonales, flood, ida y vuelta casilla ↔ punto.
+- `CellGrid`: `from_dict` elige la clase y lee el formato de 0.2, `add_cells` emite una vez, `erase_value`.
+- `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` y guardar y cargar un `.tres`.
+- Los nodos: forma desde el inspector, `radius` en cuadrados, el layout manda, rearmado agrupado, `paint` y `set_cells` (con y sin layout), `position_to_any_cell`, losetas por casilla, redibujo, `use_grid`, `cell_at_ray`, clic, arrastre y avisos del editor.
+- `GridCursor`: los mismos nodos tras 1000 `add_cell`, que solo se libera la marca de la casilla quitada, `cell_size` mueve sin recrear, marcador cuadrado.
+- El trazo del pincel (sin editor): pintar, repetir, borrar, agregar y quitar casillas con sus valores, crear el layout, y que el resultado deshace todo.
+- Los dos ejemplos jugados con eventos de mouse.
 - Que el addon no nombre a ningún otro kit.
+
+Lo que **no** cubren los tests (necesita un editor abierto con mouse): la barra GridKit, el arrastre real y el deshacer real del editor.

@@ -1,3 +1,14 @@
-extends "res://addons/command_kit/core/game_command.gd"
+extends Node
 
-## Test command with no command_type(): a log must refuse it.
+## Test game whose can_ function has no return type: it answers whatever `answer` holds.
+
+var answer: Variant = ""
+var ran := 0
+
+
+func can_flag(_seat: int):
+	return answer
+
+
+func do_flag(_seat: int) -> void:
+	ran += 1
