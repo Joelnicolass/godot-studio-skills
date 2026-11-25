@@ -8,7 +8,7 @@ Boards of hexagons **or squares** for strategy, tactics, board games or puzzles,
   - `GridBoard` builds or shows a grid, from the inspector or from a `GridLayout`.
   - `GridView3D` draws it with one scene per cell and reports clicks and hover.
   - `GridCursor` marks cells.
-  - A **brush in the editor's 3D view** paints the values of the cells and adds or removes cells.
+  - A **brush in the editor's 3D view** paints the values of the cells, raises and lowers their heights and adds or removes cells.
 
 GridKit has **no** game rules, no units, no fog, no network and no autoload.
 
@@ -57,6 +57,8 @@ Select a `GridBoard` (or its `GridView3D`) and the **GridKit** bar shows up on t
 | **Erase** | Deletes the value: the cell goes back to `default_tile` |
 | **Add cells** | Adds cells, also next to the edge of the board |
 | **Remove cells** | Removes cells and all their values |
+| **Raise** and **Lower**, with their step (`±`) | Move each cell of the stroke one step up or down. With Shift they do the opposite |
+| **Set height**, with its number | Writes that height on each cell of the stroke (to flatten a plateau) |
 | **Save shape as layout** | (A button, not a tool.) Makes a `GridLayout` from the current shape and assigns it to `layout`, without painting. Only enabled when the board has no `layout`. It is one undo step |
 
 - **One tool at a time.** With none on, the editor behaves as usual: selection and gizmos do not change. Escape lets go of the tool.
@@ -65,7 +67,44 @@ Select a `GridBoard` (or its `GridView3D`) and the **GridKit** bar shows up on t
 - **Saving the map.** A layout that is a `.tres` file is saved to its own file when you save the scene (Ctrl+S), with Save All, or when you run the game (F5, F6). A layout inside the scene is saved with it. If you close with a painted map unsaved, the editor asks. A `.tres` is only written if the brush really changed it: painting and undoing back to the original state leaves it alone.
 - **With a `layout`, the layout rules.** `shape`, `diagonals`, `columns`, `rows` and `radius` become read-only. To turn the current shape into a layout without painting, use the **Save shape as layout** button of the bar.
 - **The bar rebuilds itself** when the tiles in `tiles` change.
+- **Heights** are written into the board's `height_key` key and stay in the layout like any other value. If the board has no `height_key`, the first height stroke sets it to `height` (undo takes it out again). The tile goes up while you drag, and the brush picks a cell by where you see it: its top or its side. See [Heights](#heights).
 - **In play, the layout is not touched.** The `GridBoard` plays a copy: what the game changes with `set_value` never goes back to the `.tres`.
+
+## Heights
+
+Each cell can have its own height: a plateau, a pit, a taller frame of stones. The height is one more value of the cell (a number, int or float), and the `GridBoard` says which one with two properties:
+
+| Property | What it does |
+| --- | --- |
+| `height_key` | The key of the value that is the height, for example `height`. Empty (the default): the board is flat |
+| `height_scale` | How many world units a height of 1 is worth (1 by default): a cell with height 2 stands at Y = 2 × `height_scale` |
+
+- **Everything goes up together.** `cell_to_position(cell)` returns the center of the cell with its height in Y. The tiles of `GridView3D`, the marks of `GridCursor` and whatever your game places with `cell_to_position` stand at the same height without knowing about heights.
+- **You paint it in the editor** with **Raise**, **Lower** and **Set height** of the GridKit bar, and the 3D view shows the map with its heights.
+- **When a height changes** (`set_value`, `paint`, undo), the tile and the mark of that cell move; they are not made again. Changing `height_key` or `height_scale` places everything again, as `cell_size` does.
+- **Clicks pick what you see.** Each cell is a column that goes up to its height, and the camera ray picks the first column it meets, by its top or by its side: a tall cell hides the low one behind it. A cell off the board counts as height 0.
+- **`position_to_cell` ignores height.** Only X and Z count: a point over, under or inside a column is that cell.
+- **A value that is not a number** (a text, a `bool`) counts as height 0, with one warning per board.
+- **Solid tiles.** Since clicks treat each cell as a column, give the tile scene a body that goes down (a prism, not a sheet), or the gap under the tall cells shows.
+
+A piece is placed on cell (2, 3) and goes up with it if the cell changes its height. The two `@export`s are assigned in the inspector:
+
+```gdscript
+@export var board: GridBoard
+@export var piece: Node3D
+
+var cell := Vector2i(2, 3)
+
+
+func _ready() -> void:
+	piece.position = board.cell_to_position(cell)
+	board.cell_changed.connect(_on_cell_changed)
+
+
+func _on_cell_changed(changed: Vector2i, key: StringName, _value: Variant) -> void:
+	if changed == cell and key == board.height_key:
+		piece.position = board.cell_to_position(cell)
+```
 
 ## Examples
 
@@ -99,7 +138,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 
 **Both**
 
-- In 3D the board lies on the XZ plane: the column grows along X and the row along Z. The center of cell (0, 0) is the origin.
+- In 3D the board lies on the XZ plane: the column grows along X and the row along Z. The center of cell (0, 0) is the origin. With a `height_key`, the height of each cell goes in Y.
 - `CellGrid.NO_CELL` means "no cell", for example a click outside the board.
 - Lists always come back in the same order: by row, then by column. So results never depend on dictionary order, and a seeded match replays the same.
 
@@ -163,11 +202,11 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 
 ### `GridBoard` (Node)
 
-- **Inspector:** `layout`, `shape` (Hexagons or Squares), `diagonals` (squares only), `columns`, `rows`, `radius` (above 0: every cell within `radius` steps of (0, 0), in both shapes) and `cell_size`. With a `layout`, the grid comes from the layout and the inspector shape does not apply. `save_shape_as_layout()` makes a layout from the current shape (in the editor, the button of the GridKit bar does the same, with undo).
+- **Inspector:** `layout`, `shape` (Hexagons or Squares), `diagonals` (squares only), `columns`, `rows`, `radius` (above 0: every cell within `radius` steps of (0, 0), in both shapes), `cell_size`, `height_key` (the key of the height; empty: a flat board) and `height_scale` (world units per height of 1). With a `layout`, the grid comes from the layout and the inspector shape does not apply. `save_shape_as_layout()` makes a layout from the current shape (in the editor, the button of the GridKit bar does the same, with undo).
 - **Grid:** `grid` is the `CellGrid` it shows. `use_grid(grid)` shows your rules' grid instead of its own, and `use_own_grid()` goes back to the one from the layout or the inspector.
-- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` and `center_cell`, plus `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` off the board) and `position_to_any_cell(point)` (the cell under the point even if it is not on the board). The rest (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) goes through `board.grid`.
+- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` and `center_cell`, plus `cell_to_position(cell) -> Vector3` (the center of the cell, with its height in Y), `cell_height(cell) -> float` (the height in world units; 0 without a `height_key`), `position_to_cell(point) -> Vector2i` (`NO_CELL` off the board) and `position_to_any_cell(point)` (the cell under the point even if it is not on the board). These two only look at X and Z: height does not change the answer. The rest (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) goes through `board.grid`.
 - **Editing many at once:** `paint(key, {cell: value})` (a `null` value deletes the key) and `set_cells(add, remove, values)` (`values` is `{cell: {key: value}}` for the new cells). In the editor, with a `layout`, they write the layout too; in play, only the grid.
-- **Signals:** `cell_changed(cell, key, value)` and `rebuilt` (another grid, another shape or `cell_size`, or cells added or removed). Views and cursors update themselves with it.
+- **Signals:** `cell_changed(cell, key, value)` and `rebuilt` (another grid, another shape, `cell_size`, `height_key` or `height_scale`, or cells added or removed). Views and cursors update themselves with it.
 
 ### `GridView3D` (Node3D, child of a `GridBoard`)
 
@@ -180,8 +219,8 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 - **Methods:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)`, `cell_at_ray(origin, direction, on_board_only := true)` and `board()`.
 - **Signals:** `cell_clicked(cell)` (mouse or touch) and `cell_hovered(cell)` (`NO_CELL` when it leaves the board); `tile_created(cell, tile)` when it makes a tile, and `drawn` when every tile is in place.
 - **Each tile knows its cell.** The tile already sits on its cell's center when `tile_created` fires, and it is not in the tree yet: what you set on it there (its cell, its data) is already there in its `_ready`. `drawn` fires after a `rebuilt`, after `tiles`, `default_tile` or `value_key` change, or after `redraw()`; a cell whose value changes emits only `tile_created`.
-- **Clicks without colliders:** the camera ray meets the board plane.
-- When the board gains or loses cells, only those tiles are drawn or freed. Erasing a value (`erase_value`) sends the cell back to `default_tile`.
+- **Clicks without colliders:** the camera ray meets the board plane. On a board with heights (`height_key`), it picks the first cell the ray meets, by its top or by its side; `cell_at_ray`, `cell_at_screen`, `cell_clicked` and `cell_hovered` answer that way. Without a `height_key`, everything works as before and costs the same.
+- When the board gains or loses cells, only those tiles are drawn or freed. Erasing a value (`erase_value`) sends the cell back to `default_tile`. When the height of a cell changes, its tile moves (it is not made again).
 
 ### `GridCursor` (Node3D, child of a `GridView3D`)
 
@@ -190,6 +229,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
   - `color`, `lift` and `fill`.
 - **Methods:** `highlight(cells)` (replaces the previous marks), `clear()` and `highlighted()`.
 - When the board changes (`rebuilt`), the cursor handles it **once per frame**: marks on cells that are gone are freed and the rest move into place (none is made again). The default marker shares one mesh and one material among all marks.
+- On a board with heights, each mark floats `lift` above its cell and follows it when its height changes.
 - Use one cursor per meaning: valid moves, selection, hover.
 
 ## Tips
@@ -199,6 +239,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 - **A camera drag is not a click.** Tune `click_max_drag_px`. If your camera has its own drag state, turn `input_enabled` off while it drags.
 - **Tiles from other packs.** If they come flat-top, rotate them 90° in their scene. For hexagons `cell_size` is the width, side to side; for squares, the side.
 - **Many cells at once.** `add_cells` and `remove_cells` emit one signal; `add_cell` in a loop emits one per cell (views and cursors still group what they draw into one frame).
+- **The cost of climbing.** Height is one more value: in the `cost` of `find_path`, compare `get_value(to, &"height", 0)` with the one of `from` and return `INF` when the step is too tall.
 - **A map of your own.** Load the layout with `ResourceLoader.load` or assign it in the inspector; to build one in code: `layout.set_value(cell, &"terrain", &"forest")`, or `GridLayout.from_grid(grid)` and `ResourceSaver.save(layout, "res://map.tres")`.
 
 ## Migrating from 0.2
@@ -228,8 +269,12 @@ It prints `GRIDKIT TESTS PASS (n)`. The tests cover:
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` and saving and loading a `.tres`.
 - The nodes: shape from the inspector, `radius` on squares, the layout rules, grouped rebuild, `paint` and `set_cells` (with and without a layout), `position_to_any_cell`, tiles per cell, `tile_created` and `drawn`, redraw, `use_grid`, `cell_at_ray`, click, drag and editor warnings.
 - `GridCursor`: the same nodes after 1000 `add_cell`, only the mark of a removed cell is freed, `cell_size` moves without recreating, square marker.
-- The brush stroke (no editor): paint, repeat, erase, add and remove cells with their values, making the layout, and that its result undoes everything.
+- Heights: `cell_to_position` with and without a `height_key`, with int and float, a value that is not a number; the tile and the mark move without being made again; `height_scale` and `height_key` place everything again; the preview of a layout; clicks on a tall cell that hides a low one and on a low one in the open, on hexagons and on squares, with the view moved, turned and scaled, off the board and after each change; and that nothing changes without a `height_key`.
+- The brush stroke (no editor): paint, repeat, erase, add and remove cells with their values, raise, lower and set heights, making the layout and the height key, and that its result undoes everything.
+- The brush tool with a stand-in undo history: the bar's buttons, a height stroke as one step that undoes and redoes, Shift, the numbers of the bar, and that the brush finds a tall cell by its top.
 - Both examples played with mouse events.
 - That the addon names no other kit.
 
-What the tests do **not** cover (it needs an open editor with a mouse): the GridKit bar, the real drag and the editor's real undo.
+The editor check (`godot --headless --editor --path gridkit_lab -- --gridkit-editor-check`) goes through the real editor: the bar, tile and height strokes with the editor's undo, picking a tall cell from the 3D view's camera, and what is saved on disk.
+
+What neither of them covers (it needs a real window and mouse): how the bar looks, the real drag and the brush marker on a tall cell.

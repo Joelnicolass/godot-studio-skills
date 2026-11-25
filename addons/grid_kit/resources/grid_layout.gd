@@ -86,7 +86,7 @@ func set_value(cell: Vector2i, key: StringName, value: Variant) -> void:
 	if not cells.has(cell):
 		cells[cell] = {}
 	var values: Dictionary = cells[cell]
-	if values.has(key) and values[key] == value:
+	if values.has(key) and typeof(values[key]) == typeof(value) and values[key] == value:
 		return
 	values[key] = value
 	emit_changed()

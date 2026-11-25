@@ -6,8 +6,9 @@ extends Node3D
 ## example `&"terrain"` → `&"forest"`). It redraws a cell when that value changes and the cells that came or went when
 ## the board is `rebuilt`. A click or a tap that does not drag reports the cell under it (`cell_clicked`); the pointer
 ## moving over a new cell reports it too (`cell_hovered`). Picking needs no colliders: the ray from the camera meets
-## the board plane. Each tile sits on its cell's center before it enters the tree, and `tile_created` hands it to you
-## first (give it its cell there); `drawn` says every tile is in place.
+## the board plane or, on a board with heights (`GridBoard.height_key`), the first cell that stands in its way. Each
+## tile sits on its cell's center, at its height, before it enters the tree, and `tile_created` hands it to you first
+## (give it its cell there); `drawn` says every tile is in place. A cell whose height changes moves its tile.
 
 ## The player clicked or tapped `cell` (a press and release that moved less than `click_max_drag_px`).
 signal cell_clicked(cell: Vector2i)
@@ -19,6 +20,8 @@ signal tile_created(cell: Vector2i, tile: Node3D)
 ## The tiles match the board again: after the board was rebuilt, `tiles`, `default_tile` or `value_key` changed, or
 ## `redraw()`. A single cell redrawn by a value change emits only `tile_created`.
 signal drawn
+
+const HeightPick := preload("res://addons/grid_kit/nodes/grid_height_pick.gd")
 
 ## One scene per value of `value_key`. A cell whose value has no scene uses `default_tile`.
 @export var tiles: Dictionary[StringName, PackedScene] = {}:
@@ -51,10 +54,12 @@ var _board: GridBoard
 var _press_at := Vector2.INF
 var _flush_queued := false
 var _full_redraw := false
+var _height_pick := HeightPick.new()
 
 
 func _enter_tree() -> void:
 	_board = get_parent() as GridBoard
+	_height_pick.invalidate()
 	if _board != null:
 		if not _board.rebuilt.is_connected(_queue_sync):
 			_board.rebuilt.connect(_queue_sync)
@@ -102,10 +107,16 @@ func cell_at_screen(screen_point: Vector2) -> Vector2i:
 
 
 ## The cell where a ray (in world space) meets the board plane, or `CellGrid.NO_CELL` when it misses the plane. With
-## `on_board_only` off it also answers for a cell that is not on the board (to add cells next to it).
+## `on_board_only` off it also answers for a cell that is not on the board (to add cells next to it). On a board with
+## heights each cell is a column up to its height (a cell off the board has height 0), and the answer is the first
+## column the ray meets, by its top or by its side: a tall cell in front hides the low one behind it.
 func cell_at_ray(origin: Vector3, direction: Vector3, on_board_only := true) -> Vector2i:
 	if _board == null or not is_inside_tree():
 		return CellGrid.NO_CELL
+	if _board.height_key != &"":
+		var to_board := global_transform.affine_inverse()
+		var cell := _height_pick.pick(_board, to_board * origin, to_board.basis * direction)
+		return cell if not on_board_only or _board.has_cell(cell) else CellGrid.NO_CELL
 	var plane := Plane(global_basis.y.normalized(), global_position)
 	var hit: Variant = plane.intersects_ray(origin, direction)
 	if hit == null:
@@ -158,8 +169,10 @@ func _queue_redraw() -> void:
 	_queue_flush()
 
 
-# The board got or lost cells: only the cells that came or went are touched.
+# The board got or lost cells, or places them somewhere else: only the cells that came or went are made or freed,
+# and the others move.
 func _queue_sync() -> void:
+	_height_pick.invalidate()
 	_queue_flush()
 
 
@@ -209,6 +222,10 @@ func _sync() -> void:
 
 
 func _on_cell_changed(cell: Vector2i, key: StringName, _value: Variant) -> void:
+	if key == _board.height_key:
+		_height_pick.widen(_board.cell_height(cell))
+		if _tiles_by_cell.has(cell):
+			_tiles_by_cell[cell].position = _board.cell_to_position(cell)
 	if key != value_key:
 		return
 	var scene := _scene_for(cell)

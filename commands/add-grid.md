@@ -27,7 +27,7 @@ Enable **GridKit**. If `godot-studio-workflow` is loaded: orchestrator → tree 
 If missing, ask in one batch:
 
 1. The shape: hexagons or squares (with or without diagonals), what size or radius, and the width of a cell.
-2. The values per cell: terrain, and what else (owner, cost to enter); which tile is drawn for each value.
+2. The values per cell: terrain, and what else (owner, cost to enter, height); which tile is drawn for each value.
 3. Whether the map is painted by hand in the editor (a `GridLayout`) or built by the game (generated, loaded from a file, over the network).
 4. What a click does and what hover marks; which cursors are needed (moves, selection, path).
 5. Whether there are rules about cells (range, cost to move, paths): who owns them and where in the game they live.
@@ -57,7 +57,8 @@ Follow [godot-grid-kit](../skills/godot-grid-kit/SKILL.md) and `addons/grid_kit/
 - Tiles are scenes with a `Node3D` root; `cell_size` is the width, side to side (hexagons), or the side (squares).
 - Rules use a `CellGrid` (`board.grid`, or the match state's with `board.use_grid`), not the nodes: `neighbors`, `distance`, `cells_in_range`, `find_path(from, to, cost)`, `flood`.
 - One `GridCursor` per meaning, with `highlight(cells)` and `clear()`.
-- Tell the person how to paint: selecting the `GridBoard` shows the **GridKit** bar (a tile, **Erase**, **Add cells**, **Remove cells**); a stroke undoes with Ctrl+Z; what is painted is stored in the `layout`.
+- If the cells have heights: `height_key` (for example `height`) and `height_scale` on the `GridBoard`; everything that stands on the board is placed with `board.cell_to_position(cell)`, which already carries the height. Tiles are solid downward.
+- Tell the person how to paint: selecting the `GridBoard` shows the **GridKit** bar (a tile, **Erase**, **Add cells**, **Remove cells**, and **Raise**, **Lower** and **Set height** for heights); a stroke undoes with Ctrl+Z; what is painted is stored in the `layout`.
 - Run `godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_test_runner.gd` if you touch the kit.
 
 ## 4. Done when

@@ -75,3 +75,17 @@ func test_base_class_is_not_a_board() -> void:
 	var grid := CellGrid.new()
 	check(grid.shape_name() == &"", "the base has no shape")
 	check(CellGrid.NO_CELL == HexGrid.NO_CELL, "NO_CELL is shared")
+
+
+func test_a_value_can_change_its_type() -> void:
+	var grid := HexGrid.rect(2, 2)
+	var seen: Array = []
+	grid.value_changed.connect(func(_cell: Vector2i, _key: StringName, value: Variant) -> void: seen.append(value))
+	grid.set_value(Vector2i(0, 0), &"height", "tall")
+	grid.set_value(Vector2i(0, 0), &"height", 2)
+	check(grid.get_value(Vector2i(0, 0), &"height") == 2, "a number replaces a text")
+	grid.set_value(Vector2i(0, 0), &"height", 2.0)
+	check(seen == ["tall", 2], "and the same number as a float is no change: %s" % [seen])
+	grid.set_value(Vector2i(0, 0), &"height", &"tall")
+	grid.set_value(Vector2i(0, 0), &"height", Vector2i(1, 1))
+	check(seen.size() == 4, "a text and any other type replace it too")

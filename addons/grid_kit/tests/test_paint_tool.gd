@@ -10,6 +10,9 @@ const FakeHistory := preload("res://addons/grid_kit/tests/fake_history.gd")
 const STOP := EditorPlugin.AFTER_GUI_INPUT_STOP
 const PASS := EditorPlugin.AFTER_GUI_INPUT_PASS
 const FILE := "user://grid_kit_test_external.tres"
+const FIXED_BUTTONS: Array[String] = [
+	"Erase", "Add cells", "Remove cells", "Raise", "Lower", "Set height", "Save shape as layout"
+]
 
 
 class Rig:
@@ -87,7 +90,8 @@ func test_bar_has_a_button_per_tile() -> void:
 	var texts: Array[String] = []
 	for button in _tool_buttons(rig):
 		texts.append(button.text)
-	var expected: Array[String] = ["water", "forest", "Erase", "Add cells", "Remove cells", "Save shape as layout"]
+	var expected: Array[String] = ["water", "forest"]
+	expected.append_array(FIXED_BUTTONS)
 	check(texts == expected, "buttons: %s" % [texts])
 	check(rig.tool.bar().visible, "the bar shows when the tool is visible")
 	rig.view.tiles = {&"mountain": null}
@@ -95,7 +99,8 @@ func test_bar_has_a_button_per_tile() -> void:
 	var after: Array[String] = []
 	for button in _tool_buttons(rig):
 		after.append(button.text)
-	var expected_after: Array[String] = ["mountain", "Erase", "Add cells", "Remove cells", "Save shape as layout"]
+	var expected_after: Array[String] = ["mountain"]
+	expected_after.append_array(FIXED_BUTTONS)
 	check(after == expected_after, "rebuilt: %s" % [after])
 	rig.tool.set_visible(false)
 	check(not rig.tool.bar().visible, "and it hides")
@@ -225,7 +230,7 @@ func test_erase_add_and_remove_tools() -> void:
 func test_selecting_a_view_or_something_else() -> void:
 	var rig := _rig()
 	rig.tool.edit(rig.view)
-	check(_tool_buttons(rig).size() == 6, "a selected GridView3D has the same bar")
+	check(_tool_buttons(rig).size() == 9, "a selected GridView3D has the same bar")
 	rig.tool.edit(null)
 	(_button_named(rig, "Erase")).button_pressed = true
 	check(
@@ -234,7 +239,7 @@ func test_selecting_a_view_or_something_else() -> void:
 	)
 	var stray := Node3D.new()
 	rig.tool.edit(stray)
-	check(_tool_buttons(rig).size() == 4, "another node has no tile buttons")
+	check(_tool_buttons(rig).size() == 7, "another node has no tile buttons")
 	stray.free()
 	_end(rig)
 
@@ -391,3 +396,118 @@ func test_the_fingerprint_does_not_depend_on_dictionary_order() -> void:
 	two.set_value(Vector2i(1, 0), &"b", 3)
 	check(PaintTool.fingerprint(one) != PaintTool.fingerprint(two), "another value, another text")
 	check(PaintTool.is_external(one) == false, "a layout with no path is not external")
+
+
+# Looks at the board from the side, so a tall cell covers the ones behind it.
+func _look_from_the_side(rig: Rig) -> void:
+	rig.eye.position = Vector3(0.0, 6.0, 8.0)
+	rig.eye.look_at(Vector3.ZERO)
+
+
+func _click_on(rig: Rig, cell: Vector2i, shift := false) -> void:
+	var at := _at(rig, cell)
+	var press := _button(at, true)
+	press.shift_pressed = shift
+	rig.tool.input(rig.eye, press)
+	rig.tool.input(rig.eye, _button(at, false))
+
+
+func test_a_height_stroke_records_one_action_and_undoes() -> void:
+	var rig := _rig()
+	var snapshot := rig.board.grid.to_dict()
+	_button_named(rig, "Raise").button_pressed = true
+	var first := _at(rig, Vector2i(0, 0))
+	check(rig.tool.input(rig.eye, _button(first, true)) == STOP, "a press with Raise on takes the event")
+	rig.tool.input(rig.eye, _motion(_at(rig, Vector2i(1, 0)), true))
+	rig.tool.input(rig.eye, _motion(_at(rig, Vector2i(0, 0)), true))
+	check(rig.tool.input(rig.eye, _button(_at(rig, Vector2i(0, 0)), false)) == STOP, "and so does the release")
+	check(rig.board.height_key == &"height", "the board got the default height key")
+	check(rig.board.get_value(Vector2i(0, 0), &"height") == 1, "the cell went up one step, not two")
+	check(rig.board.get_value(Vector2i(1, 0), &"height") == 1, "and so did the one dragged over")
+	var expected: Array[String] = [
+		"create_action",
+		"add_do_property",
+		"add_do_reference",
+		"add_do_property",
+		"add_do_method",
+		"add_undo_method",
+		"add_undo_property",
+		"add_undo_property",
+		"commit_action",
+	]
+	check(rig.history.names() == expected, "one action: %s" % [rig.history.names()])
+	var calls: Array = rig.history.calls
+	check(calls[3][2] == &"height_key" and calls[3][3] == &"height", "do sets the height key before painting")
+	check(calls[4][2] == &"paint" and calls[4][3][0] == &"height", "do paints the height key")
+	check(calls[6][2] == &"height_key" and calls[7][2] == &"layout", "undo: the key and then the layout go last")
+	var layout := rig.board.layout
+	check(layout != null and layout.get_value(Vector2i(1, 0), &"height") == 1, "the heights are in the layout")
+	rig.history.run("undo")
+	check(rig.board.height_key == &"" and rig.board.layout == null, "undo: no height key, no layout")
+	check(rig.board.grid.to_dict() == snapshot, "and the board as it was")
+	check(not (layout.cells[Vector2i(1, 0)] as Dictionary).has(&"height"), "the layout was lowered before it left")
+	rig.history.run("do")
+	check(rig.board.height_key == &"height" and rig.board.layout == layout, "redo: the key and the layout again")
+	check(rig.board.cell_to_position(Vector2i(1, 0)).y == 1.0, "and the cells stand at their heights")
+	_end(rig)
+
+
+func test_raise_lower_and_set_height_use_their_numbers() -> void:
+	var rig := _rig()
+	rig.board.height_key = &"level"
+	rig.tool._step_box.value = 0.5
+	_button_named(rig, "Raise").button_pressed = true
+	_click_on(rig, Vector2i(0, 0))
+	_click_on(rig, Vector2i(0, 0))
+	check(rig.board.get_value(Vector2i(0, 0), &"level") == 1, "two strokes of Raise by 0.5: 1")
+	_click_on(rig, Vector2i(0, 0), true)
+	check(rig.board.get_value(Vector2i(0, 0), &"level") == 0.5, "Shift + Raise lowers")
+	_button_named(rig, "Lower").button_pressed = true
+	_click_on(rig, Vector2i(1, 0))
+	check(rig.board.get_value(Vector2i(1, 0), &"level") == -0.5, "Lower goes under 0")
+	_click_on(rig, Vector2i(1, 0), true)
+	check(rig.board.get_value(Vector2i(1, 0), &"level") == 0, "Shift + Lower raises")
+	rig.tool._height_box.value = 2.25
+	_button_named(rig, "Set height").button_pressed = true
+	_click_on(rig, Vector2i(1, 0))
+	_click_on(rig, Vector2i(0, 1))
+	check(rig.board.get_value(Vector2i(1, 0), &"level") == 2.25, "Set height writes the number of its box")
+	check(rig.board.get_value(Vector2i(0, 1), &"level") == 2.25, "on every cell")
+	check(rig.board.get_value(Vector2i(0, 0), &"terrain") == null, "none of them touches the terrain")
+	check(rig.board.height_key == &"level", "and the board keeps the height key it had")
+	var with_key := 0
+	for entry: Array in rig.history.calls:
+		if entry[0] == "add_do_property" and entry[2] == &"height_key":
+			with_key += 1
+	check(with_key == 0, "so no stroke records one")
+	_end(rig)
+
+
+func test_the_brush_finds_a_tall_cell_by_its_top() -> void:
+	var rig := _rig()
+	_look_from_the_side(rig)
+	var tall := Vector2i(0, 1)
+	rig.board.height_key = &"height"
+	rig.board.set_value(tall, &"height", 3)
+	var top := _at(rig, tall)
+	rig.board.height_key = &""
+	_button_named(rig, "water").button_pressed = true
+	rig.tool.input(rig.eye, _button(top, true))
+	rig.tool.input(rig.eye, _button(top, false))
+	check(rig.board.get_value(tall, &"terrain") == null, "on a flat board that point of the screen is not the cell")
+	rig.board.height_key = &"height"
+	rig.tool.input(rig.eye, _button(top, true))
+	rig.tool.input(rig.eye, _button(top, false))
+	check(rig.board.get_value(tall, &"terrain") == &"water", "with heights, a click on its top paints it")
+	_button_named(rig, "Raise").button_pressed = true
+	rig.tool.input(rig.eye, _button(top, true))
+	rig.tool.input(rig.eye, _button(top, false))
+	check(rig.board.get_value(tall, &"height") == 4, "and Raise lifts it again")
+	_button_named(rig, "Add cells").button_pressed = true
+	var beside := Vector2i(3, 0)
+	rig.board.set_value(Vector2i(2, 0), &"height", 2)
+	var ground := rig.eye.unproject_position(rig.board.cell_to_position(beside))
+	rig.tool.input(rig.eye, _button(ground, true))
+	rig.tool.input(rig.eye, _button(ground, false))
+	check(rig.board.has_cell(beside), "Add cells finds the cell beside a raised edge on the ground")
+	_end(rig)

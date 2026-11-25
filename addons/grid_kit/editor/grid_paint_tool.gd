@@ -3,7 +3,9 @@ extends Node
 
 ## The brush bar of GridKit and what it does in the 3D view: turns the mouse into cells for a GridStroke and puts each
 ## stroke in the editor's undo history as one step. The bar has a toggle per tile of the selected view (it paints
-## `view.value_key` with that tile), Erase, Add cells and Remove cells. None on: the editor behaves as usual.
+## `view.value_key` with that tile), Erase, Add cells and Remove cells, and three for the heights of the cells
+## (`board.height_key`): Raise and Lower move each cell of a stroke one step (Shift swaps them) and Set height writes
+## the number next to it. None on: the editor behaves as usual.
 
 const GridStroke := preload("res://addons/grid_kit/editor/grid_stroke.gd")
 const NO_TOOL := -1
@@ -29,6 +31,8 @@ var _marker_scenario := RID()
 # Tests put a stand-in for the editor's undo history here.
 var _history: Object
 var _save_button: Button
+var _step_box: SpinBox
+var _height_box: SpinBox
 # The layouts that live in their own file and that a stroke touched: `{layout: {"saved": text, "scene": path}}`.
 var _watched: Dictionary = {}
 
@@ -146,13 +150,28 @@ func _on_button(camera: Camera3D, button: InputEventMouseButton) -> int:
 		if cell == CellGrid.NO_CELL:
 			return EditorPlugin.AFTER_GUI_INPUT_PASS
 		_watch_layout(_board)
-		_stroke.begin(_board, _view, _tool as GridStroke.Tool, _tile)
+		var tool := _tool as GridStroke.Tool
+		# Shift turns Raise into Lower and back, as in terrain editors.
+		if button.shift_pressed and tool == GridStroke.Tool.RAISE:
+			tool = GridStroke.Tool.LOWER
+		elif button.shift_pressed and tool == GridStroke.Tool.LOWER:
+			tool = GridStroke.Tool.RAISE
+		_stroke.begin(_board, _view, tool, _stroke_value(tool))
 		_stroke.touch(cell)
 		return EditorPlugin.AFTER_GUI_INPUT_STOP
 	if _stroke.is_active():
 		_end_stroke()
 		return EditorPlugin.AFTER_GUI_INPUT_STOP
 	return EditorPlugin.AFTER_GUI_INPUT_PASS
+
+
+# What a stroke of `tool` writes: the tile, the step of Raise and Lower or the height of Set height.
+func _stroke_value(tool: GridStroke.Tool) -> Variant:
+	if tool == GridStroke.Tool.SET_HEIGHT:
+		return _height_box.value
+	if tool in GridStroke.HEIGHT_TOOLS:
+		return _step_box.value
+	return _tile
 
 
 func _cell_at(camera: Camera3D, at: Vector2) -> Vector2i:
@@ -182,10 +201,11 @@ static func record(history: Object, board: GridBoard, result: Dictionary) -> voi
 	if layout != null:
 		history.call(&"add_do_property", board, &"layout", layout)
 		history.call(&"add_do_reference", layout)
+	# A height stroke on a board that had no height key gave it one.
+	var height_key: StringName = result["height_key"]
+	if height_key != &"":
+		history.call(&"add_do_property", board, &"height_key", height_key)
 	match result["tool"] as GridStroke.Tool:
-		GridStroke.Tool.PAINT, GridStroke.Tool.ERASE:
-			history.call(&"add_do_method", board, &"paint", key, result["after"])
-			history.call(&"add_undo_method", board, &"paint", key, result["before"])
 		GridStroke.Tool.ADD:
 			var added: Array[Vector2i] = result["added"]
 			var none: Array[Vector2i] = []
@@ -196,7 +216,12 @@ static func record(history: Object, board: GridBoard, result: Dictionary) -> voi
 			var nothing: Array[Vector2i] = []
 			history.call(&"add_do_method", board, &"set_cells", nothing, removed)
 			history.call(&"add_undo_method", board, &"set_cells", removed, nothing, result["removed_values"])
-	# The layout goes away last: the undo methods run in the order they were added.
+		_:
+			history.call(&"add_do_method", board, &"paint", key, result["after"])
+			history.call(&"add_undo_method", board, &"paint", key, result["before"])
+	# The height key and the layout go away last: the undo methods run in the order they were added.
+	if height_key != &"":
+		history.call(&"add_undo_property", board, &"height_key", &"")
 	if layout != null:
 		history.call(&"add_undo_property", board, &"layout", null)
 
@@ -310,6 +335,17 @@ func _build_bar() -> void:
 	_add_button("Add cells", GridStroke.Tool.ADD, &"")
 	_add_button("Remove cells", GridStroke.Tool.REMOVE, &"")
 	_bar.add_child(VSeparator.new())
+	var raise := _add_button("Raise", GridStroke.Tool.RAISE, &"")
+	raise.tooltip_text = "Raises each cell of the stroke by the step. Shift lowers."
+	var lower := _add_button("Lower", GridStroke.Tool.LOWER, &"")
+	lower.tooltip_text = "Lowers each cell of the stroke by the step. Shift raises."
+	_step_box = _add_number_box(0.01, 100.0, 1.0, "The step of Raise and Lower.")
+	_step_box.prefix = "±"
+	var level := _add_button("Set height", GridStroke.Tool.SET_HEIGHT, &"")
+	level.tooltip_text = "Writes the height next to it on each cell of the stroke."
+	_height_box = _add_number_box(-100.0, 100.0, 1.0, "The height Set height writes.")
+	_height_box.allow_lesser = true
+	_bar.add_child(VSeparator.new())
 	_save_button = Button.new()
 	_save_button.text = "Save shape as layout"
 	_save_button.disabled = true
@@ -334,13 +370,28 @@ func _rebuild_tile_buttons() -> void:
 		_add_button(String(tile), GridStroke.Tool.PAINT, tile, _tile_buttons)
 
 
-func _add_button(text: String, tool: int, tile: StringName, into: Node = null) -> void:
+# A box for a height or a step: hundredths by hand, and the arrows move it by 1.
+func _add_number_box(low: float, high: float, value: float, tooltip: String) -> SpinBox:
+	var box := SpinBox.new()
+	box.min_value = low
+	box.max_value = high
+	box.step = 0.01
+	box.custom_arrow_step = 1.0
+	box.allow_greater = true
+	box.value = value
+	box.tooltip_text = tooltip
+	_bar.add_child(box)
+	return box
+
+
+func _add_button(text: String, tool: int, tile: StringName, into: Node = null) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.toggle_mode = true
 	button.button_group = _group
 	button.toggled.connect(_on_toggled.bind(button, tool, tile))
 	(into if into != null else _bar).add_child(button)
+	return button
 
 
 func _on_toggled(on: bool, button: Button, tool: int, tile: StringName) -> void:
@@ -404,6 +455,8 @@ func _marker_color() -> Color:
 			return Color(0.3, 1.0, 0.4)
 		GridStroke.Tool.REMOVE:
 			return Color(1.0, 0.3, 0.3)
+		GridStroke.Tool.RAISE, GridStroke.Tool.LOWER, GridStroke.Tool.SET_HEIGHT:
+			return Color(0.4, 0.8, 1.0)
 	return Color(1.0, 1.0, 1.0)
 
 
