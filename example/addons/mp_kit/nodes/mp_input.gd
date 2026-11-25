@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/mp_kit/icons/mp_input.svg")
 class_name MpInput
 extends Node
 

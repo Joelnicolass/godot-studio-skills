@@ -1,4 +1,4 @@
-# WalletKit
+# <img src="icons/wallet_kit.svg" width="32" height="32" alt=""> WalletKit
 
 Recursos y monedas para juegos de estrategia, gestión, crafting, tiendas o de mesa. Hay dos niveles:
 

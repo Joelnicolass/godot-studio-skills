@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_mesh.svg")
 class_name GrassMesh
 extends Resource
 

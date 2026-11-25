@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/fsm_kit/icons/fsm_machine.svg")
 class_name FsmMachine
 extends Node
 

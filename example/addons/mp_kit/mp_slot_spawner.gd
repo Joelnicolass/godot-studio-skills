@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_slot_spawner.svg")
 class_name MpSlotSpawner
 extends MpSpawner
 

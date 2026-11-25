@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_refusal_reason.svg")
 class_name RtsRefusalReason
 extends Label
 

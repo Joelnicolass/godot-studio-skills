@@ -1,4 +1,4 @@
-# CommandKit
+# <img src="icons/command_kit.svg" width="32" height="32" alt=""> CommandKit
 
 Jugadas validadas con motivo de rechazo, deshacer, y un historial que se guarda, se manda y se repite. Sirve para juegos por turnos, puzzles con deshacer, editores y multijugador por órdenes.
 

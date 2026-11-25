@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_armed_command.svg")
 class_name RtsArmedCommand
 extends Node
 

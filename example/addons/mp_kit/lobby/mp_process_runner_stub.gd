@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_process_runner_stub.svg")
 class_name MpProcessRunnerStub
 extends MpProcessRunner
 

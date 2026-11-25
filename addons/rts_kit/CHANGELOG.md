@@ -1,5 +1,11 @@
 # Cambios de RtsKit
 
+## 0.3.1
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.3.0
 
 - **El equipo de mando es un nodo.** `rig/rts_command_rig_3d.tscn` y `rig/rts_command_rig_2d.tscn` (`RtsCommandRig`) traen `Command` con sus diez piezas y la `View` con su `Box`, todo conectado. Lo instanciás, asignás `camera` y `ground` (en 2D alcanza con `camera`) y ya elegís y ordenás. `menu` es un tercer socket, opcional, para el menú del botón derecho. Si falta un socket, o la cámara es de la otra dimensión, el nodo muestra un aviso en el editor.

@@ -1,5 +1,11 @@
 # Changelog de BotKit
 
+## 0.1.1
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem. Reemplazan a los tres que traía el kit (`editor/bot_3d.svg`, `bot_goal_3d.svg`, `bot_mode.svg`).
+
+Nada que actualizar en tu proyecto.
+
 ## 0.1.0
 
 La primera versión: bots que juegan a tu personaje como una persona, en 3D.

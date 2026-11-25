@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_world_ref.svg")
 class_name MpWorldRef
 extends Resource
 

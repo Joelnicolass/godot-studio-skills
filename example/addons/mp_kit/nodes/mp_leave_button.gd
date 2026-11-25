@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_leave_button.svg")
 class_name MpLeaveButton
 extends Button
 

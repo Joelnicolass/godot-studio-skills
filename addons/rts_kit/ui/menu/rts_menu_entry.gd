@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_menu_entry.svg")
 class_name RtsMenuEntry
 extends Resource
 

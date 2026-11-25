@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_command_state.svg")
 class_name RtsCommandState
 extends Node
 

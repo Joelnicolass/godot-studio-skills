@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/mp_kit/icons/mp_actor.svg")
 class_name MpActor
 extends Node
 

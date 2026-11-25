@@ -1,3 +1,4 @@
+@icon("res://addons/bot_kit/icons/bot_debug.svg")
 class_name BotDebug
 extends Node3D
 

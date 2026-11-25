@@ -1,4 +1,4 @@
-# PlatKit
+# <img src="icons/plat_kit.svg" width="32" height="32" alt=""> PlatKit
 
 Motor de **plataformas 2D** como hijo de un `CharacterBody2D`: coyote, jump buffer, gravedad en el apex, corrección de esquina, memoria de lift. **Cero** niveles, puntaje, dash o stamina. Sin autoload, y no depende de ningún otro kit.
 

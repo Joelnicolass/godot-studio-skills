@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_command_rig.svg")
 class_name RtsCommandRig
 extends Node
 

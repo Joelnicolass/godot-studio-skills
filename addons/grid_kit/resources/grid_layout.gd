@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grid_kit/icons/grid_layout.svg")
 class_name GridLayout
 extends Resource
 

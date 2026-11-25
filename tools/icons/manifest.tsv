@@ -1,0 +1,140 @@
+kit	class	kind	base	script	icon	glyph	mark
+bot_kit	BotKit	emblem			addons/bot_kit/icons/bot_kit.svg	bot_kit	
+command_kit	CommandKit	emblem			addons/command_kit/icons/command_kit.svg	command_kit	
+fsm_kit	FsmKit	emblem			addons/fsm_kit/icons/fsm_kit.svg	fsm_kit	
+grass_kit	GrassKit	emblem			addons/grass_kit/icons/grass_kit.svg	grass_kit	
+grid_kit	GridKit	emblem			addons/grid_kit/icons/grid_kit.svg	grid_kit	
+mp_kit	MpKit	emblem			addons/mp_kit/icons/mp_kit.svg	mp_kit	
+perception_kit	PerceptionKit	emblem			addons/perception_kit/icons/perception_kit.svg	perception_kit	
+plat_kit	PlatKit	emblem			addons/plat_kit/icons/plat_kit.svg	plat_kit	
+prop_kit	PropKit	emblem			addons/prop_kit/icons/prop_kit.svg	prop_kit	
+rts_kit	RtsKit	emblem			addons/rts_kit/icons/rts_kit.svg	rts_kit	
+spill_kit	SpillKit	emblem			addons/spill_kit/icons/spill_kit.svg	spill_kit	
+turn_kit	TurnKit	emblem			addons/turn_kit/icons/turn_kit.svg	turn_kit	
+wallet_kit	WalletKit	emblem			addons/wallet_kit/icons/wallet_kit.svg	wallet_kit	
+bot_kit	Bot3D	node	Node3D	addons/bot_kit/nodes/bot_3d.gd	addons/bot_kit/icons/bot_3d.svg	robot	
+bot_kit	BotDebug	node	Node3D	addons/bot_kit/core/bot_debug.gd	addons/bot_kit/icons/bot_debug.svg	bug	
+bot_kit	BotDifficulty	resource	Resource	addons/bot_kit/core/bot_difficulty.gd	addons/bot_kit/icons/bot_difficulty.svg	bars	
+bot_kit	BotGoal3D	node	Node3D	addons/bot_kit/nodes/bot_goal_3d.gd	addons/bot_kit/icons/bot_goal_3d.svg	flag	
+bot_kit	BotMode	node	Node	addons/bot_kit/nodes/bot_mode.gd	addons/bot_kit/icons/bot_mode.svg	gear	
+bot_kit	BotWeapon	resource	Resource	addons/bot_kit/core/bot_weapon.gd	addons/bot_kit/icons/bot_weapon.svg	crosshair	
+command_kit	GameCommands	node	Node	addons/command_kit/nodes/game_commands.gd	addons/command_kit/icons/game_commands.svg	prompt	
+fsm_kit	FsmMachine	node	Node	addons/fsm_kit/fsm_machine.gd	addons/fsm_kit/icons/fsm_machine.svg	state_graph	
+fsm_kit	FsmState	node	Node	addons/fsm_kit/fsm_state.gd	addons/fsm_kit/icons/fsm_state.svg	state	
+grass_kit	GrassClear3D	node	Node3D	addons/grass_kit/field/grass_clear_3d.gd	addons/grass_kit/icons/grass_clear_3d.svg	grass_gap	
+grass_kit	GrassClearing	resource	Resource	addons/grass_kit/core/grass_clearing.gd	addons/grass_kit/icons/grass_clearing.svg	grass_gaps	
+grass_kit	GrassField3D	node	Node3D	addons/grass_kit/field/grass_field_3d.gd	addons/grass_kit/icons/grass_field_3d.svg	tuft	
+grass_kit	GrassGround	resource	Resource	addons/grass_kit/core/grass_ground.gd	addons/grass_kit/icons/grass_ground.svg	grass_ground	
+grass_kit	GrassLook	resource	Resource	addons/grass_kit/core/grass_look.gd	addons/grass_kit/icons/grass_look.svg	grass_look	
+grass_kit	GrassMap	resource	ImageTexture	addons/grass_kit/core/grass_map.gd	addons/grass_kit/icons/grass_map.svg	painted_map	
+grass_kit	GrassMesh	resource	Resource	addons/grass_kit/core/grass_mesh.gd	addons/grass_kit/icons/grass_mesh.svg	blade_mesh	
+grass_kit	GrassQuality	resource	Resource	addons/grass_kit/core/grass_quality.gd	addons/grass_kit/icons/grass_quality.svg	blade_levels	
+grass_kit	GrassWind	resource	Resource	addons/grass_kit/core/grass_wind.gd	addons/grass_kit/icons/grass_wind.svg	wind	
+grid_kit	GridBoard	node	Node	addons/grid_kit/nodes/grid_board.gd	addons/grid_kit/icons/grid_board.svg	checker	
+grid_kit	GridCursor	node	Node3D	addons/grid_kit/nodes/grid_cursor.gd	addons/grid_kit/icons/grid_cursor.svg	cell_cursor	
+grid_kit	GridLayout	resource	Resource	addons/grid_kit/resources/grid_layout.gd	addons/grid_kit/icons/grid_layout.svg	grid_sheet	
+grid_kit	GridView3D	node	Node3D	addons/grid_kit/nodes/grid_view_3d.gd	addons/grid_kit/icons/grid_view_3d.svg	iso_tile	
+mp_kit	MpActor	node	Node	addons/mp_kit/nodes/mp_actor.gd	addons/mp_kit/icons/mp_actor.svg	pawn	
+mp_kit	MpBootMenu	node	Control	addons/mp_kit/mp_boot_menu.gd	addons/mp_kit/icons/mp_boot_menu.svg	menu_window	
+mp_kit	MpCustomPipe	node	Node	addons/mp_kit/mp_custom_pipe.gd	addons/mp_kit/icons/mp_custom_pipe.svg	pipe	
+mp_kit	MpFlow	node	Node	addons/mp_kit/mp_flow.gd	addons/mp_kit/icons/mp_flow.svg	flow	
+mp_kit	MpGame	resource	MpNetConfig	addons/mp_kit/mp_game.gd	addons/mp_kit/icons/mp_game.svg	gamepad	
+mp_kit	MpInput	node	Node	addons/mp_kit/nodes/mp_input.gd	addons/mp_kit/icons/mp_input.svg	dpad	
+mp_kit	MpInviteLabel	node	Label	addons/mp_kit/nodes/mp_invite_label.gd	addons/mp_kit/icons/mp_invite_label.svg	envelope	
+mp_kit	MpLanBeacon	node	Node	addons/mp_kit/mp_lan_beacon.gd	addons/mp_kit/icons/mp_lan_beacon.svg	beacon	
+mp_kit	MpLeaveButton	node	Button	addons/mp_kit/nodes/mp_leave_button.gd	addons/mp_kit/icons/mp_leave_button.svg	exit	
+mp_kit	MpLobbyClient	node	Node	addons/mp_kit/lobby/mp_lobby_client.gd	addons/mp_kit/icons/mp_lobby_client.svg	monitor	
+mp_kit	MpLobbyConfig	resource	Resource	addons/mp_kit/lobby/mp_lobby_config.gd	addons/mp_kit/icons/mp_lobby_config.svg	house	knob
+mp_kit	MpLobbyEndpoint	resource	Resource	addons/mp_kit/lobby/mp_lobby_endpoint.gd	addons/mp_kit/icons/mp_lobby_endpoint.svg	plug	
+mp_kit	MpLobbyScreen	node	Control	addons/mp_kit/rooms/ui/mp_lobby_screen.gd	addons/mp_kit/icons/mp_lobby_screen.svg	lobby_window	
+mp_kit	MpLobbyServer	node	Node	addons/mp_kit/lobby/mp_lobby_server.gd	addons/mp_kit/icons/mp_lobby_server.svg	rack	
+mp_kit	MpLocalSeat	node	Node	addons/mp_kit/nodes/mp_local_seat.gd	addons/mp_kit/icons/mp_local_seat.svg	chair	
+mp_kit	MpLocalServer	node	Node	addons/mp_kit/rooms/mp_local_server.gd	addons/mp_kit/icons/mp_local_server.svg	monitor_rack	
+mp_kit	MpMatch	node	Node	addons/mp_kit/nodes/mp_match.gd	addons/mp_kit/icons/mp_match.svg	trophy	
+mp_kit	MpMatchAgent	node	Node	addons/mp_kit/lobby/mp_match_agent.gd	addons/mp_kit/icons/mp_match_agent.svg	ticket	
+mp_kit	MpMatchGate	node	Node	addons/mp_kit/mp_match_gate.gd	addons/mp_kit/icons/mp_match_gate.svg	door	
+mp_kit	MpMatchLauncher	node	Node	addons/mp_kit/lobby/mp_match_launcher.gd	addons/mp_kit/icons/mp_match_launcher.svg	rocket	
+mp_kit	MpMatchmaker	node	Node	addons/mp_kit/mp_matchmaker.gd	addons/mp_kit/icons/mp_matchmaker.svg	pair	
+mp_kit	MpNetConfig	resource	Resource	addons/mp_kit/core/mp_net_config.gd	addons/mp_kit/icons/mp_net_config.svg	sliders	
+mp_kit	MpNetQuality	node	Node	addons/mp_kit/core/mp_net_quality.gd	addons/mp_kit/icons/mp_net_quality.svg	pulse	
+mp_kit	MpOnline	node	Node	addons/mp_kit/online/mp_online.gd	addons/mp_kit/icons/mp_online.svg	cloud	
+mp_kit	MpProcessRunner	resource	Resource	addons/mp_kit/lobby/mp_process_runner.gd	addons/mp_kit/icons/mp_process_runner.svg	terminal	
+mp_kit	MpProcessRunnerStub	resource	MpProcessRunner	addons/mp_kit/lobby/mp_process_runner_stub.gd	addons/mp_kit/icons/mp_process_runner_stub.svg	terminal_hollow	
+mp_kit	MpReplicate	node	Node	addons/mp_kit/mp_replicate.gd	addons/mp_kit/icons/mp_replicate.svg	copy	
+mp_kit	MpRoomDirectory	node	Node	addons/mp_kit/mp_room_directory.gd	addons/mp_kit/icons/mp_room_directory.svg	rooms	
+mp_kit	MpRoomRules	resource	Resource	addons/mp_kit/rooms/mp_room_rules.gd	addons/mp_kit/icons/mp_room_rules.svg	checklist	
+mp_kit	MpRoomServer	node	Node	addons/mp_kit/rooms/mp_room_server.gd	addons/mp_kit/icons/mp_room_server.svg	house_rack	
+mp_kit	MpSlotSpawner	node	MpSpawner	addons/mp_kit/mp_slot_spawner.gd	addons/mp_kit/icons/mp_slot_spawner.svg	pawn	slots
+mp_kit	MpSpawner	node	MultiplayerSpawner	addons/mp_kit/mp_spawner.gd	addons/mp_kit/icons/mp_spawner.svg	pawn	plus
+mp_kit	MpStartButton	node	Button	addons/mp_kit/nodes/mp_start_button.gd	addons/mp_kit/icons/mp_start_button.svg	play_button	
+mp_kit	MpState	node	Node	addons/mp_kit/nodes/mp_state.gd	addons/mp_kit/icons/mp_state.svg	braces	
+mp_kit	MpWaitingLabel	node	Label	addons/mp_kit/nodes/mp_waiting_label.gd	addons/mp_kit/icons/mp_waiting_label.svg	hourglass	
+mp_kit	MpWorld	node	Node	addons/mp_kit/nodes/mp_world.gd	addons/mp_kit/icons/mp_world.svg	globe	
+mp_kit	MpWorldLoader	node	Node	addons/mp_kit/mp_world_loader.gd	addons/mp_kit/icons/mp_world_loader.svg	globe	down
+mp_kit	MpWorldReady	node	Node	addons/mp_kit/mp_world_ready.gd	addons/mp_kit/icons/mp_world_ready.svg	globe	check
+mp_kit	MpWorldRef	resource	Resource	addons/mp_kit/mp_world_ref.gd	addons/mp_kit/icons/mp_world_ref.svg	globe	link
+perception_kit	PerceptionSensor2D	node	Area2D	addons/perception_kit/sensors/perception_sensor_2d.gd	addons/perception_kit/icons/perception_sensor_2d.svg	eye	2d
+perception_kit	PerceptionSensor3D	node	Area3D	addons/perception_kit/sensors/perception_sensor_3d.gd	addons/perception_kit/icons/perception_sensor_3d.svg	eye	3d
+perception_kit	PerceptionTarget2D	node	Area2D	addons/perception_kit/sensors/perception_target_2d.gd	addons/perception_kit/icons/perception_target_2d.svg	bullseye	2d
+perception_kit	PerceptionTarget3D	node	Area3D	addons/perception_kit/sensors/perception_target_3d.gd	addons/perception_kit/icons/perception_target_3d.svg	bullseye	3d
+plat_kit	PlatMotor	node	Node	addons/plat_kit/plat_motor.gd	addons/plat_kit/icons/plat_motor.svg	jump	
+prop_kit	PropBatch3D	node	Node3D	addons/prop_kit/draw/prop_batch_3d.gd	addons/prop_kit/icons/prop_batch_3d.svg	forest	
+prop_kit	PropFlatGround	resource	PropGround	addons/prop_kit/core/prop_flat_ground.gd	addons/prop_kit/icons/prop_flat_ground.svg	slab	
+prop_kit	PropGround	resource	Resource	addons/prop_kit/core/prop_ground.gd	addons/prop_kit/icons/prop_ground.svg	hill	
+prop_kit	PropKeepOut	resource	Resource	addons/prop_kit/core/prop_keep_out.gd	addons/prop_kit/icons/prop_keep_out.svg	no_entry	
+prop_kit	PropMask	resource	Resource	addons/prop_kit/core/prop_mask.gd	addons/prop_kit/icons/prop_mask.svg	mask	
+prop_kit	PropNavBake	resource	Resource	addons/prop_kit/nav/prop_nav_bake.gd	addons/prop_kit/icons/prop_nav_bake.svg	zones	check
+prop_kit	PropNavZones2D	node	Node2D	addons/prop_kit/nav/prop_nav_zones_2d.gd	addons/prop_kit/icons/prop_nav_zones_2d.svg	zones	2d
+prop_kit	PropNavZones3D	node	Node3D	addons/prop_kit/nav/prop_nav_zones_3d.gd	addons/prop_kit/icons/prop_nav_zones_3d.svg	zones	3d
+prop_kit	PropRayGround	resource	PropGround	addons/prop_kit/scatter/prop_ray_ground.gd	addons/prop_kit/icons/prop_ray_ground.svg	ray_ground	
+prop_kit	PropScatter2D	node	Node2D	addons/prop_kit/scatter/prop_scatter_2d.gd	addons/prop_kit/icons/prop_scatter_2d.svg	scatter	2d
+prop_kit	PropScatter3D	node	Node3D	addons/prop_kit/scatter/prop_scatter_3d.gd	addons/prop_kit/icons/prop_scatter_3d.svg	scatter	3d
+prop_kit	PropScatterRules	resource	Resource	addons/prop_kit/core/prop_scatter_rules.gd	addons/prop_kit/icons/prop_scatter_rules.svg	clusters	
+prop_kit	PropVariant	resource	Resource	addons/prop_kit/core/prop_variant.gd	addons/prop_kit/icons/prop_variant.svg	pine_rock	
+rts_kit	RtsArcFormation	resource	RtsFormation	addons/rts_kit/orders/formations/rts_arc_formation.gd	addons/rts_kit/icons/rts_arc_formation.svg	formation_arc	
+rts_kit	RtsArmedCommand	node	Node	addons/rts_kit/input/rts_armed_command.gd	addons/rts_kit/icons/rts_armed_command.svg	crosshair	
+rts_kit	RtsArmedPreview	node	Node	addons/rts_kit/input/rts_armed_preview.gd	addons/rts_kit/icons/rts_armed_preview.svg	reticle_dashed	
+rts_kit	RtsCamera2D	node	Camera2D	addons/rts_kit/camera/rts_camera_2d.gd	addons/rts_kit/icons/rts_camera_2d.svg	camera	2d
+rts_kit	RtsCamera3D	node	Camera3D	addons/rts_kit/camera/rts_camera_3d.gd	addons/rts_kit/icons/rts_camera_3d.svg	camera	3d
+rts_kit	RtsCameraEffect	node	Node	addons/rts_kit/camera/rts_camera_effect.gd	addons/rts_kit/icons/rts_camera_effect.svg	camera	burst
+rts_kit	RtsCommandCard	node	GridContainer	addons/rts_kit/ui/card/rts_command_card.gd	addons/rts_kit/icons/rts_command_card.svg	card_grid	
+rts_kit	RtsCommandCatalog	resource	Resource	addons/rts_kit/core/rts_command_catalog.gd	addons/rts_kit/icons/rts_command_catalog.svg	stack_commands	
+rts_kit	RtsCommandCue	node	Control	addons/rts_kit/ui/cue/rts_command_cue.gd	addons/rts_kit/icons/rts_command_cue.svg	cue	
+rts_kit	RtsCommandInput	node	Node	addons/rts_kit/input/rts_command_input.gd	addons/rts_kit/icons/rts_command_input.svg	chevrons	cursor
+rts_kit	RtsCommandRig	node	Node	addons/rts_kit/rig/rts_command_rig.gd	addons/rts_kit/icons/rts_command_rig.svg	toolbox	
+rts_kit	RtsCommandState	node	Node	addons/rts_kit/input/rts_command_state.gd	addons/rts_kit/icons/rts_command_state.svg	leds	
+rts_kit	RtsCommandType	resource	Resource	addons/rts_kit/core/rts_command_type.gd	addons/rts_kit/icons/rts_command_type.svg	command_tile	
+rts_kit	RtsCueSet	resource	Resource	addons/rts_kit/ui/cue/rts_cue_set.gd	addons/rts_kit/icons/rts_cue_set.svg	stack_cues	
+rts_kit	RtsCursorSkin	node	Node	addons/rts_kit/ui/cue/rts_cursor_skin.gd	addons/rts_kit/icons/rts_cursor_skin.svg	cursor_skin	
+rts_kit	RtsFormation	resource	Resource	addons/rts_kit/orders/formations/rts_formation.gd	addons/rts_kit/icons/rts_formation.svg	formation	
+rts_kit	RtsFormationCatalog	resource	Resource	addons/rts_kit/orders/formations/rts_formation_catalog.gd	addons/rts_kit/icons/rts_formation_catalog.svg	stack_formations	
+rts_kit	RtsGroupKeys	node	Node	addons/rts_kit/input/rts_group_keys.gd	addons/rts_kit/icons/rts_group_keys.svg	key	
+rts_kit	RtsMenuEntry	resource	Resource	addons/rts_kit/ui/menu/rts_menu_entry.gd	addons/rts_kit/icons/rts_menu_entry.svg	entry	
+rts_kit	RtsOrderButton	node	Node	addons/rts_kit/input/rts_order_button.gd	addons/rts_kit/icons/rts_order_button.svg	mouse	
+rts_kit	RtsOrderInput	node	Node	addons/rts_kit/input/rts_order_input.gd	addons/rts_kit/icons/rts_order_input.svg	order_arrow	cursor
+rts_kit	RtsOrderMenu	node	Control	addons/rts_kit/ui/menu/rts_order_menu.gd	addons/rts_kit/icons/rts_order_menu.svg	menu_popup	
+rts_kit	RtsOrders	node	Node	addons/rts_kit/orders/rts_orders.gd	addons/rts_kit/icons/rts_orders.svg	orders	
+rts_kit	RtsPing2D	node	Node2D	addons/rts_kit/ui/ping/rts_ping_2d.gd	addons/rts_kit/icons/rts_ping_2d.svg	ping	2d
+rts_kit	RtsPing3D	node	Node3D	addons/rts_kit/ui/ping/rts_ping_3d.gd	addons/rts_kit/icons/rts_ping_3d.svg	ping	3d
+rts_kit	RtsPointer	node	Node	addons/rts_kit/input/rts_pointer.gd	addons/rts_kit/icons/rts_pointer.svg	cursor	
+rts_kit	RtsRadialAnimator	node	AnimationPlayer	addons/rts_kit/ui/radial/rts_radial_animator.gd	addons/rts_kit/icons/rts_radial_animator.svg	ring_play	
+rts_kit	RtsRadialDecor	node	Control	addons/rts_kit/ui/radial/rts_radial_decor.gd	addons/rts_kit/icons/rts_radial_decor.svg	pie	
+rts_kit	RtsRadialLayout	resource	Resource	addons/rts_kit/ui/radial/rts_radial_layout.gd	addons/rts_kit/icons/rts_radial_layout.svg	ring_center	
+rts_kit	RtsRadialMenu	node	RtsOrderMenu	addons/rts_kit/ui/radial/rts_radial_menu.gd	addons/rts_kit/icons/rts_radial_menu.svg	ring_segments	
+rts_kit	RtsRadialRing	resource	Resource	addons/rts_kit/ui/radial/rts_radial_ring.gd	addons/rts_kit/icons/rts_radial_ring.svg	ring_arc	
+rts_kit	RtsRadialRings	node	Control	addons/rts_kit/ui/radial/rts_radial_rings.gd	addons/rts_kit/icons/rts_radial_rings.svg	ring_dots	
+rts_kit	RtsRadialSlot	node	Control	addons/rts_kit/ui/radial/rts_radial_slot.gd	addons/rts_kit/icons/rts_radial_slot.svg	slot	
+rts_kit	RtsRefusalReason	node	Label	addons/rts_kit/ui/cue/rts_refusal_reason.gd	addons/rts_kit/icons/rts_refusal_reason.svg	bubble_x	
+rts_kit	RtsRowFormation	resource	RtsFormation	addons/rts_kit/orders/formations/rts_row_formation.gd	addons/rts_kit/icons/rts_row_formation.svg	formation_rows	
+rts_kit	RtsSelectInput	node	Node	addons/rts_kit/input/rts_select_input.gd	addons/rts_kit/icons/rts_select_input.svg	marquee	cursor
+rts_kit	RtsSelection	node	Node	addons/rts_kit/selection/rts_selection.gd	addons/rts_kit/icons/rts_selection.svg	marquee	
+rts_kit	RtsTargetProbe	node	Node	addons/rts_kit/ui/cue/rts_target_probe.gd	addons/rts_kit/icons/rts_target_probe.svg	magnifier	
+rts_kit	RtsUnit	node	Node	addons/rts_kit/core/rts_unit.gd	addons/rts_kit/icons/rts_unit.svg	unit	
+rts_kit	RtsWedgeFormation	resource	RtsFormation	addons/rts_kit/orders/formations/rts_wedge_formation.gd	addons/rts_kit/icons/rts_wedge_formation.svg	formation_wedge	
+spill_kit	SpillPool3D	node	Node3D	addons/spill_kit/nodes/spill_pool_3d.gd	addons/spill_kit/icons/spill_pool_3d.svg	puddle	
+spill_kit	SpillSource3D	node	Node3D	addons/spill_kit/nodes/spill_source_3d.gd	addons/spill_kit/icons/spill_source_3d.svg	drops	
+spill_kit	SpillType	resource	Resource	addons/spill_kit/core/spill_type.gd	addons/spill_kit/icons/spill_type.svg	flask	
+turn_kit	TurnClock	node	Node	addons/turn_kit/nodes/turn_clock.gd	addons/turn_kit/icons/turn_clock.svg	clock	
+turn_kit	TurnSeat	node	Node	addons/turn_kit/nodes/turn_seat.gd	addons/turn_kit/icons/turn_seat.svg	chair	
+wallet_kit	Wallet	node	Node	addons/wallet_kit/nodes/wallet.gd	addons/wallet_kit/icons/wallet.svg	pouch	
+wallet_kit	WalletSubstitute	resource	Resource	addons/wallet_kit/resources/wallet_substitute.gd	addons/wallet_kit/icons/wallet_substitute.svg	exchange	

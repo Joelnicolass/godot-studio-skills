@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_variant.svg")
 class_name PropVariant
 extends Resource
 

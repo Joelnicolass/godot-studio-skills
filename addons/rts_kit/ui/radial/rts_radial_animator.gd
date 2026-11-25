@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_radial_animator.svg")
 class_name RtsRadialAnimator
 extends AnimationPlayer
 

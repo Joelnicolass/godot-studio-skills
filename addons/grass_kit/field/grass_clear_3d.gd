@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_clear_3d.svg")
 class_name GrassClear3D
 extends Node3D
 

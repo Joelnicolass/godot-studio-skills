@@ -1,5 +1,11 @@
 # Cambios de CommandKit
 
+## 0.2.1
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.0
 
 Se rehace para que no haya que escribir una clase por orden. **Rompe la API de 0.1** (tabla en «Migrar desde 0.1» del README).

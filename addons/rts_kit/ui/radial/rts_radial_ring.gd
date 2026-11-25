@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_radial_ring.svg")
 class_name RtsRadialRing
 extends Resource
 

@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_game.svg")
 class_name MpGame
 extends MpNetConfig
 

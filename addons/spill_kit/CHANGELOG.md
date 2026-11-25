@@ -1,5 +1,11 @@
 # Changelog de SpillKit
 
+## 0.2.3
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.2
 
 - **El charco que se corre queda del lado del cuerpo** (lo encontró El Eternauta: un bicho muerto sobre el bisel de una vereda de 0,30 m dejaba el charco abajo, en la calle, a 0,6 m del cuerpo). La 0.2.1 no le ponía límite hacia abajo al piso nuevo, y su rayo de separación salía a la altura del componente, por encima del cordón. Ahora:

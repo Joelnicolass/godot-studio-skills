@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_lobby_endpoint.svg")
 class_name MpLobbyEndpoint
 extends Resource
 

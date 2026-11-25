@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_world_ready.svg")
 class_name MpWorldReady
 extends Node
 

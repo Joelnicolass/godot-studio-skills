@@ -1,5 +1,11 @@
 # Cambios de TurnKit
 
+## 0.3.1
+
+- **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.3.0
 
 Todo lo nuevo es opcional y viene apagado: un juego que no lo usa no ve nada nuevo.

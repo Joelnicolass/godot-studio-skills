@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_scatter_3d.svg")
 class_name PropScatter3D
 extends Node3D
 

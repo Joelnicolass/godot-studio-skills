@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grid_kit/icons/grid_cursor.svg")
 class_name GridCursor
 extends Node3D
 

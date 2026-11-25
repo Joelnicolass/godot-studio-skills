@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/spill_kit/icons/spill_pool_3d.svg")
 class_name SpillPool3D
 extends Node3D
 

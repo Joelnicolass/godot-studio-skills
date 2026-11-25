@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_match_gate.svg")
 class_name MpMatchGate
 extends Node
 

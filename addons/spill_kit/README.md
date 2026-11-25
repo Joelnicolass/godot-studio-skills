@@ -1,4 +1,4 @@
-# SpillKit
+# <img src="icons/spill_kit.svg" width="32" height="32" alt=""> SpillKit
 
 Lo que derrama un cuerpo, en 3D: sangre, icor, aceite, baba, tinta.
 - **Cada golpe** salpica gotas y deja manchas en el piso, que quedan toda la partida.

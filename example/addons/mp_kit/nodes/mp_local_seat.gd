@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_local_seat.svg")
 class_name MpLocalSeat
 extends Node
 

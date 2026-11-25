@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_replicate.svg")
 class_name MpReplicate
 extends Node
 
