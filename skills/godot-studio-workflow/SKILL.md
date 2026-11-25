@@ -46,7 +46,7 @@ If the repo already has PRD/RULES, read them and `/workflow-status` if needed; d
 
 Order for a **new game**:
 
-1. Architecture Clean vs standard — **ask** (layered skill). No answer: do not scaffold.
+1. Architecture Clean vs standard, and where the art goes (by entity, or by type in `assets/`) — **ask** in the same batch (layered skill). No answer: do not scaffold.
 2. Multiplayer — **ask** (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available) **before** copying `addons/mp_kit` or writing RPCs:
    - **No multiplayer** — do not install MpKit. No RPCs, no `MultiplayerSpawner`.
    - **Local / Wi-Fi** (same device or LAN) — `MpKit.host()` listen-server (the host is a player).
@@ -54,7 +54,7 @@ Order for a **new game**:
    No answer: do not copy the addon.
 3. 2D / 3D — **ask** (or both).
    - **2D**: sprites via Aseprite MCP **only** if the user wants (references). Skill [godot-animation](../godot-animation/SKILL.md).
-   - **3D**: **ask** if they want the Blender MCP ([official docs](https://www.blender.org/lab/mcp-server/)). If yes: install it, ask for references, export `.glb` into the game. If no: 3D placeholder. Guide: [assets.md](../godot-composition-first/assets.md).
+   - **3D**: **ask** if they want the Blender MCP ([official docs](https://www.blender.org/lab/mcp-server/)). If yes: install it, ask for references, and the model comes in as the `.blend` itself or as a `.glb`. If no: 3D placeholder. Guide: [assets.md](../godot-composition-first/assets.md).
    - **Materials / textures** (2D or 3D): when a surface stops being a placeholder and the user has no texture, say it can be created with **Material Maker** (procedural, exports PNGs + `.tres`). Only with OK + references. Skill [godot-material-maker](../godot-material-maker/SKILL.md) / `/create-material`.
 4. `/create-prd` → `PRD.md` (for games: a short GDD; see that command). Document MP type and 2D/3D.
 5. If style or refs already exist: `/create-visual-guide` → `VISUAL.md`. If not, **ask** before any visual pass.

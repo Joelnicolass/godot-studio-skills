@@ -62,7 +62,11 @@ External `.tres` = default for shared templates. Built-in = data for a single in
 
 ## Where they live
 
-Next to the scene that uses them, in one folder per entity when it helps (`projectiles/projectile.tscn`, `projectile_data.gd`, `projectile_fast.tres`). A separate family folder (`resources/<family>/`, or `src/resources/` in Clean) only for types that several scenes or features share.
+**Data** Resources: next to the scene that uses them, in one folder per entity when it helps (`projectiles/projectile.tscn`, `projectile_data.gd`, `projectile_fast.tres`). A separate family folder (`resources/<family>/`, or `src/resources/` in Clean) only for types that several scenes or features share.
+
+One file per element, with a name you can read (`terrains/plain.tres`, `terrains/forest.tres`), not an array of anonymous sub-resources (`Resource_umusd`) inside a set.
+
+The look (materials, `Environment`, themes) is something else: always a named file, even when a single scene uses it ([SKILL.md](SKILL.md) §3.1).
 
 Round rules: `@export` on the `Match` node; a `MatchRules.tres` only if several pieces read it or there are several modes to pick from. Catalog: Resources. Instance look: node `@export`.
 
@@ -71,5 +75,6 @@ Round rules: `@export` on the `Match` node; a `MatchRules.tres` only if several 
 - `enum Kind` + `match` of stats on the projectile.
 - One `.tres` per live instance.
 - A `.tres` that a single scene uses, or a `.tres` → `.tres` → node chain to find one number.
+- A Resource whose only content is a `Dictionary` or an `Array`: a lookup table in disguise.
 - Inner class `class Foo extends Resource`.
 - Overwriting `@export var data` in `_ready` to force a design number.

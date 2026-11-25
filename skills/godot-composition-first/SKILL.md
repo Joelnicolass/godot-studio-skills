@@ -65,9 +65,13 @@ Round rules: `@export` on the `Match` node. If you tweak look in play and lose i
 
 Motion / juicy: [godot-animation](../godot-animation/SKILL.md) and [godot-juicy](../godot-juicy/SKILL.md). Tween **or** `AnimationPlayer` per clip; knobs in the inspector. The 12 principles apply either way. FSM: [godot-fsm](../godot-fsm/SKILL.md). 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md).
 
-## 3.1 Resources = shared types
+## 3.1 Data Resources = shared types
 
-A `.tres` exists when **several things share it** or when **it is edited as a type**: `class_name XData extends Resource` + one `.tres` per variant. One `projectile.tscn`; `projectile_fast.tres` / `projectile_slow.tres` on `@export var data`. A value that a single scene uses is an `@export` on the node, not a `.tres`.
+A **data** `.tres` exists when **several things share it** or when **it is edited as a type**: `class_name XData extends Resource` + one `.tres` per variant. One `projectile.tscn`; `projectile_fast.tres` / `projectile_slow.tres` on `@export var data`. A value that a single scene uses is an `@export` on the node, not a `.tres`.
+
+That rule is for data. The **look** (a material, an `Environment`, a theme, a procedural texture) is an asset: always a named file (`stone.tres`, `world_env.tres`), even when a single scene uses it, and never a sub-resource inside a wiring scene (the world, `Main`). RULES.md decides the folder ([godot-code-quality](../godot-code-quality/SKILL.md) §1).
+
+A Resource whose only content is a `Dictionary` or an `Array` (name → material, a list of materials per sprite) is not a type anyone edits: it is a lookup table in disguise. Each element is its own file, or an `@export` on the node that uses it.
 
 Current HP on the node. Do not mutate the `.tres` (`duplicate()` if you need a copy). Guide: [resources.md](resources.md).
 
@@ -106,17 +110,26 @@ Shaders: one effect, one file. **Do not invent** the FX if a catalog exists: [Go
 
 2D sprites: **ask** if they want MCP/sprites and ask for **references**. Skill [godot-animation](../godot-animation/SKILL.md). If yes: [Aseprite](https://github.com/diivi/aseprite-mcp) MCP ([assets.md](assets.md)). If no: placeholder. Do not invent a sprite.
 
-3D: **ask** if they want the [Blender](https://www.blender.org/lab/mcp-server/) MCP. If yes: install it, ask for references, export `.glb`. If no: placeholder. Details in [assets.md](assets.md).
+3D: **ask** if they want the [Blender](https://www.blender.org/lab/mcp-server/) MCP. If yes: install it, ask for references, and the model comes in as the `.blend` itself or as a `.glb`. If no: placeholder. Details in [assets.md](assets.md).
 
-Materials / textures (floor, wall, terrain, 2D tile): **ask** if they want them created with [Material Maker](https://github.com/RodZill4/material-maker) and ask for references. Each surface is a `.tres` picked in the inspector. Skill [godot-material-maker](../godot-material-maker/SKILL.md).
+Materials / textures (floor, wall, terrain, 2D tile): **ask** if they want them created with [Material Maker](https://github.com/RodZill4/material-maker) and ask for references. Each surface is a `.tres` picked in the inspector; on an imported model, in its import: **Advanced…** › the material › **Use External** with the `.tres` path, not in code or by the slot name at runtime. Skill [godot-material-maker](../godot-material-maker/SKILL.md).
 
 ## 6. How to implement a component
 
 1. Small packed scene + `class_name`.
 2. `@export` knobs. Warnings if a socket is missing.
-3. The feature **instances** the component in the scene. Do not `load` shaders by hand from the world.
+3. The feature **instances** the component in the scene. Do not `load` shaders by hand from the world. A reusable component that owns its shader (as `Sprite3D` owns its own) may `preload` it and build its material, with the knobs as the component's `@export`s.
 4. Signals on the node itself; the parent connects. The `Events` bus only for systems that do not know each other. The FX pass does not call the session.
 5. Per-player variant (tint): public method, does not read internal IDs.
+
+## 7. Editor preview
+
+Opening the scene in the editor shows the game as it looks at runtime: materials, props, the board. What only exists at runtime gets tuned blind.
+
+- A look component (one that builds meshes, places props, applies a material) is `@tool`. An `@export` whose setter rebuilds it shows the change in the editor.
+- What it generates is not saved into the scene: the children it adds have no `owner`, and a generated property leaves the save through `_validate_property` (without `PROPERTY_USAGE_STORAGE`).
+- Game logic (input, timers, match signals) does not run in the editor: cut it with `Engine.is_editor_hint()` in `_ready` and `_process`. The preview does run.
+- Procedural content takes an `@export var preview_seed`, so the editor shows a fixed result.
 
 ## Anti-patterns
 
@@ -126,7 +139,10 @@ Materials / textures (floor, wall, terrain, 2D tile): **ask** if they want them 
 - Collision layers that differ in code vs the inspector.
 - 100% code-created children when a packed scene would make them editable.
 - Mutating the type `.tres` at runtime.
-- A `.tres` that a single scene uses, or one that points at another through a tag or a string.
+- A data `.tres` that a single scene uses, or one that points at another through a tag or a string.
+- A Resource that is only a `Dictionary` or an `Array` (name → resource).
+- Materials or an `Environment` embedded as sub-resources in the world scene.
+- A look that only exists at runtime: materials assigned in `_ready`, props made in code with no preview.
 
 ## Checklist
 
@@ -135,7 +151,9 @@ Materials / textures (floor, wall, terrain, 2D tile): **ask** if they want them 
 - [ ] `@export` / `%UniqueName` sockets instead of `../..` paths?
 - [ ] InputMap, not scancodes?
 - [ ] Shared variants = Resources; a value of a single scene = `@export`?
+- [ ] Is every material, `Environment` and theme a named file?
+- [ ] Does the scene look in the editor as it does in the game (materials, props)? Which part of the look only exists at runtime, and why?
 - [ ] Does the scene run with F6?
-- [ ] Catalog shader or documented port? 2D sprite: user OK + references + Aseprite, or placeholder? 3D: OK + Blender MCP + `.glb`, or placeholder?
+- [ ] Catalog shader or documented port? 2D sprite: user OK + references + Aseprite, or placeholder? 3D: OK + Blender MCP + `.blend` or `.glb`, or placeholder?
 
 Patterns: [patterns.md](patterns.md). Resources: [resources.md](resources.md). Assets: [assets.md](assets.md). Code: [examples.md](examples.md).

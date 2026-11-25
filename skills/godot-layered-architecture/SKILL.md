@@ -35,6 +35,8 @@ On the **standard** path, “layers” does **not** mean `domain/core/features` 
 1. **Clean / layered** — `features → core → domain`. See [clean.md](clean.md).
 2. **Standard Godot** — scenes + scripts next to the scene. See [standard.md](standard.md).
 
+In the same batch, ask **where the art goes**: by entity (Godot's default: the scene with its script, its `.tres` files and its art) or by type (scenes and scripts by feature; shaders, materials, and art in `assets/`). It goes in RULES.md next to the style ([godot-code-quality](../godot-code-quality/SKILL.md) §1).
+
 Do not ask again if: the user already chose in this chat; they named a style; or the repo **already declares** it **and** the work is on that same game.
 
 If there is no answer, **do not** scaffold `src/domain/` or a giant `scripts/` dump.
@@ -72,6 +74,7 @@ UI in the product language; code identifiers in English.
 |------|--------|
 | Type catalog (projectile A vs B, scout vs tank) | **Resource** `.tres` |
 | Look of *this* instance | `@export` on the node / material |
+| Shared look (material, `Environment`, theme) | A named asset (`.tres`), next to its scene or in `assets/` as RULES.md says; never a sub-resource of the world scene |
 | Round rules (duration, lives, layers) | `@export` on the `Match` node. A `MatchRules.tres` only if several pieces read it (the Clean session and the features) or there are several modes to pick from. No copied literals. |
 | Current HP, active cooldown | Runtime on the node; **do not** mutate the `.tres` |
 

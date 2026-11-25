@@ -24,8 +24,8 @@ If one of the project's own conventions (RULES.md, a CONVENTIONS file) contradic
 A developer should guess where a thing lives and change it by opening one or two files.
 
 - "Editor first" means the value lives **on the node that uses it**, as an `@export`, visible in the inspector. It does not mean a `.tres` or a pointer for everything.
-- A `.tres` exists only when **several things share it** or when **it is edited as a type** (an enemy, a weapon with variants). If a single scene uses it, it is an `@export` on the node.
-- No indirection through tags or text. That covers a key that names another resource, a path built from a code (`"res://shots/" + tag + ".tscn"`), or a `String` that picks a scene. Reference the scene, node, or resource directly.
+- A data `.tres` exists only when **several things share it** or when **it is edited as a type** (an enemy, a weapon with variants). If a single scene uses it, it is an `@export` on the node. The look (a material, an `Environment`, a theme) is something else: always a named file ([godot-composition-first](../godot-composition-first/SKILL.md) §3.1).
+- No indirection through tags or text. That covers a key that names another resource, a path built from a code (`"res://shots/" + tag + ".tscn"`), or a `String` that picks a scene; also a material slot name used as a key, a `node.get(&"prop")` with the name kept in an `@export StringName`, or an id → shader index dictionary far from the node that is that id. Reference the scene, node, or resource directly.
 - No chains: going from A to B to C to find one number is a design bug.
 - **Measure:** if changing a number means opening more than 2 files, the design is wrong.
 - When two designs work, pick the one with fewer files and fewer hops, even if it is less "general".
@@ -37,9 +37,9 @@ A developer should guess where a thing lives and change it by opening one or two
 - Scenes and resources: `@export var x: PackedScene`, dragged in the inspector. Do not `preload` into an `@export` default: the scene overwrites it and the load is wasted ([logic preferences][s-logic]).
 - A scene that repeats in two places is its own `.tscn` and gets instanced; it is never copied node by node.
 - In a big scene, group the children under plain parents (`World`, `Systems`, `Hud`, `Audio`) ([scene organization][s-org]).
-- A node created from code is the exception (pools, bullets). Anything that exists once per scene is placed in the `.tscn`.
+- A node created from code is the exception: pools, bullets, and whatever depends on the match data (one tile per cell). Even then it is an exported `PackedScene` that gets instanced, not `MeshInstance3D.new()` with its mesh and material put together in code. Anything that exists once per scene is placed in the `.tscn`.
 - An empty required `@export` shows an editor warning (`_get_configuration_warnings`) **and** calls `push_error` at runtime; never a silent `return`.
-- One folder per entity when it helps: `enemies/bat/` with its `.tscn`, `.gd`, `.tres`, and art. Assets go "as close to scenes as possible" ([project organization][s-project]). A separate data folder only for types that several scenes share.
+- **Folders.** By default, one folder per entity: `enemies/bat/` with its `.tscn`, `.gd`, `.tres`, and art, "as close to scenes as possible" ([project organization][s-project]). The valid alternative: scenes and scripts by feature, and shaders, materials, and art by type in `assets/` (`assets/shaders/`, `assets/materials/`, `assets/art/`). One is chosen when the project starts ([godot-layered-architecture](../godot-layered-architecture/SKILL.md) §1), it goes in RULES.md, and they are not mixed. A separate data folder only for types that several scenes share.
 - Files and folders in `snake_case`. A file is named after its `class_name` or its root node.
 
 ## 2. Communication: proven patterns only
@@ -89,6 +89,7 @@ Follow the [style guide][s-style] and let `gdformat` decide the formatting.
   - a typed class instead of a `Dictionary` whose keys live in a comment. A `Dictionary` is fine only at the network or save-file edge, with `to_dict()` / `from_dict()`;
   - the `UNTYPED_DECLARATION` and `UNSAFE_*` warnings turned on (§7). The count only goes down.
 - **No magic values:** an enum instead of `0 / 1 / 2`; an `@export` (with `@export_range` and units) instead of a tuning number in code; `delta` or `Engine.physics_ticks_per_second` instead of a local `FPS := 60.0`.
+- **A readable inspector:** `@export_group` / `@export_subgroup` order the knobs, and the unit goes in the hint (`@export_range(0.0, 5.0, 0.05, "suffix:s")`, `"suffix:m"`). An `@export` whose setter rebuilds geometry or the look goes in a `@tool` script, so the change shows in the editor.
 - One statement per line, under 100 columns, and two blank lines between functions.
 - **No cap on script length.** Split by responsibility, not by count. A low cap leads to compressed code (one-line `if`s, 160-column lines) and to splitting a cohesive class into several. gdlint only warns at 1000 lines or 20 public methods.
 - **Errors:** `push_error` for a broken setup, `push_warning` for a recoverable oddity, and `assert()` for programmer invariants (stripped from release builds). A game refusal (no mana, out of range) is an enum or a `StringName` constant, not free text.
@@ -131,19 +132,20 @@ A custom check is only worth it for what the standard does not cover (a network 
 ## 8. Review: the questions that matter
 
 1. **How many files do you open to change a number in this feature?** Count them. More than 2 = redesign.
-2. Is each new `.tres` shared by several things or edited as a type? If not, it is an `@export` on the node.
+2. Is each new data `.tres` shared by several things or edited as a type? If not, it is an `@export` on the node. Is any `.tres` only a `Dictionary` or an `Array`?
 3. Is there a reference through a tag, a string, or a built path? Turn it into a direct `@export`.
-4. Does every communication use a pattern from §2? Did a registry, locator, manager, or new autoload show up?
-5. Is the typing real? Over the diff's `.gd` files (check each hit: a `Dictionary.get` at the network edge is legitimate):
+4. Is any material, mesh, or node created or reassigned in `_ready`? Could it show in the editor (in the scene, in the import, or with `@tool`)?
+5. Does every communication use a pattern from §2? Did a registry, locator, manager, or new autoload show up?
+6. Is the typing real? Over the diff's `.gd` files (check each hit: a `Dictionary.get` at the network edge is legitimate):
 
    ```bash
    git diff --name-only -- '*.gd' | xargs rg -nP '(:|->)\s*(Dictionary|Array)\b(?!\[)'
    git diff --name-only -- '*.gd' | xargs rg -n '\.get\("|\.set\("|has_method\(|\.call\("'
    ```
 
-6. `##` only on the API and `#` inside functions, with no history or citations? `rg -n '^\s+##'` finds indented `##`.
-7. Logs and warnings in English, and player text through `tr()`?
-8. `gdformat --check`, `gdlint`, and GUT green, if the project has them? Paste the output.
+7. `##` only on the API and `#` inside functions, with no history or citations? `rg -n '^\s+##'` finds indented `##`.
+8. Logs and warnings in English, and player text through `tr()`?
+9. `gdformat --check`, `gdlint`, and GUT green, if the project has them? Paste the output.
 
 ## Sources
 

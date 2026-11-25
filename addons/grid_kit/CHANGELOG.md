@@ -1,5 +1,13 @@
 # GridKit changes
 
+## 0.4.0
+
+- **`GridView3D.tile_created(cell, tile)`:** fires for every tile it makes, already on its cell's center and before it enters the tree, so what you set on it there (its cell, its data) is already there in its `_ready`. Before, the game had to work out the cell from the position.
+- **`GridView3D.drawn`:** every tile is in place (after a `rebuilt`, after `tiles`, `default_tile` or `value_key` change, or after `redraw()`). Before, there was no way to know the board had finished drawing.
+- **README:** how to see the board in the editor when the grid arrives at runtime (a `layout` or the inspector shape as a preview; `use_grid` replaces it).
+
+Nothing to update in your project.
+
 ## 0.3.0
 
 - **Squares as well as hexagons, with the same API.** A new base `CellGrid` (cells, values, `find_path`, `flood`, `to_dict`, signals) with `HexGrid` and `SquareGrid` on top. `SquareGrid` has `diagonals`: off, 4 neighbors and Manhattan distance; on, 8 neighbors and Chebyshev distance. Factories: `HexGrid.rect/hexagon`, `SquareGrid.rect/disc`.

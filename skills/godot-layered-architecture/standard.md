@@ -21,7 +21,7 @@ events.gd               # Events autoload (signals only), if needed
 addons/mp_kit/
 ```
 
-A separate data folder (`resources/<family>/`) only for types that several scenes share. Valid variant: folders per feature. Invalid: a thousand-line `Player.gd` and `match weapon`.
+A separate data folder (`resources/<family>/`) only for types that several scenes share. Valid variant: folders per feature. If RULES.md chose art by type, scene folders hold no art and it goes in `assets/shaders/`, `assets/materials/`, `assets/art/`. Invalid: a thousand-line `Player.gd` and `match weapon`.
 
 ## Autonomous scenes
 
