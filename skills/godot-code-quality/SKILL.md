@@ -65,7 +65,7 @@ Si no se cumple ninguna, es un `@export`. El look (un material, un `Environment`
 
 ### `docs/tuning.md`: el mapa de perillas
 
-Cada juego tiene `docs/tuning.md`: una tabla «quiero cambiar → archivo → nodo → propiedad», en el idioma del usuario. Quien planifica escribe las filas nuevas en el plan, el árbol incluye `[~] docs/tuning.md`, quien implementa las agrega, y el review marca NEEDS WORK si una feature sumó un `@export` de diseño sin su fila.
+Cada juego tiene `docs/tuning.md`: una tabla «quiero cambiar → archivo → nodo → propiedad», en el idioma del usuario. Quien planifica escribe las filas nuevas en el plan, el árbol incluye `[~] docs/tuning.md`, quien implementa las agrega, y el review marca NEEDS WORK si una feature sumó un `@export` de diseño sin su fila. Las `uniform` de un shader que se ajustan en su material también cuentan: una fila por perilla, con el `_material.tres` como archivo y `shader_parameter/<nombre>` como propiedad.
 
 | Quiero cambiar | Archivo | Nodo | Propiedad |
 |---|---|---|---|
