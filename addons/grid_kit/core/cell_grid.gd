@@ -53,10 +53,89 @@ func distance(_a: Vector2i, _b: Vector2i) -> int:
 	return 0
 
 
-## The board cells next to `cell`, in a fixed order that each shape documents.
-func neighbors(_cell: Vector2i) -> Array[Vector2i]:
+## How many cells are next to a cell: 6 on hexes; 4 on squares, or 8 with diagonals.
+func direction_count() -> int:
 	push_error("CellGrid: use a HexGrid or a SquareGrid")
-	return []
+	return 0
+
+
+## The cell one step from `cell` toward `direction` (0 to `direction_count() - 1`, in the order each shape documents),
+## on the board or not. NO_CELL for a direction out of range.
+func neighbor(_cell: Vector2i, _direction: int) -> Vector2i:
+	push_error("CellGrid: use a HexGrid or a SquareGrid")
+	return NO_CELL
+
+
+## The board cells next to `cell`, in direction order. With `on_board_only` off it also lists the cells off the board,
+## so the list always has `direction_count()` cells and the index is the direction.
+func neighbors(cell: Vector2i, on_board_only := true) -> Array[Vector2i]:
+	var list: Array[Vector2i] = []
+	for direction in direction_count():
+		var next := neighbor(cell, direction)
+		if not on_board_only or _cells.has(next):
+			list.append(next)
+	return list
+
+
+## The direction from `a` to `b` when `b` is next to `a` (on the board or not), or -1.
+func direction_to(a: Vector2i, b: Vector2i) -> int:
+	for direction in direction_count():
+		if neighbor(a, direction) == b:
+			return direction
+	return -1
+
+
+## The cells around the board: every cell off the board that touches it (on squares a corner is enough), and with
+## `rings` above 1 the cells around those too. Sorted by row and then column. For a frame, a fog border or a coast.
+func outline(rings := 1) -> Array[Vector2i]:
+	var seen: Dictionary[Vector2i, bool] = {}
+	for cell: Vector2i in _cells:
+		seen[cell] = true
+	var frontier := cells()
+	var list: Array[Vector2i] = []
+	for _ring in maxi(rings, 0):
+		var next_ring: Array[Vector2i] = []
+		for cell in frontier:
+			for next in _touching(cell):
+				if not seen.has(next):
+					seen[next] = true
+					next_ring.append(next)
+		list.append_array(next_ring)
+		frontier = next_ring
+	list.sort_custom(_before)
+	return list
+
+
+## The board cells whose `key` value is `value`, sorted by row and then column. A `String` and a `StringName` with the
+## same text match, and so do an int and a float with the same number.
+func cells_with(key: StringName, value: Variant) -> Array[Vector2i]:
+	var list: Array[Vector2i] = []
+	for cell: Vector2i in _cells:
+		var cell_values: Dictionary = _cells[cell]
+		if cell_values.has(key) and _same_value(cell_values[key], value):
+			list.append(cell)
+	list.sort_custom(_before)
+	return list
+
+
+## The board cell closest to the middle of the board (the average of the cell centers), or NO_CELL on an empty board.
+## A tie goes to the first cell by row and then column.
+func center_cell() -> Vector2i:
+	if _cells.is_empty():
+		return NO_CELL
+	var all := cells()
+	var middle := Vector2.ZERO
+	for cell in all:
+		middle += cell_to_local(cell, 1.0)
+	middle /= all.size()
+	var best := all[0]
+	var best_distance := INF
+	for cell in all:
+		var gap := cell_to_local(cell, 1.0).distance_squared_to(middle)
+		if gap < best_distance - 0.000001:
+			best = cell
+			best_distance = gap
+	return best
 
 
 ## The board cells at `radius` steps or fewer from `cell`, `cell` included, sorted by row and then column.
@@ -247,6 +326,11 @@ func _shape_data() -> Dictionary:
 	return {}
 
 
+# Every cell that shares a side or a corner with `cell`, on the board or not (for `outline`).
+func _touching(cell: Vector2i) -> Array[Vector2i]:
+	return neighbors(cell, false)
+
+
 func _cheapest(open: Array[Vector2i], best: Dictionary[Vector2i, float], to: Vector2i, unit_cost: bool) -> int:
 	var chosen := 0
 	var chosen_score := INF
@@ -261,3 +345,14 @@ func _cheapest(open: Array[Vector2i], best: Dictionary[Vector2i, float], to: Vec
 
 static func _before(a: Vector2i, b: Vector2i) -> bool:
 	return a.y < b.y or (a.y == b.y and a.x < b.x)
+
+
+# Equal values for `cells_with`: text with text and numbers with numbers, whatever their exact type.
+static func _same_value(a: Variant, b: Variant) -> bool:
+	var type_a := typeof(a)
+	var type_b := typeof(b)
+	if type_a in [TYPE_STRING, TYPE_STRING_NAME] and type_b in [TYPE_STRING, TYPE_STRING_NAME]:
+		return String(a) == String(b)
+	if type_a in [TYPE_INT, TYPE_FLOAT] and type_b in [TYPE_INT, TYPE_FLOAT]:
+		return float(a) == float(b)
+	return type_a == type_b and a == b

@@ -143,3 +143,45 @@ func test_to_dict() -> void:
 	check(plain["diagonals"] == false and (CellGrid.from_dict(plain) as SquareGrid).diagonals == false, "no diagonals")
 	var through_square := SquareGrid.from_dict(data)
 	check(through_square is SquareGrid, "from_dict called on SquareGrid gives what the data says")
+
+
+func test_directions() -> void:
+	var grid := SquareGrid.rect(3, 3)
+	check(grid.direction_count() == 4, "4 directions without diagonals")
+	check(grid.direction_to(Vector2i(1, 1), Vector2i(2, 1)) == 0, "east is 0")
+	check(grid.direction_to(Vector2i(1, 1), Vector2i(1, 2)) == 3, "south is 3")
+	check(grid.direction_to(Vector2i(1, 1), Vector2i(2, 0)) == -1, "a diagonal without diagonals: -1")
+	check(grid.neighbor(Vector2i(1, 1), 4) == CellGrid.NO_CELL, "no direction 4 without diagonals")
+	grid.diagonals = true
+	check(grid.direction_count() == 8, "8 with diagonals")
+	check(grid.direction_to(Vector2i(1, 1), Vector2i(2, 0)) == 4, "north-east is 4")
+	check(grid.direction_to(Vector2i(1, 1), Vector2i(2, 2)) == 7, "south-east is 7")
+	check(grid.direction_to(Vector2i(0, 0), Vector2i(-1, 0)) == 2, "a cell off the board still has a direction")
+
+
+func test_neighbors_off_the_board() -> void:
+	var grid := SquareGrid.rect(2, 2)
+	var all := grid.neighbors(Vector2i(0, 0), false)
+	var expected: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1)]
+	check(all == expected, "the four, in direction order: %s" % [all])
+	grid.diagonals = true
+	check(grid.neighbors(Vector2i(0, 0), false).size() == 8, "eight with diagonals")
+
+
+func test_cells_around_the_board() -> void:
+	var grid := SquareGrid.rect(3, 3)
+	var ring := grid.outline()
+	check(ring.size() == 16, "a 3 x 3 has 16 cells around it, corners included: %d" % ring.size())
+	check(ring.has(Vector2i(-1, -1)) and ring.has(Vector2i(3, 3)), "the corners touch, even without diagonals")
+	check(not ring.has(Vector2i(1, 1)), "no board cell")
+	check(grid.outline(2).size() == 40, "two rings: 16 + 24 = %d" % grid.outline(2).size())
+
+
+func test_cells_with_and_center() -> void:
+	var grid := SquareGrid.rect(4, 4)
+	grid.set_value(Vector2i(3, 0), &"start", &"red")
+	grid.set_value(Vector2i(0, 3), &"start", &"blue")
+	var red: Array[Vector2i] = [Vector2i(3, 0)]
+	check(grid.cells_with(&"start", &"red") == red, "the cell with that value")
+	check(SquareGrid.rect(3, 3).center_cell() == Vector2i(1, 1), "the middle of a 3 x 3")
+	check(grid.center_cell() == Vector2i(1, 1), "a 4 x 4 has four in the middle: the first by row and column")
