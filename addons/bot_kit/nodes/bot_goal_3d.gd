@@ -1,5 +1,5 @@
 @tool
-@icon("res://addons/bot_kit/editor/bot_goal_3d.svg")
+@icon("res://addons/bot_kit/icons/bot_goal_3d.svg")
 class_name BotGoal3D
 extends Node3D
 

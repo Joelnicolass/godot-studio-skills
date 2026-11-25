@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_wedge_formation.svg")
 class_name RtsWedgeFormation
 extends RtsFormation
 

@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_net_config.svg")
 class_name MpNetConfig
 extends Resource
 

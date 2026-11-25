@@ -1,5 +1,11 @@
 # BotKit changelog
 
+## 0.1.1
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem. They replace the three the kit shipped (`editor/bot_3d.svg`, `bot_goal_3d.svg`, `bot_mode.svg`).
+
+Nothing to update in your project.
+
 ## 0.1.0
 
 The first version: bots that play your character like a person, in 3D.

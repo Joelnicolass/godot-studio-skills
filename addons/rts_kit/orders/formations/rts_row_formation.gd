@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_row_formation.svg")
 class_name RtsRowFormation
 extends RtsFormation
 

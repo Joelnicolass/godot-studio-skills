@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_nav_zones_3d.svg")
 class_name PropNavZones3D
 extends Node3D
 

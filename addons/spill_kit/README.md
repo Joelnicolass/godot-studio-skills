@@ -1,4 +1,4 @@
-# SpillKit
+# <img src="icons/spill_kit.svg" width="32" height="32" alt=""> SpillKit
 
 What a body spills, in 3D: blood, ichor, oil, slime, ink.
 - **Every hit** sprays drops and leaves marks on the floor, which stay for the whole match.

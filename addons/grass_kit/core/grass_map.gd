@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_map.svg")
 class_name GrassMap
 extends ImageTexture
 

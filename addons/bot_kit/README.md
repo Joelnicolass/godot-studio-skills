@@ -1,4 +1,4 @@
-# BotKit
+# <img src="icons/bot_kit.svg" width="32" height="32" alt=""> BotKit
 
 Bots that play your character like a person, in 3D:
 - **One node on your character.** `Bot3D` presses the same keys a player presses, in `bot.input`, which reads like Godot's `Input`. Your character walks, jumps and shoots with its own code, without knowing whether a person or a bot plays it.

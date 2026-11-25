@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/spill_kit/icons/spill_type.svg")
 class_name SpillType
 extends Resource
 

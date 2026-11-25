@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/mp_kit/icons/mp_state.svg")
 class_name MpState
 extends Node
 

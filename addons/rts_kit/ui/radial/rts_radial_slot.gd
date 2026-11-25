@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_radial_slot.svg")
 class_name RtsRadialSlot
 extends Control
 

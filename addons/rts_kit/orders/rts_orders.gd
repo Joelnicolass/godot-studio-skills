@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_orders.svg")
 class_name RtsOrders
 extends Node
 

@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_formation_catalog.svg")
 class_name RtsFormationCatalog
 extends Resource
 

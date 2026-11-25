@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_matchmaker.svg")
 class_name MpMatchmaker
 extends Node
 

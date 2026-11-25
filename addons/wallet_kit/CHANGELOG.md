@@ -1,5 +1,11 @@
 # WalletKit changes
 
+## 0.3.1
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.3.0
 
 - New: substitutes with a rate. `Purse.add_substitute(key, covers, rate)`: `rate` of `key` pay for 1 that is missing of any of `covers` (empty: any other key). `substitutes()`, `substitutes_for(key)`, `clear_substitutes()`. The payment plan is fixed and written in the README: what is its own for each key of the cost first, then the substitutes in list order.

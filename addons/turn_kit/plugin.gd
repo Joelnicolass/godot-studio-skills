@@ -6,8 +6,8 @@ const SEAT := preload("res://addons/turn_kit/nodes/turn_seat.gd")
 
 
 func _enter_tree() -> void:
-	add_custom_type("TurnClock", "Node", CLOCK, null)
-	add_custom_type("TurnSeat", "Node", SEAT, null)
+	add_custom_type("TurnClock", "Node", CLOCK, preload("res://addons/turn_kit/icons/turn_clock.svg"))
+	add_custom_type("TurnSeat", "Node", SEAT, preload("res://addons/turn_kit/icons/turn_seat.svg"))
 
 
 func _exit_tree() -> void:

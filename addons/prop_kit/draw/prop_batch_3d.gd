@@ -1,3 +1,4 @@
+@icon("res://addons/prop_kit/icons/prop_batch_3d.svg")
 class_name PropBatch3D
 extends Node3D
 

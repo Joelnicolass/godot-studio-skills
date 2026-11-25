@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/perception_kit/icons/perception_target_2d.svg")
 class_name PerceptionTarget2D
 extends Area2D
 

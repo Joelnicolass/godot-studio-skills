@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_waiting_label.svg")
 class_name MpWaitingLabel
 extends Label
 

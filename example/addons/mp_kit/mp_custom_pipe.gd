@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_custom_pipe.svg")
 class_name MpCustomPipe
 extends Node
 

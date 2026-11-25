@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_start_button.svg")
 class_name MpStartButton
 extends Button
 

@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_boot_menu.svg")
 class_name MpBootMenu
 extends Control
 

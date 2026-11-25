@@ -1,4 +1,4 @@
-# TurnKit
+# <img src="icons/turn_kit.svg" width="32" height="32" alt=""> TurnKit
 
 Turns, rounds and cycles for strategy, board, card, tactics or turn-based RPG games. It has two levels:
 

@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_selection.svg")
 class_name RtsSelection
 extends Node
 

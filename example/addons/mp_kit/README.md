@@ -1,4 +1,4 @@
-# MpKit — informal multiplayer kit (Godot 4)
+# <img src="icons/mp_kit.svg" width="32" height="32" alt=""> MpKit — informal multiplayer kit (Godot 4)
 
 Canonical copy: this repo (`addons/mp_kit`). Host-authoritative helpers. **No gameplay** in `mp_kit.gd`: no scores, copy, or pawns. `MpFlow` only changes boot/world scenes.
 

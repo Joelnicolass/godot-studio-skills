@@ -1,4 +1,4 @@
-# CommandKit
+# <img src="icons/command_kit.svg" width="32" height="32" alt=""> CommandKit
 
 Validated moves with a rejection reason, undo, and a history you save, send and replay. For turn-based games, puzzles with undo, editors and command-based multiplayer.
 

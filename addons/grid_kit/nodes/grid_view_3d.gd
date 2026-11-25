@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grid_kit/icons/grid_view_3d.svg")
 class_name GridView3D
 extends Node3D
 

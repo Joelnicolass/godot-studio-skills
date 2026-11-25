@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_world_loader.svg")
 class_name MpWorldLoader
 extends Node
 

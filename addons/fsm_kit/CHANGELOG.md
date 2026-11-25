@@ -1,5 +1,11 @@
 # FsmKit changelog
 
+## 0.2.2
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.2.1
 
 - Minimal example `examples/minimal_2d/`: an actor with `Idle`, `Move` and `Hurt` (payload and `apply_payload`), and a Label that follows `state_changed`. The tests play it with input.

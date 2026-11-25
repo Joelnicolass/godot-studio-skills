@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_camera_effect.svg")
 class_name RtsCameraEffect
 extends Node
 

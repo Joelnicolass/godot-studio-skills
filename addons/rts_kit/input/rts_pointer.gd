@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_pointer.svg")
 class_name RtsPointer
 extends Node
 

@@ -1,5 +1,5 @@
 @tool
-@icon("res://addons/bot_kit/editor/bot_mode.svg")
+@icon("res://addons/bot_kit/icons/bot_mode.svg")
 class_name BotMode
 extends Node
 

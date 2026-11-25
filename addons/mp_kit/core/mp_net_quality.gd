@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_net_quality.svg")
 class_name MpNetQuality
 extends Node
 

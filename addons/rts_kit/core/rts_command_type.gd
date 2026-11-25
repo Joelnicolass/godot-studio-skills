@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_command_type.svg")
 class_name RtsCommandType
 extends Resource
 

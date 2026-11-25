@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_online.svg")
 class_name MpOnline
 extends Node
 

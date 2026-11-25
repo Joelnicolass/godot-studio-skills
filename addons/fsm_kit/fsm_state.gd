@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/fsm_kit/icons/fsm_state.svg")
 class_name FsmState
 extends Node
 

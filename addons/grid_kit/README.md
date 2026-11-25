@@ -1,4 +1,4 @@
-# GridKit
+# <img src="icons/grid_kit.svg" width="32" height="32" alt=""> GridKit
 
 Boards of hexagons **or squares** for strategy, tactics, board games or puzzles, with the same API for both shapes. Three levels:
 

@@ -1,5 +1,11 @@
 # PropKit changelog
 
+## 0.2.4
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.2.3
 
 - **Minimal example** `examples/minimal_3d/`: trees planted on a `PropFlatGround` around a camp (`PropKeepOut`) and drawn by a `PropBatch3D`. Space gives another seed.

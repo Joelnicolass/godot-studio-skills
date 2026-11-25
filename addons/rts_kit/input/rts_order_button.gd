@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_order_button.svg")
 class_name RtsOrderButton
 extends Node
 

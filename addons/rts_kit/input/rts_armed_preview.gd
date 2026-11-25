@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_armed_preview.svg")
 class_name RtsArmedPreview
 extends Node
 

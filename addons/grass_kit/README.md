@@ -1,4 +1,4 @@
-# GrassKit
+# <img src="icons/grass_kit.svg" width="32" height="32" alt=""> GrassKit
 
 Grass for 3D worlds, drawn on the GPU around the camera:
 - **Painted by hand:** brushes in the 3D view paint where grass grows, how tall, the ground's colour under it and where each kind of blade grows (flowers). Every stroke undoes.

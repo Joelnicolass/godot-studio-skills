@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/wallet_kit/icons/wallet_substitute.svg")
 class_name WalletSubstitute
 extends Resource
 

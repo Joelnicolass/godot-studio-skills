@@ -1,4 +1,4 @@
-# RtsKit
+# <img src="icons/rts_kit.svg" width="32" height="32" alt=""> RtsKit
 
 The command layer of a real-time strategy game, for **2D and 3D**: units, selection and groups, typed orders laid out in formations, the input that gives them (right click by context, armed orders, an optional menu or a command panel), cursor cues and RTS cameras. **No** network, **no** game rules, **no** autoload. It moves no unit and fights no fight: the game does that with the orders the kit hands each unit.
 

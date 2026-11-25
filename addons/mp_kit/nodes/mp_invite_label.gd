@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_invite_label.svg")
 class_name MpInviteLabel
 extends Label
 

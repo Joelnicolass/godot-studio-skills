@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_quality.svg")
 class_name GrassQuality
 extends Resource
 
