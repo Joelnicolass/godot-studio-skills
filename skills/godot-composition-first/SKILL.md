@@ -122,7 +122,7 @@ Materiales / texturas (piso, pared, terreno, tile 2D): **preguntá** si quiere c
 
 1. Packed scene chica + `class_name`.
 2. Perillas `@export` con `##`, rango y unidad. Aviso del editor si falta una referencia.
-3. El feature **instancia** el componente en la escena. No `load` shaders a mano desde el mundo. Un componente reusable dueño de su shader (como `Sprite3D` con el suyo) sí puede hacer `preload` y armar su material, con las perillas como `@export` del componente.
+3. El feature **instancia** el componente en la escena. No `load` shaders a mano desde el mundo. Un componente reusable dueño de su shader (como `Sprite3D` con el suyo) sí puede hacer `preload` y armar su material, con las perillas como `@export` del componente. El shader vive al lado del componente, también en sistemas + contenido (en `systems/<componente>/`, no en `content/shaders/`).
 4. Señales del propio nodo; el padre conecta. El bus `Events` solo para sistemas que no se conocen. El pass FX no llama a la sesión.
 5. Variante por jugador (un tinte): método público que recibe el color; el color sale de un `@export` o de una paleta, no del código.
 

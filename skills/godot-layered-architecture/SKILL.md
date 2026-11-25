@@ -40,7 +40,7 @@ No preguntar de nuevo si: el usuario ya eligió en este chat; pidió un tamaño 
 
 Si no hay respuesta, **no** crees carpetas.
 
-**Clean en capas** (`features → core → domain`) no se ofrece a un proyecto nuevo. Vale en un repo que ya lo declara o si el usuario lo pide por nombre: [clean.md](clean.md). No se cambia el estilo de un juego ya empezado.
+**Clean en capas** (`features → core → domain`) no se ofrece a un proyecto nuevo. Vale en un repo que ya lo declara o si el usuario lo pide por nombre: [clean.md](clean.md). No se cambia el estilo de un juego ya empezado, salvo que el usuario lo pida: entonces se migra por tandas, con el árbol antes de cada una.
 
 Carpetas, nombres de archivo y sufijos: [godot-code-quality](../godot-code-quality/SKILL.md) §1. La elección queda en RULES.md.
 

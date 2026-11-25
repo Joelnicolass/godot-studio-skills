@@ -12,13 +12,13 @@ res://
 ├── systems/               reglas y mecánicas; no conocen el contenido
 │   ├── combat/            health.gd, hitbox.tscn, damage_rules.gd   # núcleo puro
 │   ├── units/             unit.tscn (la base), unit.gd, unit_type.gd
-│   ├── match/             match.tscn, match.gd, match_rules.gd, match_config.gd
+│   ├── match/             match.gd, match_rules.gd (núcleo puro), match_config.gd
 │   └── spawning/          spawner.gd
 ├── content/               todo lo que editan diseño y arte
 │   ├── units/
 │   │   ├── soldier/       soldier.tscn (heredada de unit.tscn), soldier_type.tres, model/, textures/
 │   │   └── archer/
-│   ├── levels/forest/     forest.tscn, forest_env.tres, forest_layout.tres
+│   ├── levels/forest/     forest.tscn (la partida, con match.gd), forest_env.tres, forest_layout.tres
 │   ├── balance/           match_config.tres, waves/
 │   ├── materials/         stone_material.tres
 │   ├── vfx/               hit_flash.tscn, hit_flash.gdshader
@@ -53,7 +53,30 @@ rg -n "res://debug" --glob '!debug/**'        # must be empty
 | Componentes (`Health`, `Hitbox`) y núcleos puros | Niveles, materiales, `Environment`, efectos, curvas |
 | La clase de la configuración (`match_config.gd`) | `balance/match_config.tres`, las tablas de oleadas |
 
-Dentro de `content/` valen las reglas de carpeta de [godot-code-quality](../godot-code-quality/SKILL.md) §1: carpeta por entidad, subcarpetas por tipo al pasar unos 8 archivos, y lo que comparten varias entidades en `content/materials/`, `content/vfx/`, `content/shaders/`. No hay `shared/`: lo común de código está en `systems/` y lo común de arte en `content/`.
+### Casos que confunden
+
+- **El núcleo puro de las reglas** (lo que en Clean era `domain/`) va en `systems/<nombre>/`, sin nodos: `RefCounted` y `static func`, como `systems/rules/` o `systems/combat/damage_rules.gd`. Los tests lo usan directo.
+- **La escena que arma el contenido** (el nivel, la partida con su tablero, sus losetas y sus materiales) vive en `content/` (`content/levels/<nivel>/<nivel>.tscn`), aunque su script esté en `systems/`. En `systems/` solo hay escenas que no nombran nada de `content`: la base de una familia, un componente.
+- **Una configuración no tiene un default que se cargue desde `content`.** El sistema la recibe de afuera: la escena se la asigna por `@export`, y los tests y las tools la cargan ellos.
+
+  ```gdscript
+  # systems/match/match.gd: the level scene assigns the config; the system never loads it.
+  @tool
+  extends Node
+
+  @export var config: MatchConfig
+
+
+  func _get_configuration_warnings() -> PackedStringArray:
+  	if config == null:
+  		return PackedStringArray(["Assign a MatchConfig (a _config.tres in content/balance/)."])
+  	return PackedStringArray()
+  ```
+
+  Un test hace `load("res://content/balance/match_config.tres")` desde `tests/`, no desde `systems/`.
+- **Un componente dueño de su shader** (un `PixelSprite` que arma su material) lo tiene al lado, en `systems/<componente>/`, como dice [godot-composition-first](../godot-composition-first/SKILL.md) §6. `content/shaders/` es para los shaders del contenido: un efecto, el material de un nivel.
+
+Dentro de `content/` valen las reglas de carpeta de [godot-code-quality](../godot-code-quality/SKILL.md) §1: carpeta por entidad, subcarpetas por tipo al pasar unos 8 archivos, y lo que comparten varias entidades en `content/materials/`, `content/vfx/`, `content/shaders/` (salvo el shader de un componente, que va con él). No hay `shared/`: lo común de código está en `systems/` y lo común de arte en `content/`.
 
 ## Qué gana y qué pierde
 
