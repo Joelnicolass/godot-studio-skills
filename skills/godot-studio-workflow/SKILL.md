@@ -47,7 +47,7 @@ Si el repo ya tiene PRD/RULES, leelos y `/workflow-status` si hace falta; no reg
 
 Orden para un **juego nuevo**:
 
-1. Arquitectura Clean vs estándar — **preguntar** (skill layered). Sin respuesta: no scaffoldear.
+1. Arquitectura Clean vs estándar, y dónde va el arte (por entidad, o por tipo en `assets/`) — **preguntar** en la misma tanda (skill layered). Sin respuesta: no scaffoldear.
 2. Multiplayer — **preguntar** (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está), **antes** de copiar `addons/mp_kit` o de escribir RPCs:
    - **Sin multiplayer** — no instales MpKit. Sin RPCs, sin `MultiplayerSpawner`.
    - **Local / WiFi** (mismo dispositivo o LAN) — `MpKit.host()` listen-server (el host es jugador).
@@ -55,7 +55,7 @@ Orden para un **juego nuevo**:
    Sin respuesta: no copies el addon.
 3. 2D / 3D — **preguntar** (o ambos).
    - **2D**: sprites vía Aseprite MCP **solo** si el usuario quiere (referencias). Skill [godot-animation](../godot-animation/SKILL.md) (12 principios; Tween o AnimationPlayer según el clip).
-   - **3D**: **preguntá** si quiere el MCP de Blender ([docs oficiales](https://www.blender.org/lab/mcp-server/)). Si sí: instalalo, pedí referencias, exportá `.glb` al juego. Si no: placeholder 3D. Guía: [assets.md](../godot-composition-first/assets.md).
+   - **3D**: **preguntá** si quiere el MCP de Blender ([docs oficiales](https://www.blender.org/lab/mcp-server/)). Si sí: instalalo, pedí referencias, y el modelo entra como `.blend` directo o como `.glb`. Si no: placeholder 3D. Guía: [assets.md](../godot-composition-first/assets.md).
    - **Materiales / texturas** (2D o 3D): cuando una superficie deja de ser placeholder y no hay textura del usuario, decí que se puede crear con **Material Maker** (procedural, export PNG + `.tres`). Solo con OK + referencias. Skill [godot-material-maker](../godot-material-maker/SKILL.md) / `/create-material`.
 4. Slice vertical: `/implement-feature` (o un RFC-001 si piden contrato). Pilares + loop + una escena. No hace falta FEATURES de todo el juego.
 5. Si quieren un GDD escrito: `/create-prd` → `PRD.md` **corto y vivo** (solo el slice + no-goals). No definas sistemas futuros.

@@ -1,10 +1,13 @@
 # Assets — shaders, 2D y 3D
 
-No inventes arte o FX “de memoria” si hay catálogo o herramienta. El juego (PNG, `.gdshader`, `.glb`) vive en el **proyecto Godot**, no en este framework.
+No inventes arte o FX “de memoria” si hay catálogo o herramienta. El juego (PNG, `.gdshader`, `.blend` o `.glb`) vive en el **proyecto Godot**, no en este framework.
 
 ## Shaders
 
 Buscá primero, adaptá, envolvé en un **pass** (packed scene). Un efecto = un archivo `.gdshader`. Knobs en el material (`shader_parameter`), no 80 floats en un autoload.
+
+- Cada `uniform` numérico lleva `hint_range` (los colores, `source_color`), y se agrupan con `group_uniforms` cuando son más que unos pocos: 27 uniforms sueltos no se leen en el inspector.
+- El `.gdshader` vive junto al componente o el pass que lo usa, o en `assets/shaders/` si RULES.md eligió el arte por tipo.
 
 | Fuente | Uso |
 |--------|-----|
@@ -120,6 +123,10 @@ Para un juego de pixel art, la fuente puede ser una imagen: una grilla de celdas
 
 Probado en Godot 4.7.2 con un PNG hecho así: cada carácter cae en su celda en el orden de `character_ranges` (Ñ, 209, antes de ¡, 161), el tamaño de la fuente es 8 y cada letra avanza 6 px.
 
+## Sprites en un mundo 3D
+
+Un sprite en 3D es un `Sprite3D` (o un nodo componente con un `@export var texture`), con la textura en el inspector. No un material `.tres` por sprite.
+
 ## Modelos 3D (Blender MCP)
 
 Fuente oficial: [MCP Server — Blender](https://www.blender.org/lab/mcp-server/).
@@ -129,8 +136,12 @@ Fuente oficial: [MCP Server — Blender](https://www.blender.org/lab/mcp-server/
 Si dijo que sí:
 
 1. Instalá y configurá el MCP oficial (abajo). Blender tiene que estar **abierto** con el add-on arrancado.
-2. Modelá / ajustá en Blender vía MCP. Exportá **glTF 2.0** (`.glb`) a `res://assets/…` del juego.
-3. En Godot: `MeshInstance3D` / packed scene. No dejes el `.blend` como único asset de runtime.
+2. Modelá / ajustá en Blender vía MCP.
+3. Elegí cómo entra al juego:
+   - **El `.blend` directo** (importación oficial desde Godot 4.0) si el equipo edita en Blender: guardalo en `res://assets/…` y cada cambio se reimporta solo. Pide la ruta de Blender en Editor Settings › FileSystem › Import › Blender; cada máquina que importa, el CI incluido, necesita Blender o la carpeta `.godot/imported` en caché.
+   - **Un `.glb`** (File › Export › glTF 2.0) a `res://assets/…` si el modelo viene de otro lado o el CI no tiene Blender. El `.blend` queda fuera del proyecto (uno adentro también se importa).
+4. Los materiales, afuera del modelo: en el import, **Advanced…** › Materials › el material › **Use External** con un `.tres` por material (o **Actions… › Extract Materials** para sacarlos todos). Se editan y se cambian en el inspector, no por código ni por el nombre del slot.
+5. En Godot: la escena importada como packed scene, o su malla en un `MeshInstance3D`.
 
 El servidor ejecuta Python generado por la IA **sin** sandbox. No lo uses sobre archivos con datos sensibles. Preferí una copia de trabajo.
 

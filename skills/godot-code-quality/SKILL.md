@@ -24,8 +24,8 @@ Si una convención propia del proyecto (RULES.md, un CONVENTIONS) contradice est
 Un dev tiene que adivinar dónde vive una cosa y cambiarla abriendo uno o dos archivos.
 
 - «Editor first» quiere decir que el valor vive **en el nodo que lo usa**, como `@export`, a la vista en el inspector. No quiere decir un `.tres` o un puntero para cada cosa.
-- Un `.tres` existe solo si **varias cosas lo comparten** o si **se edita como tipo** (un enemigo, un arma con variantes). Si lo usa una sola escena, va como `@export` en el nodo.
-- Nada de indirección por tag o por texto. Eso incluye una clave que nombra otro recurso, una ruta armada con un código (`"res://shots/" + tag + ".tscn"`) o un `String` que elige una escena. Referenciá la escena, el nodo o el recurso directo.
+- Un `.tres` de datos existe solo si **varias cosas lo comparten** o si **se edita como tipo** (un enemigo, un arma con variantes). Si lo usa una sola escena, va como `@export` en el nodo. El look (un material, un `Environment`, un tema) es otra cosa: siempre un archivo con nombre ([godot-composition-first](../godot-composition-first/SKILL.md) §3.1).
+- Nada de indirección por tag o por texto. Eso incluye una clave que nombra otro recurso, una ruta armada con un código (`"res://shots/" + tag + ".tscn"`) o un `String` que elige una escena; también el nombre de un slot de material como clave, un `node.get(&"prop")` con el nombre guardado en un `@export StringName`, o un diccionario id → índice de shader lejos del nodo que es ese id. Referenciá la escena, el nodo o el recurso directo.
 - Sin cadenas: si para encontrar un número hay que ir de A a B y de B a C, es un bug de diseño.
 - **Medida:** si cambiar un número exige abrir más de 2 archivos, el diseño está mal.
 - Si dos diseños funcionan, elegí el de menos archivos y menos saltos, aunque sea menos «general».
@@ -37,9 +37,9 @@ Un dev tiene que adivinar dónde vive una cosa y cambiarla abriendo uno o dos ar
 - Escenas y recursos: `@export var x: PackedScene`, arrastrado en el inspector. No pongas `preload` en el default de un `@export`: la escena lo pisa y se desperdicia ([logic preferences][s-logic]).
 - Una escena que se repite en dos lugares es su propio `.tscn` y se instancia; nunca se copia nodo a nodo.
 - En una escena grande, agrupá los hijos bajo padres simples (`World`, `Systems`, `Hud`, `Audio`) ([scene organization][s-org]).
-- Un nodo creado por código es la excepción (pools, balas). Lo que existe una vez por escena va en el `.tscn`.
+- Un nodo creado por código es la excepción: pools, balas, y lo que depende de los datos de la partida (una loseta por casilla). Aun así es una `PackedScene` exportada que se instancia, no `MeshInstance3D.new()` con su malla y su material armados en el código. Lo que existe una vez por escena va en el `.tscn`.
 - Un `@export` obligatorio vacío muestra un aviso en el editor (`_get_configuration_warnings`) **y** hace `push_error` en runtime; nunca un `return` callado.
-- Una carpeta por entidad cuando ayuda: `enemies/bat/` con su `.tscn`, `.gd`, `.tres` y arte. Los assets van «lo más cerca posible» de sus escenas ([project organization][s-project]). Una carpeta aparte de datos, solo para tipos que comparten varias escenas.
+- **Carpetas.** Por defecto, una carpeta por entidad: `enemies/bat/` con su `.tscn`, `.gd`, `.tres` y arte, «lo más cerca posible» de sus escenas ([project organization][s-project]). La alternativa válida: escenas y scripts por feature, y shaders, materiales y arte por tipo en `assets/` (`assets/shaders/`, `assets/materials/`, `assets/art/`). Se elige una al arrancar el proyecto ([godot-layered-architecture](../godot-layered-architecture/SKILL.md) §1), queda en RULES.md, y no se mezclan. Una carpeta aparte de datos, solo para tipos que comparten varias escenas.
 - Archivos y carpetas en `snake_case`. El archivo se llama como su `class_name` o su nodo raíz.
 
 ## 2. Comunicación: solo patrones probados
@@ -89,6 +89,7 @@ Seguí la [guía de estilo][s-style] y dejá que `gdformat` decida el formato.
   - una clase tipada en vez de un `Dictionary` con las claves en un comentario. El `Dictionary` solo vale en el borde de la red o del guardado, con `to_dict()` / `from_dict()`;
   - los avisos `UNTYPED_DECLARATION` y `UNSAFE_*` encendidos (§7). El conteo solo puede bajar.
 - **Sin valores mágicos:** un enum en vez de `0 / 1 / 2`; un `@export` (con `@export_range` y unidades) en vez de un número de tuning en el código; `delta` o `Engine.physics_ticks_per_second` en vez de un `FPS := 60.0` local.
+- **Un inspector que se lee:** `@export_group` / `@export_subgroup` ordenan los knobs, y la unidad va en el hint (`@export_range(0.0, 5.0, 0.05, "suffix:s")`, `"suffix:m"`). Un `@export` cuyo setter reconstruye geometría o el look va en un script `@tool`, así el cambio se ve en el editor.
 - Una sentencia por línea, menos de 100 columnas y dos líneas en blanco entre funciones.
 - **Sin tope de líneas por script.** Se parte por responsabilidad, no por cantidad. Un tope bajo lleva a comprimir código (`if` de una línea, líneas de 160 columnas) y a partir una clase cohesiva en varias. gdlint avisa recién a las 1000 líneas o a los 20 métodos públicos.
 - **Errores:** `push_error` para un setup roto, `push_warning` para una rareza recuperable y `assert()` para invariantes del programador (no llega al release). Un rechazo del juego (sin maná, fuera de rango) es un enum o una constante `StringName`, no texto libre.
@@ -131,19 +132,20 @@ Un chequeo propio solo vale para lo que el estándar no cubre (una frontera de r
 ## 8. Revisión: las preguntas que mandan
 
 1. **¿Cuántos archivos hay que abrir para cambiar un número de esta feature?** Contalos. Más de 2 = rediseñar.
-2. ¿Cada `.tres` nuevo lo comparten varias cosas o se edita como tipo? Si no, es un `@export` en el nodo.
+2. ¿Cada `.tres` de datos nuevo lo comparten varias cosas o se edita como tipo? Si no, es un `@export` en el nodo. ¿Algún `.tres` es solo un `Dictionary` o un `Array`?
 3. ¿Hay una referencia por tag, por texto o por una ruta armada? Pasala a un `@export` directo.
-4. ¿Cada comunicación usa un patrón de §2? ¿Apareció un registry, un locator, un manager o un autoload nuevo?
-5. ¿El tipado es real? Sobre los `.gd` del diff (revisá cada resultado: un `Dictionary.get` en el borde de red es legítimo):
+4. ¿Algún material, malla o nodo se crea o se reasigna en `_ready`? ¿Se podría ver en el editor (en la escena, en el import o con `@tool`)?
+5. ¿Cada comunicación usa un patrón de §2? ¿Apareció un registry, un locator, un manager o un autoload nuevo?
+6. ¿El tipado es real? Sobre los `.gd` del diff (revisá cada resultado: un `Dictionary.get` en el borde de red es legítimo):
 
    ```bash
    git diff --name-only -- '*.gd' | xargs rg -nP '(:|->)\s*(Dictionary|Array)\b(?!\[)'
    git diff --name-only -- '*.gd' | xargs rg -n '\.get\("|\.set\("|has_method\(|\.call\("'
    ```
 
-6. ¿`##` solo en la API y `#` dentro de las funciones, sin historial ni citas? `rg -n '^\s+##'` encuentra `##` indentados.
-7. ¿Logs y avisos en inglés, y textos del jugador con `tr()`?
-8. ¿`gdformat --check`, `gdlint` y GUT en verde, si el proyecto los tiene? Pegá la salida.
+7. ¿`##` solo en la API y `#` dentro de las funciones, sin historial ni citas? `rg -n '^\s+##'` encuentra `##` indentados.
+8. ¿Logs y avisos en inglés, y textos del jugador con `tr()`?
+9. ¿`gdformat --check`, `gdlint` y GUT en verde, si el proyecto los tiene? Pegá la salida.
 
 ## Fuentes
 

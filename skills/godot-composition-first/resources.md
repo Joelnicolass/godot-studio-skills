@@ -62,7 +62,11 @@ func _get_configuration_warnings() -> PackedStringArray:
 
 ## Dónde viven
 
-Junto a la escena que los usa, en una carpeta por entidad cuando ayuda (`projectiles/projectile.tscn`, `projectile_data.gd`, `projectile_fast.tres`). Una carpeta de familia aparte (`resources/<familia>/`, o `src/resources/` en Clean) solo para tipos que comparten varias escenas o features.
+Los Resources de **datos**: junto a la escena que los usa, en una carpeta por entidad cuando ayuda (`projectiles/projectile.tscn`, `projectile_data.gd`, `projectile_fast.tres`). Una carpeta de familia aparte (`resources/<familia>/`, o `src/resources/` en Clean) solo para tipos que comparten varias escenas o features.
+
+Un archivo por elemento, con un nombre que se lee (`terrains/plain.tres`, `terrains/forest.tres`), no un array de sub-recursos anónimos (`Resource_umusd`) dentro de un set.
+
+El look (materiales, `Environment`, temas) es otra cosa: siempre un archivo con nombre, aunque lo use una sola escena ([SKILL.md](SKILL.md) §3.1).
 
 Reglas de ronda: `@export` del nodo `Match`; un `MatchRules.tres` solo si lo leen varias piezas o hay varios modos para elegir. Catálogo: Resources. Look de instancia: `@export` del nodo.
 
@@ -71,5 +75,6 @@ Reglas de ronda: `@export` del nodo `Match`; un `MatchRules.tres` solo si lo lee
 - `enum Kind` + `match` de stats en el proyectil.
 - Un `.tres` por instancia viva.
 - Un `.tres` que usa una sola escena, o una cadena `.tres` → `.tres` → nodo para encontrar un número.
+- Un Resource cuyo único contenido es un `Dictionary` o un `Array`: una tabla de búsqueda disfrazada.
 - Inner class `class Foo extends Resource`.
 - Pisar `@export var data` en `_ready` para forzar un número de diseño.

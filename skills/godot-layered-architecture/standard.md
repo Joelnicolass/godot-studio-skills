@@ -21,7 +21,7 @@ events.gd               # autoload Events (solo señales), si hace falta
 addons/mp_kit/
 ```
 
-Una carpeta de datos aparte (`resources/<familia>/`) solo para tipos que comparten varias escenas. Variante válida: carpetas por feature. Inválido: un `Player.gd` de mil líneas y `match weapon`.
+Una carpeta de datos aparte (`resources/<familia>/`) solo para tipos que comparten varias escenas. Variante válida: carpetas por feature. Si RULES.md eligió el arte por tipo, las carpetas de escenas quedan sin arte y el arte va en `assets/shaders/`, `assets/materials/`, `assets/art/`. Inválido: un `Player.gd` de mil líneas y `match weapon`.
 
 ## Escenas autónomas
 

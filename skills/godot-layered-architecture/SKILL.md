@@ -34,6 +34,8 @@ En el camino **estándar**, “capas” **no** significa carpetas `domain/core/f
 1. **Clean / en capas** — `features → core → domain`. Ver [clean.md](clean.md).
 2. **Estándar Godot** — escenas + scripts junto a la escena. Ver [standard.md](standard.md).
 
+En la misma tanda, preguntá **dónde va el arte**: por entidad (el default de Godot: la escena con su script, sus `.tres` y su arte) o por tipo (escenas y scripts por feature; shaders, materiales y arte en `assets/`). Queda en RULES.md junto al estilo ([godot-code-quality](../godot-code-quality/SKILL.md) §1).
+
 No preguntar de nuevo si: el usuario ya eligió en este chat; pidió un estilo por nombre; o el repo **ya lo declara** **y** el trabajo es sobre ese mismo juego.
 
 Si no hay respuesta, **no** scaffoldear `src/domain/` ni un `scripts/` gigante.
@@ -71,6 +73,7 @@ UI en el idioma del producto; identificadores de código en inglés.
 |------|--------|
 | Catálogo de tipos (proyectil A vs B, enemigo scout vs tank) | **Resource** `.tres` |
 | Look de *esta* instancia | `@export` en el nodo / material |
+| Look compartido (material, `Environment`, tema) | Un asset con nombre (`.tres`), junto a su escena o en `assets/` según RULES.md; nunca un sub-recurso de la escena del mundo |
 | Reglas de ronda (duración, vidas, layers) | `@export` en el nodo `Match`. Un `MatchRules.tres` solo si lo leen varias piezas (la sesión Clean y los features) o hay varios modos para elegir. No literales copiados. |
 | HP actual, cooldown en curso | Runtime en el nodo; **no** mutar el `.tres` |
 

@@ -80,7 +80,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 | `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors`, `distance(a, b)`, `cells_in_range`, `find_path`, `flood`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
 | `GridLayout` | `make_grid()` (una copia), `GridLayout.from_grid(grid)`, `set_value`, `erase_value`, `add_cell`, `remove_cell` |
 | `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position`, `position_to_cell`; `cell_changed`, `rebuilt` |
-| `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_hovered`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
+| `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
 | `GridCursor` | `highlight(cells)`, `clear()`, `highlighted()`; `marker`, `color`, `lift`, `fill` |
 
 ## Listo cuando

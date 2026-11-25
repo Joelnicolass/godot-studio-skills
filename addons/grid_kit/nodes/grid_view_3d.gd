@@ -6,12 +6,19 @@ extends Node3D
 ## example `&"terrain"` → `&"forest"`). It redraws a cell when that value changes and the cells that came or went when
 ## the board is `rebuilt`. A click or a tap that does not drag reports the cell under it (`cell_clicked`); the pointer
 ## moving over a new cell reports it too (`cell_hovered`). Picking needs no colliders: the ray from the camera meets
-## the board plane.
+## the board plane. Each tile sits on its cell's center before it enters the tree, and `tile_created` hands it to you
+## first (give it its cell there); `drawn` says every tile is in place.
 
 ## The player clicked or tapped `cell` (a press and release that moved less than `click_max_drag_px`).
 signal cell_clicked(cell: Vector2i)
 ## The pointer is now over `cell` (`CellGrid.NO_CELL` when it left the board).
 signal cell_hovered(cell: Vector2i)
+## A tile for `cell` was made and placed on the cell's center. It is not in the tree yet: what you set on it here (its
+## cell, its data) is already there in its `_ready`.
+signal tile_created(cell: Vector2i, tile: Node3D)
+## The tiles match the board again: after the board was rebuilt, `tiles`, `default_tile` or `value_key` changed, or
+## `redraw()`. A single cell redrawn by a value change emits only `tile_created`.
+signal drawn
 
 ## One scene per value of `value_key`. A cell whose value has no scene uses `default_tile`.
 @export var tiles: Dictionary[StringName, PackedScene] = {}:
@@ -181,6 +188,7 @@ func _sync() -> void:
 				tile.queue_free()
 		_tiles_by_cell.clear()
 		_scenes_by_cell.clear()
+		drawn.emit()
 		return
 	var wanted := _board.cells()
 	var present: Dictionary[Vector2i, bool] = {}
@@ -197,6 +205,7 @@ func _sync() -> void:
 				continue
 			_free_tile(cell)
 		_draw_cell(cell, scene)
+	drawn.emit()
 
 
 func _on_cell_changed(cell: Vector2i, key: StringName, _value: Variant) -> void:
@@ -231,9 +240,10 @@ func _draw_cell(cell: Vector2i, scene: PackedScene) -> void:
 		push_error("GridView3D: a tile scene must have a Node3D root")
 		return
 	tile.position = _board.cell_to_position(cell)
-	add_child(tile)
 	_tiles_by_cell[cell] = tile
 	_scenes_by_cell[cell] = scene
+	tile_created.emit(cell, tile)
+	add_child(tile)
 
 
 func _get_configuration_warnings() -> PackedStringArray:

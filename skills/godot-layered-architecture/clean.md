@@ -13,8 +13,9 @@ src/
   core/autoload/     # MatchRules.tres, Events, GameSession, SceneDirector
   domain/            # trackers y resolvers puros (estado de ronda, no catálogos)
   features/<name>/   # scripts + escenas juntas
-  shared/            # StateMachine, PostFx, Health
+  shared/            # componentes (un script o una escena): StateMachine, PostFx, Health; no shaders sueltos
   resources/         # class_name + .tres de tipos que comparten varias features
+assets/              # solo si RULES.md eligió el arte por tipo: art/, shaders/, materials/, environment/
 addons/              # MpKit y plugins del framework (cero gameplay)
 ```
 
@@ -44,4 +45,4 @@ Nodos. `@rpc`, física, spawners. `@export var data: EnemyData`. No `match kind`
 
 ### Shared + resources
 
-Componentes de escena en `shared/`. Un `.tres` que usa una sola feature vive en `features/<name>/`; `resources/<familia>/` es para tipos compartidos.
+Componentes (un script o una escena) en `shared/`; los shaders, materiales y arte sueltos no van ahí, van con su feature o en `assets/` (lo decide RULES.md). Un `.tres` que usa una sola feature vive en `features/<name>/`; `resources/<familia>/` es para tipos compartidos.
