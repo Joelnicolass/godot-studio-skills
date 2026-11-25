@@ -217,7 +217,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
   - `click_max_drag_px`: if the pointer moves more than this between press and release, it is a drag, not a click.
   - `camera`: if empty, it uses the current camera.
 - **Methods:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)`, `cell_at_ray(origin, direction, on_board_only := true)` and `board()`.
-- **Signals:** `cell_clicked(cell)` (mouse or touch) and `cell_hovered(cell)` (`NO_CELL` when it leaves the board); `tile_created(cell, tile)` when it makes a tile, and `drawn` when every tile is in place.
+- **Signals:** `cell_clicked(cell)` (mouse or touch), `cell_right_clicked(cell)` (the right button, same rule: a drag is not a click) and `cell_hovered(cell)` (`NO_CELL` when it leaves the board); `tile_created(cell, tile)` when it makes a tile, and `drawn` when every tile is in place.
 - **Each tile knows its cell.** The tile already sits on its cell's center when `tile_created` fires, and it is not in the tree yet: what you set on it there (its cell, its data) is already there in its `_ready`. `drawn` fires after a `rebuilt`, after `tiles`, `default_tile` or `value_key` change, or after `redraw()`; a cell whose value changes emits only `tile_created`.
 - **Clicks without colliders:** the camera ray meets the board plane. On a board with heights (`height_key`), it picks the first cell the ray meets, by its top or by its side; `cell_at_ray`, `cell_at_screen`, `cell_clicked` and `cell_hovered` answer that way. Without a `height_key`, everything works as before and costs the same.
 - When the board gains or loses cells, only those tiles are drawn or freed. Erasing a value (`erase_value`) sends the cell back to `default_tile`. When the height of a cell changes, its tile moves (it is not made again).
@@ -236,6 +236,25 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 
 - **Rules use `CellGrid`, not the nodes.** Keep the grid in your match state and show it with `board.use_grid(state.grid)`. Rules then run headless, and the view updates itself from `value_changed`. With no node at all: `layout.make_grid()` or `HexGrid.rect(…)` / `SquareGrid.rect(…)`.
 - **See the board in the editor even when the grid arrives at runtime.** Leave a `layout` (or the columns and rows) on the `GridBoard`: that is what the editor shows, and `use_grid` replaces it at runtime.
+- **Pick with the left button, order with the right** (as in Civilization). A left click picks a unit and a right click sends it to the cell:
+
+  ```gdscript
+  @export var view: GridView3D
+
+  var selected := CellGrid.NO_CELL
+
+
+  func _ready() -> void:
+  	view.cell_clicked.connect(func(cell: Vector2i) -> void: selected = cell)
+  	view.cell_right_clicked.connect(_order_to)
+
+
+  func _order_to(cell: Vector2i) -> void:
+  	if selected != CellGrid.NO_CELL:
+  		print("move from ", selected, " to ", cell)
+  ```
+
+  The middle button stays with the camera. A phone has no right click: if your game needs one, map it yourself (a long press, a "move" button).
 - **A camera drag is not a click.** Tune `click_max_drag_px`. If your camera has its own drag state, turn `input_enabled` off while it drags.
 - **Tiles from other packs.** If they come flat-top, rotate them 90° in their scene. For hexagons `cell_size` is the width, side to side; for squares, the side.
 - **Many cells at once.** `add_cells` and `remove_cells` emit one signal; `add_cell` in a loop emits one per cell (views and cursors still group what they draw into one frame).
@@ -267,7 +286,7 @@ It prints `GRIDKIT TESTS PASS (n)`. The tests cover:
 - Hexagons and squares: shapes and coordinates, neighbors (4 and 8, in order), distance, range, paths with cost, with and without diagonals, flood, cell ↔ point round trips, directions (`direction_to`, `neighbor`), neighbors off the board, `outline` (corners included on squares), `cells_with` (text and numbers of different types) and `center_cell`.
 - `CellGrid`: `from_dict` picks the class and reads the 0.2 format, `add_cells` emits once, `erase_value`.
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` and saving and loading a `.tres`.
-- The nodes: shape from the inspector, `radius` on squares, the layout rules, grouped rebuild, `paint` and `set_cells` (with and without a layout), `position_to_any_cell`, tiles per cell, `tile_created` and `drawn`, redraw, `use_grid`, `cell_at_ray`, click, drag and editor warnings.
+- The nodes: shape from the inspector, `radius` on squares, the layout rules, grouped rebuild, `paint` and `set_cells` (with and without a layout), `position_to_any_cell`, tiles per cell, `tile_created` and `drawn`, redraw, `use_grid`, `cell_at_ray`, left and right click, drag and editor warnings.
 - `GridCursor`: the same nodes after 1000 `add_cell`, only the mark of a removed cell is freed, `cell_size` moves without recreating, square marker.
 - Heights: `cell_to_position` with and without a `height_key`, with int and float, a value that is not a number; the tile and the mark move without being made again; `height_scale` and `height_key` place everything again; the preview of a layout; clicks on a tall cell that hides a low one and on a low one in the open, on hexagons and on squares, with the view moved, turned and scaled, off the board and after each change; and that nothing changes without a `height_key`.
 - The brush stroke (no editor): paint, repeat, erase, add and remove cells with their values, raise, lower and set heights, making the layout and the height key, and that its result undoes everything.

@@ -57,9 +57,9 @@ func test_warnings() -> void:
 	view.free()
 
 
-func _click(view: GridView3D, down: Vector2, up: Vector2) -> void:
+func _click(view: GridView3D, down: Vector2, up: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
 	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
+	press.button_index = button
 	press.pressed = true
 	press.position = down
 	view._unhandled_input(press)
@@ -142,4 +142,42 @@ func test_view_hands_over_each_tile() -> void:
 	board.set_cells([Vector2i(4, 0)], [])
 	await tree.process_frame
 	check(created.has(Vector2i(4, 0)) and drawn[0] == 2, "a new cell: its tile, then drawn: %d" % drawn[0])
+	board.free()
+
+
+func test_right_click() -> void:
+	var board := build_board(3)
+	var view := board.get_node(^"View") as GridView3D
+	var eye := Camera3D.new()
+	tree.root.add_child(eye)
+	eye.position = Vector3(0, 10, 0.01)
+	eye.look_at(Vector3.ZERO)
+	eye.current = true
+	view.camera = eye
+	await tree.process_frame
+	var left: Array[Vector2i] = []
+	var right: Array[Vector2i] = []
+	view.cell_clicked.connect(func(cell: Vector2i) -> void: left.append(cell))
+	view.cell_right_clicked.connect(func(cell: Vector2i) -> void: right.append(cell))
+	var target := Vector2i(1, 0)
+	var screen := eye.unproject_position(board.cell_to_position(target))
+	_click(view, screen, screen, MOUSE_BUTTON_RIGHT)
+	check(right == [target] and left.is_empty(), "a right click emits cell_right_clicked only: %s %s" % [right, left])
+	_click(view, screen, screen + Vector2(40, 0), MOUSE_BUTTON_RIGHT)
+	check(right.size() == 1, "a right drag is not a click")
+	_click(view, screen, screen)
+	check(left == [target] and right.size() == 1, "the left click still emits cell_clicked only")
+	var middle := InputEventMouseButton.new()
+	middle.button_index = MOUSE_BUTTON_MIDDLE
+	middle.pressed = true
+	middle.position = screen
+	view._unhandled_input(middle)
+	middle = middle.duplicate() as InputEventMouseButton
+	middle.pressed = false
+	view._unhandled_input(middle)
+	check(left.size() == 1 and right.size() == 1, "the middle button is the camera's, not a click")
+	view.input_enabled = false
+	_click(view, screen, screen, MOUSE_BUTTON_RIGHT)
+	check(right.size() == 1, "input_enabled off ignores right clicks")
+	eye.free()
 	board.free()
