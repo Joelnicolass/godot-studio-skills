@@ -139,7 +139,7 @@ Los sockets, pieza por pieza:
 | `OrderButton` | `view` = `Hud/View`, `order_input`, `pointer` (y `menu`, sección 4) |
 | `Camera` | `ground`, `edge_area` = `Hud/View` |
 
-`Hud/View` es lo que distingue «un clic en el mundo» de «un clic en el HUD»: todo lo del HUD que esté encima conserva sus clics. Dejá su filtro de mouse en *Stop*.
+`Hud/View` es lo que distingue «un clic en el mundo» de «un clic en el HUD»: todo lo del HUD que esté encima conserva sus clics. Dejá su filtro de mouse en *Stop*. Si tu mundo lee los clics en `_unhandled_input` (sin `Hud/View`), dejá `edge_area` vacío: los bordes igual se frenan sobre los botones y paneles del HUD.
 
 Capas de física: por defecto el suelo es la capa 1 y las unidades la 2 (`RtsPointer.ground_mask`, `unit_mask`, `pick_mask`). Cambialas ahí si tu proyecto usa otras.
 

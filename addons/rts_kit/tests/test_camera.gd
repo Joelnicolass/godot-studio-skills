@@ -1,7 +1,8 @@
 extends "res://addons/rts_kit/tests/rts_test.gd"
 
 ## RtsCamera3D (follow and free) and RtsCamera2D: placement, the ground, the limits of the look, the
-## drag threshold, the wheel blockers, the edges, the pan, the bounds and the shared yaw contract.
+## drag threshold, the wheel blockers, the edges (and the UI over them), the pan, the bounds and the
+## shared yaw contract.
 
 
 func _camera_3d(mode: RtsCamera3D.Mode) -> RtsCamera3D:
@@ -107,6 +108,69 @@ func test_follow_edges_turn_the_view() -> void:
 	check(near(camera.yaw, deg_to_rad(36.0), 0.001), "the left edge turns 36°/s: %s" % rad_to_deg(camera.yaw))
 
 
+## A SubViewport of the test's own: its hover follows pushed events (a headless window's does not).
+func _ui_view() -> SubViewport:
+	var view := SubViewport.new()
+	view.size = Vector2i(1280, 720)
+	root.add_child(view)
+	return view
+
+
+## A HUD button on the left edge, y 300 to 420 (in a CanvasLayer: a 2D camera does not move it).
+func _edge_button(view: SubViewport) -> Button:
+	var hud := CanvasLayer.new()
+	view.add_child(hud)
+	var button := Button.new()
+	button.position = Vector2(0, 300)
+	button.size = Vector2(60, 120)
+	hud.add_child(button)
+	return button
+
+
+## Moves the real pointer of `view` to `at` and lets its hover update.
+func _hover(view: SubViewport, at: Vector2) -> void:
+	var motion := InputEventMouseMotion.new()
+	motion.position = at
+	motion.global_position = at
+	view.push_input(motion)
+	await tree.process_frame
+
+
+func test_follow_edges_and_the_ui() -> void:
+	RtsKeymap.install()
+	var view := _ui_view()
+	var area := Control.new()
+	area.size = Vector2(1280, 720)
+	area.visible = false
+	view.add_child(area)
+	_edge_button(view)
+	var label := Label.new()
+	label.text = "wood 30"
+	label.position = Vector2(0, 500)
+	label.size = Vector2(60, 100)
+	view.add_child(label)
+	var camera := RtsCamera3D.new()
+	camera.mode = RtsCamera3D.Mode.FOLLOW
+	view.add_child(camera)
+	camera.current = true
+	_follow(camera)
+	var turns := func(at: Vector2) -> bool:
+		await _hover(view, at)
+		var before := camera.yaw
+		camera._process(1.0)
+		return not near(camera.yaw, before, 0.001)
+	check(not await turns.call(Vector2(10, 360)), "a HUD button at the edge does not turn the view")
+	check(await turns.call(Vector2(10, 200)), "the edge over the world turns it")
+	check(await turns.call(Vector2(10, 550)), "a label that ignores the mouse is not UI")
+	camera.edges_over_gui = true
+	check(await turns.call(Vector2(10, 360)), "edges_over_gui: it turns over the button too")
+	camera.edges_over_gui = false
+	area.visible = true
+	camera.edge_area = area
+	check(await turns.call(Vector2(10, 200)), "edge_area: the edge turns it over the area")
+	check(not await turns.call(Vector2(10, 360)), "edge_area: not over a button on top of the area")
+
+
 func test_free_mode_pans_turns_and_stays_in_bounds() -> void:
 	var camera := _camera_3d(RtsCamera3D.Mode.FREE)
 	camera.bounds = Rect2(-10, -10, 20, 20)
@@ -161,3 +225,21 @@ func test_camera_2d() -> void:
 	camera.rotation = PI * 0.5
 	var up := Vector2(0, -1).rotated(PI * 0.5)
 	check(near(camera.yaw, atan2(up.x, up.y)), "turned: the yaw follows the screen's up")
+
+
+func test_camera_2d_edges_and_the_ui() -> void:
+	RtsKeymap.install()
+	var view := _ui_view()
+	_edge_button(view)
+	var camera := RtsCamera2D.new()
+	view.add_child(camera)
+	camera.make_current()
+	var pans := func(at: Vector2) -> bool:
+		await _hover(view, at)
+		var before := camera.global_position
+		camera._process(0.5)
+		return not near(camera.global_position, before)
+	check(not await pans.call(Vector2(10, 360)), "2D: not over a HUD button at the edge")
+	check(await pans.call(Vector2(10, 200)), "2D: the edge over the world pans it")
+	camera.edges_over_gui = true
+	check(await pans.call(Vector2(10, 360)), "2D: edges_over_gui pans over the button too")

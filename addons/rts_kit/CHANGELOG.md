@@ -1,5 +1,12 @@
 # Cambios de RtsKit
 
+## 0.2.0
+
+- **Los bordes se frenan sobre la UI.** `RtsCamera3D` y `RtsCamera2D` ya no panean ni giran por los bordes con el puntero sobre un control de la UI: un botón o un panel del HUD, cualquier control cuyo filtro de mouse no sea *Ignore* (los labels y contenedores en *Ignore* no cuentan). Antes, sin `edge_area`, la cámara se movía mientras apuntabas a un botón de una esquina. `edges_over_gui = true` vuelve a lo de antes. Con `edge_area` nada cambia: los bordes siguen andando solo sobre ese control.
+- **Tests:** `test_camera` prueba un botón en el borde, un label que ignora el mouse, `edges_over_gui` y `edge_area`, en 3D y en 2D.
+
+Para actualizar: si tu cámara no tiene `edge_area` y un panel del HUD cubre un borde por el que querés panear, poné el filtro de mouse de ese panel en *Ignore* (sus botones siguen frenando los bordes) o prendé `edges_over_gui`.
+
 ## 0.1.1
 
 - **Ejemplo mínimo** `examples/minimal_2d/`: seis soldados (`soldier.tscn`: un cuerpo, un `RtsUnit` y el script de unidad de la GUIDE en 2D) y el equipo de mando de la GUIDE › 3. Los tests lo juegan con eventos de mouse.
