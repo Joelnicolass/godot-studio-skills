@@ -1,5 +1,12 @@
 # Cambios de GridKit
 
+## 0.2.0
+
+- `HexGrid.add_cell` y `remove_cell` emiten la señal nueva `cells_changed`, y `GridBoard` la pasa como `rebuilt`: `GridView3D` dibuja o borra la loseta de una casilla agregada o quitada en juego.
+- `GridCursor` escucha `rebuilt`: borra las marcas de casillas que ya no están y mueve las demás (también con un `cell_size` nuevo).
+- README: qué consultas tiene `GridBoard` y cuáles van por `board.grid`.
+- `gridkit_lab/project.godot`: el mismo comentario en español y en inglés.
+
 ## 0.1.0
 
 Primera versión:

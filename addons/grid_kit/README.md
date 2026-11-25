@@ -66,7 +66,7 @@ Minimal3D                 # minimal_3d.gd: pinta el terreno y conecta las señal
 | Miembro | Qué hace |
 | --- | --- |
 | `HexGrid.rect(columns, rows)` / `HexGrid.hexagon(radius)` | Tablero rectangular, o hexagonal centrado en (0, 0) |
-| `add_cell`, `remove_cell`, `has_cell`, `size()`, `cells()` | Las casillas del tablero |
+| `add_cell`, `remove_cell`, `has_cell`, `size()`, `cells()` | Las casillas del tablero. Agregar o quitar una emite `cells_changed` |
 | `set_value(cell, key, value)`, `get_value(cell, key, default)`, `values(cell)` | Valores por casilla y clave (`StringName`) |
 | `neighbors(cell)` | Las vecinas que están en el tablero |
 | `HexGrid.distance(a, b)` | Pasos entre dos casillas |
@@ -76,13 +76,14 @@ Minimal3D                 # minimal_3d.gd: pinta el terreno y conecta las señal
 | `HexGrid.cell_to_local(cell, cell_size)` / `local_to_cell(point, cell_size)` | Del centro de una casilla al plano y del plano a una casilla |
 | `to_dict()` / `HexGrid.from_dict(data)` | Datos planos para guardar o mandar por red |
 | señal `value_changed(cell, key, value)` | Cambió un valor |
+| señal `cells_changed` | Se agregó o se quitó una casilla |
 
 ### `GridBoard` (Node)
 
 - **Inspector:** `columns`, `rows`, `radius` (si es mayor a 0, el tablero es hexagonal) y `cell_size`.
 - **Grilla:** `grid` es la `HexGrid` que muestra. `use_grid(grid)` muestra la grilla de tus reglas en vez de la propia y `use_own_grid()` vuelve a la del inspector.
-- **Consultas:** las mismas de `HexGrid`, más `cell_to_position(cell) -> Vector3` y `position_to_cell(point) -> Vector2i`.
-- **Señales:** `cell_changed(cell, key, value)` y `rebuilt`.
+- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path` y `flood`, más `cell_to_position(cell) -> Vector3` y `position_to_cell(point) -> Vector2i`. Lo demás (`values`, `size`, `add_cell`, `remove_cell`, `to_dict`) va por `board.grid`.
+- **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma o `cell_size`, o una casilla agregada o quitada). Las vistas y los cursores se actualizan solos con ella.
 
 ### `GridView3D` (Node3D, hijo de un `GridBoard`)
 
@@ -102,6 +103,7 @@ Minimal3D                 # minimal_3d.gd: pinta el terreno y conecta las señal
   - `marker`: la escena del marcador. Si queda vacía, dibuja un hexágono plano del `color` elegido.
   - `color`, `lift` y `fill`.
 - **Métodos:** `highlight(cells)` (reemplaza la marca anterior), `clear()` y `highlighted()`.
+- Si el tablero cambia (`rebuilt`), las marcas sobre casillas que ya no están se borran y las demás se mueven a su lugar.
 - Usá un cursor por significado: movimientos válidos, selección, hover.
 
 ## Tips
@@ -119,7 +121,7 @@ godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_te
 Sale `GRIDKIT TESTS PASS (n)`. Los tests cubren:
 
 - Formas y coordenadas, vecinos, distancia, rango, caminos con costo y flood.
-- `to_dict`.
-- Los nodos: losetas por casilla, redibujo, `use_grid`, clic, arrastre y avisos del editor.
+- `to_dict` y `cells_changed`.
+- Los nodos: losetas por casilla, redibujo, `use_grid`, casillas agregadas y quitadas en juego (losetas y marcas), clic, arrastre y avisos del editor.
 - El ejemplo jugado con eventos de mouse.
 - Que el addon no nombre a ningún otro kit.

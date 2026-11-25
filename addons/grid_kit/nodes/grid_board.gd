@@ -9,7 +9,7 @@ extends Node
 
 ## A value of a cell changed (from the board or from the grid it shows).
 signal cell_changed(cell: Vector2i, key: StringName, value: Variant)
-## The board got a new set of cells (inspector change or `use_grid`): views draw it again.
+## The board got a new set of cells (inspector change, `use_grid`, or a cell added or removed): views draw it again.
 signal rebuilt
 
 ## Columns of a rectangular board (used when `radius` is 0).
@@ -114,14 +114,21 @@ func _rebuild_own() -> void:
 func _set_grid(next: HexGrid) -> void:
 	if _grid != null and _grid.value_changed.is_connected(_on_value_changed):
 		_grid.value_changed.disconnect(_on_value_changed)
+		_grid.cells_changed.disconnect(_on_cells_changed)
 	_grid = next
 	_grid.value_changed.connect(_on_value_changed)
+	_grid.cells_changed.connect(_on_cells_changed)
 	rebuilt.emit()
 	update_configuration_warnings()
 
 
 func _on_value_changed(cell: Vector2i, key: StringName, value: Variant) -> void:
 	cell_changed.emit(cell, key, value)
+
+
+func _on_cells_changed() -> void:
+	rebuilt.emit()
+	update_configuration_warnings()
 
 
 func _get_configuration_warnings() -> PackedStringArray:

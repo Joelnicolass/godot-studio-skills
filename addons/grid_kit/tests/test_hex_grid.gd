@@ -111,3 +111,17 @@ func test_to_dict() -> void:
 	check(copy.size() == grid.size(), "same cells")
 	check(copy.get_value(Vector2i(1, 0), &"terrain") == &"mountain", "values survive")
 	check(copy.to_dict() == grid.to_dict(), "to_dict is stable")
+
+
+func test_cells_changed() -> void:
+	var grid := HexGrid.rect(2, 2)
+	var count := [0]
+	grid.cells_changed.connect(func() -> void: count[0] += 1)
+	grid.add_cell(Vector2i(0, 0))
+	check(count[0] == 0, "adding a cell that is there emits nothing")
+	grid.add_cell(Vector2i(5, 5))
+	check(count[0] == 1, "a new cell emits cells_changed")
+	grid.remove_cell(Vector2i(9, 9))
+	check(count[0] == 1, "removing a cell that is not there emits nothing")
+	grid.remove_cell(Vector2i(5, 5))
+	check(count[0] == 2 and not grid.has_cell(Vector2i(5, 5)), "removing one emits it")

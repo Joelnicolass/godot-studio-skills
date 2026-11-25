@@ -40,11 +40,11 @@ func harvest() -> void:
 
 ## Ejemplo mínimo
 
-`examples/minimal/minimal.tscn` (F6): comida, madera, mineral y oro. Cosechar suma 1 comida, 2 de madera y 1 de mineral; la comida tiene tope 2, así que lo que sobra se pierde y se avisa. Construir cuesta 2 de madera y 1 de mineral, y el oro cubre lo que falta.
+`examples/minimal/minimal.tscn` (F6): comida, madera, mineral y oro. **Harvest** suma 1 comida, 2 de madera y 1 de mineral; la comida tiene tope 2, así que lo que sobra se pierde y se avisa. **Build (2 wood, 1 ore)** cuesta 2 de madera y 1 de mineral, y el oro cubre lo que falta.
 
 ```
 Minimal          # minimal.gd: muestra los montos y conecta los botones
-├── Box          # montos, botones Cosechar y Construir, registro
+├── Box          # montos, botones Harvest y Build, registro
 └── Wallet       # start = {food: 2, gold: 1}, limits = {food: 2, …}, wildcard = gold
 ```
 
@@ -81,11 +81,11 @@ Minimal          # minimal.gd: muestra los montos y conecta los botones
 - **Inspector:** `start_amounts`, `limits`, `wildcard` y `wildcard_covers`. Cambiar los topes o el comodín en el juego se aplica al momento; cambiar `start_amounts` arma la bolsa de nuevo.
 - **Bolsa:** `purse` es el `Purse` que muestra. `use_purse(purse)` muestra el de tus reglas y `use_own_purse()` vuelve al del inspector.
 - **Métodos:** los mismos de `Purse` (`amount`, `amounts`, `limit`, `can_pay`, `payment_for`, `pay`, `add`, `set_amount`).
-- **Señales:** las mismas de `Purse`.
+- **Señales:** las mismas de `Purse`, más `rebuilt` cuando el nodo pasa a mostrar otra bolsa (`use_purse`, `use_own_purse` o `start_amounts` nuevos). Al recibirla, volvé a leer todos los montos.
 
 ## Tips
 
-- **Las reglas usan `Purse`, no el nodo.** Guardá una bolsa por jugador en el estado de tu partida y mostrala con `wallet.use_purse(player.purse)`. El HUD escucha `changed`.
+- **Las reglas usan `Purse`, no el nodo.** Guardá una bolsa por jugador en el estado de tu partida y mostrala con `wallet.use_purse(player.purse)`. El HUD escucha `changed` para cada cambio y `rebuilt` para redibujar todo, por ejemplo cuando cambia el jugador que se muestra.
 - **Fichas que no son recursos** (cultura, ánimo): usá otras claves y dejalas fuera de `wildcard_covers`, así el comodín no las cubre.
 - **Un costo para mostrar:** `payment_for(cost)` sirve para decirle al jugador cuánto oro va a gastar antes de confirmar.
 
@@ -98,6 +98,6 @@ godot --headless --path walletkit_lab --script res://addons/wallet_kit/tests/wal
 Sale `WALLETKIT TESTS PASS (n)`. Los tests cubren:
 
 - Montos, topes y lo que se pierde, pagar todo o nada, el comodín y su lista, los errores y `to_dict`.
-- El nodo: la bolsa del inspector, las señales, los cambios en vivo, `use_purse` y los avisos del editor.
+- El nodo: la bolsa del inspector, las señales, los cambios en vivo, `use_purse`, `rebuilt` y los avisos del editor.
 - El ejemplo jugado con los botones.
 - Que el addon no nombre a ningún otro kit.
