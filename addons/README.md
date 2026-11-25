@@ -15,6 +15,7 @@ Reusable pieces of the framework. Copy them to `res://addons/<name>/` in **each*
 | `grid_kit` | Hex boards: `HexGrid` as plain data (values per cell, neighbors, distance, range, paths, flood, `to_dict`) and nodes to show them and pick cells in 3D (`GridBoard`, `GridView3D`, `GridCursor`). No game rules, no network |
 | `turn_kit` | Turns, rounds and cycles: `TurnCycle` as plain data (actions per turn, rounds, cycles and an end you set, inactive seats, `to_dict`) and a clock with one child per player (`TurnClock`, `TurnSeat`). No game rules, no network |
 | `wallet_kit` | Resources and coins: `Purse` as plain data (amounts by key, limits that report what is lost, all-or-nothing payments, a wildcard that covers what is missing, `to_dict`) and the `Wallet` node. No prices or UI, no network |
+| `command_kit` | Validated commands with a log: `GameCommand` (type, `can_run`, `run`, optional undo) and `CommandLog` as plain data (runs only valid ones, keeps `{type, seat, args}`, undoes the last one, replays a log), with the `CommandBus` node. No game rules, no randomness, no network |
 | `bot_kit` | Bots that play your character like a person, 3D: they press a player's keys (an `Input` of their own), see the nearest enemy with no wall in between, aim with a person's limits, pick the weapon by distance, walk the navmesh to goals and get out of where they are stuck; your own behaviours as child nodes, difficulty presets. No network, no weapons or health |
 
 Every addon ships a **minimal example** (`examples/minimal_2d/` or `examples/minimal_3d/`: the smallest integration that works, F6) and, in its README, that code explained with **tips and recommendations**. The table with all of them is in the [repo README](../README.md#each-kits-examples).
@@ -39,4 +40,5 @@ Install into a project:
 ./install.sh --addon /path/to/godot-project grid_kit
 ./install.sh --addon /path/to/godot-project turn_kit
 ./install.sh --addon /path/to/godot-project wallet_kit
+./install.sh --addon /path/to/godot-project command_kit
 ```

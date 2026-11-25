@@ -22,7 +22,7 @@ With the kit:
 - Standard Godot code: proven patterns (signals, `Events` bus, FSM, components…), real typing, `gdformat` / `gdlint`, and GUT + CI when there are tests (skill `godot-code-quality`).
 - One RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across sessions in Engram or `.studio/MEMORY.md` if needed.
-- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit, CommandKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
@@ -43,6 +43,7 @@ With the kit:
 | GridKit             | `addons/grid_kit/`                                                             | Hex boards: `HexGrid` (plain data: values per cell, neighbors, distance, range, paths, flood, `to_dict`) and nodes to show them and pick cells in 3D (`GridBoard`, `GridView3D`, `GridCursor`). No game rules, no network. Start with `addons/grid_kit/README.md`; tests in `gridkit_lab/`. |
 | TurnKit             | `addons/turn_kit/`                                                             | Turns, rounds and cycles: `TurnCycle` (plain data: actions per turn, rounds, cycles and an end you set, inactive seats, `to_dict`) and a clock with one child per player (`TurnClock`, `TurnSeat`). No game rules, no network. Start with `addons/turn_kit/README.md`; tests in `turnkit_lab/`. |
 | WalletKit           | `addons/wallet_kit/`                                                           | Resources and coins: `Purse` (plain data: amounts by key, limits that report what is lost, all-or-nothing payments, a wildcard that covers what is missing, `to_dict`) and the `Wallet` node. No prices or UI, no network. Start with `addons/wallet_kit/README.md`; tests in `walletkit_lab/`. |
+| CommandKit          | `addons/command_kit/`                                                          | Validated commands with a log: `GameCommand` and `CommandLog` (plain data: runs only valid ones, keeps `{type, seat, args}`, undoes the last one, replays a log) and the `CommandBus` node. No game rules, no randomness, no network. Start with `addons/command_kit/README.md`; tests in `commandkit_lab/`. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -133,6 +134,7 @@ Written contract, if you ask:
 ./install.sh --addon /path/to/godot-project grid_kit   # GridKit
 ./install.sh --addon /path/to/godot-project turn_kit   # TurnKit
 ./install.sh --addon /path/to/godot-project wallet_kit # WalletKit
+./install.sh --addon /path/to/godot-project command_kit # CommandKit
 ./install.sh --addon /path/to/godot-project agent_kit  # AgentKit (fetched from the playtest repo)
 ```
 
@@ -160,6 +162,7 @@ Every kit ships a **minimal example**: the smallest integration that works, to o
 | GridKit | `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn`: a hexagon board of radius 4; a click marks the cell and its neighbors | — | [README](addons/grid_kit/README.md) | `gridkit_lab/` |
 | TurnKit | `addons/turn_kit/examples/minimal/minimal.tscn`: three seats pass the turn, spend actions, and the match ends after two cycles | — | [README](addons/turn_kit/README.md) | `turnkit_lab/` |
 | WalletKit | `addons/wallet_kit/examples/minimal/minimal.tscn`: harvest under limits that lose the excess and build with gold as the wildcard | — | [README](addons/wallet_kit/README.md) | `walletkit_lab/` |
+| CommandKit | `addons/command_kit/examples/minimal/minimal.tscn`: stones in turns on a 5 × 5 board, with occupied cells rejected, Undo and Replay | — | [README](addons/command_kit/README.md) | `commandkit_lab/` |
 
 Each lab is a small Godot project with the kit as a symlink; its README says how to run the tests.
 
@@ -180,6 +183,7 @@ addons/bot_kit/
 addons/grid_kit/
 addons/turn_kit/
 addons/wallet_kit/
+addons/command_kit/
 mpkit_lab/                     # MpKit's tests, network runs and examples, no game
 fsmkit_lab/                    # FsmKit's tests and example, no game
 platkit_lab/                   # PlatKit's tests and example, no game
@@ -188,6 +192,7 @@ propkit_lab/                   # PropKit's tests and examples, no game
 gridkit_lab/                   # GridKit tests and example, no game
 turnkit_lab/                   # TurnKit tests and example, no game
 walletkit_lab/                 # WalletKit tests and example, no game
+commandkit_lab/                # CommandKit tests and example, no game
 grasskit_lab/                  # GrassKit's tests and examples, no game
 perceptionkit_lab/             # PerceptionKit's tests and examples, no game
 spillkit_lab/                  # SpillKit's tests and examples, no game
