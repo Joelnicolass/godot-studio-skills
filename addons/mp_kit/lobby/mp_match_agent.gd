@@ -6,7 +6,7 @@ extends Node
 ## state.json as a heartbeat (with whether the match started and the seats nobody may take any more), writes result.json when
 ## the match ends, and quits when nobody is left or the room server (`--room-pid`) is gone. After the result it quits
 ## result_quit_delay_s later or, with stay_after_finish_s, once its players left (they read the game's end screen).
-## The glue starts the dedicated host (MpKit.host_dedicated) and calls `report_result()`. Not: the grace or the wait (the gate).
+## The game starts the dedicated host (MpKit.host_dedicated) and calls `report_result()`. Not: the grace or the wait (the gate).
 ## The agent never sees the plain token: it compares sha256(presented) with the ticket.
 ## Rows of the ticket without `token_sha256` (bot seats) are ignored: they are never admitted.
 

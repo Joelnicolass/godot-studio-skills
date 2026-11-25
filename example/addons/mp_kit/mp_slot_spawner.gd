@@ -6,6 +6,8 @@ extends MpSpawner
 ## Joiners spawn on client_world_ready; peers already world-ready when this spawner enters spawn in _ready.
 ## Identity: node name Pawn_<slot>
 ## and `player_slot` if the actor exposes it.
+## A pawn your game frees (MpActor.despawn: it died) is forgotten: pawn_for gives null and spawn_slot makes a new one, which
+## keeps the name Pawn_<slot> even in the frame the old one leaves.
 
 @export var pawn_scene: PackedScene
 @export var spawn_points: NodePath
@@ -41,6 +43,12 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	## A pawn still waiting for its slot's last one to leave never enters now.
+	for slot in _pawns.keys():
+		var pawn: Variant = _pawns[slot]
+		if is_instance_valid(pawn) and not (pawn as Node).is_inside_tree():
+			_pawns.erase(slot)
+			(pawn as Node).free()
 	if MpKit.client_world_ready.is_connected(_on_slot_world_ready):
 		MpKit.client_world_ready.disconnect(_on_slot_world_ready)
 	if MpKit.peer_left.is_connected(_on_slot_peer_left):
@@ -53,9 +61,15 @@ func spawn_occupied() -> void:
 		spawn_slot(slot)
 
 
+## The pawn of `slot`: the one it has, or a new one under spawn_path. One that was freed or is being freed (MpActor.despawn)
+## counts as none. A new pawn whose slot's last one is still leaving this frame enters right after it (from the next frame),
+## so its name is Pawn_<slot> here and on every peer.
 func spawn_slot(slot: int) -> Node:
-	if slot <= 0 or _pawns.has(slot):
-		return _pawns.get(slot)
+	if slot <= 0:
+		return null
+	var known := pawn_for(slot)
+	if known:
+		return known
 	if pawn_scene == null or _root == null:
 		return null
 	var pawn := pawn_scene.instantiate()
@@ -66,13 +80,35 @@ func spawn_slot(slot: int) -> Node:
 	if net:
 		net.owner_slot = slot
 	_place(pawn, slot)
-	_root.add_child(pawn, true)
 	_pawns[slot] = pawn
+	var leaving := _root.get_node_or_null(NodePath(String(pawn.name)))
+	if leaving != null and leaving.is_queued_for_deletion():
+		leaving.tree_exited.connect(_enter_later.bind(slot, pawn.get_instance_id()), CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+	else:
+		_root.add_child(pawn, true)
 	return pawn
 
 
+## The pawn of `slot`, or null: none yet, or the one it had was freed or is being freed (MpActor.despawn).
 func pawn_for(slot: int) -> Node:
-	return _pawns.get(slot)
+	var pawn: Variant = _pawns.get(slot)
+	if is_instance_valid(pawn) and not (pawn as Node).is_queued_for_deletion():
+		return pawn
+	_pawns.erase(slot)
+	return null
+
+
+## The slot's last pawn is out of the tree: the new one goes in, under the same name.
+func _enter_later(slot: int, pawn_id: int) -> void:
+	var pawn := instance_from_id(pawn_id) as Node
+	if pawn == null or pawn.is_inside_tree() or pawn.is_queued_for_deletion():
+		return
+	if not is_instance_valid(_root) or not _root.is_inside_tree() or _pawns.get(slot) != pawn:
+		if _pawns.get(slot) == pawn:
+			_pawns.erase(slot)
+		pawn.free()
+		return
+	_root.add_child(pawn, true)
 
 
 func _place(pawn: Node, slot: int) -> void:
@@ -107,9 +143,7 @@ func _on_slot_world_ready(peer_id: int) -> void:
 
 
 func _on_slot_peer_left(_peer_id: int, slot: int) -> void:
-	if not _pawns.has(slot):
-		return
-	var pawn: Node = _pawns[slot]
+	var pawn := pawn_for(slot)
 	_pawns.erase(slot)
-	if is_instance_valid(pawn):
+	if pawn:
 		pawn.queue_free()

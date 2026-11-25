@@ -3,10 +3,10 @@ extends Node3D
 ## GridKit's smallest example: a hexagon board of radius 4 whose map (the shape and four terrains) is the saved layout
 ## `map.tres`. Click a cell: its neighborhood lights up. Move the pointer: the cell under it is marked.
 
-@onready var board: GridBoard = $Board
-@onready var view: GridView3D = $Board/View
-@onready var selection: GridCursor = $Board/View/Selection
-@onready var hover: GridCursor = $Board/View/Hover
+@export var board: GridBoard
+@export var view: GridView3D
+@export var selection: GridCursor
+@export var hover: GridCursor
 
 
 func _ready() -> void:

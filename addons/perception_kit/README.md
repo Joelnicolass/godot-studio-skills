@@ -44,12 +44,14 @@ Minimal3D (minimal_3d.gd)
 ├── WorldEnvironment, Sun, Camera3D, Floor
 ├── Wall (StaticBody3D)                 # en la capa 1: te tapa
 ├── Guard (StaticBody3D)                # el cuerpo propio del sensor: nunca le tapa la vista
-│   └── Head (Node3D)                   # gira hacia lo que percibe
+│   └── %Head (Node3D)                   # gira hacia lo que percibe
 │       ├── Nose
-│       └── Sensor (PerceptionSensor3D) # vista 12, pérdida 16, ángulo 100°, cercanía 2, show_in_game
-└── Player (CharacterBody3D)
+│       └── %Sensor (PerceptionSensor3D) # vista 12, pérdida 16, ángulo 100°, cercanía 2, show_in_game
+└── %Player (CharacterBody3D)
     └── Target (PerceptionTarget3D)     # en el pecho
 ```
+
+El guardia gira la cabeza hacia lo último que percibió, y Espacio hace un ruido que él oye:
 
 ```gdscript
 # minimal_3d.gd (lo esencial)

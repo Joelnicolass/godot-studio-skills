@@ -14,16 +14,14 @@ Misma fantasía en 3D (caja placeholder + piso). Extraer el spawn 1P del match 2
 ## Archivos
 
 ```
-example/scenes/world/demo_match.gd          # nuevo
-example/scenes/world/match_2d.tscn          # hijo DemoMatch; quitar spawn inline
-example/scenes/world/match_2d.gd            # delgado o vacío
-example/scenes/world/match_3d.tscn
-example/scenes/world/match_3d.gd
-example/scenes/actors/pawn_3d.tscn
-example/scenes/actors/pawn_3d.gd
-example/glue/net_glue.gd                    # world_kind 2d|3d, paths
-example/scenes/ui/boot.gd                   # toggle
-example/glue/demo_copy.gd                   # WORLD_2D / WORLD_3D si faltan
+example/match/demo_match.gd          # nuevo
+example/levels/match_2d/match_2d.tscn          # hijo DemoMatch; quitar spawn inline
+example/levels/match_3d/match_3d.tscn
+example/player/pawn_3d.tscn
+example/player/pawn_3d.gd
+example/autoloads/net_session.gd                    # world_kind 2d|3d, paths
+example/main/boot.gd                   # toggle
+example/locale/texts.csv                   # WORLD_2D / WORLD_3D si faltan
 ```
 
 ## Contratos
@@ -34,7 +32,7 @@ extends Node
 @export var pawn_scene: PackedScene
 @export var actors: Node
 @export var spawn_points: Node
-@export var looks: Array[ActorLook]
+@export var types: Array[PawnType]
 func ensure_pawn(slot: int) -> void
 ```
 
@@ -47,7 +45,7 @@ F6 pawn 3D: si `current_scene == self`, añadir `Camera3D` + piso temporal (no e
 ## Criterios de aceptación
 
 1. Existen `match_3d.tscn` y `pawn_3d.tscn` con placeholders (`BoxMesh`), sin `.glb`.
-2. Lobby toggle 2D/3D cambia `NetGlue.world_kind`. Jugar solo carga la escena correspondiente.
+2. Lobby toggle 2D/3D cambia `NetSession.world_kind`. Jugar solo carga la escena correspondiente.
 3. `DemoMatch` está en **ambos** matches. Spawn 1P no está duplicado en dos scripts largos.
 4. Markers 2D (`Marker2D`) / 3D (`Marker3D`) definen posiciones; el script no hardcodea Vector mágicos salvo fallback si no hay markers.
 5. F6 `pawn_3d` es controlable. F6 `match_3d` muestra piso + pawn.
@@ -61,4 +59,4 @@ Jugar solo 2D y 3D. F6 de las cuatro escenas (matches + pawns).
 
 ## Reglas aplicables
 
-RULES §3 placeholders 3D, F6–F8. Composición: DemoMatch es el “Match” del camino estándar.
+RULES §3 placeholders 3D, F6–F8. Composición: DemoMatch es el “Match” del tamaño por entidad.

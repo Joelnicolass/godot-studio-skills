@@ -39,16 +39,16 @@ Habilitá el plugin **SpillKit** (la línea de costo del inspector; los nodos, s
 
 ## Red
 
-**Con MpKit:** en el `MpActor` del cuerpo, `Spill:wound` en **Sync › sync_extra** (todo viaja al nacer, así que quien entra tarde arranca del valor actual), y el daño detrás de la autoridad:
+**Con MpKit:** en el `MpActor` del cuerpo, `Spill:wound` en **Sync › sync_extra** (todo viaja al nacer, así que quien entra tarde arranca del valor actual), y el daño detrás de la autoridad (`%Spill` es el nodo `Spill` marcado como nombre único):
 
 ```gdscript
 func take_damage(amount: float, from: Vector3) -> void:
 	if not MpKit.is_authority():
 		return
 	hp -= amount
-	$Spill.hit(amount, max_hp, from)
+	%Spill.hit(amount, max_hp, from)
 	if hp <= 0.0:
-		$Spill.die()
+		%Spill.die()
 ```
 
 En un servidor dedicado, un export con la feature `dedicated_server` (o corrido headless) no arma nada. Uno corrido con el editor headless sí: `pool.shown = not MpKit.is_dedicated()` en el pegamento del juego.

@@ -33,9 +33,9 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 
 ```
 [~] project.godot                        # plugin PerceptionKit; nombres de capa para los bandos (survivors, threats)
-[~] scenes/enemies/guard.tscn            # Head > PerceptionSensor3D (máscara: survivors; valores arrastrados con sus manijas)
-[~] scenes/player/player.tscn            # PerceptionTarget3D en el pecho, en la capa survivors
-[~] scenes/enemies/guard_states/*.gd     # los estados del actor leen el sensor: latest(), sees_any(), is_aware()
+[~] enemies/guard.tscn            # Head > PerceptionSensor3D (máscara: survivors; valores arrastrados con sus manijas)
+[~] player/player.tscn            # PerceptionTarget3D en el pecho, en la capa survivors
+[~] enemies/guard_states/*.gd     # los estados del actor leen el sensor: latest(), sees_any(), is_aware()
 [~] scripts/noise.gd                     # la señal de ruidos del juego llama a sensor.hear(position, radius, source)
 ```
 

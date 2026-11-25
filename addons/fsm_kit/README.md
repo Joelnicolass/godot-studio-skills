@@ -20,7 +20,7 @@ Habilitá el plugin **FsmKit** (tipos `FsmMachine` / `FsmState` en Create Node).
 Minimal2D
 ├── Mover            # CharacterBody2D, mover.gd
 │   ├── Shape, Body
-│   └── States       # FsmMachine: actor = Mover, initial_state = Idle
+│   └── %States      # FsmMachine: actor = Mover, initial_state = Idle
 │       ├── Idle     # states/idle.gd
 │       ├── Move     # states/move.gd: @export speed
 │       └── Hurt     # states/hurt.gd: @export duration, push_speed, tint
@@ -33,7 +33,7 @@ El actor solo traduce lo que pasa en el juego a una transición:
 # mover.gd (lo esencial)
 extends CharacterBody2D
 
-@onready var states: FsmMachine = $States
+@onready var states: FsmMachine = %States
 
 
 func hit(push: Vector2) -> void:
@@ -58,6 +58,8 @@ func physics_update(_delta: float) -> void:
 	body.velocity = wish * speed
 	body.move_and_slide()
 ```
+
+Al recibir un golpe, `Hurt` arranca con el empuje que le mandó el actor; si llega otro golpe estando herido, vuelve a empezar con el empuje nuevo:
 
 ```gdscript
 # states/hurt.gd (lo esencial)
@@ -93,8 +95,12 @@ Con `autostart` prendido (por defecto) el machine entra solo a `initial_state` (
 
 Con `autostart` apagado no corre nada hasta que llamás `start(state, payload)`: un actor que primero se arma, un enemigo de un pool, un personaje que carga de un save, un jugador que entra a mitad de partida en el estado que dice la red.
 
+Por ejemplo, un enemigo que sale del pool y arranca ya herido (`hurt` es el estado `Hurt`, asignado en el inspector):
+
 ```gdscript
-machine.start($States/Hurt, {"animate": false})   # una vez; false si todavía no hay estado o actor
+@export var hurt: FsmState
+
+machine.start(hurt, {"animate": false})   # una vez; false si todavía no hay estado o actor
 ```
 
 ## Quién cambia el estado

@@ -56,7 +56,7 @@ El transporte es elegible; la API, los RPC y la replicación son los mismos con 
 - **Web**: un export web usa WebSocket (directo, o por el relay si el `.tres` dice `relay`), no hostea ni busca salas LAN (`MpNetConfig.can_host()`); el menú oculta esas filas. Prueba: `mpkit_lab/run/web.sh` (y `TRANSPORT=relay`), que abre la página en un Chrome headless.
 - **Relay**: `--transport=relay` (o `MpNetConfig.transport = relay`) con `relay_url` / `relay_room`: todo va por un túnel WebSocket ([relay/README.md](relay/README.md)); el servidor no necesita IP pública. Sirve para escritorio y web.
 - **Salas que hospedan tus jugadores**: con el relay y el [emisor](issuer/README.md) (`issuer_url` en el `.tres`), `MpFlow.host_online()` / `join_online(code)` / `online_rooms()`: ningún servidor tuyo corre las partidas; un escritorio hospeda con un proceso de partida de su PC, un navegador en su propia pestaña (GUIDE 10.3).
-- **Flag**: `--transport=ws` (o `enet`). Lo leen `MpKit` (`MpKit.transport`, antes de `host()`/`host_dedicated()`/`join()`; el glue puede fijarlo a mano) y `MpLobbyClient.transport`.
+- **Flag**: `--transport=ws` (o `enet`). Lo leen `MpKit` (`MpKit.transport`, antes de `host()`/`host_dedicated()`/`join()`; el código del juego puede fijarlo a mano) y `MpLobbyClient.transport`.
 - **Servidor de salas**: `MpLobbyConfig.transport` (`.tres` o `--transport=ws`). Sirve el lobby con ese transporte, busca puertos libres de las partidas con TCP o UDP según corresponda y **se lo pasa al dedicado hijo** (`transport` está en `agent_fields`, llega como `--transport=ws`).
 - Mismo transporte en todos los procesos: cliente, servidor de salas y dedicados. Un cliente ENet no habla con un servidor WS.
 - Dentro de WebSocket el lobby y la partida usan puertos TCP; abrí TCP (no UDP) en el firewall del VPS.
@@ -162,13 +162,13 @@ Hacé esto en Godot, en orden. Un mundo alcanza; varios mundos usan el catálogo
 2. Proyecto → Ajustes → Plugins → **MpKit** (Enable).
 3. Proyecto → Ajustes → Autoload: tiene que existir `MpKit` apuntando a `res://addons/mp_kit/mp_kit.gd`.
 4. Project → Tools → **MpKit: New session flow...**  
-   O creá a mano un nodo `MpFlow`, guardalo como `res://glue/session_flow.tscn`, y agregalo de autoload **después** de MpKit.
+   O creá a mano un nodo `MpFlow`, guardalo como `res://autoloads/session_flow.tscn`, y agregalo de autoload **después** de MpKit.
 
 En el inspector del flow:
 
 | Propiedad | Qué poner |
 |-----------|-----------|
-| `boot_path` | `res://scenes/ui/boot.tscn` |
+| `boot_path` | `res://main/boot.tscn` |
 | `world_path` | tu match, si hay **un** mundo |
 | `worlds` | lista de `MpWorldRef` si hay **varios** mapas (`id` + escena o path) |
 | `max_players` | p.ej. 4 |
@@ -186,7 +186,7 @@ Opción A — drop-in: instancia `res://addons/mp_kit/mp_boot_menu.tscn`. Si ya 
 Opción B — a mano:
 
 1. `Control` a pantalla completa. Botones: Jugar solo, Host LAN, Unirse + `LineEdit` de IP.
-2. En el script:
+2. En el script. Cada botón arranca una partida (sola, de host o unida por IP) y la lista de partidas de la red local se arma sola:
 
 ```gdscript
 func _on_play_solo() -> void:
@@ -288,7 +288,7 @@ Reglas:
 
 5. Inspector de `MpReplicate`: `interpolate` on para proxies (el host no interpola).
 6. Input **solo** si `player_slot == MpKit.local_slot()` (o un hijo de input que ya lo haga).
-7. Comandos al servidor:
+7. Comandos al servidor. El jugador pide moverse: el cliente se lo pide al servidor, que lo valida y lo aplica, y en un juego de uno solo se aplica directo:
 
 ```gdscript
 func try_move(dir: Vector2) -> void:
@@ -379,9 +379,11 @@ Nodo cómodo: hijo `MpCustomPipe`, `@export channel = &"emote"`.
 
 ### Mandar (cliente → servidor)
 
+Un jugador manda un mensaje suelto (un saludo) al servidor (`%MpCustomPipe` pide el nodo marcado como nombre único: clic derecho › «Acceso como nombre único»):
+
 ```gdscript
 # En el pawn / feature (cliente o 1P)
-$MpCustomPipe.send({"slot": player_slot, "msg": "hola"})
+%MpCustomPipe.send({"slot": player_slot, "msg": "hola"})
 ```
 
 ```mermaid
@@ -398,6 +400,8 @@ En 1P o si lo llama el listen host: no hay RPC; se emite ahí mismo. Por eso el 
 
 ### Recibir
 
+Cualquier nodo del juego se entera de los mensajes del canal `emote` y distingue si los empujó el servidor o llegaron de un cliente:
+
 ```gdscript
 func _ready() -> void:
 	MpKit.custom_received.connect(_on_custom)
@@ -409,11 +413,11 @@ func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
 	# from_peer == 2+ → llegó de ese cliente, todavía no está “en todos”
 ```
 
-O en el actor: `$MpCustomPipe.packet.connect(_on_emote)`.
+O en el actor: `%MpCustomPipe.packet.connect(_on_emote)`.
 
 ### Sincronizar al resto (el servidor reenvía)
 
-Sin este paso, solo el servidor vio el paquete del cliente.
+Sin este paso, solo el servidor vio el paquete del cliente. Así el servidor reenvía a todos lo que mandó un cliente:
 
 ```gdscript
 func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
@@ -443,13 +447,15 @@ Un peer solo: `push_custom_to(peer_id, channel, data)` (el servidor no lo ve en 
 
 ### Patrón en el actor (como el emote de la demo)
 
+Cuando el jugador saluda, todos ven el destello una sola vez sobre su personaje:
+
 ```gdscript
 func try_emote() -> void:
 	var data := {"slot": player_slot, "msg": "hola"}
 	if not MpKit.is_networked() or not MpKit.is_server():
-		$MpCustomPipe.send(data)      # 1P o cliente → servidor
+		%MpCustomPipe.send(data)      # 1P o cliente → servidor
 		return
-	$MpCustomPipe.broadcast(data)     # listen host: todos
+	%MpCustomPipe.broadcast(data)     # listen host: todos
 
 func _on_emote_packet(data: Dictionary, from_peer: int) -> void:
 	if int(data.get("slot", 0)) != player_slot:
@@ -459,7 +465,7 @@ func _on_emote_packet(data: Dictionary, from_peer: int) -> void:
 	_flash()
 ```
 
-El glue (autoload) sigue haciendo el reflect `from_peer != 1` → `broadcast_custom`. El actor no reenvía.
+El código del juego (autoload) sigue haciendo el reflect `from_peer != 1` → `broadcast_custom`. El actor no reenvía.
 
 ## Qué va por cada canal
 
@@ -481,7 +487,7 @@ Con el plugin enabled, **Project → Tools**:
 - **Setup game...** — un juego multijugador completo desde un diálogo (`editor/mp_setup_wizard.gd`): `game.tres` (`MpGame`), boot con un `MpFlow` que solo tiene ese `.tres`, mundo con un `MpWorld`, jugador con `MpActor` predicho + `MpInput` y, opcional, salas online. Muestra el árbol de archivos (`[+]` / `[~]`) y nunca pisa uno existente. Prueba: el e2e `run_mpkit_wizard.sh` del laboratorio (genera un juego y lo juega en red; `WIZARD_3D=1` para 3D)
 - **Make selection a network actor** — hijo `MpActor` (con su `MpSync`, que se arma y se guarda con la escena) y, si es un `CharacterBody`, `MpInput`
 - **New replicated feature...** — `res://features/<id>/<id>.gd` + `.tscn`
-- **New session flow...** — autoload `MpFlow` (`res://glue/session_flow.tscn`)
+- **New session flow...** — autoload `MpFlow` (`res://autoloads/session_flow.tscn`)
 - **Install Cursor/VS Code snippets** — `.vscode/mpkit.code-snippets`
 
 Al Enable copia plantillas a `res://script_templates/` (CharacterBody / Node2D / Node3D / Node).
@@ -574,13 +580,13 @@ Piezas de bajo nivel:
 | `lobby/mp_lobby.gd` | Autoload `MpLobby` (después de `MpKit`): hijos `Server` y `Client` con un `SceneMultiplayer` propio; no toca el peer de `MpKit`. `MpLobby.start_server(config, launcher)` / `MpLobby.connect_to(host, port, nombre)`. Prueba: `agent/run_034d.sh` |
 | `lobby/mp_match_files.gd` | rutas `user://mp_matches/<id>/{ticket,state,result}.json`, JSON atómico (0600), sha256 |
 
-Handshake de spawn: `hold_until_world_ready` (synchronizers ocultos hasta que el spawner de ese peer avisa que está listo; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en glue.
+Handshake de spawn: `hold_until_world_ready` (synchronizers ocultos hasta que el spawner de ese peer avisa que está listo; Godot manda spawn + sync emparejados). Dedicated: no pawn para peer 1. No desparentes actors en el código del juego.
 
 ## Servidor de salas
 
 **Camino de nodos (recomendado)**: `MpRoomServer` (escena del servidor) + `MpLobbyConfig` + `MpRoomRules` (opcional), `MpLobbyScreen` en el cliente y `MpMatch` en el mundo. Ver [QUICKSTART.md](QUICKSTART.md) › Online. Prueba sin juego: el e2e `run_mpkit_rooms.sh` del laboratorio (`TRANSPORT=ws` para WebSocket). Lo que sigue es la referencia de las piezas de abajo, que esos nodos envuelven sin cambiarlas.
 
-Regla de dependencias: `MpFlow` y los nodos del mundo (`MpMatch`) nunca nombran clases del lobby (`MpMatchAgent`...): las buscan por grupo o las cargan por ruta. Un juego que carga el lobby como autoload y referencia su flow desde el glue del dedicado formaría un ciclo de carga.
+Regla de dependencias: `MpFlow` y los nodos del mundo (`MpMatch`) nunca nombran clases del lobby (`MpMatchAgent`...): las buscan por grupo o las cargan por ruta. Un juego que carga el lobby como autoload y referencia su flow desde el código del juego del dedicado formaría un ciclo de carga.
 
 Camino de internet: un **servidor de salas** (lobby, un proceso) y **un dedicado por partida** (otro proceso Godot que el servidor lanza). Los clientes no escriben la IP de la partida: hablan con el lobby y reciben `(host, port, token)` cuando arranca. Todo vive en `lobby/` y no sabe nada del juego: reglas, textos y resultados entran por `Callable` y `Dictionary` que pone el pegamento.
 
@@ -664,7 +670,7 @@ Si tu juego es un match por servidor, **no toques esto**. El `example/` no usa c
 
 No es la lista LAN del boot. Esa es `MpLan.browse` → `rooms_changed` (nombre + IP de un listen host). Las hub rooms viven en `MpKit.rooms`.
 
-El kit **agrupa peers**. No cambia de escena, no instancia N mundos y no pone puntaje. Eso es glue.
+El kit **agrupa peers**. No cambia de escena, no instancia N mundos y no pone puntaje. Eso es código del juego.
 
 ### Qué aparece solo
 
@@ -702,7 +708,7 @@ Con el dedicated corriendo: Árbol remoto → `MpKit` → `Rooms` / `Matchmaker`
 | `Rooms` | `code_length` | 4 | Largo del código |
 | `Matchmaker` | `party_size` | 2 | Cuántos saca la cola para armar una sala |
 
-Desde glue, antes de encolar:
+Para armar salas de 2 jugadores, con un tope de 16 salas, desde el código del juego antes de encolar:
 
 ```gdscript
 MpKit.rooms.max_rooms = 16
@@ -726,7 +732,7 @@ func _on_peer_joined(peer_id: int, _slot: int) -> void:
 	MpKit.matchmaker.enqueue(peer_id)
 
 func _on_match(room_id: StringName, peer_ids: PackedInt32Array) -> void:
-	# glue: spawn / lógica de ESA sala. peer_ids ya están sentados 0..n-1
+	# código del juego: spawn / lógica de ESA sala. peer_ids ya están sentados 0..n-1
 	print(room_id, MpKit.rooms.code_for_room(room_id), peer_ids)
 ```
 
@@ -752,7 +758,7 @@ sequenceDiagram
 
 ### Camino B — código privado
 
-Sin cola. El servidor crea una sala vacía, le das el código a un amigo, el glue sienta a quien lo manda.
+Sin cola. El servidor crea una sala vacía, le das el código a un amigo, el código del juego sienta a quien lo manda.
 
 ```gdscript
 # servidor (host de la sala, o un operador)
@@ -798,17 +804,19 @@ Varias partidas en una misma escena de mundo: cada sala tiene su subárbol con s
 Hub (escena de mundo)
 ├── Room_r_1
 │   ├── Actors
-│   └── MpSpawner   # room_id = r_1, spawn_path = ../Actors
+│   └── %MpSpawner  # room_id = r_1, spawn_path = ../Actors
 └── Room_r_2
     ├── Actors
-    └── MpSpawner   # room_id = r_2
+    └── %MpSpawner  # room_id = r_2
 ```
+
+Cada vez que se arma una partida, se instancia su sala y su spawner queda con el `room_id` de esa partida:
 
 ```gdscript
 func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
 	var room := ROOM_SCENE.instantiate()
 	room.name = "Room_%s" % room_id
-	room.get_node("MpSpawner").room_id = room_id
+	room.get_node("%MpSpawner").room_id = room_id
 	add_child(room)
 ```
 
@@ -818,7 +826,7 @@ El servidor revela ese spawner solo a los peers sentados en `room_id` (lo cheque
 
 El `submit_*` de un match único sigue con `accept_command(self, player_slot)` (slot del **hub**).
 
-Si el pawn representa un asiento de sala:
+Si el pawn representa un asiento de sala, el comando solo vale si viene del jugador de ese asiento en esa sala:
 
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")

@@ -63,13 +63,16 @@ Arrancá desde `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexágonos
 
 ## API esencial
 
+Al hacer clic en una casilla se marcan las que quedan a 2 pasos, y la casilla (2, 3) pasa a ser bosque. Los tres `@export` se asignan en el inspector:
+
 ```gdscript
-@onready var board: GridBoard = $Board
-@onready var moves: GridCursor = $Board/View/Moves
+@export var board: GridBoard
+@export var view: GridView3D
+@export var moves: GridCursor
 
 func _ready() -> void:
 	board.set_value(Vector2i(2, 3), &"terrain", &"forest")
-	$Board/View.cell_clicked.connect(_on_cell_clicked)
+	view.cell_clicked.connect(_on_cell_clicked)
 
 func _on_cell_clicked(cell: Vector2i) -> void:
 	moves.highlight(board.cells_in_range(cell, 2))

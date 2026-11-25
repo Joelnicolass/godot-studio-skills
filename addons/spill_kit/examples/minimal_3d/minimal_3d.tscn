@@ -56,6 +56,7 @@ transform = Transform3D(0.81915206, 0.4262504, -0.38379753, 0, 0.66913056, 0.743
 shadow_enabled = true
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=912718126]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 0.9486833, 0.3162278, 0, -0.3162278, 0.9486833, 0, 1.9, 3.6)
 
 [node name="Floor" type="StaticBody3D" parent="." unique_id=1149842483]
@@ -84,11 +85,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("CapsuleMesh_jq47e")
 
 [node name="Spill" type="Node3D" parent="Dummy" unique_id=1804278288]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
 script = ExtResource("5_xd35u")
 type = ExtResource("4_73q2x")
 
 [node name="Label" type="Label" parent="." unique_id=668319858]
+unique_name_in_owner = true
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 16.0

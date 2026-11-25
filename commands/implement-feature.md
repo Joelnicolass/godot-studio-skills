@@ -18,7 +18,7 @@ Cargar `godot-layered-architecture`, `godot-composition-first` y `godot-code-qua
 Si el pedido es vago, preguntá en un lote (`AskUserQuestion` en Claude Code / `AskQuestion` en Cursor, si está):
 
 1. Qué hace el jugador / qué se ve. Una o dos frases.
-2. Dónde vive (escena, actor, HUD). Clean vs estándar **ya elegido**; no lo cambies.
+2. Dónde vive (escena, actor, HUD). El tamaño del proyecto **ya está elegido**; no lo cambies.
 3. ¿Hay red? Si sí: local/WiFi u online. Si no: cero RPCs.
 4. 2D / 3D. Arte: placeholder salvo OK + referencias. Si hay superficies (piso, pared, terreno): ofrecé Material Maker.
 5. ¿Es “como en X” (otro juego / app)? Ofrecé investigarlo (web, y decompilarlo si el juego se puede abrir; `/research-feature`), y usá el informe para los criterios.
@@ -27,7 +27,7 @@ No entrevistas un GDD completo. No corras `/create-prd` ni `/generate-rfcs` “p
 
 Fuera de alcance de **esta** feature: anotalo y no lo construyas.
 
-Si el corte cruza sesión + red + varios mundos, proponé un RFC corto y `/implement-rfc`. Si es un componente, HUD, un tipo `.tres`, un estado: seguí acá. Si solo querés feel jugoso sobre algo que ya pega: `/add-juicy`. Si solo querés FSM o perdón de plataformas: `/add-state-machine` / `/add-platformer-2d`.
+Si el corte cruza sesión + red + varios mundos, proponé un RFC corto y `/implement-rfc`. Si es un componente, HUD, un tipo (`_type.tres`), un estado: seguí acá. Si solo querés feel jugoso sobre algo que ya pega: `/add-juicy`. Si solo querés FSM o perdón de plataformas: `/add-state-machine` / `/add-platformer-2d`.
 
 ## 2. Artefactos (crecen, no se regeneran)
 
@@ -46,8 +46,8 @@ Autoridad si hay conflicto: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > 
 
 - Árbol con `[+]` / `[~]` / `[-]` + mapa de responsabilidades ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
 - Escena de prueba en `res://debug/`: estado inicial fácil, resultado todavía no ocurrido, acción de InputMap. Queda escrita en el `F<n>` (o en el RFC si hay contrato).
-- Dónde vive cada número (regla 0: `@export` del nodo que lo usa; `.tres` solo si se comparte o se edita como tipo) y qué patrón usa cada comunicación
-- Motion: evaluar Tween vs `AnimationPlayer` (skill `godot-animation`); knobs en inspector o timeline
+- Dónde vive cada número (regla 0: un dueño, el tipo o la raíz), con sus filas de `docs/tuning.md`, y qué patrón usa cada comunicación
+- Motion: evaluar Tween vs `AnimationPlayer` (skill `godot-animation`); perillas y curva en el inspector o en la timeline
 - Checklist de [adding-features.md](../skills/godot-layered-architecture/adding-features.md)
 
 Mostrar el árbol. **Esperar OK** (¿más/menos piezas?).
@@ -65,5 +65,6 @@ Mostrar el árbol. **Esperar OK** (¿más/menos piezas?).
 - El proyecto parsea headless (`godot --headless --path . --quit` sin `SCRIPT ERROR`). Si tiene `gdformat` / `gdlint` / GUT, en verde.
 - La feature se ejerce en el editor (F5/F6, una acción).
 - Cada criterio del `F<n>` tiene evidencia en el review.
-- Timing / squash / feel se tunnea en el inspector si hay animación.
+- Los tiempos, el squash y la curva se ajustan en el inspector si hay animación.
+- `docs/tuning.md` tiene las filas de la feature, y cada escena nueva se ve en el editor como en el juego.
 - FEATURES.md tiene el `F<n>` y no se inventó el resto del producto; decisión + próximo paso quedan en memoria si está la skill.

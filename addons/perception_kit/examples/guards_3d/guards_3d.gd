@@ -16,12 +16,12 @@ const SHADE_VISIBILITY := 0.3
 
 @export var guards: Array[CharacterBody3D] = []
 
-@onready var player: CharacterBody3D = $Player
-@onready var target: PerceptionTarget3D = $Player/Target
-@onready var lamp: PerceptionTarget3D = $Player/Lamp
-@onready var lamp_light: OmniLight3D = $Player/Lamp/Light
-@onready var shade: Area3D = $Shade
-@onready var label: Label = $Label
+@onready var player: CharacterBody3D = %Player
+@onready var target: PerceptionTarget3D = %Target
+@onready var lamp: PerceptionTarget3D = %Lamp
+@onready var lamp_light: OmniLight3D = %Light
+@onready var shade: Area3D = %Shade
+@onready var label: Label = %Label
 
 var night := false
 

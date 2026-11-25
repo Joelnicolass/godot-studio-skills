@@ -31,13 +31,13 @@ Si falta, preguntá en una sola tanda:
 Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambiado, `[-]` borrado), por ejemplo:
 
 ```
-[~] scenes/maps/meadow/map.tscn          # GrassField3D (se arma solo: ground, look, quality, wind)
-[+] scenes/maps/meadow/map_grass_ground.res   # lo escriben «Bake ground» y los pinceles (alturas, mapas pintados)
-[+] scenes/look/grass_summer.tres        # GrassLook desde addons/grass_kit/looks/ (uno por bioma o estación)
-[+] scenes/look/flower.tres              # GrassMesh: una malla, sus texturas, su peso, map_name "flower"
-[+] scenes/look/wind.tres                # GrassWind
-[~] scenes/maps/meadow/ground.gdshader   # incluye grass_ground.gdshaderinc (color del pasto bajo las hojas, tierra en senderos pintados)
-[~] scenes/units/unit.tscn               # grupo para trample_group
+[~] levels/meadow/map.tscn          # GrassField3D (se arma solo: ground, look, quality, wind)
+[+] levels/meadow/map_grass_ground.res   # lo escriben «Bake ground» y los pinceles (alturas, mapas pintados)
+[+] look/grass_summer.tres        # GrassLook desde addons/grass_kit/looks/ (uno por bioma o estación)
+[+] look/flower.tres              # GrassMesh: una malla, sus texturas, su peso, map_name "flower"
+[+] look/wind.tres                # GrassWind
+[~] levels/meadow/ground.gdshader   # incluye grass_ground.gdshaderinc (color del pasto bajo las hojas, tierra en senderos pintados)
+[~] units/unit.tscn               # grupo para trample_group
 [~] project.godot                        # plugin GrassKit
 ```
 

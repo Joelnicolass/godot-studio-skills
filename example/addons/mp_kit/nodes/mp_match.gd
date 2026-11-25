@@ -4,7 +4,7 @@ extends Node
 ## Drop one in the world for the start and the end of a match. It tells, in the world, what the match's start gate (MpKit.gate)
 ## says: when everyone is in, who left, who came back and who gave up; `finish(result)` ends the match for every peer (`finished`
 ## everywhere) and, in a match started by the online lobby, writes the result for the room.
-## Not: the wait or the grace (the gate pauses the world and counts them), the rules that decide who won (your game calls
+## Not: the wait or the grace (the gate counts them, and pauses the world unless MpFlow.pause_while_waiting is off), the rules that decide who won (your game calls
 ## finish), the lobby screen, scoring (MpState).
 
 ## Server: the match starts (every seat it waited for loaded; solo: the local world), or at once when no gate holds it.
@@ -17,7 +17,8 @@ signal player_back(slot: int)
 signal player_abandoned(slot: int)
 ## Every peer: the server called finish(result).
 signal finished(result: Dictionary)
-## Every peer: the match waits for seats to load (the world is paused, so nobody walks ahead) or runs.
+## Every peer: the match waits for seats to load or runs. The world is paused meanwhile, unless MpFlow.pause_while_waiting is
+## off: then the players walk, and the game holds its own systems (a day clock, threats, bots) until this says false.
 signal waiting_changed(waiting: bool)
 
 ## True while the match waits for its seats (every peer: the server says so).

@@ -1,7 +1,7 @@
 # RFCs — MpKit Example
 
 **Tipo de producto:** juego Godot (demo).  
-**Omitido en cada RFC (auditable):** schema SQL, auth de usuarios, browsers, REST, “Database Schema Changes”. En su lugar: escenas, Resources, glue MpKit.
+**Omitido en cada RFC (auditable):** schema SQL, auth de usuarios, browsers, REST, “Database Schema Changes”. En su lugar: escenas, Resources, código del juego MpKit.
 
 **Autoridad:** PRD.md > FEATURES.md > RULES.md > estos RFCs.
 

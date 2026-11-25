@@ -44,7 +44,7 @@ Detalle de cada pieza: `addons/mp_kit/README.md`. Lo de abajo es el bajo nivel (
 
 ## Install
 
-Copiá `addons/mp_kit/` a `res://addons/mp_kit/` del proyecto. Autoload, **antes** del glue:
+Copiá `addons/mp_kit/` a `res://addons/mp_kit/` del proyecto. Autoload, **antes** del código del juego:
 
 ```
 MpKit="*res://addons/mp_kit/mp_kit.gd"
@@ -97,7 +97,7 @@ Input de pawn y semántica del dict custom **fuera** del kit.
 
 Editor: [editor.md](editor.md).
 
-`rpc_load_world` es `call_remote`: el **servidor no lo recibe**. Entra al mundo por glue (listen host y dedicated).
+`rpc_load_world` es `call_remote`: el **servidor no lo recibe**. Entra al mundo por el código del juego (listen host y dedicated).
 
 ## MpBoot
 
@@ -184,7 +184,7 @@ Default `hold_until_world_ready = true`:
 5. `gate_unsynced_spawns` (default on): un actor sin synchronizer recibe un synchronizer vacío `MpSpawnGate` en todos los peers al entrar a `spawn_path`.
 
 - Inspector: `spawn_path` = padre de los actores. `extra_scenes` = packed scenes.
-- Glue: `add_child(node, true)` bajo ese padre, cuando quieras. Identidad (`player_slot`, etc.) va en el `MultiplayerSynchronizer` con `spawn = true`, no en un RPC.
+- Código del juego: `add_child(node, true)` bajo ese padre, cuando quieras. Identidad (`player_slot`, etc.) va en el `MultiplayerSynchronizer` con `spawn = true`, no en un RPC.
 - Synchronizers: en la escena, o `MpAuthority.ensure_sync` antes del `add_child` / en el `_ready` del propio actor. Los posteriores faltan en el paquete de spawn (el que vuelve: `ERR_INVALID_DATA`); el spawner les hace `push_error`.
 - `spawn_function`: asignala en cualquier `_ready` de la escena (el del spawner, un hermano o el padre); el spawner la envuelve al final de ese frame (diferido), antes de que nada spawnee. Si la asignás más tarde, avisa y el primer nodo cuenta como agregado a mano.
 - `is_revealed_to(peer_id)` (servidor): ese peer tiene el spawner y pasa el `room_id`.
@@ -205,7 +205,7 @@ Hijo del actor. Inspector: `interpolate` (default on) + `interpolate_speed`. Sol
 
 ## MpBootMenu
 
-Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un autoload `MpFlow`, lo usa. Si no: `world_scene` asignado = loop sin glue (`drive_kit`: el host arma la puerta de arranque con `start_seats` y le manda el mundo a cada asiento que admite). Vacío = solo UI; tu glue escucha las signals.
+Escena `res://addons/mp_kit/mp_boot_menu.tscn`. Copy por `@export`. Si hay un autoload `MpFlow`, lo usa. Si no: `world_scene` asignado = loop sin código del juego (`drive_kit`: el host arma la puerta de arranque con `start_seats` y le manda el mundo a cada asiento que admite). Vacío = solo UI; tu código del juego escucha las signals.
 
 ## MpFlow
 
@@ -221,8 +221,8 @@ Un mundo:
 extends MpFlow
 
 func _ready() -> void:
-	boot_path = "res://scenes/ui/boot.tscn"
-	world_path = "res://scenes/world/match.tscn"
+	boot_path = "res://main/boot.tscn"
+	world_path = "res://levels/match/match.tscn"
 	start_when = StartWhen.DEDICATED_FIRST_CLIENT
 	super._ready()
 ```
@@ -231,9 +231,9 @@ Varios mundos — catálogo `MpWorldRef` (inspector `worlds`, o `add_world`). El
 
 ```gdscript
 func _ready() -> void:
-	boot_path = "res://scenes/ui/boot.tscn"
-	add_world(&"2d", "res://scenes/world/match_2d.tscn")
-	add_world(&"3d", "res://scenes/world/match_3d.tscn")
+	boot_path = "res://main/boot.tscn"
+	add_world(&"2d", "res://levels/match_2d/match_2d.tscn")
+	add_world(&"3d", "res://levels/match_3d/match_3d.tscn")
 	start_when = StartWhen.DEDICATED_FIRST_CLIENT
 	super._ready()
 
@@ -243,7 +243,7 @@ MpFlow.select_world(&"3d")
 
 `snapshot_for_joiner()` ya manda `world_id`. Override y `super.snapshot_for_joiner()` si necesitás más estado.
 
-`MpFlow.find_in_tree(self)` localiza el autoload aunque no se llame `MpFlow` (la demo se llama `NetGlue`).
+`MpFlow.find_in_tree(self)` localiza el autoload aunque no se llame `MpFlow` (la demo usa otro nombre).
 
 ## MpLan
 

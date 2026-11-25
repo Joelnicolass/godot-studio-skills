@@ -7,7 +7,7 @@ Nada de un título concreto. Cada caso dice qué regla de [SKILL.md](SKILL.md) a
 Antes: para cambiar el daño de la furia del murciélago hay que abrir 4 archivos.
 
 ```text
-bat.tres          on_hit_ability = bat_fury_ability.tres    # nothing says "fury"
+bat_type.tres          on_hit_ability = bat_fury_ability.tres    # nothing says "fury"
 bat_fury_ability.tres                                        # empty ability
 bat_fury.tres     ability = bat_fury_ability.tres, factor = 1.5
 enemy.tscn        PassiveRunner.types = [bat_fury.tres, …]   # looks for the one pointing at on_hit_ability
@@ -21,7 +21,7 @@ Después: el número vive en el tipo que lo usa, y el componente lo lee directo.
 @export_range(1.0, 3.0, 0.05) var fury_damage_factor := 1.0
 ```
 
-Abrir: 1 archivo (`bat.tres`). Si un solo enemigo tiene esa pasiva, mejor todavía: un componente `Fury` solo en su escena, con su `@export`.
+Abrir: 1 archivo (`bat_type.tres`). Si un solo enemigo tiene esa pasiva, mejor todavía: un componente `Fury` solo en su escena, con su `@export`.
 
 ## 2. Un texto que elige una escena (regla 0, §1)
 

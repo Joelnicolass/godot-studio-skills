@@ -4,7 +4,7 @@ extends Node
 ## Room-server side. One dedicated process per match: picks a free port from a range, writes the
 ## ticket, spawns the process, follows its state.json / result.json, and kills what stops
 ## beating, runs too long, or was left behind by a previous run. Nothing here knows the game.
-## The caller (glue) builds the ticket content; the launcher adds match_id, port, room_pid,
+## The caller (the game) builds the ticket content; the launcher adds match_id, port, room_pid,
 ## expires_ms and replaces each seat's `token` with `token_sha256`.
 
 signal match_listening(match_id: String, port: int)
@@ -85,7 +85,13 @@ func is_listening(match_id: String) -> bool:
 	return bool(_matches.get(match_id, {}).get("listening", false))
 
 
-## `ticket`: {world, options, seed, seats: [{slot, token, meta}], ...} (glue content, any keys).
+## True once the match wrote its result (MpMatch.finish). Its process may stay up a while for its players
+## (stay_after_finish_s); match_ended comes when it is gone.
+func is_finished(match_id: String) -> bool:
+	return int(_matches.get(match_id, {}).get("result_seen_ms", 0)) > 0
+
+
+## `ticket`: {world, options, seed, seats: [{slot, token, meta}], ...} (game content, any keys).
 ## ERR_BUSY = max_matches reached. ERR_UNAVAILABLE = no free port. ERR_ALREADY_EXISTS = id in use.
 func launch(match_id: String, ticket: Dictionary) -> Error:
 	if not MpMatchFiles.is_valid_id(match_id):
@@ -185,7 +191,7 @@ func _poll_match(match_id: String, now: int) -> void:
 			return
 		if int(m["result_seen_ms"]) == 0:
 			m["result_seen_ms"] = now
-		elif now - int(m["result_seen_ms"]) > int((config.result_quit_delay_s + config.parent_check_s) * 1000.0):
+		elif now - int(m["result_seen_ms"]) > int((maxf(config.result_quit_delay_s, config.stay_after_finish_s) + config.parent_check_s) * 1000.0):
 			_kill_verified(pid, match_id)
 		return
 	if not running:

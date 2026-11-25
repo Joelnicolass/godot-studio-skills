@@ -69,7 +69,7 @@ Marcá una dimensión inaplicable N/A con una línea de razonamiento. No la rell
 - Cobertura de tests adecuada
 - Separación de responsabilidades correcta
 - Código muerto o imports no usados
-- En un **juego Godot**: las preguntas de §8 de la skill `godot-code-quality`. Primero, **cuántos archivos hay que abrir para cambiar un número** de la feature (contalos; más de 2 = NEEDS WORK). Después: cada `.tres` justificado (compartido o editado como tipo), sin punteros por tag o texto, comunicación con patrones probados (sin registries, locators ni managers nuevos), tipado real, `##` solo en la API y logs en inglés. Una convención propia que contradice el estándar se marca, aunque RULES.md la pida
+- En un **juego Godot**: las preguntas de §8 de la skill `godot-code-quality`. Primero, **cuántos archivos hay que abrir para cambiar un número** de la feature (contalos; más de 2 = NEEDS WORK). Después: su fila en `docs/tuning.md`, un dueño por número, cada `.tres` justificado por la regla 0, catálogos tipados y no tablas ciegas, carpetas y sufijos según RULES.md, cada `@export` con `##`, rango y unidad, el look visible en el editor, comunicación con patrones probados (sin registries, locators ni managers nuevos), tipado real, `##` solo en la API y logs en inglés. Una convención propia que contradice el estándar se marca, aunque RULES.md la pida
 
 ## Formato de salida
 

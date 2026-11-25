@@ -44,10 +44,10 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 [+] bots/flee.gd                         # BotMode del juego: herido, a la salud más cercana
 [+] bots/weapons/rifle.tres              # BotWeapon: 0 a 40 m, HOLD
 [+] bots/weapons/grenade.tres            # BotWeapon: 6 a 16 m, la velocidad y la gravedad de la granada del juego, TAP
-[~] scenes/player/player.gd             # input = Input o bot.input; weapon_changed cambia el arma; weapon_score sin munición
-[~] scenes/player/player.tscn           # en el grupo bot_target
-[~] scenes/pickups/health.tscn           # BotGoal3D: priority 2; wanted: herido
-[~] scenes/levels/arena.tscn             # navmesh horneado; los bots que llenan los asientos
+[~] player/player.gd             # input = Input o bot.input; weapon_changed cambia el arma; weapon_score sin munición
+[~] player/player.tscn           # en el grupo bot_target
+[~] pickups/health.tscn           # BotGoal3D: priority 2; wanted: herido
+[~] levels/arena/arena.tscn             # navmesh horneado; los bots que llenan los asientos
 ```
 
 Arrancá desde `addons/bot_kit/examples/minimal_3d` (un robot que te caza) o `arena_3d` (cuatro bots, rifle y granadas, pickups, huir, dificultad).

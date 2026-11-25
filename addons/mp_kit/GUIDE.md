@@ -90,7 +90,7 @@ Al activarlo pasa esto:
 | **MpKit: Setup game...** | El asistente: arma un juego completo (ver [Camino A](#4-camino-a-el-asistente-setup-game)). |
 | **MpKit: Make selection a network actor** | Agrega un `MpActor` a cada nodo seleccionado y, si es un `CharacterBody2D`/`3D`, también un `MpInput`. Se deshace con Ctrl+Z. |
 | **MpKit: New replicated feature...** | Crea `res://features/<id>/<id>.gd` + `.tscn` (camino de bajo nivel). |
-| **MpKit: New session flow...** | Crea un `MpFlow` como autoload en `res://glue/session_flow.tscn`. **No hace falta** si ponés el `MpFlow` en la escena de boot (lo recomendado acá). No uses los dos: ver [15](#15-problemas-comunes), "two flows". |
+| **MpKit: New session flow...** | Crea un `MpFlow` como autoload en `res://autoloads/session_flow.tscn`. **No hace falta** si ponés el `MpFlow` en la escena de boot (lo recomendado acá). No uses los dos: ver [15](#15-problemas-comunes), "two flows". |
 | **MpKit: Install Cursor/VS Code snippets** | Copia snippets a `.vscode/mpkit.code-snippets`. |
 
 ## 4. Camino A: el asistente Setup game
@@ -406,15 +406,15 @@ El script del jugador se escribe como el de un juego de un jugador, con tres reg
 
 ### 6.1 El esqueleto
 
-Del ejemplo (`examples/arena_2d/player.gd`):
+Del ejemplo (`examples/arena_2d/player.gd`): el jugador se mueve con las flechas y, al apretar aceptar, suma un punto y todos ven un destello. Los `%Nombre` piden que el nodo esté marcado como nombre único (clic derecho › «Acceso como nombre único»), como `MpActor` y `MpInput` en `player.tscn`:
 
 ```gdscript
 extends CharacterBody2D
 
 const SPEED := 220.0
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
 
 
 func mp_move(keys: MpInput, _delta: float) -> void:
@@ -656,7 +656,7 @@ Una puerta, una palanca, una campana: está en el mundo desde el principio y no 
 2. En el `MpActor`: `sync_position` off y `sync_rotation` off (no se mueve), `smoothing` = `NONE`, `sync_extra` = `rings`.
 3. En **Owner**: `callers` = **ANYONE**. Sin esto, con `owner_slot` = 0 solo el servidor podría tocarla.
 4. Guardá la escena.
-5. Instanciala en el mundo (a mano, no por spawner).
+5. Instanciala en el mundo (a mano, no por spawner). Cualquier jugador puede tocar la campana: el servidor suma un toque y todos ven el total y quién la tocó.
 
 ```gdscript
 extends Node2D
@@ -665,9 +665,9 @@ extends Node2D
 	set(value):
 		rings = value
 		if is_node_ready():
-			$Label.text = "Bell %d" % rings
+			%Label.text = "Bell %d" % rings
 
-@onready var net: MpActor = $MpActor
+@onready var net: MpActor = %MpActor
 
 
 func ring() -> void:          # lo llama cualquier jugador en su máquina
@@ -691,7 +691,7 @@ Un nodo estático con `MpActor` no necesita nada más: el spawner del mundo lo r
 4. En **Extra Scenes**, agregá `shot.tscn`. **Obligatorio**: todos los peers necesitan la misma lista; no se puede agregar solo en el servidor.
 5. Para encontrarlo desde el jugador, ponelo en un grupo: pestaña **Nodo › Grupos**, `shot_spawner`.
 
-La bala (`shot.tscn`) tiene su `MpActor` (posición sincronizada, `sync_rotation` off). Desde el servidor:
+La bala (`shot.tscn`) tiene su `MpActor` (posición sincronizada, `sync_rotation` off). Al disparar, el servidor la crea:
 
 ```gdscript
 const SHOT := preload("res://addons/mp_kit/examples/arena_2d/shot.tscn")
@@ -808,7 +808,7 @@ Tu juego sabe que espera con `MpMatch.waiting` (en todos los peers), `MpMatch.wa
 
 ```gdscript
 # world.gd: lo de la partida arranca recién cuando arranca la partida.
-@onready var match_node: MpMatch = $MpMatch
+@onready var match_node: MpMatch = %MpMatch
 
 func _ready() -> void:
 	match_node.all_loaded.connect(_spawn_threats)  # servidor: el arranque
@@ -834,9 +834,11 @@ El kit no trae IA: dice qué asientos nadie ocupa y deja que un bot tuyo los jue
 | `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | Las teclas del bot: se leen igual que las de un jugador (`get_vector`, `is_action_just_pressed`, `mp_move`). Valen mientras nadie juega el asiento; cuando entra un jugador quedan sueltas y mandan las suyas |
 | `MpInput.has_player()` | Verdadero mientras un jugador juega ese asiento. Falso también mientras su jugador está ausente dentro de la gracia |
 
+Cuando arranca la partida, cada asiento libre se llena con un bot:
+
 ```gdscript
 ## arena.gd (el mundo): cuando arranca, un bot en cada asiento libre.
-@onready var players: MpSlotSpawner = $Players
+@onready var players: MpSlotSpawner = %Players
 
 
 func _ready() -> void:
@@ -849,6 +851,8 @@ func _ready() -> void:
 			players.spawn_slot(slot).add_child(Bot.new()))
 ```
 
+El bot aprieta las teclas del asiento mientras no haya un jugador sentado:
+
 ```gdscript
 ## bot.gd: hijo del peón, solo en el servidor. Decide teclas; el movimiento es el del jugador (mp_move).
 class_name Bot
@@ -858,7 +862,7 @@ var input: MpInput
 
 
 func _ready() -> void:
-	input = get_parent().get_node("MpInput")
+	input = get_parent().get_node("%MpInput")
 
 
 func _physics_process(_delta: float) -> void:
@@ -937,9 +941,12 @@ Métodos y propiedades:
 Mientras espera, el árbol está pausado. La red del kit sigue andando (MpKit, el lobby, el agente, el lanzador, el beacon LAN corren igual), y también el botón Leave y la línea de invitación. Lo tuyo no: si querés mostrar "Esperando jugadores…", poné ese nodo del HUD con **Process › Mode = Always** y escuchá `waiting_changed`.
 
 ```gdscript
+@export var match_node: MpMatch  # el MpMatch del mundo, asignado en el inspector
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	$"../Match".waiting_changed.connect(func(on: bool) -> void: $Waiting.visible = on)
+	match_node.waiting_changed.connect(func(on: bool) -> void: %Waiting.visible = on)
 ```
 
 Del ejemplo (`arena.gd`): gana el primero que llega a 3; el que abandona pierde.
@@ -947,8 +954,8 @@ Del ejemplo (`arena.gd`): gana el primero que llega a 3; el que abandona pierde.
 ```gdscript
 const WIN_SCORE := 3
 
-@onready var score: MpState = $Score
-@onready var match_node: MpMatch = $Match
+@onready var score: MpState = %Score
+@onready var match_node: MpMatch = %Match
 
 
 func _ready() -> void:
@@ -1091,9 +1098,9 @@ func _process(_delta: float) -> void:
 	var mine := holder > 0 and holder == MpKit.local_slot() and not net.is_authority()
 	var feet := carrier() if mine else null
 	if feet != null:
-		$Body.global_position = feet.global_position + feet.facing * DRIBBLE
+		%Body.global_position = feet.global_position + feet.facing * DRIBBLE
 	else:
-		$Body.position = Vector2.ZERO
+		%Body.position = Vector2.ZERO
 ```
 
 **6. El partido espera a todos.** `MpFlow.start_seats` en 0 (lo de entrada) espera cada asiento, y `MpMatch` tiene el mundo en pausa hasta entonces. No arranques el partido a mano al cargar el host: escuchá `MpMatch.all_loaded`. Para arrancar igual si alguien no llega: `start_on_timeout` con `load_timeout_s`, o `MpStartButton` para el host.
@@ -1338,6 +1345,8 @@ Un script que extiende `MpRoomRules` y pisa las funciones que necesitás. Todas 
 | `accept_bot(pick) -> bool` | ¿Vale el bot que puso el anfitrión? Falso = `bad_bot` | true |
 | `build_ticket(seats, options) -> Dictionary` | Qué recibe la partida. Mantené `seats`; agregá lo que haga falta (semilla, mapa) | `{"options": ..., "seats": ...}` |
 
+Una sala de 4 asientos si el modo es 2v2 y de 2 si no, y solo deja elegir al caballero o al arquero:
+
 ```gdscript
 # my_rules.gd
 extends MpRoomRules
@@ -1463,6 +1472,8 @@ La partida usa el mismo transporte que tu juego (ENet, WebSocket o relay). Por i
 
 ### 10.2 Por código
 
+Para levantar un servidor local de 2 asientos y enterarte de su dirección y de los códigos de sala:
+
 ```gdscript
 var server := MpLocalServer.start_on(get_tree(), 2)
 server.server_ready.connect(func(address: String, port: int, codes: Dictionary) -> void:
@@ -1518,6 +1529,8 @@ Cuándo conviene: amigos, cooperativo, salas casuales y privadas. Cuándo no: pa
 Probalo todo antes en tu PC: `bash mpkit_lab/run/online.sh` en el repo del kit levanta un emisor y un relay locales y juega a través de ellos con un host de escritorio, un host dentro de su juego (congelado 3 s en mitad de la partida) y un host en un navegador.
 
 ### 10.5 En tu juego
+
+Alojar una sala online para 4, unirse con el código de un amigo y listar las salas públicas con lugar:
 
 ```gdscript
 var flow := MpFlow.find_in_tree(self)

@@ -6,7 +6,7 @@
 **Features:** F13, F14, F15, F17, F18
 
 **Tipo:** juego Godot. Omitido: SQL, auth, browsers.  
-**Nota command:** online = RFC de glue dedicated separado del slice de gameplay (ya cumplido: este RFC no es el 001).
+**Nota command:** online = RFC de código del juego dedicated separado del slice de gameplay (ya cumplido: este RFC no es el 001).
 
 ## Resumen
 
@@ -15,15 +15,15 @@ Servidor dedicado (mismo proyecto), emote por túnel `Dictionary`, snapshot de `
 ## Archivos
 
 ```
-example/glue/net_glue.gd              # dedicated boot, reflect emote, primer cliente arranca
-example/scenes/world/demo_match.gd    # elapsed, push_snapshot, apply_snapshot
-example/scenes/ui/match_hud.gd
-example/scenes/ui/match_hud.tscn
-example/scenes/actors/pawn_2d.tscn    # MpCustomPipe channel emote
-example/scenes/actors/pawn_3d.tscn
-example/scenes/actors/pawn_2d.gd      # try_emote
-example/scenes/actors/pawn_3d.gd
-example/scenes/components/pawn_input.gd  # emote action
+example/autoloads/net_session.gd              # dedicated boot, reflect emote, primer cliente arranca
+example/match/demo_match.gd    # elapsed, push_snapshot, apply_snapshot
+example/ui/hud/match_hud.gd
+example/ui/hud/match_hud.tscn
+example/player/pawn_2d.tscn    # MpCustomPipe channel emote
+example/player/pawn_3d.tscn
+example/player/pawn_2d.gd      # try_emote
+example/player/pawn_3d.gd
+example/shared/components/pawn_input.gd  # emote action
 example/README.md
 example/PRD.md                        # ya existe (F18)
 example/FEATURES.md
@@ -50,7 +50,7 @@ MpBoot.is_dedicated_process()
 ```
 Cliente / 1P: pipe.send({slot, msg})
 Listen host / dedicated server origin: pipe.broadcast(...)
-Glue: if is_server() and from_peer != 1: broadcast_custom
+Código del juego: if is_server() and from_peer != 1: broadcast_custom
 ```
 
 Pawn flashea visual si `data.slot == player_slot`. Evitar doble flash: ignorar el paquete crudo del cliente (`from_peer != 1`) en el server y esperar el echo `from_peer == 1`, **o** flash en todos los peers de forma idempotente.
@@ -64,7 +64,7 @@ Solo server y 1P incrementan `elapsed`. Server networked: `push_snapshot` ~5 Hz.
 1. `godot --headless --path example -- --dedicated` bindea, sin lobby. Primer cliente Join ve el match. El proceso dedicated **no** tiene pawn (`local_slot()==0`).
 2. `--world=3d` carga match 3D en dedicated + clientes.
 3. Canal `emote` en allowlist. E en un cliente se ve en el otro (broadcast). Listen host también replica emote.
-4. `broadcast_custom` desde glue **no** entra en recursión infinita.
+4. `broadcast_custom` desde código del juego **no** entra en recursión infinita.
 5. HUD muestra modo, elapsed, `occupied_slots()`, último túnel. Dedicated: copy de “sin jugador local”, no “player 1”.
 6. Cliente no tiquea `elapsed` (el valor llega por snapshot).
 7. `example/README.md` documenta 1P, LAN dos instancias, dedicated, F6, re-copia del addon.

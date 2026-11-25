@@ -3,6 +3,8 @@ extends BotMode
 ## The arena's own behaviour, a BotMode child of each Bot3D: hurt below `below`, the bot runs to the nearest health it
 ## can take (it wants 2, more than its fight's 1); with none out, it fights on.
 
+const Fighter := preload("res://addons/bot_kit/examples/arena_3d/fighter.gd")
+
 ## It flees under this much health.
 @export var below := 35.0
 
@@ -10,7 +12,7 @@ var _health: Node3D
 
 
 func _want(bot: Bot3D) -> float:
-	if float(bot.body.get(&"health")) >= below:
+	if (bot.body as Fighter).health >= below:
 		return 0.0
 	_health = _nearest_health(bot)
 	return 2.0 if _health != null else 0.0

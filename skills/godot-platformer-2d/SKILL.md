@@ -27,7 +27,7 @@ Ejemplo de referencia: `addons/plat_kit/examples/minimal_2d/` (F6), sin código:
 
 ## En el addon (defaults)
 
-| Truco | Qué hace | Knob |
+| Truco | Qué hace | Perilla |
 |-------|----------|------|
 | Coyote time | Saltás un rato después de dejar el borde | `coyote_time` |
 | Jump buffer | Jump apretado en el aire se consume al aterrizar | `jump_buffer` |
@@ -40,7 +40,7 @@ Ejemplo de referencia: `addons/plat_kit/examples/minimal_2d/` (F6), sin código:
 
 ## En el juego (no el addon)
 
-Celeste también hace cosas **de ese título**. Documentadas en [forgiveness.md](forgiveness.md): dash corner, pop a one-way, super wall-jump, stamina refund. Implementalas como hijos / glue si el producto las pide. No las metas en `plat_kit`.
+Celeste también hace cosas **de ese título**. Documentadas en [forgiveness.md](forgiveness.md): dash corner, pop a one-way, super wall-jump, stamina refund. Implementalas como hijos o código del juego si el producto las pide. No las metas en `plat_kit`.
 
 ## Árbol
 

@@ -78,6 +78,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 mesh = SubResource("CylinderMesh_pole")
 
 [node name="Forest" type="Node3D" parent="."]
+unique_name_in_owner = true
 script = ExtResource("2_scatter")
 rules = SubResource("Resource_rules")
 variants = Array[ExtResource("4_variant")]([SubResource("Resource_tree")])
@@ -86,6 +87,7 @@ keep_out = Array[ExtResource("7_keep_out")]([SubResource("Resource_camp")])
 name_prefix = "Tree"
 
 [node name="Batch" type="Node3D" parent="." node_paths=PackedStringArray("props")]
+unique_name_in_owner = true
 script = ExtResource("8_batch")
 props = [NodePath("../Forest")]
 build_on_ready = false

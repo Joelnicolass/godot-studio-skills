@@ -13,9 +13,9 @@ Plataformas 2D (coyote, buffer): addon `plat_kit` / `/add-platformer-2d`. El mot
 
 ## Health / Hitbox / Hurtbox
 
-`Health` (nodo `class_name`): `max_hp` puede venir del Resource de tipo; `hp` actual en el nodo. `signal damaged(amount: int)` / `signal died`. El padre orquesta (animación, `queue_free`).
+`Health` (nodo `class_name`): si la entidad tiene un tipo, `max_hp` sale del tipo (`health.setup(type.max_hp)`) y la escena no lo pisa en el inspector de `Health`; si no tiene tipo, es el `@export` de `Health`. Nunca los dos. `hp` actual en el nodo. `signal damaged(amount: int)` / `signal died`. El padre orquesta (animación, `queue_free`).
 
-Hitbox / Hurtbox = `Area2D` packed scenes. Opcional: grupo `"hurtbox"` si el tipo exacto no importa; los sockets `@export` ganan.
+Hitbox / Hurtbox = `Area2D` packed scenes. Opcional: grupo `"hurtbox"` si el tipo exacto no importa; las referencias `@export` ganan.
 
 ## PostFx stack
 
@@ -39,17 +39,22 @@ PostFxStack (CanvasLayer, layer alta)
 
 ## Preview en editor
 
-`@export_tool_button` para regenerar geometría. El preview no escribe `MatchRules` ni arranca ENet.
+`@export_tool_button` para regenerar geometría. La preview no toca las reglas de la partida ni arranca la red. Reglas completas: [SKILL.md](SKILL.md) §7.
 
-## Plantilla Resource + escena
+## Tipo + escena
 
 ```
 projectile.tscn
-projectile_fast.tres    # ProjectileData { damage, speed, scene? }
-projectile_slow.tres
+projectile_type.gd                 # class_name ProjectileType
+fast/fast_projectile_type.tres     # { damage, speed, scene? }
+slow/slow_projectile_type.tres
 ```
 
-El arma exporta `ProjectileData`. Spawnea `data.scene` (o la escena única) y asigna `data`.
+El arma exporta `ProjectileType`. Crea `type.scene` (o la escena única) y le asigna `type`.
+
+## Variante con otra estructura
+
+*New Inherited Scene* de la base (`tank.tscn` heredada de `enemy.tscn`): cambia la malla, suma una partícula, y el resto sigue a la base. Un nivel de herencia.
 
 ## Cuándo sí va en código
 
@@ -57,4 +62,4 @@ El arma exporta `ProjectileData`. Spawnea `data.scene` (o la escena única) y as
 - Autoridad multiplayer.
 - Valores de **ronda** idénticos en host y guest.
 
-Tipos compartidos: Resource. Valor de una sola escena: `@export` del nodo. Runtime: nodo. Comunicación (señales, bus `Events`, command, pool, spawner): [godot-code-quality](../godot-code-quality/SKILL.md).
+Dónde vive cada número: regla 0. Lo que cambia al correr: variable del nodo. Comunicación (señales, bus `Events`, command, pool, spawner): [godot-code-quality](../godot-code-quality/SKILL.md).

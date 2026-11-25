@@ -1,3 +1,4 @@
+@tool
 class_name RtsOrders
 extends Node
 
@@ -35,7 +36,11 @@ const FORMATION := &"formation"
 @export var local_slot := 1
 ## Most units one order moves; 0 = no limit.
 @export var max_units := 0
+## Two units stand min(`spacing_per_size` · the widest RtsUnit.size + `spacing_base`, `max_spacing`)
+## apart.
 @export var spacing_per_size := 1.25
+## World units, as the two below (the inspector shows which: px under a Node2D, m under a Node3D).
+## The defaults are meters: a 2D game sets its own, in pixels (rts_command_rig_2d.tscn has them).
 @export var spacing_base := 0.85
 @export var max_spacing := 10.0
 ## A `retarget_nearest` command (attack a unit) makes each unit take the foe nearest its slot within
@@ -64,6 +69,11 @@ func _init() -> void:
 	send = func(order: RtsOrder) -> void: apply(order, local_slot)
 	anchor_for = _default_anchor
 	closest_foe = _default_closest_foe
+
+
+func _validate_property(property: Dictionary) -> void:
+	if property.name in ["spacing_base", "max_spacing", "retarget_range"]:
+		RtsSpace.show_distance_unit(property, self)
 
 
 ## The local player's order: `requested`, then `send`.

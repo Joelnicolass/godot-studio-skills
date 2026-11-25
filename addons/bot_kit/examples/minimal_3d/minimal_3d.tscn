@@ -171,6 +171,7 @@ mesh = SubResource("BoxMesh_qjp5t")
 shape = SubResource("BoxShape3D_qoaon")
 
 [node name="You" type="CharacterBody3D" parent="." unique_id=342669938 groups=["bot_target"]]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -2)
 collision_layer = 2
 script = ExtResource("2_bgs5d")
@@ -184,6 +185,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_wccmu")
 
 [node name="Robot" type="CharacterBody3D" parent="." unique_id=957529826]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -7)
 collision_layer = 2
 script = ExtResource("3_1lw6q")
@@ -197,6 +199,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_v81ay")
 
 [node name="Head" type="Node3D" parent="Robot" unique_id=610284755]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
 [node name="Visor" type="MeshInstance3D" parent="Robot/Head" unique_id=1291577149]
@@ -204,10 +207,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
 mesh = SubResource("BoxMesh_sg0gw")
 
 [node name="Bot3D" type="Node3D" parent="Robot" unique_id=1744516659 node_paths=PackedStringArray("head")]
+unique_name_in_owner = true
 script = ExtResource("4_guyrg")
 head = NodePath("../Head")
 
 [node name="Label" type="Label" parent="." unique_id=668725910]
+unique_name_in_owner = true
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 16.0

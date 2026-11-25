@@ -1,5 +1,17 @@
 # Cambios de RtsKit
 
+## 0.3.0
+
+- **El equipo de mando es un nodo.** `rig/rts_command_rig_3d.tscn` y `rig/rts_command_rig_2d.tscn` (`RtsCommandRig`) traen `Command` con sus diez piezas y la `View` con su `Box`, todo conectado. Lo instanciás, asignás `camera` y `ground` (en 2D alcanza con `camera`) y ya elegís y ordenás. `menu` es un tercer socket, opcional, para el menú del botón derecho. Si falta un socket, o la cámara es de la otra dimensión, el nodo muestra un aviso en el editor.
+- **Las piezas siguen a mano.** En el editor, clic derecho sobre el equipo > Editable Children: cada valor sigue en la pieza que lo usa. En código, `rig.selection`, `rig.orders`, `rig.command`, `rig.order_input`, `rig.select_input`, `rig.armed`, `rig.state`, `rig.pointer`, `rig.probe`, `rig.order_button`, `rig.group_keys`, `rig.view`, `rig.box`.
+- **Los bordes de la cámara, sin conectar nada.** A un `RtsCamera3D` / `RtsCamera2D` sin `edge_area`, el equipo le pone su `View`.
+- **El inspector muestra la unidad de cada distancia.** `RtsUnit.size`, `RtsOrders.spacing_base`, `max_spacing`, `retarget_range` y `RtsSelection.same_type_radius` muestran `px` cuando el nodo cuelga de un `Node2D` y `m` cuando cuelga de un `Node3D`; antes no mostraban nada y la documentación decía «metros» también en 2D. Ningún valor cambia. El equipo 2D trae las suyas en píxeles (8, 120, 1200, 600). `RtsSpace.distance_unit(node)` es la regla.
+- **`RtsOrderButton.menu` se puede cambiar con el juego andando** (antes solo se conectaba en `_ready`).
+- **Ejemplos:** `minimal_2d`, `skirmish_3d` y `skirmish_2d` usan el equipo; los `skirmish` tienen Editable Children prendido para conectar su HUD.
+- **Tests:** `test_rig` (el equipo en 2D y 3D con eventos de mouse, los avisos, el socket del suelo, el menú, los bordes, un HUD encima con un puntero real), `test_space` (la unidad que muestra el inspector) y `test_independence` (el kit no nombra a ningún otro).
+
+Para actualizar: nada se rompe; un equipo armado a mano sigue andando igual. Para pasarte a la escena: borrá tu `Command` y tu `Hud/View`, instanciá el equipo de tu dimensión, asigná `camera` y `ground`, y dejá tu HUD después del equipo en el árbol. Los valores que habías cambiado en una pieza se vuelven a poner con Editable Children; en tus scripts, `$Command/Selection` pasa a `rig.selection` (con `@export var rig: RtsCommandRig`), y el `edge_area` de tu cámara puede quedar vacío. Un script tuyo que extiende `RtsOrders` o `RtsSelection` sigue igual (ahora son `@tool` solo para mostrar la unidad).
+
 ## 0.2.0
 
 - **Los bordes se frenan sobre la UI.** `RtsCamera3D` y `RtsCamera2D` ya no panean ni giran por los bordes con el puntero sobre un control de la UI: un botón o un panel del HUD, cualquier control cuyo filtro de mouse no sea *Ignore* (los labels y contenedores en *Ignore* no cuentan). Antes, sin `edge_area`, la cámara se movía mientras apuntabas a un botón de una esquina. `edges_over_gui = true` vuelve a lo de antes. Con `edge_area` nada cambia: los bordes siguen andando solo sobre ese control.

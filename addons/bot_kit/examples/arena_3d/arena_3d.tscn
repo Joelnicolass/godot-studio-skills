@@ -306,6 +306,7 @@ transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81
 shadow_enabled = true
 
 [node name="CameraPivot" type="Node3D" parent="." unique_id=891644646]
+unique_name_in_owner = true
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot" unique_id=605210531]
 transform = Transform3D(1, 0, 0, 0, 0.6097108, 0.79262394, 0, -0.79262394, 0.6097108, 0, 26, 20)
@@ -440,11 +441,12 @@ mesh = SubResource("BoxMesh_35xxw")
 [node name="Shape" type="CollisionShape3D" parent="Level/Crate5" unique_id=858448664]
 shape = SubResource("BoxShape3D_ofwwa")
 
-[node name="Health" type="Area3D" parent="." unique_id=1390595351]
+[node name="Health" type="Area3D" parent="." unique_id=1390595351 node_paths=PackedStringArray("goal")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 0)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("2_hkgok")
+goal = NodePath("BotGoal3D")
 
 [node name="Shape" type="CollisionShape3D" parent="Health" unique_id=728887315]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
@@ -459,11 +461,12 @@ script = ExtResource("3_r5bqf")
 priority = 2.0
 reach_m = 25.0
 
-[node name="Health2" type="Area3D" parent="." unique_id=1006260439]
+[node name="Health2" type="Area3D" parent="." unique_id=1006260439 node_paths=PackedStringArray("goal")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("2_hkgok")
+goal = NodePath("BotGoal3D")
 
 [node name="Shape" type="CollisionShape3D" parent="Health2" unique_id=1977012198]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
@@ -478,11 +481,12 @@ script = ExtResource("3_r5bqf")
 priority = 2.0
 reach_m = 25.0
 
-[node name="Grenades" type="Area3D" parent="." unique_id=735287087]
+[node name="Grenades" type="Area3D" parent="." unique_id=735287087 node_paths=PackedStringArray("goal")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("2_hkgok")
+goal = NodePath("BotGoal3D")
 kind = 1
 
 [node name="Shape" type="CollisionShape3D" parent="Grenades" unique_id=1607239117]
@@ -497,10 +501,13 @@ mesh = SubResource("BoxMesh_3xhle")
 script = ExtResource("3_r5bqf")
 reach_m = 25.0
 
-[node name="Red" type="CharacterBody3D" parent="." unique_id=185933755 groups=["arena_fighter", "bot_target"]]
+[node name="Red" type="CharacterBody3D" parent="." unique_id=185933755 node_paths=PackedStringArray("bot", "head", "shape") groups=["arena_fighter", "bot_target"]]
 transform = Transform3D(-0.70710677, 0, -0.70710677, 0, 1, 0, 0.70710677, 0, -0.70710677, -12, 0, -12)
 collision_layer = 2
 script = ExtResource("4_eghrw")
+bot = NodePath("Bot3D")
+head = NodePath("Head")
+shape = NodePath("Shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Red" unique_id=2019305713]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -525,10 +532,13 @@ weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_
 [node name="Flee" type="Node" parent="Red/Bot3D" unique_id=1752415217]
 script = ExtResource("9_03j42")
 
-[node name="Blue" type="CharacterBody3D" parent="." unique_id=314424704 groups=["arena_fighter", "bot_target"]]
+[node name="Blue" type="CharacterBody3D" parent="." unique_id=314424704 node_paths=PackedStringArray("bot", "head", "shape") groups=["arena_fighter", "bot_target"]]
 transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 12, 0, 12)
 collision_layer = 2
 script = ExtResource("4_eghrw")
+bot = NodePath("Bot3D")
+head = NodePath("Head")
+shape = NodePath("Shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Blue" unique_id=1053136471]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -553,10 +563,13 @@ weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_
 [node name="Flee" type="Node" parent="Blue/Bot3D" unique_id=555444367]
 script = ExtResource("9_03j42")
 
-[node name="Green" type="CharacterBody3D" parent="." unique_id=893506569 groups=["arena_fighter", "bot_target"]]
+[node name="Green" type="CharacterBody3D" parent="." unique_id=893506569 node_paths=PackedStringArray("bot", "head", "shape") groups=["arena_fighter", "bot_target"]]
 transform = Transform3D(-0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, -0.70710677, 12, 0, -12)
 collision_layer = 2
 script = ExtResource("4_eghrw")
+bot = NodePath("Bot3D")
+head = NodePath("Head")
+shape = NodePath("Shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Green" unique_id=853559806]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -581,10 +594,13 @@ weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_
 [node name="Flee" type="Node" parent="Green/Bot3D" unique_id=392752116]
 script = ExtResource("9_03j42")
 
-[node name="Yellow" type="CharacterBody3D" parent="." unique_id=128570293 groups=["arena_fighter", "bot_target"]]
+[node name="Yellow" type="CharacterBody3D" parent="." unique_id=128570293 node_paths=PackedStringArray("bot", "head", "shape") groups=["arena_fighter", "bot_target"]]
 transform = Transform3D(0.70710677, 0, -0.70710677, 0, 1, 0, 0.70710677, 0, 0.70710677, -12, 0, 12)
 collision_layer = 2
 script = ExtResource("4_eghrw")
+bot = NodePath("Bot3D")
+head = NodePath("Head")
+shape = NodePath("Shape")
 
 [node name="Mesh" type="MeshInstance3D" parent="Yellow" unique_id=613729402]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -610,6 +626,7 @@ weapons = Array[ExtResource("6_2kxw2")]([ExtResource("7_pt6wc"), ExtResource("8_
 script = ExtResource("9_03j42")
 
 [node name="Label" type="Label" parent="." unique_id=2031063779]
+unique_name_in_owner = true
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 16.0

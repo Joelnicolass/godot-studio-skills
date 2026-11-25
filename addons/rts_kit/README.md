@@ -4,11 +4,14 @@ La capa de mando de un juego de estrategia en tiempo real, para **2D y 3D**: uni
 
 No depende de ningún otro kit. Un juego en red lo conecta con MpKit (o con cualquier transporte) con dos llamadas propias (ver [Red](#red)); un RTS de un jugador no conecta nada.
 
+**Lo más corto:** tus unidades con un hijo `RtsUnit`, y **un nodo** en la escena de batalla: `rig/rts_command_rig_3d.tscn` (o `rts_command_rig_2d.tscn`) con dos sockets, la cámara y el suelo. Ya elegís y ordenás.
+
 **¿Nunca usaste el kit?** Empezá por [GUIDE.md](GUIDE.md): una unidad, el equipo, las formas de dar órdenes, cómo hacer tuya cada parte y el multijugador con MpKit, paso a paso.
 
 ## Instalar
 
 ```bash
+# Copia el addon al proyecto de tu juego.
 ./install.sh --addon /path/to/godot-project rts_kit
 ```
 
@@ -16,16 +19,17 @@ Habilitá el plugin **RtsKit**. Proyecto > Herramientas > *RtsKit: Add default i
 
 ## Ejemplo mínimo
 
-`examples/minimal_2d/minimal_2d.tscn` (F6): seis soldados y el equipo de mando de [GUIDE.md › 3](GUIDE.md#3-el-equipo-de-mando), con cada socket conectado en el inspector. Arrastrá un rectángulo sobre los soldados, hacé clic derecho en el suelo y van en línea; Ctrl/Cmd+1 guarda el grupo y 1 lo trae.
+`examples/minimal_2d/minimal_2d.tscn` (F6): seis soldados, una cámara y el equipo de mando, que es **un nodo**: la escena `rig/rts_command_rig_2d.tscn` con su socket `camera` puesto en el inspector. Arrastrá un rectángulo sobre los soldados, hacé clic derecho en el suelo y van en línea; Ctrl/Cmd+1 guarda el grupo y 1 lo trae.
 
 ```
 Minimal2D
 ├── Units/Soldier1…6     # soldier.tscn
 ├── Camera               # RtsCamera2D
-├── Command              # RtsCommandInput: Selection, Orders, Pointer, State, Armed,
-│                        #   OrderInput, SelectInput, GroupKeys, OrderButton
-└── Hud/View/Box         # toma los clics del mundo; el rectángulo de selección
+├── Rig                  # rts_command_rig_2d.tscn: camera = Camera
+└── Hud/Help             # tu HUD, después del equipo
 ```
+
+En 3D es igual con `rig/rts_command_rig_3d.tscn` y dos sockets: `camera` y `ground` (el cuerpo de tu suelo).
 
 Una unidad es tu escena con un hijo `RtsUnit`, y tu script hace lo que el kit no: caminar hasta su lugar y avisar.
 
@@ -37,7 +41,7 @@ Soldier (CharacterBody2D, soldier.gd)   # capa 2: la de las unidades
 ```
 
 ```gdscript
-# soldier.gd
+# soldier.gd: el soldado camina hasta el lugar que le da la orden y avisa cuando llegó.
 extends CharacterBody2D
 
 ## Pixels per second.
@@ -80,42 +84,74 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 ```
 
-Las distancias del kit vienen en metros: en 2D, el ejemplo pone las de `Orders` y `Selection` en píxeles.
+En 2D el mundo se mide en píxeles: el equipo 2D ya trae sus distancias en píxeles, y el inspector muestra `px` al lado de cada una (`m` en 3D).
 
 ## Un mismo suelo para 2D y 3D
 
 El kit piensa en un solo espacio (`RtsSpace`): el suelo es el plano XZ e Y es arriba, las coordenadas del mundo 3D tal como son. Un punto del mundo 2D `(x, y)` es el punto del kit `(x, 0, y)`: visto desde arriba, un campo 3D y un mapa 2D cenital son el mismo dibujo, así que una formación, una distancia y un yaw sirven para los dos. Solo convierten los bordes: `RtsSpace.from_2d` / `to_2d`, `RtsUnitOrder.spot_2d()`.
 
-Las unidades del mundo son metros en 3D y **píxeles en 2D**. Las distancias que expone el kit (`RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius`, `RtsUnit.size`) vienen en metros: un juego 2D las pone en píxeles (el ejemplo 2D lo muestra).
+Las unidades del mundo son metros en 3D y **píxeles en 2D**, y las distancias del kit se escriben en la unidad del mundo: `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius` y `RtsUnit.size`. El inspector muestra cuál es al lado de cada valor: `px` cuando el nodo cuelga de un `Node2D`, `m` cuando cuelga de un `Node3D` (el más cercano hacia arriba; si no cuelga de ninguno, no muestra unidad). `rts_command_rig_2d.tscn` las trae en píxeles (8, 120, 1200 y 600) y `rts_command_rig_3d.tscn` en metros; `RtsUnit.size` lo ponés vos en cada unidad (unos 34 px el soldado del ejemplo). Si armás las piezas a mano en 2D, los valores por defecto de `RtsOrders` y `RtsSelection` son metros: poné los tuyos en píxeles.
 
 Yaw: adelante es `(sin yaw, 0, cos yaw)` y la derecha `(-cos yaw, 0, sin yaw)`. Las cámaras y `RtsPointer.camera_yaw()` dan el yaw con el que gira una formación: hacia donde mira la vista en 3D, hacia arriba de la pantalla en 2D.
 
 ## El equipo
 
+El equipo de mando es una escena del kit con todas las piezas ya conectadas. Instanciala en tu escena de batalla y asigná sus sockets:
+
+| Escena | Sockets | Distancias |
+|---|---|---|
+| `addons/rts_kit/rig/rts_command_rig_3d.tscn` | `camera` (tu `Camera3D`, por ejemplo un `RtsCamera3D`) y `ground` (el cuerpo de tu suelo, o el padre de sus cuerpos) | metros |
+| `addons/rts_kit/rig/rts_command_rig_2d.tscn` | `camera` (tu `Camera2D`, por ejemplo un `RtsCamera2D`); `ground` es opcional | píxeles |
+
 ```
 Juego
 ├── Units / …                      # tus cuerpos, cada uno con un hijo RtsUnit
 ├── Camera                         # RtsCamera3D o RtsCamera2D
-├── Command                        # RtsCommandInput: reparte las teclas, comparte local_slot
-│   ├── Selection                  # RtsSelection
-│   ├── Orders                     # RtsOrders: quién obedece, formaciones, lugares
-│   ├── Pointer                    # RtsPointer: pantalla -> mundo
-│   ├── State                      # RtsCommandState: qué está armado, qué se dijo
-│   ├── Armed                      # RtsArmedCommand
-│   ├── OrderInput                 # RtsOrderInput: clic derecho, clics armados, entradas de menú
-│   ├── SelectInput                # RtsSelectInput: botón izquierdo y rectángulo
-│   ├── GroupKeys                  # RtsGroupKeys
-│   ├── OrderButton                # RtsOrderButton: el botón derecho (+ un menú opcional)
-│   └── Probe                      # RtsTargetProbe: qué hay bajo el puntero (cursor, señal)
-└── Hud (CanvasLayer)
-    ├── View                       # un Control a pantalla completa que toma los clics del mundo
-    │   └── Box                    # el rectángulo de selección (cualquier Control)
+├── Rig                            # rts_command_rig_3d.tscn (RtsCommandRig): camera, ground, menu
+│   ├── Command                    # RtsCommandInput: reparte las teclas, comparte local_slot
+│   │   ├── Selection              # RtsSelection
+│   │   ├── Orders                 # RtsOrders: quién obedece, formaciones, lugares
+│   │   ├── Pointer                # RtsPointer: pantalla -> mundo
+│   │   ├── State                  # RtsCommandState: qué está armado, qué se dijo
+│   │   ├── Armed                  # RtsArmedCommand
+│   │   ├── OrderInput             # RtsOrderInput: clic derecho, clics armados, entradas de menú
+│   │   ├── SelectInput            # RtsSelectInput: botón izquierdo y rectángulo
+│   │   ├── GroupKeys              # RtsGroupKeys
+│   │   ├── OrderButton            # RtsOrderButton: el botón derecho (+ un menú opcional)
+│   │   └── Probe                  # RtsTargetProbe: qué hay bajo el puntero (cursor, señal)
+│   └── ViewLayer/View/Box         # el Control a pantalla completa que toma los clics del mundo,
+│                                  #   y el rectángulo de selección
+└── Hud (CanvasLayer)              # tu HUD: después del equipo en el árbol
     ├── CommandCard                # opcional: RtsCommandCard, botones para cada orden
-    ├── RadialMenu                 # opcional: rts_radial_menu.tscn (un RtsOrderMenu)
+    ├── RadialMenu                 # opcional: rts_radial_menu.tscn (va en el socket menu del equipo)
     └── Cue                        # opcional: rts_command_cue.tscn
 ```
 
-Cada pieza es un nodo con sockets `@export`; si sacás uno, ese comando desaparece y nada más se rompe. Los ejemplos traen el equipo conectado: `examples/minimal_2d` (lo mínimo, arriba), `examples/skirmish_3d` (con el menú radial, el cursor y los pings) y `examples/skirmish_2d` (sin ningún menú: un clic derecho simple y el panel de comandos).
+**La raíz (`RtsCommandRig`)** tiene solo lo que el equipo necesita de tu batalla:
+
+| Socket | Qué es |
+|---|---|
+| `camera` | La cámara de la batalla. A un `RtsCamera3D` / `RtsCamera2D` sin `edge_area` el equipo le pone su `View`: los bordes panean sobre el mundo y se frenan sobre tu HUD |
+| `ground` | 3D: el cuerpo del suelo; nada más de esa capa cuenta como suelo (un edificio no). 2D: opcional, el suelo es todo el plano |
+| `menu` | Opcional: el menú que abre el botón derecho al mantenerlo (`rts_radial_menu.tscn` o el tuyo) |
+
+Si falta `camera` (o `ground` en 3D), o la cámara es de la otra dimensión, el nodo muestra un aviso en el editor.
+
+**Las piezas** guardan todo lo demás, cada valor en la pieza que lo usa. En el editor: clic derecho sobre el equipo > **Editable Children**, y cambiás `Command/Orders` (catálogos, espaciado), `Command/Selection` (límite, radio), `Command` (`local_slot`, teclas) o conectás tu HUD a una pieza. En código, la raíz las da por nombre: `rig.selection`, `rig.orders`, `rig.command`, `rig.order_input`, `rig.select_input`, `rig.armed`, `rig.state`, `rig.pointer`, `rig.probe`, `rig.order_button`, `rig.group_keys`, `rig.view`, `rig.box`.
+
+```gdscript
+# El script de tu batalla escucha la selección y dice quién es el jugador de esta pantalla.
+@export var rig: RtsCommandRig
+
+
+func _ready() -> void:
+	rig.command.local_slot = 1
+	rig.selection.changed.connect(func(units: Array[RtsUnit]) -> void: print(units.size()))
+```
+
+**Tu HUD va después del equipo** en el árbol, en su propio `CanvasLayer` (o en una capa más alta): lo que queda encima de `View` conserva sus clics, y el resto del clic es del mundo.
+
+Cada pieza es un nodo con sockets `@export`; si sacás una (con Editable Children), ese comando desaparece y nada más se rompe. Los tres ejemplos usan el equipo: `examples/minimal_2d` (lo mínimo, arriba), `examples/skirmish_3d` (con el menú radial, el cursor y los pings) y `examples/skirmish_2d` (sin ningún menú: un clic derecho simple y el panel de comandos). ¿Preferís armarlo a mano, pieza por pieza? [GUIDE.md › 3](GUIDE.md#3-el-equipo-de-mando) tiene la tabla de sockets.
 
 ## La unidad (RtsUnit)
 
@@ -147,6 +183,7 @@ Los tipos de orden son datos (`RtsCommandType` en un `RtsCommandCatalog`: a qué
 El kit no manda nada. `RtsOrder.to_array()` / `RtsOrder.from_array(data, root)` convierten una orden en datos simples y de vuelta (las unidades por NodePath, o por tus ids con `id_of` / `node_of`); `from_array` rechaza datos mal formados (forma, tipos, tamaños, NaN). Un juego en red escribe el pegamento en su propio código. Con MpKit, por su canal propio (sin RPC a mano; también anda sin red):
 
 ```gdscript
+# Las órdenes del jugador local viajan al servidor, que las aplica como el jugador que las mandó.
 # Todos los peers: las órdenes del jugador local van al servidor.
 orders.send = func(order: RtsOrder) -> void:
 	MpKit.send_custom(&"rts_order", {"order": order.to_array(func(body: Node) -> String: return String(body.name))})
@@ -181,17 +218,18 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 ## Tests
 
 ```bash
+# Corre todos los tests del kit, sin ningún juego.
 godot --headless --path rtskit_lab --script res://addons/rts_kit/tests/rts_test_runner.gd
 ```
 
-`RTSKIT TESTS PASS (n)`. Cubren los lugares de las formaciones, quién obedece, el reparto de lugares (greedy y por filas), el re-blanco y la retirada, los datos simples de una orden, la cola, la selección (clic, tipo, rectángulo en 2D y 3D con oclusión, límite, grupos), la entrada sobre colisiones reales (puntero, contexto, ciclo de armado, rectángulo con eventos de mouse, el menú radial, el panel de comandos, las teclas, los modales), las dos cámaras, y los tres ejemplos jugados de punta a punta. Un test que corta con un error de script, o que no llega a chequear nada, falla. `rtskit_lab/` es un proyecto aparte para ellos; ahí `addons/rts_kit` es un symlink.
+`RTSKIT TESTS PASS (n)`. Cubren los lugares de las formaciones, quién obedece, el reparto de lugares (greedy y por filas), el re-blanco y la retirada, los datos simples de una orden, la cola, la selección (clic, tipo, rectángulo en 2D y 3D con oclusión, límite, grupos), la entrada sobre colisiones reales (puntero, contexto, ciclo de armado, rectángulo con eventos de mouse, el menú radial, el panel de comandos, las teclas, los modales), las dos cámaras, el equipo como un solo nodo en 2D y 3D (sockets, avisos, menú, bordes, un HUD encima), la unidad que muestra el inspector, que el kit no nombra a ningún otro, y los tres ejemplos jugados de punta a punta. Un test que corta con un error de script, o que no llega a chequear nada, falla. `rtskit_lab/` es un proyecto aparte para ellos; ahí `addons/rts_kit` es un symlink.
 
 ## Tips y recomendaciones
 
-- **Copiá el equipo, no lo armes.** Elegí `Command` y `Hud` en un ejemplo, copialos a tu escena y corregí los sockets que apuntan a la cámara y al suelo.
+- **Instanciá el equipo, no lo armes.** Arrastrá `rig/rts_command_rig_3d.tscn` (o `rts_command_rig_2d.tscn`) a tu escena y asigná `camera` y `ground`. Para cambiar una pieza: clic derecho > Editable Children.
 - **Capas:** el suelo en la 1 y las unidades en la 2 (`RtsPointer.ground_mask`, `unit_mask`). Una unidad fuera de la capa de unidades no se puede elegir con un clic.
-- **`Hud/View` toma los clics del mundo.** Todo lo del HUD que esté encima conserva los suyos; dejá su filtro de mouse en *Stop*.
-- **En 2D las distancias son píxeles:** `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius` y `RtsUnit.size`.
+- **La `View` del equipo toma los clics del mundo.** Poné tu HUD después del equipo en el árbol (o en una capa más alta): todo lo que esté encima conserva sus clics.
+- **En 2D las distancias son píxeles** y el inspector lo dice (`px`). El equipo 2D ya las trae; `RtsUnit.size` va en cada unidad.
 - **Avisá siempre.** Una orden que termina sola (`move`, `attack`) espera tu `complete()` o `fail(reason)`; si no avisás, la cola nunca avanza.
 - **Una unidad muerta** apaga `selectable`, `orderable` y `targetable`: sale sola de la selección y de los grupos.
 - **Reglas por unidad** en un script que `extends RtsUnit` (`accepts`, `is_foe`), no en la entrada.
@@ -200,4 +238,4 @@ godot --headless --path rtskit_lab --script res://addons/rts_kit/tests/rts_test_
 
 ## Lo que no trae esta versión
 
-El movimiento de las unidades (pathfinding, avoidance), la visión y la niebla de guerra, un minimapa y el combate son del juego por ahora; RtsKit 0.3–0.5 suman movimiento, visión y minimapa, y la 0.2 los controles modernos (más teclas de grupos y de selección, colas con Shift y waypoints, puntos de reunión, patrullar, mantener posición, posturas, posiciones de cámara, alertas). Ver `CHANGELOG.md`.
+El movimiento de las unidades (pathfinding, avoidance), la visión y la niebla de guerra, un minimapa y el combate son del juego por ahora; las próximas versiones suman movimiento, visión y minimapa, y los controles modernos (más teclas de grupos y de selección, colas con Shift y waypoints, puntos de reunión, patrullar, mantener posición, posturas, posiciones de cámara, alertas). Ver `CHANGELOG.md`.

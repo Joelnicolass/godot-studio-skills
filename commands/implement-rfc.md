@@ -37,7 +37,7 @@ Orden de autoridad: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
 2. Presentar un plan de implementación completo que cubra:
    - Árbol de archivos con `[+]` nuevo / `[~]` modificado / `[-]` borrado + mapa de responsabilidades (qué pieza hace una sola cosa; por qué no se fusiona)
    - Archivos a crear o modificar
-   - Dónde vive cada número (regla 0: `@export` del nodo que lo usa; `.tres` solo si se comparte o se edita como tipo) y cuántos archivos hay que abrir para cambiarlo
+   - Dónde vive cada número (regla 0: un dueño, el `.tres` del tipo o la raíz de la escena), sus filas de `docs/tuning.md`, y cuántos archivos hay que abrir para cambiarlo
    - Secuencia de implementación propuesta
    - Decisiones técnicas y trade-offs
    - Impactos potenciales sobre la funcionalidad existente

@@ -18,7 +18,7 @@
 
 ## 2. RULES
 
-**Veredicto:** PASS — kit intacto como transporte; glue en `NetGlue`.
+**Veredicto:** PASS — kit intacto como transporte; código del juego en `NetSession`.
 
 ## 3. Seguridad
 

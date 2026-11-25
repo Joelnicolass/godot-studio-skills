@@ -1,0 +1,25 @@
+keys,es,en
+BOOT_TITLE,MpKit — demo,MpKit — demo
+BOOT_PLAY_SOLO,Jugar solo,Play solo
+BOOT_HOST_LAN,Host LAN,Host LAN
+BOOT_JOIN,Unirse,Join
+BOOT_WORLD_2D,Mundo 2D,2D world
+BOOT_WORLD_3D,Mundo 3D,3D world
+BOOT_ROOMS_HEADER,Salas LAN,LAN rooms
+BOOT_LAN_IP,IP local: %s,Local IP: %s
+BOOT_STATUS_IDLE,Elegí un modo. WASD o flechas para mover. E para emote.,Pick a mode. WASD or arrows to move. E to emote.
+STATUS_HOST_FAIL,No se pudo hacer host (¿puerto ocupado?),Could not host (port in use?)
+STATUS_JOINING,Conectando a %s…,Connecting to %s…
+STATUS_JOIN_FAIL,No se pudo unir,Could not join
+STATUS_SERVER_LOST,Se perdió el servidor,Lost the server
+STATUS_BAD_IP,IP IPv4 inválida,Invalid IPv4 address
+STATUS_DEDICATED,Dedicated en puerto %d — esperando clientes,Dedicated on port %d — waiting for clients
+HUD_LEAVE,Salir,Leave
+HUD_STATUS,%s | t=%.1f | slots=%s,%s | t=%.1f | slots=%s
+HUD_MODE_1P,1P,1P
+HUD_MODE_LISTEN,Listen host,Listen host
+HUD_MODE_DEDICATED,Dedicated (sin jugador local),Dedicated (no local player)
+HUD_MODE_CLIENT,Cliente slot %d,Client slot %d
+HUD_TUNNEL_EMPTY,Túnel: (E emote),Tunnel: (E emote)
+HUD_TUNNEL_MSG,%s ← peer %d: %s,%s ← peer %d: %s
+EMOTE_MSG,hola,hi

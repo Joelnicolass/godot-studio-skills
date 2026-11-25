@@ -7,8 +7,12 @@
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/squares_3d/tiles/light.tscn" id="5_light"]
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/squares_3d/tiles/dark.tscn" id="6_dark"]
 
-[node name="Squares3D" type="Node3D"]
+[node name="Squares3D" type="Node3D" node_paths=PackedStringArray("board", "view", "reach", "route")]
 script = ExtResource("1_main")
+board = NodePath("Board")
+view = NodePath("Board/View")
+reach = NodePath("Board/View/Reach")
+route = NodePath("Board/View/Route")
 
 [node name="Camera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 3.5, 8.5, 11)

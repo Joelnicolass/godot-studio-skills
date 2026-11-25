@@ -2,6 +2,6 @@
 
 Leé `RULES.md` antes de tocar código. Autoridad: `PRD.md` > `FEATURES.md` > `RULES.md` > `VISUAL.md` > `RFCs/`.
 
-Arquitectura: **estándar Godot**. Multiplayer: 1P + listen + dedicated (MpKit). Arte: placeholders. UI en el idioma del producto (`glue/demo_copy.gd`); IDs en inglés.
+Arquitectura: **por entidad** (árbol y sufijos en `RULES.md`; dónde cambiar cada cosa, `docs/tuning.md`). Multiplayer: 1P + listen + dedicated (MpKit). Arte: placeholders. UI en el idioma del producto (`locale/texts.csv`); IDs en inglés.
 
 No metas gameplay en `addons/mp_kit`. Re-copiá el addon desde el repo padre con `./install.sh --addon-only example`.

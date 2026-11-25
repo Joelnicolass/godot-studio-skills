@@ -2,6 +2,12 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.25.1
+
+- **El asistente genera nombres únicos (`%`) en lugar de rutas `$`.** `Setup game...` escribe el script del jugador con `%MpActor`, `%MpInput` y `%Visual`, y marca esos nodos como nombre único en la escena (`unique_name_in_owner`). `examples/minimal_2d` queda igual a lo que genera. **MpKit: New session flow...** escribe `res://autoloads/session_flow.tscn` (más su `.gd`) en lugar de `res://glue/`, y las rutas de ejemplo del kit (`main/boot.tscn`, `levels/<nivel>/<nivel>.tscn`) siguen el layout por carpetas por tema. `examples/bots_2d`: el bot ya no busca el `MpInput` en su padre; `world.gd`, que lo crea, se lo pasa, y lleva su propio registro de peón a bot.
+
+Qué actualizar: nada en tu proyecto. `MpKit.VERSION` pasa a 0.25.1, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.25.0
 
 - **Una sola línea de tiempo.** `MpActor › Smoothing › shared_timeline`: todo actor `BUFFERED` con esto prendido se dibuja en el mismo momento del servidor, al retraso adaptativo más grande que necesite alguno (sube y baja de a poco, como el de uno solo). Antes cada actor calculaba el suyo, y la pelota podía verse un tick corrida de los pies que la tocan. Apagado por defecto. Lo pidió futbolito-match.

@@ -15,6 +15,7 @@ Para quien nunca usó el kit. Va desde una escena de batalla vacía hasta unidad
 ## 1. Instalar
 
 ```bash
+# Copia el addon al proyecto de tu juego.
 ./install.sh --addon /path/to/tu-proyecto-godot rts_kit
 ```
 
@@ -41,13 +42,14 @@ En el inspector de `RtsUnit`:
 |---|---|
 | `owner_slot` | El jugador dueño (1 en un juego de un jugador; 0 = de nadie) |
 | `kind` | Su tipo, por ejemplo `soldier`: Ctrl / Cmd + clic elige todos los `soldier` cerca |
-| `size` | Su ancho en unidades del mundo: las formaciones espacian por la más ancha |
+| `size` | Su ancho en unidades del mundo (el inspector muestra `m` en 3D y `px` en 2D): las formaciones espacian por la más ancha |
 | `center` | Opcional: un `Marker3D` en el medio del cuerpo, para el rectángulo de selección |
 
 Después, **el script de tu unidad** hace lo que el kit no puede: camina, pelea y avisa.
 
 ```gdscript
-# soldier.gd — código de tu juego
+# soldier.gd, código de tu juego: el soldado camina hasta el lugar de su orden, avisa cuando
+# llegó y deja de ser una unidad cuando muere.
 extends CharacterBody3D
 
 @export var speed := 6.0
@@ -99,16 +101,33 @@ func die() -> void:
 - `ends_on_its_own` está prendido en `move` y `attack` (avisá `complete()` al llegar / cuando el blanco murió) y apagado en `guard`, `guard_area`, `attack_move` y `retreat` (siguen hasta que otra orden las reemplaza).
 - ¿Algo salió mal (no hay camino)? `unit.fail(&"no_path")`.
 
-**2D** es igual con un `CharacterBody2D`, un `CollisionShape2D` en la capa 2 y `order.spot_2d()`: es el `soldier.gd` de `examples/minimal_2d` (camina en línea recta, sin `NavigationAgent2D`). En 2D las unidades del mundo son **píxeles**: poné `RtsUnit.size` en píxeles (sección 5.6).
+**2D** es igual con un `CharacterBody2D`, un `CollisionShape2D` en la capa 2 y `order.spot_2d()`: es el `soldier.gd` de `examples/minimal_2d` (camina en línea recta, sin `NavigationAgent2D`). En 2D las unidades del mundo son **píxeles**: poné `RtsUnit.size` en píxeles (el inspector muestra `px`; sección 5.6).
 
 ## 3. El equipo de mando
 
-El equipo es un conjunto de nodos chicos; cada uno hace una cosa y apunta a los demás con sockets `@export`. Lo más rápido: abrí `examples/minimal_2d` (este equipo y nada más) o un `skirmish`, elegí los nodos `Command` y `Hud`, copialos a tu escena de batalla y corregí los sockets que apuntan a la cámara.
+El equipo de mando es **un nodo**: una escena del kit con todas las piezas ya conectadas entre sí.
+
+1. Arrastrá `addons/rts_kit/rig/rts_command_rig_3d.tscn` a tu escena de batalla (2D: `rts_command_rig_2d.tscn`).
+2. En su inspector, asigná **Camera** (tu cámara) y **Ground** (el cuerpo de tu suelo; en 2D es opcional).
+3. Poné tu HUD después del equipo en el árbol, en su propio `CanvasLayer`.
 
 ```
 Battle (Node3D)
+├── Ground                         # tu suelo (un StaticBody3D en la capa 1)
 ├── Units                          # tus unidades
 ├── Camera                         # RtsCamera3D (2D: RtsCamera2D)
+├── Rig                            # rts_command_rig_3d.tscn: camera = Camera, ground = Ground
+└── Hud (CanvasLayer)              # tu HUD, después del equipo
+```
+
+Apretá F6: arrastrá un rectángulo sobre tus unidades, hacé clic derecho en el suelo, y van en línea. Si falta un socket, el nodo muestra un aviso en el editor (el triángulo amarillo) que dice cuál.
+
+**Qué hace cada socket.** `camera` le dice al equipo desde dónde se mira (y a un `RtsCamera` sin `edge_area` le pone la vista del equipo, así los bordes de la pantalla panean sobre el mundo y se frenan sobre tu HUD). `ground` dice qué es suelo: los edificios de la misma capa no cuentan. `menu` es opcional (sección 4).
+
+**Qué hay adentro.** Las piezas del kit, cada una un nodo chico que hace una cosa:
+
+```
+Rig (RtsCommandRig)
 ├── Command                        # RtsCommandInput
 │   ├── Selection                  # RtsSelection
 │   ├── Orders                     # RtsOrders
@@ -119,33 +138,51 @@ Battle (Node3D)
 │   ├── SelectInput                # RtsSelectInput
 │   ├── GroupKeys                  # RtsGroupKeys
 │   ├── OrderButton                # RtsOrderButton
-│   └── Probe                      # RtsTargetProbe (para el cursor; opcional)
-└── Hud (CanvasLayer)
+│   └── Probe                      # RtsTargetProbe (para el cursor)
+└── ViewLayer (CanvasLayer)
     └── View                       # Control a pantalla completa: toma los clics del mundo
         └── Box                    # Panel: el rectángulo de selección mientras arrastrás
 ```
 
-Los sockets, pieza por pieza:
+**Cómo llegás a una pieza.**
+
+- En el editor: clic derecho sobre `Rig` > **Editable Children**. Las piezas aparecen en el árbol y cada una muestra sus valores en el inspector (el espaciado en `Command/Orders`, el límite de la selección en `Command/Selection`, las teclas en `Command`). También las podés elegir en un socket de tu HUD.
+- En código: la raíz las da por nombre (`rig.selection`, `rig.orders`, `rig.order_input`, `rig.armed`, `rig.state`, `rig.command`…).
+
+```gdscript
+# El script de tu batalla muestra cuántas unidades hay elegidas.
+@export var rig: RtsCommandRig
+@export var status: Label
+
+
+func _ready() -> void:
+	rig.selection.changed.connect(
+		func(units: Array[RtsUnit]) -> void: status.text = "%d elegidas" % units.size()
+	)
+```
+
+**`View` distingue «un clic en el mundo» de «un clic en el HUD»**: todo lo del HUD que esté encima conserva sus clics. Por eso tu HUD va después del equipo en el árbol (o en un `CanvasLayer` con una capa más alta).
+
+Capas de física: por defecto el suelo es la capa 1 y las unidades la 2 (`RtsPointer.ground_mask`, `unit_mask`, `pick_mask`). Cambialas en `Command/Pointer` si tu proyecto usa otras.
+
+**Quién soy «yo».** `Command.local_slot` (`rig.command.local_slot`) es el jugador de esta pantalla (1 por defecto) y le pasa ese valor a la selección, las órdenes y el puntero. Solo las unidades de ese slot se pueden elegir y ordenar.
+
+**¿Armarlo a mano?** Se puede: el equipo es solo estos nodos con sus sockets `@export`, y cada pieza anda sola. Los sockets, pieza por pieza:
 
 | Nodo | Sockets |
 |---|---|
 | `Command` | `selection`, `orders`, `pointer`, `armed`, `state`, `order_input`, `select_input`, `group_keys`, `order_button` (sus hijos) |
-| `Selection` | `box` = `Hud/View/Box` |
-| `Pointer` | `camera` = `Camera`; `ground` = el cuerpo de tu suelo (así los edificios de la misma capa no cuentan como suelo) |
+| `Selection` | `box` = el `Box` |
+| `Pointer` | `camera` = tu cámara; `ground` = el cuerpo de tu suelo |
 | `Armed` | `state` |
 | `OrderInput` | `selection`, `orders`, `pointer`, `armed`, `state` |
-| `SelectInput` | `view` = `Hud/View`, `selection`, `pointer`, `armed`, `order_input` |
+| `SelectInput` | `view` = la `View`, `selection`, `pointer`, `armed`, `order_input` |
 | `GroupKeys` | `selection` |
-| `OrderButton` | `view` = `Hud/View`, `order_input`, `pointer` (y `menu`, sección 4) |
-| `Camera` | `ground`, `edge_area` = `Hud/View` |
+| `OrderButton` | `view` = la `View`, `order_input`, `pointer` (y `menu`, sección 4) |
+| `Probe` | `pointer`, `world_view` = la `View` |
+| tu cámara | `ground`, `edge_area` = la `View` |
 
-`Hud/View` es lo que distingue «un clic en el mundo» de «un clic en el HUD»: todo lo del HUD que esté encima conserva sus clics. Dejá su filtro de mouse en *Stop*. Si tu mundo lee los clics en `_unhandled_input` (sin `Hud/View`), dejá `edge_area` vacío: los bordes igual se frenan sobre los botones y paneles del HUD.
-
-Capas de física: por defecto el suelo es la capa 1 y las unidades la 2 (`RtsPointer.ground_mask`, `unit_mask`, `pick_mask`). Cambialas ahí si tu proyecto usa otras.
-
-**Quién soy «yo».** `RtsCommandInput.local_slot` es el jugador de esta pantalla (1 por defecto) y le pasa ese valor a la selección, las órdenes y el puntero. Solo las unidades de ese slot se pueden elegir y ordenar.
-
-Apretá F6: arrastrá un rectángulo sobre tus unidades, hacé clic derecho en el suelo, y van en línea.
+Si tu mundo lee los clics en `_unhandled_input` (sin una `View`), dejá `edge_area` vacío: los bordes igual se frenan sobre los botones y paneles del HUD.
 
 ## 4. Cómo da órdenes el jugador
 
@@ -156,11 +193,11 @@ De fábrica, sin ningún menú:
 
 Encima de eso, la interfaz de comandos que quieras. Todas muestran las mismas entradas (`RtsMenuEntry`: una orden, una formación, o algo tuyo) y las corren igual (`RtsOrderInput.run_entry`).
 
-**Un panel de comandos** (botones, a la manera clásica de los RTS). Sumá al HUD un `GridContainer` con el script `rts_command_card.gd`; sockets `order_input` y `command_input` (`Command`, por las teclas que muestra). Arma un botón por orden y por formación. Un botón que apunta (atacar) se arma para el próximo clic izquierdo; retirarse pasa ya; una formación la guarda la selección. `skirmish_2d` tiene uno.
+**Un panel de comandos** (botones, a la manera clásica de los RTS). Sumá al HUD un `GridContainer` con el script `rts_command_card.gd`; con Editable Children prendido en el equipo, poné sus sockets `order_input` (`Command/OrderInput`) y `command_input` (`Command`, por las teclas que muestra). Arma un botón por orden y por formación. Un botón que apunta (atacar) se arma para el próximo clic izquierdo; retirarse pasa ya; una formación la guarda la selección. `skirmish_2d` tiene uno.
 
-**El menú radial** (mantener el botón derecho). Instanciá `addons/rts_kit/ui/radial/rts_radial_menu.tscn` bajo el HUD y poné `OrderButton.menu` apuntando a él. Mantener el botón derecho 0,25 s lo abre donde apretaste; lo que soltás corre en ese punto; el centro cancela. Su layout es una lista de anillos: por defecto uno con todas las órdenes y otro con todas las formaciones; editá `rts_default_layout.tres` (o una copia) para elegir. `skirmish_3d` tiene uno.
+**El menú radial** (mantener el botón derecho). Instanciá `addons/rts_kit/ui/radial/rts_radial_menu.tscn` bajo tu HUD y ponelo en el socket **Menu** del equipo. Mantener el botón derecho 0,25 s lo abre donde apretaste; lo que soltás corre en ese punto; el centro cancela. Su layout es una lista de anillos: por defecto uno con todas las órdenes y otro con todas las formaciones; editá `rts_default_layout.tres` (o una copia) para elegir. `skirmish_3d` tiene uno.
 
-**El tuyo.** Un botón en cualquier lado: `button.pressed.connect(func() -> void: order_input.run_entry(entry))`. Un menú que se abre en un punto (una lista, una torta tuya): un script que `extends RtsOrderMenu` y redefine `open_at`, `point_at`, `confirm`, `cancel` e `is_open`; ponelo en `OrderButton.menu`.
+**El tuyo.** Un botón en cualquier lado: `button.pressed.connect(func() -> void: rig.order_input.run_entry(entry))`. Un menú que se abre en un punto (una lista, una torta tuya): un script que `extends RtsOrderMenu` y redefine `open_at`, `point_at`, `confirm`, `cancel` e `is_open`; ponelo en el socket **Menu** del equipo.
 
 Si sacás cualquiera, el clic derecho y las teclas siguen andando.
 
@@ -168,7 +205,7 @@ Si sacás cualquiera, el clic derecho y las teclas siguen andando.
 
 ### 5.1 Tus tipos de orden
 
-Las órdenes son datos. Hacé un recurso nuevo **RtsCommandCatalog**, sumale ítems **RtsCommandType** y ponelo en `Orders.commands` (y en `Armed.commands`). Arrancá desde una copia de `addons/rts_kit/commands/commands.tres`. Una orden de «mantener posición», por ejemplo:
+Las órdenes son datos. Hacé un recurso nuevo **RtsCommandCatalog**, sumale ítems **RtsCommandType** y ponelo en `Command/Orders.commands` y en `Command/Armed.commands` (Editable Children). Arrancá desde una copia de `addons/rts_kit/commands/commands.tres`. Una orden de «mantener posición», por ejemplo:
 
 | Campo | Valor |
 |---|---|
@@ -185,7 +222,7 @@ Dale una tecla: sumá una acción `my_hold` al Input Map y `my_hold → hold` a 
 Extendé `RtsFormation` y devolvé los lugares (derecha, adelante) para `count` unidades:
 
 ```gdscript
-# column_formation.gd — en fila india detrás del punto
+# column_formation.gd: una formación tuya, en fila india detrás del punto de la orden.
 class_name ColumnFormation
 extends RtsFormation
 
@@ -197,14 +234,15 @@ func slots(count: int, spacing: float, _target_distance: float, _role: int) -> A
 	return result
 ```
 
-Creá un recurso `ColumnFormation` (id `column`, un nombre), sumalo a una copia de `addons/rts_kit/orders/formations/formations.tres` y ponela en `Orders.formations`. La primera formación del catálogo gana los empates; Alt+N elige la N-ésima.
+Creá un recurso `ColumnFormation` (id `column`, un nombre), sumalo a una copia de `addons/rts_kit/orders/formations/formations.tres` y ponela en `Command/Orders.formations`. La primera formación del catálogo gana los empates; Alt+N elige la N-ésima.
 
 ### 5.3 Reglas de tus unidades
 
 Un script que extiende `RtsUnit` (usalo en vez de `RtsUnit` en tus unidades):
 
 ```gdscript
-# my_unit.gd
+# my_unit.gd: una unidad con reglas tuyas (un pacifista no ataca; un monstruo neutral es enemigo
+# de todos).
 class_name MyUnit
 extends RtsUnit
 
@@ -227,47 +265,56 @@ Para un pacifista solo no hace falta script: `refused = [attack, attack_move]` e
 
 ### 5.4 Qué significa un clic derecho
 
-`OrderInput.context_orders` mapea lo que hay bajo el puntero a una orden: `enemy`, `own`, `ally`, `neutral`, `other` (un cuerpo que no es unidad) y `ground`. Sumá clases de tu juego con `classify`:
+`Command/OrderInput.context_orders` mapea lo que hay bajo el puntero a una orden: `enemy`, `own`, `ally`, `neutral`, `other` (un cuerpo que no es unidad) y `ground`. Sumá clases de tu juego con `classify`:
 
 ```gdscript
-# en el script de tu batalla
-order_input.classify = func(body: Node) -> StringName:
-	return &"corpse" if body.is_in_group(&"corpse") else &""
-order_input.context_orders[&"corpse"] = &"guard_area"
-order_input.point_contexts.append(&"corpse")   # ordenar en su lugar, no sobre el cuerpo
+# Un clic derecho sobre un cadáver ordena custodiar el lugar donde está.
+# En el script de tu batalla:
+@export var rig: RtsCommandRig
+
+
+func _ready() -> void:
+	rig.order_input.classify = func(body: Node) -> StringName:
+		return &"corpse" if body.is_in_group(&"corpse") else &""
+	rig.order_input.context_orders[&"corpse"] = &"guard_area"
+	rig.order_input.point_contexts.append(&"corpse")   # ordenar en su lugar, no sobre el cuerpo
 ```
 
 ### 5.5 Hechizos, edificios y otras cosas que se arman
 
 ```gdscript
-@onready var armed: RtsArmedCommand = $Command/Armed
-@onready var pointer: RtsPointer = $Command/Pointer
-
-
-func _on_fireball_button() -> void:
-	armed.arm(&"fireball", fireball_data)   # el cursor lo muestra; un clic derecho lo cancela
+# Un botón arma una bola de fuego; el próximo clic izquierdo en el suelo la lanza ahí.
+@export var rig: RtsCommandRig
 
 
 func _ready() -> void:
-	$Command/SelectInput.armed_clicked.connect(_on_armed_click)
+	rig.select_input.armed_clicked.connect(_on_armed_click)
+
+
+func _on_fireball_button() -> void:
+	rig.armed.arm(&"fireball", fireball_data)   # el cursor lo muestra; un clic derecho lo cancela
 
 
 func _on_armed_click(mode: StringName, screen: Vector2) -> void:
 	if mode != &"fireball":
 		return
-	var point: Variant = pointer.ground_at(screen)
+	var point: Variant = rig.pointer.ground_at(screen)
 	if point == null:
-		$Command/State.say(RtsRefusal.NO_GROUND)   # hace destellar la señal de rechazo
+		rig.state.say(RtsRefusal.NO_GROUND)   # hace destellar la señal de rechazo
 		return
-	cast_fireball(point, armed.payload)
-	armed.mode = &""   # o dejalo armado para otro lanzamiento
+	cast_fireball(point, rig.armed.payload)
+	rig.armed.mode = &""   # o dejalo armado para otro lanzamiento
 ```
 
-Mientras está armado, un **RtsArmedPreview** (el callable `answer`) le puede preguntar a tu regla qué contestaría un clic, así el cursor pasa a «bloqueado» antes de que el jugador haga clic.
+Mientras está armado, un **RtsArmedPreview** (sockets `armed`, `state` y `pointer` del equipo; el callable `answer`) le puede preguntar a tu regla qué contestaría un clic, así el cursor pasa a «bloqueado» antes de que el jugador haga clic.
 
 ### 5.6 2D: distancias en píxeles
 
-Las distancias del kit vienen en metros. En un juego 2D poné, en píxeles: `Orders.spacing_base`, `max_spacing`, `retarget_range`, `Selection.same_type_radius` y el `RtsUnit.size` de cada unidad. `skirmish_2d` usa 8, 120, 1200, 600 y unos 40.
+En 2D el mundo se mide en píxeles, y las distancias del kit se escriben en la unidad del mundo. El inspector muestra cuál es al lado de cada valor: `px` cuando el nodo cuelga de un `Node2D`, `m` cuando cuelga de un `Node3D`.
+
+- `rts_command_rig_2d.tscn` ya las trae en píxeles: `Orders.spacing_base` 8, `max_spacing` 120, `retarget_range` 1200 y `Selection.same_type_radius` 600. Cambialas con Editable Children si tus unidades son mucho más grandes o más chicas.
+- `RtsUnit.size` lo ponés vos en cada unidad, en píxeles: su ancho (unos 34 para un cuerpo de 28 px).
+- Si armás las piezas a mano, los valores por defecto de `RtsOrders` y `RtsSelection` son metros: en 2D poné los tuyos.
 
 ### 5.7 Cámara
 
@@ -279,15 +326,15 @@ Las distancias del kit vienen en metros. En un juego 2D poné, en píxeles: `Ord
 
 ### 5.8 Teclas
 
-Reasigná cualquier acción en Configuración del proyecto > Input Map: el kit solo agrega las que faltan. Las teclas para guardar grupos usan Cmd en macOS; poné `Command.command_on_macos = false` para usar Ctrl en todos lados (vale solo para las que agrega el kit).
+Reasigná cualquier acción en Configuración del proyecto > Input Map: el kit solo agrega las que faltan. Las teclas para guardar grupos usan Cmd en macOS; poné `Command.command_on_macos = false` (Editable Children) para usar Ctrl en todos lados (vale solo para las que agrega el kit).
 
 ### 5.9 Menús, pausa y el HUD
 
-Una pantalla de pausa u opciones entra al grupo `rts_modal` mientras está abierta (`add_to_group(RtsWorldInput.modal_group)`): ningún clic, tecla, borde ni rueda llega al mundo. Un panel del HUD encima de `Hud/View` conserva sus clics.
+Una pantalla de pausa u opciones entra al grupo `rts_modal` mientras está abierta (`add_to_group(RtsWorldInput.modal_group)`): ningún clic, tecla, borde ni rueda llega al mundo. Un panel de tu HUD conserva sus clics mientras tu HUD esté después del equipo en el árbol.
 
 ### 5.10 El cursor y las palabras
 
-Hacé un recurso **RtsCueSet**: las imágenes del cursor según lo que hay bajo el puntero, el ícono de cada orden armada, el ícono de rechazo y las palabras de cada rechazo (`reason_texts`, traducidas con `tr`). Usalo en `State.cues`, `Cue.cues` y un `RtsCursorSkin`.
+Hacé un recurso **RtsCueSet**: las imágenes del cursor según lo que hay bajo el puntero, el ícono de cada orden armada, el ícono de rechazo y las palabras de cada rechazo (`reason_texts`, traducidas con `tr`). Usalo en `Command/State.cues` (Editable Children), en `Cue.cues` y en un `RtsCursorSkin`; los sockets `state` y `probe` de esos dos apuntan a `Command/State` y `Command/Probe`.
 
 ## 6. Multijugador con MpKit
 
@@ -307,6 +354,7 @@ RtsUnit:targetable
 En el script de la unidad, tomá el dueño del MpActor (el spawn se lo lleva a cada peer antes de `_ready`) y corré la lógica de la unidad solo en el servidor:
 
 ```gdscript
+# La unidad toma su dueño del MpActor y solo el servidor la mueve.
 @onready var net: MpActor = $MpActor
 
 
@@ -324,16 +372,19 @@ func _physics_process(_delta: float) -> void:
 Hacé aparecer las unidades en el servidor con un **MpSpawner** (`GUIDE.md` de MpKit, 7.2): un nodo vacío `Units`, un `MpSpawner` con `spawn_path = ../Units` y la escena de tu unidad en **Extra Scenes**. Después, en el servidor:
 
 ```gdscript
+# El servidor hace aparecer seis soldados por jugador, cada grupo en el punto de su asiento.
 const SOLDIER := preload("res://units/soldier.tscn")
+
+@export var spawner: MpSpawner
+## Los SpawnPoints del MpWorld: un marcador por asiento.
+@export var spawn_points: Node
 
 
 func _spawn_armies() -> void:
 	if not MpKit.is_authority():
 		return
-	var spawner := $UnitSpawner as MpSpawner
 	for slot in MpKit.occupied_slots():
-		# Los SpawnPoints del MpWorld: un marcador por asiento.
-		var start: Vector3 = ($MpWorld/SpawnPoints.get_child(slot - 1) as Node3D).global_position
+		var start: Vector3 = (spawn_points.get_child(slot - 1) as Node3D).global_position
 		for i in 6:
 			spawner.spawn_actor(SOLDIER, {"position": start + Vector3(i * 2.0, 0, 0)}, slot)
 ```
@@ -343,19 +394,20 @@ func _spawn_armies() -> void:
 Un nodo de tu juego manda las órdenes del jugador local por el canal propio de MpKit y aplica en el servidor las que llegan. No se escribe ningún RPC a mano, y el mismo código anda en una partida de un jugador (MpKit entrega el mensaje localmente):
 
 ```gdscript
-# rts_mp_glue.gd — código de tu juego, junto a Command
+# rts_network.gd, código de tu juego: las órdenes del jugador local viajan al servidor por el
+# canal propio de MpKit, y el servidor las aplica como el jugador que las mandó.
 extends Node
 
 const CHANNEL := &"rts_order"
 
-@export var orders: RtsOrders
+@export var rig: RtsCommandRig
 ## Dónde están las unidades (el spawn_path del MpSpawner): una orden nombra a las unidades por el nombre de su nodo.
 @export var units_root: Node
 
 
 func _ready() -> void:
 	MpKit.custom_received.connect(_on_custom)
-	orders.send = func(order: RtsOrder) -> void:
+	rig.orders.send = func(order: RtsOrder) -> void:
 		MpKit.send_custom(CHANNEL, {"order": order.to_array(_id_of)})
 
 
@@ -363,7 +415,7 @@ func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
 	if channel != CHANNEL or not MpKit.is_authority():
 		return
 	var slot := MpKit.slot_for_peer(from_peer) if MpKit.is_networked() else MpKit.local_slot()
-	orders.apply(RtsOrder.from_array(data.get("order"), self, _node_of), slot)
+	rig.orders.apply(RtsOrder.from_array(data.get("order"), self, _node_of), slot)
 
 
 func _id_of(body: Node) -> String:
@@ -383,15 +435,20 @@ func _node_of(id: String) -> Node:
 El jugador de esta pantalla es el slot local de MpKit. En el script de tu batalla:
 
 ```gdscript
+# El jugador de esta pantalla es el slot local de MpKit; un servidor dedicado no tiene jugador.
+@export var rig: RtsCommandRig
+@export var hud: CanvasLayer
+
+
 func _ready() -> void:
-	$Command.local_slot = MpKit.local_slot()
+	rig.command.local_slot = MpKit.local_slot()
 	if MpKit.is_dedicated():
-		# Un servidor dedicado no tiene jugador: ni selección ni HUD.
-		$Command.process_mode = Node.PROCESS_MODE_DISABLED
-		$Hud.visible = false
+		# Ni selección ni HUD.
+		rig.process_mode = Node.PROCESS_MODE_DISABLED
+		hud.visible = false
 ```
 
-Equipos (2 contra 2): poné `RtsUnit.team` en las unidades y `Command.local_team` para el jugador.
+Equipos (2 contra 2): poné `RtsUnit.team` en las unidades y `rig.command.local_team` para el jugador.
 
 ### 6.4 Lo que queda local
 
@@ -401,7 +458,7 @@ La selección, los grupos, el cursor, los menús, la cámara y los pings viven e
 
 - [ ] Cada unidad tiene un `RtsUnit` con `owner_slot`, `kind` y `size`; las unidades muertas apagan `selectable`, `orderable` y `targetable`.
 - [ ] El script de tu unidad escucha `order_started` y llama a `complete()` / `fail()`.
-- [ ] Los sockets del equipo están puestos; `Hud/View` cubre el mundo; el suelo y las unidades están en las capas del puntero.
+- [ ] El equipo (`rts_command_rig_3d.tscn` o `rts_command_rig_2d.tscn`) está en la escena, con `camera` y `ground` puestos y sin avisos; tu HUD está después en el árbol; el suelo y las unidades están en las capas del puntero.
 - [ ] F6: un rectángulo elige solo tus unidades, un clic derecho en el suelo las lleva en formación, sobre un enemigo atacan, Ctrl/Cmd+1 y después 1 recupera el grupo, Alt+N guarda una formación.
-- [ ] 2D: distancias en píxeles.
+- [ ] 2D: el equipo 2D y `RtsUnit.size` en píxeles (el inspector muestra `px`).
 - [ ] En red: las unidades las hace aparecer un `MpSpawner` con el slot del dueño; el nodo de pegamento está en el mundo; `local_slot` sale de MpKit; la lógica de la unidad corre solo donde `net.is_authority()`.

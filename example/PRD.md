@@ -8,7 +8,7 @@
 
 | Tema | Elección |
 |------|----------|
-| Arquitectura | **Estándar Godot** (`scenes/` + script junto a la escena). No Clean, no `src/domain/`. |
+| Arquitectura | **Por entidad** (una carpeta por tema, lo de cada entidad adentro). No Clean, no `src/domain/`. |
 | Multiplayer | **Los tres modos** en la misma demo: 1P (sin `host()`), local/WiFi (`MpKit.host()`), online (`MpKit.host_dedicated()` + `join`). |
 | Dimensión | **2D y 3D** (dos escenas de match). |
 | Arte | **Placeholders** (`PlaceholderTexture2D`, `BoxMesh`). Sin Aseprite, sin Blender MCP. |
@@ -20,9 +20,9 @@
 
 ## Resumen
 
-Demo mínima y jugable que enseña cómo usar **MpKit** y las skills del estudio (arquitectura estándar, composición, Resources, host-authoritative) **sin ser un juego real**. Hay un lobby, un pawn placeholder que se mueve, un emote por túnel `Dictionary`, y el mismo árbol sirve en 1P, listen-server LAN y servidor dedicado.
+Demo mínima y jugable que enseña cómo usar **MpKit** y las skills del estudio (arquitectura por entidad, composición, Resources, host-authoritative) **sin ser un juego real**. Hay un lobby, un pawn placeholder que se mueve, un emote por túnel `Dictionary`, y el mismo árbol sirve en 1P, listen-server LAN y servidor dedicado.
 
-Propuesta de valor: quien clone el kit abre `example/`, corre el flujo de producto (este PRD → RFCs → código) y entiende dónde termina el addon y dónde empieza el glue del título.
+Propuesta de valor: quien clone el kit abre `example/`, corre el flujo de producto (este PRD → RFCs → código) y entiende dónde termina el addon y dónde empieza el autoload del título.
 
 ## Metas y objetivos
 
@@ -30,7 +30,7 @@ Propuesta de valor: quien clone el kit abre `example/`, corre el flujo de produc
 2. Dos instancias en la misma máquina demuestran **Host LAN + Join** (`127.0.0.1`) con pawns replicados (no duplicados).
 3. Un proceso `--headless -- --dedicated` + un cliente demuestra **online** (dedicated, peer 1 no es jugador).
 4. El código no mete puntaje, copy de un título, ni reglas de ronda dentro de `addons/mp_kit`.
-5. Cada packed scene relevante corre con **F6** (o advierte). Tipos de look = `.tres`, no `if kind`.
+5. Cada packed scene relevante corre con **F6** (o advierte). Los tipos de pawn son `_type.tres`, no `if kind`.
 
 ## Alcance
 
@@ -38,11 +38,11 @@ Propuesta de valor: quien clone el kit abre `example/`, corre el flujo de produc
 
 - Lobby: Jugar solo, Host LAN, Unirse (IP), toggle mundo 2D/3D, IP local, Salir.
 - Match 2D y Match 3D con placeholders, `MpSpawner`, `MpWorldReady`, spawn por slot.
-- Pawn 2D (`CharacterBody2D`) y pawn 3D (`CharacterBody3D`): movimiento host-authoritative (`submit_*` / `apply_*`), `MpReplicate`, look por Resource.
+- Pawn 2D (`CharacterBody2D`) y pawn 3D (`CharacterBody3D`): movimiento host-authoritative (`submit_*` / `apply_*`), `MpReplicate`, tipo por Resource (`PawnType`).
 - Túnel `MpCustomPipe` canal `emote` (servidor decide broadcast; no auto-reflect).
 - Snapshot mínimo (tiempo transcurrido) para mostrar `push_snapshot` / `apply_snapshot` (el cliente no tiquea el reloj).
 - Boot dedicated vía `MpBoot` (`--dedicated` o feature `dedicated_server`).
-- Copy de UI en el idioma del producto (`DemoCopy`); IDs de código en inglés.
+- Los textos de la UI viven en `locale/texts.csv` (es y en; el idioma de cada rama sale de `project.godot`); IDs de código en inglés.
 - README de la demo: cómo correr cada modo.
 
 ### Fuera (Won't)
@@ -66,7 +66,7 @@ Prioridad MoSCoW detallada en `FEATURES.md`. Resumen:
 
 | Prioridad | Capacidad |
 |-----------|-----------|
-| Must | Lobby + 1P + match 2D/3D + pawns placeholder + InputMap + Resources de look |
+| Must | Lobby + 1P + match 2D/3D + pawns placeholder + InputMap + Resources de tipo de pawn |
 | Must | Listen-server: host es jugador (slot 1); handshake spawn; `submit_move` |
 | Must | Dedicated: `local_slot() == 0`, sin pawn de servidor; clientes `join` |
 | Must | Túnel emote + snapshot de elapsed + HUD de modo/slots |
@@ -77,7 +77,7 @@ Prioridad MoSCoW detallada en `FEATURES.md`. Resumen:
 ## Requisitos no funcionales
 
 - Godot **4.7** (el `project.godot` existente). GDScript. Física 3D: Jolt (ya configurado).
-- Autoload: `MpKit` **antes** de `NetGlue`. Plugin MpKit habilitado.
+- Autoload: `MpKit` **antes** de `NetSession`. Plugin MpKit habilitado.
 - Puerto default **7777**; override `MpBoot.user_value("mp-port", "7777")`.
 - Máximo **4** jugadores.
 - El kit se **copia** con `./install.sh --addon-only example` desde la raíz del studio kit; no se forkear.
@@ -104,8 +104,8 @@ Prioridad MoSCoW detallada en `FEATURES.md`. Resumen:
 ## Métricas de éxito
 
 - Los tres modos se pueden demostrar en una máquina.
-- Un lector distingue `addons/mp_kit` (transporte) de `glue/` + `scenes/` (juego).
-- No hay `if look_id ==` ni puntaje en el addon.
+- Un lector distingue `addons/mp_kit` (transporte) de `autoloads/` + `player/` + `levels/` (juego).
+- No hay `if type_id ==` ni puntaje en el addon.
 
 ## Cronograma
 
@@ -122,7 +122,7 @@ Implementación: `/implement-rfc` por RFC, en orden.
 
 | Ítem | Resolución |
 |------|------------|
-| ¿Clean o estándar? | Estándar. |
+| ¿Clean o por entidad? | Por entidad. |
 | ¿Un tipo de MP o los tres? | Los tres, como guía. Política: listen arranca al hostear (el host juega solo en red); dedicated arranca al **primer** cliente (no espera 2: es una demo). |
 | ¿Arte? | Placeholders. |
 | ¿Tests? | No. |

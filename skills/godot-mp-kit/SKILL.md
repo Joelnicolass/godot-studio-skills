@@ -2,7 +2,7 @@
 name: godot-mp-kit
 description: >-
   Implementa multiplayer host-authoritative en Godot 4 con el addon informal
-  MpKit (ENet, slots, handshake, snapshots) más glue del juego. Preguntá antes
+  MpKit (ENet, slots, handshake, snapshots) más el código del juego. Preguntá antes
   el tipo: sin MP (no copies el addon), local/WiFi (listen-server), u online
   (dedicated server, mismo proyecto, VPS). Usar al copiar addons/mp_kit,
   host/host_dedicated/join, RPCs submit_*, túnel Dictionary, MultiplayerSpawner,
@@ -14,7 +14,7 @@ description: >-
 
 Un simulador (servidor). Los clientes mandan intenciones y pintan copias. El addon es pequeño a propósito: tubería reusable, cero gameplay.
 
-Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** Clean vs estándar; no asumir capas). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md). Dedicated / VPS: [dedicated.md](dedicated.md).
+Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.md) (**preguntar** el tamaño: por entidad, el default, o sistemas + contenido; no crear carpetas sin respuesta). Nodos/FX/Resources: [godot-composition-first](../godot-composition-first/SKILL.md). Dedicated / VPS: [dedicated.md](dedicated.md).
 
 ## Alcance de red (obligatorio)
 
@@ -34,19 +34,19 @@ Tipos de pawn/proyectil/enemigo: Resource `.tres` en el actor, no un RPC por `ki
 
 Siempre se priorice:
 
-- arquitectura facil de escalar y limpia en capas
+- arquitectura fácil de escalar, una carpeta por tema
 - siempre tienen prioridad las estructuras de composicion
 - siempre tienen prioirdad los nodos y las configuraciones sobre el editor
 - siempre se debe dar prioridad a la reusabilidad de los componenetes
 
 En red eso se traduce a:
 
-| Prioridad | En MpKit / glue |
+| Prioridad | En MpKit / código del juego |
 |-----------|-----------------|
 | Capas | `addons/mp_kit` no nombra sesión, escenas, copy ni puntaje. Online = dedicated en el addon, no un `NetworkManager` del título. |
-| Composición | Transport (kit) + glue + (`GameSession` **o** nodo Match) + actores con `submit_*`. |
+| Composición | Transport (kit) + código del juego + (`GameSession` **o** nodo Match) + actores con `submit_*`. |
 | Editor | Spawners, replication config y escenas de pawn se arman como nodos. El kit no genera el mundo. |
-| Reuso | Copiar el addon canónico. El juego escribe glue + dominio; no forks del kit por título. |
+| Reuso | Copiar el addon canónico. El juego escribe código del juego + dominio; no forks del kit por título. |
 
 ## Fuente canónica
 
@@ -54,7 +54,7 @@ El plugin es `addons/mp_kit/` **dentro del proyecto Godot**. Copiá esa carpeta 
 
 Si el addon del proyecto y una copia suelta divergen, gana `res://addons/mp_kit/` de este proyecto.
 
-API: [kit-api.md](kit-api.md). Glue: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
+API: [kit-api.md](kit-api.md). Código del juego: [game-glue.md](game-glue.md). Dedicated: [dedicated.md](dedicated.md). Editor / túnel / scaffold: [editor.md](editor.md). Código genérico: [examples.md](examples.md).
 
 Ejemplos del addon: `addons/mp_kit/examples/minimal_2d/` (lo que escribe *Setup game*: un menú, un mundo y un jugador predicho; abrí `boot.tscn` y F6), `examples/arena_2d/` (el completo) y `examples/sports_2d/` (un deportivo en tiempo real: dos contra dos, pelota, barrida predicha, quite con compensación de lag; GUIDE §7.8). Partí del mínimo y sumá lo que pide la feature; para un juego de pocos jugadores con pelota y contacto, partí de `sports_2d`.
 
@@ -88,7 +88,7 @@ El kit tiene que poder usarlo una persona **sin IA**. Por eso, en código nuevo,
 | Orden puntual del dueño | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
 | Efecto en todos | `net.to_all(&"x", args)` → `func mp_all_x(args)` (solo el servidor) | `@rpc("authority")` propio |
 | Score, reloj, ronda | **`MpState`** (`set_value`, `add`, señal `changed`) | `push_snapshot` + `snapshot_for_joiner` a mano |
-| Inicio y fin de partida | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | glue propio de tickets y abandonos |
+| Inicio y fin de partida | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | código propio de tickets y abandonos |
 | Salas online | **`MpRoomServer`** + `MpLobbyConfig` + `MpRoomRules`; cliente **`MpLobbyScreen`** | `Callable`s del lobby cableados a mano |
 | Partida privada en la PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; el HUD muestra `ip:puerto#CÓDIGO` (`MpInviteLabel`) | un launcher propio |
 | Que los jugadores hospeden partidas online, sin servidor tuyo (también web) | `flow.host_online()` / `join_online(code)` / `online_rooms()` + el emisor (`addons/mp_kit/issuer`) y el relay; `issuer_url` + `game_id` en `MpNetConfig` (GUIDE 10.3) | meter el secreto del relay en los clientes, un matchmaker propio |
@@ -166,7 +166,7 @@ else:
     pawn.apply_x(payload)
 ```
 
-RPC en **tu** pawn, no en el kit:
+RPC en **tu** pawn, no en el kit: el cliente pide algo y el servidor lo valida antes de aplicarlo:
 
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")
@@ -186,14 +186,14 @@ func submit_x(payload) -> void:
 El `MultiplayerSpawner` de Godot replica hijos en `peer_connected`, cuando el cliente **sigue en el lobby**; la ruta falla y Godot no la reintenta, así que ese spawner (o nodo estático con sync) queda muerto para ese peer. `MpSpawner` (default `hold_until_world_ready`) usa la visibilidad por peer del `MultiplayerSynchronizer`: todo lo que le pertenece en la escena queda oculto y cada peer se revela cuando su propia copia del spawner avisa que está lista; recién ahí Godot manda spawn + sync emparejados. Los actores sin synchronizer reciben un `MpSpawnGate` vacío (si no, Godot los manda a todos).
 
 ```
-Server broadcast_load_world() + glue carga el mundo en el proceso servidor
+Server broadcast_load_world() + el código del juego carga el mundo en el proceso servidor
   → listen host add_child(pawn local) en _ready; nace oculto para peers no listos
   → cliente carga escena; MpSpawner pide request_world_ready() + rpc_spawner_ready (deferred)
   → el MpSpawner del servidor revela al peer (set_visibility_for) → Godot manda spawn + sync
-  → MpSlotSpawner (o glue) spawnea el slot que acaba de entrar
+  → MpSlotSpawner (o el código del juego) spawnea el slot que acaba de entrar
 ```
 
-No desparentes actors en glue: el kit ya revela por peer. Los synchronizers van en la escena (o se agregan antes del `add_child` / en el `_ready` del actor), nunca diferidos. Salas hub: un subárbol + `MpSpawner` por sala con `room_id` (README → Actores por sala).
+No desparentes actors en el código del juego: el kit ya revela por peer. Los synchronizers van en la escena (o se agregan antes del `add_child` / en el `_ready` del actor), nunca diferidos. Salas hub: un subárbol + `MpSpawner` por sala con `room_id` (README → Actores por sala).
 
 Identidad del actor (`player_slot`, etc.): propiedades del `MultiplayerSynchronizer` con `spawn = true`, o el nombre (`Pawn_2` / `Ship_2`).
 
@@ -217,9 +217,9 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 
 - Cliente spawnea / `queue_free` / suma puntos.
 - `PlayerId` o `GameSession` importados desde `mp_kit.gd`.
-- Arrancar spawn en el mismo frame que `change_scene` del invitado (el kit lo cubre; no lo “arregles” unparenteando en glue).
+- Arrancar spawn en el mismo frame que `change_scene` del invitado (el kit lo cubre; no lo “arregles” unparenteando en el código del juego).
 - `leave()` dejando `multiplayer_peer = null` (el kit pone `OfflineMultiplayerPeer`).
-- Tercer peer aceptado en silencio (el kit debe `disconnect_peer` al exceder cupo; la política de “sala llena” es glue + kit).
+- Tercer peer aceptado en silencio (el kit debe `disconnect_peer` al exceder cupo; la política de “sala llena” es código del juego + kit).
 - HUD que muestra el score del host porque usó peer id 1.
 - Dedicated con pawn para sí, o desarrollar online como listen-server.
 - Fingir que `host()` LAN detrás de NAT es online.
@@ -233,12 +233,12 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 ## Checklist
 
 - [ ] Tipo de MP declarado (ninguno / local-WiFi / online). Sin MP: este checklist no aplica.
-- [ ] Autoload `MpKit` **antes** del glue. `configure(port, max_players)` antes de host/join.
-- [ ] `MpFlow` (nodo en el boot, autoload o `extends MpFlow`) con un `MpGame` (`game.tres`), o un `MpNetConfig` más rutas. El mundo con un `MpWorld`, salvo que ya tenga su estructura. Varios mapas: `add_world` + `select_world`. Glue extra solo si hay copy o túnel.
+- [ ] Autoload `MpKit` **antes** del código del juego. `configure(port, max_players)` antes de host/join.
+- [ ] `MpFlow` (nodo en el boot, autoload o `extends MpFlow`) con un `MpGame` (`game.tres`), o un `MpNetConfig` más rutas. El mundo con un `MpWorld`, salvo que ya tenga su estructura. Varios mapas: `add_world` + `select_world`. Código extra solo si hay copy o túnel.
 - [ ] Actores nuevos con `MpActor` + `MpInput` (predict para el jugador); estado de partida en `MpState`; fin en `MpMatch.finish`. Sin `@rpc` a mano salvo un caso que la capa de nodos no cubra (anotalo).
 - [ ] Online: `MpBoot` + `host_dedicated()`; clientes `join`; export dedicated; spawn solo `occupied_slots()`. Varios jugadores por partida por internet: servidor de salas + tickets (`MpMatchLauncher`), no un `join(ip)` libre. Hub opcional: `MpKit.rooms` / `MpKit.matchmaker` en el mismo proceso; el puntaje sigue fuera del addon.
 - [ ] Slots en dominio; peers solo en RPC/authority.
-- [ ] `MpSpawner` o `MpSlotSpawner` con `hold_until_world_ready` (default). El cliente no necesita `MpWorldReady`. No restage de pawns en glue.
+- [ ] `MpSpawner` o `MpSlotSpawner` con `hold_until_world_ready` (default). El cliente no necesita `MpWorldReady`. No restage de pawns en el código del juego.
 - [ ] Guest no simula reglas; servidor valida sender.
 - [ ] 1P offline verificado.
 - [ ] Pawns son packed scenes componibles, no lógica de red incrustada en el kit.

@@ -1,6 +1,6 @@
 # FEATURES — MpKit Example
 
-**Producto (según PRD):** demo Godot 4.7 que enseña MpKit + skills (estándar, composición, Resources) con 1P, listen-server y dedicated; match 2D y 3D con placeholders. No es un juego real.
+**Producto (según PRD):** demo Godot 4.7 que enseña MpKit + skills (por entidad, composición, Resources) con 1P, listen-server y dedicated; match 2D y 3D con placeholders. No es un juego real.
 
 Los IDs son **permanentes**. No renumerar.
 
@@ -32,10 +32,10 @@ Persona: desarrollador que aprende el framework (todas las Must).
 
 ### F1 — Lobby (boot)
 
-UI de entrada: título, toggle 2D/3D, Jugar solo, Host LAN, campo IP, Unirse, IP local LAN, estado. Copy vía `DemoCopy` (idioma del producto).
+UI de entrada: título, toggle 2D/3D, Jugar solo, Host LAN, campo IP, Unirse, IP local LAN, estado. Textos por clave de `locale/texts.csv` (`tr()` en código).
 
-- **Aceptación:** F5 abre `boot.tscn`. Los botones no crashean sin red. Dedicated headless no muestra el lobby (NetGlue host_dedicated y espera).
-- **Técnico:** `scenes/ui/boot.tscn` + `boot.gd`. Input no se lee aquí.
+- **Aceptación:** F5 abre `boot.tscn`. Los botones no crashean sin red. Dedicated headless no muestra el lobby (NetSession host_dedicated y espera).
+- **Técnico:** `main/boot.tscn` + `boot.gd`. Input no se lee aquí.
 - **Límites:** sin menús extra (opciones, créditos).
 
 ### F2 — Jugar solo (1P)
@@ -43,7 +43,7 @@ UI de entrada: título, toggle 2D/3D, Jugar solo, Host LAN, campo IP, Unirse, IP
 No llama `MpKit.host()`. `MpKit.leave()` deja `OfflineMultiplayerPeer`. Carga el match del `world_kind` actual.
 
 - **Aceptación:** un pawn en slot `MpKit.local_slot()` (host_slot, default 1). Movimiento local sin RPC.
-- **Técnico:** `NetGlue.play_solo()`.
+- **Técnico:** `NetSession.play_solo()`.
 - **Límites:** no hay “servidor fantasma”.
 
 ### F3 — Match 2D
@@ -51,23 +51,23 @@ No llama `MpKit.host()`. `MpKit.leave()` deja `OfflineMultiplayerPeer`. Carga el
 Escena 2D con fondo placeholder, `Camera2D`, contenedor `Actors`, `MpSpawner` (`spawn_path` → Actors), `MpWorldReady` **después** del spawner, markers de spawn, HUD canvas.
 
 - **Aceptación:** F6 instancia un pawn offline. No depende de un autoload de puntaje.
-- **Técnico:** `scenes/world/match_2d.tscn`.
+- **Técnico:** `levels/match_2d/match_2d.tscn`.
 - **Límites:** sin tilemaps ni enemigos.
 
 ### F4 — Pawn 2D
 
 `CharacterBody2D` delgado: visual `Sprite2D` + `PlaceholderTexture2D`, colisión, `MpReplicate`, hijo de input, badge. Movimiento WASD/flechas.
 
-- **Aceptación:** F6 mueve el pawn. `player_slot` `@export`. Look inyectado (`ActorLook`).
-- **Técnico:** `scenes/actors/pawn_2d.tscn`. InputMap, no `KEY_*`.
+- **Aceptación:** F6 mueve el pawn. `player_slot` `@export`. Tipo (`PawnType`) tomado del catálogo por slot.
+- **Técnico:** `player/pawn_2d.tscn`. InputMap, no `KEY_*`.
 - **Límites:** sin salto complejo ni armas.
 
-### F5 — Resource `ActorLook`
+### F5 — Resource `PawnType` (`type`)
 
-`class_name ActorLook` + `.tres` por slot (tint, badge, `move_speed`). Una escena de pawn, N looks. No `if kind`.
+`class_name PawnType` + `_type.tres` por slot (tint, badge, velocidades, destello) más un `pawn_catalog.tres`. Una escena de pawn, N tipos. No `if kind`.
 
 - **Aceptación:** slot 1 y 2 se distinguen de color/badge sin ramas en el pawn.
-- **Técnico:** `resources/looks/actor_look.gd` + `look_a.tres`…`look_d.tres`.
+- **Técnico:** `player/pawn_type.gd` + `pawn_a_type.tres`…`pawn_d_type.tres` + `pawn_catalog.tres`.
 - **Límites:** no mutar el `.tres` en runtime.
 
 ### F6 — Match 3D
@@ -75,7 +75,7 @@ Escena 2D con fondo placeholder, `Camera2D`, contenedor `Actors`, `MpSpawner` (`
 Igual contrato que F3 en 3D: piso `BoxMesh`/`StaticBody3D`, `Camera3D`, luz, `Actors`, `MpSpawner`, `MpWorldReady`, markers.
 
 - **Aceptación:** F6 muestra el piso y un pawn (si el match spawnea offline). Placeholders, no `.glb`.
-- **Técnico:** `scenes/world/match_3d.tscn`.
+- **Técnico:** `levels/match_3d/match_3d.tscn`.
 - **Límites:** sin animación de cámara.
 
 ### F7 — Pawn 3D
@@ -83,23 +83,23 @@ Igual contrato que F3 en 3D: piso `BoxMesh`/`StaticBody3D`, `Camera3D`, luz, `Ac
 `CharacterBody3D` + `BoxMesh` + colisión + `MpReplicate` + input. Movimiento en XZ. Gravedad simple.
 
 - **Aceptación:** F6 añade cámara/piso de preview si la escena es current. WASD mueve.
-- **Técnico:** `scenes/actors/pawn_3d.tscn`.
+- **Técnico:** `player/pawn_3d.tscn`.
 - **Límites:** sin mesh de personaje.
 
 ### F8 — Nodo `DemoMatch` (spawn / handshake)
 
-Componente hijo de ambos mundos: spawnea `occupied_slots()` (o slot local en 1P), coloca en markers, asigna look, `add_child(..., true)`. Listen host spawnea su pawn en `_ready`. Clientes: al `client_world_ready`. Dedicated: **no** pawn para slot 0.
+Componente hijo de ambos mundos: spawnea `occupied_slots()` (o slot local en 1P), coloca en markers, asigna el tipo, `add_child(..., true)`. Listen host spawnea su pawn en `_ready`. Clientes: al `client_world_ready`. Dedicated: **no** pawn para slot 0.
 
 - **Aceptación:** 1P y listen-solo-host ven un pawn; dedicated sin clientes no spawnea; cada cliente listo recibe su pawn.
-- **Técnico:** `scenes/world/demo_match.gd`. `@export` pawn_scene, actors, spawn_points, looks.
+- **Técnico:** `match/demo_match.gd`. `@export` `snapshot_hz`; el spawner (`pawn_scene`, spawn points) vive en cada nivel.
 - **Límites:** no puntúa.
 
 ### F9 — Host LAN
 
 `MpKit.host()` listen-server. El proceso host **es** jugador (slot 1 / peer 1). Arranca el match de inmediato (política de demo).
 
-- **Aceptación:** el host entra al mundo y controla un pawn. `broadcast_load_world` + glue `goto_world` (el server no recibe el RPC).
-- **Técnico:** `NetGlue.host_lan()`.
+- **Aceptación:** el host entra al mundo y controla un pawn. `broadcast_load_world` + código del juego `goto_world` (el server no recibe el RPC).
+- **Técnico:** `NetSession.host_lan()`.
 - **Límites:** no es “online”.
 
 ### F10 — Join
@@ -107,7 +107,7 @@ Componente hijo de ambos mundos: spawnea `occupied_slots()` (o slot local en 1P)
 `MpKit.join(ip)` tras validar IPv4 con `MpLan`. Espera `load_world`.
 
 - **Aceptación:** IP inválida → mensaje, no `join`. Join ok → misma escena que el host. Late join con match vivo → `load_world_to`.
-- **Técnico:** `NetGlue.join_lan(ip)`.
+- **Técnico:** `NetSession.join_lan(ip)`.
 - **Límites:** sin scan de red.
 
 ### F11 — Autoridad `submit_*` / `apply_*`
@@ -131,31 +131,31 @@ Hijo `MpReplicate` (authority peer 1, sync position/rotation/visible). El kit pu
 `MpBoot.is_dedicated_process()` → `MpKit.host_dedicated()`. Peer 1 no es jugador. Arranque al primer cliente. Args: `--dedicated`, opcional `--world=2d|3d`, `--mp-port=`.
 
 - **Aceptación:** `local_slot() == 0`; `occupied_slots()` no incluye al server; HUD no asume “soy player 1” por peer 1.
-- **Técnico:** `NetGlue._ready`. Documentar comando en README (F17).
+- **Técnico:** `NetSession._ready`. Documentar comando en README (F17).
 - **Límites:** sin preset de export VPS en este repo.
 
 ### F14 — Túnel emote
 
-Canal `emote` (allowlist en `configure`). `MpCustomPipe` en el pawn. Cliente/`send`; server/`broadcast`. Glue refleja **solo** si `from_peer != 1`. 1P: emit local. E = one-shot `_unhandled_input`.
+Canal `emote` (allowlist en `configure`). `MpCustomPipe` en el pawn. Cliente/`send`; server/`broadcast`. Código del juego refleja **solo** si `from_peer != 1`. 1P: emit local. E = one-shot `_unhandled_input`.
 
 - **Aceptación:** el emote del cliente lo ven todos; el del listen host también; no hay recursión infinita de `broadcast_custom`.
-- **Técnico:** pipe + `NetGlue._on_custom`. Payload `{slot, msg}` opaco para el kit.
-- **Límites:** no usar el túnel para movimiento ni looks (eso es Resource + submit).
+- **Técnico:** pipe + `NetSession._on_custom`. Payload `{slot, msg}` opaco para el kit.
+- **Límites:** no usar el túnel para movimiento ni tipos de pawn (eso es Resource + submit).
 
 ### F15 — Snapshot elapsed + HUD
 
 Solo server (y 1P) tiquea `elapsed`. 2–10 Hz `push_snapshot({elapsed})`. Cliente `apply_snapshot` y **no** tiquea. HUD: modo (1P / listen / dedicated / client slot), elapsed, slots, último paquete de túnel.
 
 - **Aceptación:** dos clientes muestran el mismo elapsed (aprox.) sin simular el reloj local.
-- **Técnico:** `DemoMatch` + `scenes/ui/match_hud.gd` (`CanvasLayer`).
+- **Técnico:** `DemoMatch` + `ui/hud/match_hud.gd` (`CanvasLayer`).
 - **Límites:** elapsed no es condición de victoria.
 
 ### F16 — Salir y pérdida de servidor
 
-Salir → `leave` + boot. `server_lost` / `join_failed` → boot + mensaje `DemoCopy`. `peer_left`: borrar pawn de ese slot (rejoin = nuevo spawn).
+Salir → `leave` + boot. `server_lost` / `join_failed` → boot + mensaje `tr("STATUS_*")`. `peer_left`: borrar pawn de ese slot (rejoin = nuevo spawn).
 
 - **Aceptación:** matar el host devuelve al cliente al lobby sin stack de errores.
-- **Técnico:** `NetGlue.return_to_boot()`.
+- **Técnico:** `NetSession.return_to_boot()`.
 - **Límites:** dedicated headless: Ctrl+C; no botón Salir.
 
 ---

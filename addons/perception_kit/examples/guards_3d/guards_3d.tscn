@@ -215,6 +215,7 @@ material_override = SubResource("StandardMaterial3D_fojk2")
 mesh = SubResource("BoxMesh_cgrs7")
 
 [node name="Shade" type="Area3D" parent="." unique_id=1655118242]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.9, 8)
 
 [node name="Shape" type="CollisionShape3D" parent="Shade" unique_id=190855652]
@@ -292,6 +293,7 @@ memory_s = 6.0
 show_in_game = true
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=1773465815]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 14)
 motion_mode = 1
 
@@ -303,20 +305,24 @@ material_override = SubResource("StandardMaterial3D_qtodl")
 mesh = SubResource("CapsuleMesh_iqm2e")
 
 [node name="Target" type="Area3D" parent="Player" unique_id=28723627]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
 script = ExtResource("4_les0p")
 
 [node name="Lamp" type="Area3D" parent="Player" unique_id=1509870880]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.1, -0.3)
 script = ExtResource("4_les0p")
 kind = &"light"
 
 [node name="Light" type="OmniLight3D" parent="Player/Lamp" unique_id=340838513]
+unique_name_in_owner = true
 light_color = Color(1, 0.85, 0.55, 1)
 light_energy = 2.0
 omni_range = 7.0
 
 [node name="Label" type="Label" parent="." unique_id=402332878]
+unique_name_in_owner = true
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 16.0

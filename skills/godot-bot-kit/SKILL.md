@@ -43,13 +43,13 @@ Habilitá el plugin **BotKit** (la vista, el cono y las manijas en la vista 3D; 
 
 ## Red
 
-El bot corre donde se decide el juego y aprieta las teclas de un asiento. **Con MpKit**, en el servidor, sobre el peón de un asiento libre:
+El bot corre donde se decide el juego y aprieta las teclas de un asiento. **Con MpKit**, en el servidor, sobre el peón de un asiento libre (`%MpInput` pide `MpInput` marcado como nombre único: clic derecho › «Acceso como nombre único»):
 
 ```gdscript
 var bot := preload("res://bots/bot.tscn").instantiate() as Bot3D
 bot.turn_body = false
 pawn.add_child(bot)
-var keys := pawn.get_node(^"MpInput") as MpInput
+var keys := pawn.get_node("%MpInput") as MpInput
 bot.input.pressed.connect(keys.bot_press)
 bot.input.released.connect(keys.bot_release)
 bot.input.value_changed.connect(keys.bot_set_value)

@@ -19,10 +19,10 @@ Habilitá el plugin **WalletKit** (tipo `Wallet` en Create Node).
 
 1. Agregá un `Wallet`.
 2. En el inspector poné `start_amounts` (por ejemplo `food: 2`), `limits` (por ejemplo `food: 2, wood: 7`) y, si querés, `substitutes`: una lista de `WalletSubstitute` (por ejemplo `gold` sin `covers`: el oro cubre lo que falte de cualquier cosa).
-3. Pagá y sumá:
+3. Pagá y sumá. Construir el templo cuesta 2 de madera y 1 de mineral (si no alcanza, no se cobra nada), y cosechar suma comida y madera y avisa lo que se pierde por el tope:
 
 ```gdscript
-@onready var wallet: Wallet = $Wallet
+@onready var wallet: Wallet = %Wallet
 
 
 func build_temple() -> bool:
@@ -45,7 +45,7 @@ func harvest() -> void:
 ```
 Minimal          # minimal.gd: muestra los montos y conecta los botones
 ├── Box          # montos, botones Harvest y Build, registro
-└── Wallet       # start = {food: 2, gold: 1}, limits = {food: 2, …}
+└── %Wallet      # start = {food: 2, gold: 1}, limits = {food: 2, …}
                  # substitutes = [food → wood a 2, gold → todo a 1]
 ```
 

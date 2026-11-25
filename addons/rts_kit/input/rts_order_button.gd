@@ -11,7 +11,13 @@ extends Node
 @export var order_action: StringName = &"rts_order"
 @export var menu_action: StringName = &"rts_order_menu"
 ## Optional. Empty: no menu, no hold.
-@export var menu: RtsOrderMenu
+@export var menu: RtsOrderMenu:
+	set(value):
+		if menu and menu.entry_chosen.is_connected(_on_entry_chosen):
+			menu.entry_chosen.disconnect(_on_entry_chosen)
+		menu = value
+		if menu:
+			menu.entry_chosen.connect(_on_entry_chosen)
 ## The Control that takes the world's clicks. Empty: unhandled input.
 @export var view: Control
 @export var order_input: RtsOrderInput
@@ -36,8 +42,6 @@ func _get_configuration_warnings() -> PackedStringArray:
 func _ready() -> void:
 	if view:
 		view.gui_input.connect(_on_view_event)
-	if menu:
-		menu.entry_chosen.connect(_on_entry_chosen)
 
 
 func is_open() -> bool:

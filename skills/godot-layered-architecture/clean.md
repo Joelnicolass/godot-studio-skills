@@ -1,48 +1,40 @@
-# Camino Clean — capas
+# Clean en capas (solo repos que ya lo declaran)
 
-Usar **solo** si el usuario eligió Clean (o el repo ya lo declara). Dependencias hacia adentro:
+No se ofrece a un proyecto nuevo. Usar **solo** si el repo ya lo declara o si el usuario lo pidió por nombre. Para un juego nuevo: [by-entity.md](by-entity.md) o [systems-content.md](systems-content.md). Lo que Clean buscaba, reglas que se prueban sin escena, lo da el núcleo puro de [SKILL.md](SKILL.md) §2.
+
+Dependencias hacia adentro:
 
 ```
-features (Nodes, .tscn, física, RPCs, spawners)
-    → core (autoloads: sesión, eventos, director, glue de red)
+features (nodos, .tscn, física, spawners)
+    → core (autoloads: sesión, eventos, cambio de escena)
         → domain (RefCounted: reglas de partida)
 ```
 
 ```
 src/
-  core/autoload/     # MatchRules.tres, Events, GameSession, SceneDirector
-  domain/            # trackers y resolvers puros (estado de ronda, no catálogos)
-  features/<name>/   # scripts + escenas juntas
-  shared/            # componentes (un script o una escena): StateMachine, PostFx, Health; no shaders sueltos
-  resources/         # class_name + .tres de tipos que comparten varias features
-assets/              # solo si RULES.md eligió el arte por tipo: art/, shaders/, materials/, environment/
-addons/              # MpKit y plugins del framework (cero gameplay)
+  core/              # Events, GameSession, SceneDirector
+  domain/            # reglas puras: estado de la ronda, no catálogos
+  features/<name>/   # scripts + escenas juntas, con sus .tres
+  shared/            # componentes, y shaders y materiales que usan varias features
+  balance/           # match_config.tres y otros .tres de balance
+addons/              # kits (cero gameplay)
+docs/                # architecture.md, tuning.md
 ```
 
-Nombres de fachada: `GameSession`, `Events`, `SceneDirector`. No uses nombres de un título anterior.
-
-`GameSession` autoload **solo** si tiene que sobrevivir el cambio de escena; si no, nodo bajo `Main`. Tests: [godot-testing](../godot-testing/SKILL.md).
+Nombres de archivo y sufijos: [godot-code-quality](../godot-code-quality/SKILL.md) §1. `docs/tuning.md` es obligatorio acá también.
 
 ### Domain
 
-- `extends RefCounted`. `new()` en tests y en la sesión.
-- Prohibido: `Node`, `Input`, `MultiplayerAPI`, `get_tree()`, `@rpc`, `await` de escena.
-- Recibe números **o Resources de definición** por constructor. No lee autoloads en tests.
-- **No** es el lugar de “cómo se ve el proyectil”. Eso es el `.tres`. Domain usa `data.damage`, no strings de tipo.
+Las reglas del núcleo puro de [SKILL.md](SKILL.md) §2, en la carpeta `src/domain/`. Usa `type.damage`, no textos de tipo. No decide cómo se ve nada.
 
 ### Core
 
-- **GameSession**: trackers por slot, `start` / `abort`, `submit_*`, `to_snapshot` / `apply_snapshot`. El cliente apaga el tick al aplicar snapshot.
-- **Events**: bus de eventos, solo declaraciones `signal` tipadas (sin estado ni métodos). HUD/FX escuchan; el actor no guarda el score.
-- **SceneDirector**: cambia de escena. Preferí swap de hijos de `World` y dejar `GUI` viva. No puntúa.
-- **`MatchRules.tres`**: tunables de **ronda** (duración, vidas, layers) que leen la sesión y los features. No 80 floats de cada enemigo: esos van en el `@export` del nodo o en el `.tres` de su tipo.
+- **GameSession**: el estado de la partida y `start` / `abort`. Autoload **solo** si tiene que sobrevivir al cambio de escena; si no, un nodo bajo `Main`. Si tiene valores que se ajustan, se registra como `.tscn` o lee `balance/match_config.tres`.
+- **Events**: bus de eventos, solo declaraciones `signal` tipadas (sin estado ni métodos). HUD y efectos escuchan; el actor no guarda el puntaje.
+- **SceneDirector**: cambia de escena. Preferí cambiar los hijos de `World` y dejar `GUI` viva. No puntúa.
 
-1P = host local. Mismas reglas que 2P.
+Solo si hay red: `GameSession` suma `submit_*` y `to_snapshot` / `apply_snapshot`; el cliente apaga su tick al aplicar un snapshot; un jugador solo es un host local con las mismas reglas. Sin red, nada de eso existe.
 
 ### Features
 
-Nodos. `@rpc`, física, spawners. `@export var data: EnemyData`. No `match kind`.
-
-### Shared + resources
-
-Componentes (un script o una escena) en `shared/`; los shaders, materiales y arte sueltos no van ahí, van con su feature o en `assets/` (lo decide RULES.md). Un `.tres` que usa una sola feature vive en `features/<name>/`; `resources/<familia>/` es para tipos compartidos.
+Nodos, física, spawners. `@export var type: EnemyType`. No `match kind`.

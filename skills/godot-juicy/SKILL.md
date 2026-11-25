@@ -3,7 +3,7 @@ name: godot-juicy
 description: >-
   Hace jugoso (juicy) un juego Godot 4: camera shake, hit-stop, squash de
   impacto, partículas, post-process, screen flash, knockback visual, hooks de
-  SFX. Packed scenes, knobs @export, solo presentación. Usar cuando el usuario
+  SFX. Packed scenes, perillas @export, solo presentación. Usar cuando el usuario
   quiere juicy, jugoso, feel, camera shake, VFX, GPUParticles, feedback de
   golpe, post-process o /add-juicy. No es puntaje ni QA visual de UI.
 ---
@@ -22,7 +22,7 @@ Composición: [godot-composition-first](../godot-composition-first/SKILL.md). Mo
 |----|----|
 | Shake de cámara, flash, partículas, pass de post, squash, hit-stop **visual**, whoosh de SFX | Mutar HP, spawn, puntaje, autoridad de red |
 | Un packed scene / hijo por efecto | Un `World.gd` que tira partículas + puntúa |
-| Knobs `@export` (trauma, decay, amount, duration) | Magia en el `.gd` |
+| Perillas `@export` (trauma, decay, amount, duration) | Magia en el `.gd` |
 | Cada peer pinta lo jugoso | Meter juicy en `addons/mp_kit` o en el snapshot de reglas |
 
 En MP: el servidor decide **si** hubo hit; el cliente (y el listen host) pintan el FX. Mismo código 1P (`OfflineMultiplayerPeer`).

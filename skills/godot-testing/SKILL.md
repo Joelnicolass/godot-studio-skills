@@ -3,7 +3,7 @@ name: godot-testing
 description: >-
   Testea proyectos Godot 4 con GUT (GDScript) o GdUnit4 (C#) y los corre en CI
   (GitHub Actions: gdformat, gdlint, import headless y GUT). Usar al escribir
-  tests unitarios, de escena, de Resources, señales, reglas puras o domain
+  tests unitarios, de escena, de Resources, señales, reglas puras o núcleo
   RefCounted, al armar el CI headless o al elegir un runner de tests de Godot.
 ---
 
@@ -17,7 +17,7 @@ Arquitectura: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 
 | Capa | Cómo |
 |------|------|
-| Reglas puras (`class_name` + `static func`) y domain Clean (`RefCounted`) | `MyRule.new()` o la llamada estática. Sin escena ni autoloads. Es el primer lote |
+| Reglas puras (`class_name` + `static func`) y el núcleo puro de un nodo (`RefCounted`, al lado del nodo) | `MyRule.new()` o la llamada estática. Sin escena ni autoloads. Es el primer lote |
 | Resource de tipo | Construir el Resource o cargar el `.tres`; no mutar el asset compartido |
 | Nodo / componente | Agregarlo como hijo del test con `add_child_autofree`. Probar señales |
 | Feel / cámara / juicy | Playtest anotado. Un unit test verde no prueba que se sienta bien |

@@ -9,14 +9,14 @@ const GROUP := &"bell"
 	set(value):
 		rings = value
 		if is_node_ready():
-			$Label.text = "Bell %d" % rings
+			%Label.text = "Bell %d" % rings
 
-@onready var net: MpActor = $MpActor
+@onready var net: MpActor = %MpActor
 
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	$Label.text = "Bell %d" % rings
+	%Label.text = "Bell %d" % rings
 
 
 func ring() -> void:

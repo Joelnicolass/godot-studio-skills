@@ -27,7 +27,7 @@ func physics_update(_delta: float) -> void:
 		transition(&"Move")
 ```
 
-## Socket `@export` + UniqueName
+## Referencia `@export` + UniqueName
 
 ```gdscript
 @export var health: Health
@@ -43,28 +43,40 @@ func _get_configuration_warnings() -> PackedStringArray:
 ## Resource de tipo + una escena
 
 ```gdscript
-class_name ProjectileData
+class_name ProjectileType
 extends Resource
 
-@export var display_name: String = "Default"
-@export var damage: int = 1
-@export var speed: float = 400.0
+## Name shown in the HUD (a translation key).
+@export var display_name: String = "PROJECTILE_DEFAULT"
+## Damage per hit.
+@export_range(0, 100) var damage: int = 1
+## Travel speed.
+@export_range(0.0, 2000.0, 10.0, "suffix:px/s") var speed: float = 400.0
 ```
 
-Un `projectile_fast.tres` y un `projectile_slow.tres` apuntan a la misma `projectile.tscn`.
+Un `fast_projectile_type.tres` y un `slow_projectile_type.tres` apuntan a la misma `projectile.tscn`.
 
 ## Juicy con Tween + inspector
 
 ```gdscript
 @export_group("Land squash")
+## Scale at the bottom of the squash.
 @export var squash_scale: Vector2 = Vector2(1.2, 0.8)
-@export var squash_duration: float = 0.08
-@export var recover_duration: float = 0.12
+## Time to reach the squash.
+@export_range(0.0, 1.0, 0.01, "suffix:s") var squash_duration: float = 0.08
+## Time to get back to normal.
+@export_range(0.0, 1.0, 0.01, "suffix:s") var recover_duration: float = 0.12
+## Shape of the motion. Pick it here, not in the code.
+@export var transition: Tween.TransitionType = Tween.TRANS_QUAD
+@export var ease_type: Tween.EaseType = Tween.EASE_OUT
+
 
 func play_land() -> void:
-	var tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var tw := create_tween().set_trans(transition).set_ease(ease_type)
 	tw.tween_property(%Visual, "scale", squash_scale, squash_duration)
 	tw.tween_property(%Visual, "scale", Vector2.ONE, recover_duration)
 ```
 
-Doce principios: [godot-animation](../godot-animation/SKILL.md). Este clip es one-shot paramétrico → Tween. Varios tracks / loop authorado → `AnimationPlayer`. No hardcodees esos floats.
+Una forma que no es una de las de `Tween`: `@export var curve: Curve`, y `tween_method` que la lee con `curve.sample(t)`. Se dibuja en el inspector.
+
+Doce principios: [godot-animation](../godot-animation/SKILL.md). Este clip es one-shot paramétrico → Tween. Varios tracks / loop authorado → `AnimationPlayer`. Ni los números ni la curva van en el código.

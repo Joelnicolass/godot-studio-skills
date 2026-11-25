@@ -73,6 +73,27 @@ static func is_2d(node: Node) -> bool:
 	return node is Node2D
 
 
+## The unit `node`'s world distances are in, by where it sits in the scene: "px" under a Node2D, "m"
+## under a Node3D (the nearest of the two above it, or itself), "" when neither is above it.
+static func distance_unit(node: Node) -> String:
+	var at := node
+	while at != null:
+		if at is Node2D:
+			return "px"
+		if at is Node3D:
+			return "m"
+		at = at.get_parent()
+	return ""
+
+
+## For a `_validate_property`: the inspector shows `property` (a world distance of `node`) with its
+## unit, px or m (`distance_unit`). Nothing changes when the scene does not say which.
+static func show_distance_unit(property: Dictionary, node: Node) -> void:
+	var unit := distance_unit(node)
+	if not unit.is_empty():
+		property.hint_string = "suffix:%s" % unit
+
+
 ## Where a kit point is drawn on `viewport`'s screen, in viewport pixels, or null when a 3D camera has
 ## it behind. `node_2d` decides how: a 2D point goes through the canvas transform, a 3D one through
 ## the viewport's Camera3D (no camera: null).

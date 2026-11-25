@@ -3,9 +3,10 @@ extends Node3D
 ## BotKit's smallest example: a robot (a Bot3D on Godot's character template) hunts you round the walls.
 ## Arrows: walk. F: draw what the robot thinks.
 
-@onready var robot: CharacterBody3D = $Robot
-@onready var you: CharacterBody3D = $You
-@onready var label: Label = $Label
+@onready var robot: CharacterBody3D = %Robot
+@onready var you: CharacterBody3D = %You
+@onready var bot: Bot3D = %Bot3D
+@onready var label: Label = %Label
 
 var hits := 0
 var _tracer := ImmediateMesh.new()
@@ -27,14 +28,12 @@ func _process(delta: float) -> void:
 	_tracer_left_s -= delta
 	if _tracer_left_s <= 0.0:
 		_tracer.clear_surfaces()
-	var bot := robot.get_node(^"Bot3D") as Bot3D
 	label.text = "Arrows: walk   F: what it thinks\nThe robot %s. It hit you %d times." % [bot.mode, hits]
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	if key != null and key.pressed and not key.echo and key.keycode == KEY_F:
-		var bot := robot.get_node(^"Bot3D") as Bot3D
 		bot.show_in_game = not bot.show_in_game
 
 

@@ -1,6 +1,6 @@
 # Arquitectura del kit
 
-Cómo orquesta el chat, qué arquitecturas Godot soporta y cómo es el flujo de una iteración. El [README](../README.md) tiene el qué y el cómo instalar. Diagrama interactivo: [docs/diagram/](diagram/README.md).
+Cómo orquesta el chat, cómo se arma un juego Godot y cómo es el flujo de una iteración. El [README](../README.md) tiene el qué y el cómo instalar. Diagrama interactivo: [docs/diagram/](diagram/README.md).
 
 ## Arquitectura del orquestador
 
@@ -34,7 +34,7 @@ flowchart TB
 
   subgraph game [Tu proyecto Godot]
     arts[PRD FEATURES RULES VISUAL RFCs]
-    code[Escenas Resources glue]
+    code["Escenas, Resources y código del juego"]
   end
 
   orch --> skills
@@ -65,40 +65,47 @@ Roles (tool de subagentes — `Agent` en Claude Code, `Task` en Cursor — → `
 | Playtester | `studio-playtester` | Después del review, juega la escena del `F<n>`. Módulo [playtest](https://github.com/Joelnicolass/godot-studio-playtest). Si no está instalado: checklist manual o se saltea |
 | Visual | `studio-visual` | Solo si pedís pase UI; hace falta `VISUAL.md` o refs |
 
-Los subagentes **no** ven este chat. El prompt les pasa repo, RFC, estilo de arquitectura, y que lean los artefactos.
+Los subagentes **no** ven este chat. El prompt les pasa repo, RFC, tamaño del proyecto, y que lean los artefactos.
 
-## Arquitecturas Godot (siempre se pregunta)
+## Arquitectura del juego (se pregunta el tamaño)
 
-Hay **dos** estilos válidos. El agente no asume Clean. En ambos mandan lo simple y predecible, la composición, el editor y los patrones probados de Godot (skill `godot-code-quality`).
+Hay **un estilo** con **dos tamaños**. El juego se arma igual que un kit: cada sistema es un nodo que se ve en el editor, con sus `@export` y sus señales, y al lado un núcleo puro opcional (`RefCounted`) para las reglas que merecen un test. El agente pregunta el tamaño y recomienda el default.
 
 ```mermaid
 flowchart TB
-  ask{¿Clean o estándar?}
+  ask{¿Qué tamaño?}
 
-  ask -->|Clean| clean[features → core → domain]
-  ask -->|Estándar| std[escenas + scripts juntos]
+  ask -->|"Chico (el default)"| ent[Por entidad]
+  ask -->|"Mucho contenido, o alguien ajusta sin programar"| sys["Sistemas + contenido"]
 
-  clean --> feat[features: nodos, física, RPC]
-  feat --> core[core: sesión, eventos, director]
-  core --> domain[domain: RefCounted, testeable]
+  ent --> entf["player/ enemies/ levels/ match/ ui/ shared/"]
+  sys --> sysf["systems/ content/ ui/"]
 
-  std --> scenes[scenes/ junto al .gd]
-  scenes --> match[nodo Match en el mundo]
+  entf --> common[En los dos]
+  sysf --> common
 
-  clean --> shared[Composición]
-  std --> shared
-
-  shared --> packed[Packed scenes + @export]
-  packed --> tres[Tipos compartidos = Resource .tres]
-  tres --> f6[Cada escena corre con F6]
+  common --> node["Nodo visible + núcleo puro al lado"]
+  node --> owner["Un dueño por número: el tipo o la raíz"]
+  owner --> tuning["docs/tuning.md: qué abrir para cada cosa"]
+  tuning --> f6[Cada escena corre con F6 y se ve en el editor]
 ```
 
-| Estilo | Forma | Estado de partida |
-|--------|--------|-------------------|
-| **Clean** | `src/domain` + `core` + `features` | `GameSession` autoload **solo** si sobrevive el cambio de escena |
-| **Estándar** | Escena + script juntos; sin `src/domain/` | Nodo `Match` hijo del mundo |
+| Tamaño | Cuándo | Forma |
+|--------|--------|-------|
+| **Por entidad** (default) | Uno o dos programadores, hasta unos 10 tipos de entidad | Una carpeta por tema en la raíz, con su escena, script, `.tres` y arte; lo común en `shared/` |
+| **Sistemas + contenido** | Mucho contenido, alguien que ajusta valores sin programar, o sistemas que se reusan | Reglas en `systems/`, todo lo que editan diseño y arte en `content/`, `ui/` aparte. `content` usa `systems`, nunca al revés |
 
-Valor de una sola escena → `@export` del nodo que lo usa. Dato de tipo que se comparte → Resource. Helpers puros → `class_name` + `static func`. Comportamiento de actor → nodo hijo. Autoload solo para servicios globales (MpKit **si hay MP**, bus `Events` solo con señales).
+Clean en capas (`features → core → domain`) ya no se ofrece a un proyecto nuevo: queda para los repos que ya lo declaran o si lo pedís por nombre.
+
+En los dos tamaños:
+
+- **Un dueño por número.** Los números de diseño de una entidad están en el `.tres` de su tipo o en la raíz de su escena, nunca en dos lugares.
+- **`docs/tuning.md`** dice, para cada cosa que se puede ajustar, qué archivo, qué nodo y qué propiedad.
+- **El nombre dice el tipo:** `bat_type.tres`, `stone_material.tres`, `forest_env.tres`.
+- **Lo que se ve al correr se ve en el editor**, y cada `@export` tiene tooltip, rango y unidad.
+- Autoloads en `autoloads/`, solo para servicios globales (MpKit **si hay MP**, el bus `Events` solo con señales). Escenas de prueba en `debug/`, fuera del export.
+
+Los árboles completos: skill `godot-layered-architecture` (`by-entity.md`, `systems-content.md`). Las reglas de datos, carpetas y sufijos: skill `godot-code-quality` §0 y §1.
 
 ## Multiplayer (siempre se pregunta)
 
@@ -179,13 +186,11 @@ El ejemplo mínimo es la integración más chica que anda; el README de cada kit
 
 ## Prioridades (siempre)
 
-- lo simple y predecible: cambiar un número abre como mucho 2 archivos
-- arquitectura fácil de escalar y limpia en capas
-- siempre tienen prioridad las estructuras de composición
-- siempre tienen prioridad los nodos y las configuraciones en el editor: el valor vive en el nodo que lo usa
-- siempre se debe dar prioridad a la reusabilidad de los componentes
-
-En **estándar**, “capas” no significa carpetas `domain/core/features`. Significa una responsabilidad por pieza y composición (sin tope de líneas: se parte por responsabilidad).
+- Simple y predecible: cambiar un número abre como mucho 2 archivos.
+- Un humano lo encuentra: `docs/tuning.md` dice qué abrir para cada cosa.
+- Composición antes que herencia.
+- Nodos y editor antes que código.
+- Componentes reusables.
 
 ## Shaders, sprites 2D y 3D
 

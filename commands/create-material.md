@@ -24,7 +24,7 @@ Sin OK: placeholder y seguí. No instales nada.
 
 ## 2. Plan
 
-- `res://assets/materials/<nombre>/`: `.ptex` + PNG + `.tres`.
+- `res://shared/materials/<nombre>/` (`content/materials/` en sistemas + contenido; la carpeta de la entidad si lo usa una sola): `.ptex` + PNG + `<nombre>_material.tres`.
 - Target de export (`Godot/Godot 4 Standard` u `ORM`) y por qué.
 - Qué componente lo recibe por `@export` y qué escena lo asigna en el inspector.
 

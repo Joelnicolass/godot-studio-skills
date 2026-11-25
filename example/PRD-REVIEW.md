@@ -15,7 +15,7 @@
 | Hueco | Impacto | Tratamiento |
 |-------|---------|-------------|
 | El PRD inicial de conversación no fijaba política de arranque listen vs dedicated | High | Documentado: listen al hostear; dedicated al 1.er cliente |
-| No estaba el idioma de UI vs código | Medium | UI = idioma del producto; IDs en inglés; `DemoCopy` |
+| No estaba el idioma de UI vs código | Medium | UI = idioma del producto; IDs en inglés; `locale/texts.csv` |
 | Rejoin indefinido | Medium | Pawn se destruye al leave; slot reservado por el kit |
 | Export VPS | Low | Won't: se documenta headless; no presets de export en el repo |
 | Tests | Low | Explicitamente no pedidos |

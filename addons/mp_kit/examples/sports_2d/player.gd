@@ -30,14 +30,14 @@ var facing := Vector2.RIGHT
 var slide_ticks := 0
 var stun_ticks := 0
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
 
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	$Body.color = TEAM_COLORS[team()]
-	$Tag.text = "P%d" % net.owner_slot
+	%Body.color = TEAM_COLORS[team()]
+	%Tag.text = "P%d" % net.owner_slot
 
 
 ## Home (0: slots 1 and 3, the left goal) or away (1: slots 2 and 4).
@@ -96,5 +96,5 @@ func reset_to(at: Vector2) -> void:
 
 
 func _process(_delta: float) -> void:
-	$Facing.rotation = facing.angle()
-	$Body.rotation = facing.angle() + PI / 2.0 if slide_ticks > 0 or stun_ticks > RECOVER_TICKS else 0.0
+	%Facing.rotation = facing.angle()
+	%Body.rotation = facing.angle() + PI / 2.0 if slide_ticks > 0 or stun_ticks > RECOVER_TICKS else 0.0
