@@ -1,5 +1,16 @@
 # Cambios de GridKit
 
+## 0.5.0
+
+Cuatro consultas que antes cada juego escribía por su cuenta, en `CellGrid` (hexágonos y cuadrados) y como atajos en `GridBoard`:
+
+- **Direcciones:** `direction_to(a, b)` dice hacia qué lado de `a` está `b` (0 a 5 en hexágonos, en el orden de `CUBE_DIRECTIONS`; 0 a 3, u 0 a 7 con diagonales), o -1 si no es vecina. `neighbor(cell, direction)` es el camino inverso, y `direction_count()` dice cuántas hay.
+- **Vecinas fuera del tablero:** `neighbors(cell, false)` también devuelve las que quedan afuera, siempre en el orden de las direcciones. `outline(rings := 1)` da las casillas que rodean el tablero: un marco, una niebla, una costa.
+- **`cells_with(key, value)`:** las casillas con ese valor (las de inicio de un jugador). También en `GridLayout`.
+- **`center_cell()`:** la casilla más cercana al centro de la forma.
+
+Nada que actualizar en tu proyecto: `neighbors(cell)` sigue igual.
+
 ## 0.4.0
 
 - **`GridView3D.tile_created(cell, tile)`:** sale por cada loseta que arma, ya en el centro de su casilla y antes de que entre al árbol, así que lo que le pongas ahí (su casilla, sus datos) ya está en su `_ready`. Antes, el juego tenía que deducir la casilla por la posición.
