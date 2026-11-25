@@ -37,7 +37,7 @@ Habilitá el plugin **GridKit** (la barra del pincel en la vista 3D; los nodos a
 - **Las alturas son un valor de la casilla.** `height_key` en el `GridBoard` (por ejemplo `height`; vacía: plano) y `height_scale`. `cell_to_position` ya trae la altura en Y: las losetas, los cursores y las fichas del juego se ubican con ella y no calculan alturas. Los clics eligen la casilla que se ve (una alta tapa a la baja de atrás). Se pintan con la barra, no en un `_ready`.
 - **Los valores por casilla son claves.** `board.set_value(cell, &"terrain", &"forest")`; qué loseta se dibuja la elige `value_key` de la vista. Otras claves (dueño, costo) las lee el juego.
 - **Caminos y rangos.** `find_path(from, to, cost)` con `cost` como `func(from, to) -> float` (`INF` es intransitable); `cells_in_range`, `flood`. Todo en orden fijo (fila, después columna): el mismo resultado en cada corrida.
-- **Clics sin colliders.** `GridView3D.cell_clicked` / `cell_hovered`; un arrastre de cámara no es un clic (`click_max_drag_px`).
+- **Clics sin colliders.** `GridView3D.cell_clicked` / `cell_right_clicked` / `cell_hovered` (elegir con el izquierdo, ordenar con el derecho); un arrastre de cámara no es un clic (`click_max_drag_px`).
 - **Un cursor por significado.** Un `GridCursor` para los movimientos válidos, otro para la selección, otro para el hover.
 - **Ningún kit depende de otro.** GridKit no tiene reglas, unidades, turnos ni red: el juego conecta.
 
@@ -85,7 +85,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 | `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors(cell, on_board_only)`, `neighbor`, `direction_to`, `distance(a, b)`, `cells_in_range`, `find_path`, `flood`, `outline(rings)`, `cells_with(key, value)`, `center_cell`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
 | `GridLayout` | `make_grid()` (una copia), `GridLayout.from_grid(grid)`, `set_value`, `erase_value`, `add_cell`, `remove_cell` |
 | `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`, `height_key`, `height_scale`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position` (con la altura en Y), `cell_height`, `position_to_cell` (solo X y Z); `cell_changed`, `rebuilt` |
-| `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
+| `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_right_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
 | `GridCursor` | `highlight(cells)`, `clear()`, `highlighted()`; `marker`, `color`, `lift`, `fill` |
 
 ## Listo cuando

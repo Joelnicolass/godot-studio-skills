@@ -5,14 +5,18 @@ extends Node3D
 
 ## Draws its parent `GridBoard` in 3D: one scene per cell, picked from `tiles` by the cell's `value_key` value (for
 ## example `&"terrain"` → `&"forest"`). It redraws a cell when that value changes and the cells that came or went when
-## the board is `rebuilt`. A click or a tap that does not drag reports the cell under it (`cell_clicked`); the pointer
-## moving over a new cell reports it too (`cell_hovered`). Picking needs no colliders: the ray from the camera meets
-## the board plane or, on a board with heights (`GridBoard.height_key`), the first cell that stands in its way. Each
-## tile sits on its cell's center, at its height, before it enters the tree, and `tile_created` hands it to you first
-## (give it its cell there); `drawn` says every tile is in place. A cell whose height changes moves its tile.
+## the board is `rebuilt`. A click or a tap that does not drag reports the cell under it (`cell_clicked`), and so does a
+## right click (`cell_right_clicked`); the pointer moving over a new cell reports it too (`cell_hovered`). Picking needs
+## no colliders: the ray from the camera meets the board plane or, on a board with heights (`GridBoard.height_key`), the
+## first cell that stands in its way. Each tile sits on its cell's center, at its height, before it enters the tree, and
+## `tile_created` hands it to you first (give it its cell there); `drawn` says every tile is in place. A cell whose
+## height changes moves its tile.
 
 ## The player clicked or tapped `cell` (a press and release that moved less than `click_max_drag_px`).
 signal cell_clicked(cell: Vector2i)
+## The player right-clicked `cell`, with the same rule: a right drag is not a click. Touch has no right click: a game
+## that wants one on phones maps it itself (a long press, a button).
+signal cell_right_clicked(cell: Vector2i)
 ## The pointer is now over `cell` (`CellGrid.NO_CELL` when it left the board).
 signal cell_hovered(cell: Vector2i)
 ## A tile for `cell` was made and placed on the cell's center. It is not in the tree yet: what you set on it here (its
@@ -52,7 +56,8 @@ var hovered_cell := CellGrid.NO_CELL
 var _tiles_by_cell: Dictionary[Vector2i, Node3D] = {}
 var _scenes_by_cell: Dictionary[Vector2i, PackedScene] = {}
 var _board: GridBoard
-var _press_at := Vector2.INF
+# Where each held button went down (left or right; a tap counts as left).
+var _press_at: Dictionary[int, Vector2] = {}
 var _flush_queued := false
 var _full_redraw := false
 var _height_pick := HeightPick.new()
@@ -130,30 +135,34 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint() or not input_enabled:
 		return
 	var button := event as InputEventMouseButton
-	if button != null and button.button_index == MOUSE_BUTTON_LEFT:
-		_on_press(button.pressed, button.position)
+	if button != null and (button.button_index == MOUSE_BUTTON_LEFT or button.button_index == MOUSE_BUTTON_RIGHT):
+		_on_press(button.button_index, button.pressed, button.position)
 		return
 	var touch := event as InputEventScreenTouch
 	if touch != null and touch.index == 0:
-		_on_press(touch.pressed, touch.position)
+		_on_press(MOUSE_BUTTON_LEFT, touch.pressed, touch.position)
 		return
 	var motion := event as InputEventMouseMotion
 	if motion != null:
 		_hover(motion.position)
 
 
-func _on_press(pressed: bool, at: Vector2) -> void:
+func _on_press(button_index: int, pressed: bool, at: Vector2) -> void:
 	if pressed:
-		_press_at = at
+		_press_at[button_index] = at
 		return
-	if _press_at == Vector2.INF:
+	if not _press_at.has(button_index):
 		return
-	var travelled := _press_at.distance_to(at)
-	_press_at = Vector2.INF
+	var travelled := _press_at[button_index].distance_to(at)
+	_press_at.erase(button_index)
 	if travelled > click_max_drag_px:
 		return
 	var cell := cell_at_screen(at)
-	if cell != CellGrid.NO_CELL:
+	if cell == CellGrid.NO_CELL:
+		return
+	if button_index == MOUSE_BUTTON_RIGHT:
+		cell_right_clicked.emit(cell)
+	else:
 		cell_clicked.emit(cell)
 
 
