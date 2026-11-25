@@ -15,6 +15,7 @@ Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **ca
 | `grid_kit` | Tableros hexagonales: `HexGrid` como datos puros (valores por casilla, vecinos, distancia, rango, caminos, flood, `to_dict`) y nodos para verlos y elegir casillas en 3D (`GridBoard`, `GridView3D`, `GridCursor`). Sin reglas de juego, sin red |
 | `turn_kit` | Turnos, rondas y ciclos: `TurnCycle` como datos puros (acciones por turno, rondas, ciclos y fin configurables, asientos inactivos, `to_dict`) y un reloj con un hijo por jugador (`TurnClock`, `TurnSeat`). Sin reglas de juego, sin red |
 | `wallet_kit` | Recursos y monedas: `Purse` como datos puros (montos por clave, topes que devuelven lo perdido, pagar todo o nada, un comodín que cubre lo que falta, `to_dict`) y el nodo `Wallet`. Sin precios ni UI, sin red |
+| `command_kit` | Órdenes validadas con registro: `GameCommand` (tipo, `can_run`, `run`, deshacer opcional) y `CommandLog` como datos puros (corre solo las válidas, guarda `{type, seat, args}`, deshace la última, repite un registro), con el nodo `CommandBus`. Sin reglas de juego, sin azar, sin red |
 | `bot_kit` | Bots que juegan a tu personaje como una persona, 3D: aprietan las teclas de un jugador (un `Input` propio), ven al enemigo más cercano sin muros en el medio, apuntan con límites humanos, eligen el arma por la distancia, recorren el navmesh hacia metas y salen de donde se traban; conductas propias como nodos hijos, presets de dificultad. Sin red, sin armas ni vida |
 
 Cada addon trae un **ejemplo mínimo** (`examples/minimal_2d/` o `examples/minimal_3d/`: la integración más chica que anda, F6) y, en su README, ese código explicado con **tips y recomendaciones**. La tabla con todos está en el [README del repo](../README.md#ejemplos-de-cada-kit).
@@ -39,4 +40,5 @@ Instalar en un proyecto:
 ./install.sh --addon /path/to/godot-project grid_kit
 ./install.sh --addon /path/to/godot-project turn_kit
 ./install.sh --addon /path/to/godot-project wallet_kit
+./install.sh --addon /path/to/godot-project command_kit
 ```
