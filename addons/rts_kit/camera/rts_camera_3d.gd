@@ -12,9 +12,10 @@ extends Camera3D
 ##
 ## In both the eye never goes below `ground_clearance` over the ground under it (a ray to `ground`,
 ## and `height_at` when the game gives one: live terrain that moves before its collision does). The
-## edges only work while the pointer is over `edge_area`; the wheel does nothing over a
-## `wheel_blockers` control (one with a `covers(screen) -> bool` method decides by it). Nothing reads
-## input while a modal UI is open (RtsWorldInput).
+## edges stop while the pointer is over the UI (`edges_over_gui`) and, with `edge_area`, only work
+## over it; the wheel does nothing over a `wheel_blockers` control (one with a
+## `covers(screen) -> bool` method decides by it). Nothing reads input while a modal UI is open
+## (RtsWorldInput).
 
 enum Mode { FOLLOW, FREE }
 
@@ -30,8 +31,12 @@ enum Mode { FOLLOW, FREE }
 @export_flags_3d_physics var ground_mask := 1
 ## The eye never goes lower than this over the ground under it.
 @export var ground_clearance := 0.5
-## Edges only work while the pointer hovers this control (a HUD bar stays out). Empty: anywhere.
+## Edges only work while the pointer hovers this control (a HUD bar stays out). Empty: anywhere but
+## the UI (`edges_over_gui`).
 @export var edge_area: Control
+## Without `edge_area`, the edges also work while the pointer is over the UI (a control whose mouse
+## filter is not Ignore). Off: a HUD button or panel at an edge does not move the camera.
+@export var edges_over_gui := false
 ## The wheel does not zoom while the pointer is over one of these.
 @export var wheel_blockers: Array[Control] = []
 ## Composed last on top of the placement (a shake). Empty: none.
@@ -335,13 +340,17 @@ func _edge_pointer() -> Variant:
 		return debug_pointer
 	if not _mouse_inside or not get_window().has_focus():
 		return null
-	if _free_look() or _held(orbit_action):
+	if _free_look() or _held(orbit_action) or _pointer.x < 0.0:
 		return null
-	if _pointer.x < 0.0:
-		return null
-	if edge_area and get_viewport().gui_get_hovered_control() != edge_area:
-		return null
-	return _pointer
+	return _pointer if _edges_work_here() else null
+
+
+## Over `edge_area` when it is set; otherwise anywhere but the UI, unless `edges_over_gui`.
+func _edges_work_here() -> bool:
+	var hovered := get_viewport().gui_get_hovered_control()
+	if edge_area:
+		return hovered == edge_area
+	return hovered == null or edges_over_gui
 
 
 func _wheel_blocked(screen: Vector2) -> bool:

@@ -56,4 +56,4 @@ Everything is in `addons/rts_kit/`. Kit points are `Vector3` with the ground on 
 
 ## Cameras
 
-`RtsCamera3D` (`mode` FOLLOW / FREE, `follow`, `set_follow`, `focus`, `yaw`, `is_dragging`, `free_target`, `free_pitch_deg`, `free_min_distance`, `free_max_distance`, `pan_speed`, `bounds`, `ground`, `ground_clearance`, `height_at`, `height_of`, `edge_area`, `wheel_blockers`, `effect`, `follow_yaw_property`, the follow formula, `debug_pointer`), `RtsCamera2D` (`mode`, `follow`, `focus`, `yaw`, `bounds`, `can_turn`, `min_zoom`, `max_zoom`, `pan_speed`), `RtsCameraEffect` (`offset()`, `roll()`).
+`RtsCamera3D` (`mode` FOLLOW / FREE, `follow`, `set_follow`, `focus`, `yaw`, `is_dragging`, `free_target`, `free_pitch_deg`, `free_min_distance`, `free_max_distance`, `pan_speed`, `bounds`, `ground`, `ground_clearance`, `height_at`, `height_of`, `edge_area`, `edges_over_gui`, `wheel_blockers`, `effect`, `follow_yaw_property`, the follow formula, `debug_pointer`), `RtsCamera2D` (`mode`, `follow`, `focus`, `yaw`, `bounds`, `can_turn`, `min_zoom`, `max_zoom`, `pan_speed`, `edge_area`, `edges_over_gui`, `wheel_blockers`), `RtsCameraEffect` (`offset()`, `roll()`).
