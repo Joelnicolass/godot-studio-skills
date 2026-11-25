@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/turn_kit/icons/turn_seat.svg")
 class_name TurnSeat
 extends Node
 

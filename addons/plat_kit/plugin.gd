@@ -5,7 +5,7 @@ const MOTOR := preload("res://addons/plat_kit/plat_motor.gd")
 
 
 func _enter_tree() -> void:
-	add_custom_type("PlatMotor", "Node", MOTOR, null)
+	add_custom_type("PlatMotor", "Node", MOTOR, preload("res://addons/plat_kit/icons/plat_motor.svg"))
 	add_tool_menu_item("PlatKit: Add motor to selected CharacterBody2D", _on_add_motor)
 
 

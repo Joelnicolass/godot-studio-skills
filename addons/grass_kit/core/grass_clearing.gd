@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_clearing.svg")
 class_name GrassClearing
 extends Resource
 

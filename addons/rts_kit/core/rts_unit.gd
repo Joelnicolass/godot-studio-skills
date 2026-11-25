@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_unit.svg")
 class_name RtsUnit
 extends Node
 

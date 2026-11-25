@@ -1,5 +1,11 @@
 # GrassKit changelog
 
+## 0.2.3
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem. The kit's emblem is in its bar of the 3D view.
+
+Nothing to update in your project.
+
 ## 0.2.2
 
 - **A ground painted in the game is freed.** `GrassGround` kept every painted or baked ground in a static list, so the editor would save it with the scene, in an exported game too. A ground painted in the game (burning grass with `ground.paint`) was never freed, and on quit that list crashed the process (exit 134 in the tests). Now only the editor keeps it, with weak references (`GrassGround.edited_grounds()`, `GrassGround.mark_saved()`).

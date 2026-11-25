@@ -1,4 +1,4 @@
-# PropKit
+# <img src="icons/prop_kit.svg" width="32" height="32" alt=""> PropKit
 
 Props for 2D and 3D worlds, in three independent pieces:
 

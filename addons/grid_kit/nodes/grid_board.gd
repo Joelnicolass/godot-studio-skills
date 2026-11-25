@@ -1,5 +1,6 @@
 # gdlint: disable=max-public-methods
 @tool
+@icon("res://addons/grid_kit/icons/grid_board.svg")
 class_name GridBoard
 extends Node
 

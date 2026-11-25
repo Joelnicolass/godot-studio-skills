@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_radial_rings.svg")
 class_name RtsRadialRings
 extends Control
 

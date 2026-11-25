@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/bot_kit/icons/bot_weapon.svg")
 class_name BotWeapon
 extends Resource
 

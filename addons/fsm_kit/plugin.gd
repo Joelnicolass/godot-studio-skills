@@ -6,8 +6,8 @@ const STATE := preload("res://addons/fsm_kit/fsm_state.gd")
 
 
 func _enter_tree() -> void:
-	add_custom_type("FsmMachine", "Node", MACHINE, null)
-	add_custom_type("FsmState", "Node", STATE, null)
+	add_custom_type("FsmMachine", "Node", MACHINE, preload("res://addons/fsm_kit/icons/fsm_machine.svg"))
+	add_custom_type("FsmState", "Node", STATE, preload("res://addons/fsm_kit/icons/fsm_state.svg"))
 	add_tool_menu_item("FsmKit: Add machine under selection", _on_add_machine)
 
 

@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_order_input.svg")
 class_name RtsOrderInput
 extends Node
 

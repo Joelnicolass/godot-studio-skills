@@ -14,9 +14,9 @@ var _tool: PaintTool
 
 
 func _enter_tree() -> void:
-	add_custom_type("GridBoard", "Node", BOARD, null)
-	add_custom_type("GridView3D", "Node3D", VIEW_3D, null)
-	add_custom_type("GridCursor", "Node3D", CURSOR, null)
+	add_custom_type("GridBoard", "Node", BOARD, preload("res://addons/grid_kit/icons/grid_board.svg"))
+	add_custom_type("GridView3D", "Node3D", VIEW_3D, preload("res://addons/grid_kit/icons/grid_view_3d.svg"))
+	add_custom_type("GridCursor", "Node3D", CURSOR, preload("res://addons/grid_kit/icons/grid_cursor.svg"))
 	_tool = PaintTool.new()
 	add_child(_tool)
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, _tool.bar())

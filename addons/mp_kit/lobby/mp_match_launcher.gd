@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_match_launcher.svg")
 class_name MpMatchLauncher
 extends Node
 

@@ -1,5 +1,11 @@
 # SpillKit changelog
 
+## 0.2.3
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.2.2
 
 - **A puddle that moves stays on the body's side** (found by El Eternauta: a bug dead on the bevel of a 0.30 m sidewalk left its puddle down on the street, 0.6 m from the body). 0.2.1 set no limit below for the new floor, and its separation ray left at the component's height, over the curb. Now:

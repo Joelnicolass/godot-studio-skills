@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/command_kit/icons/game_commands.svg")
 class_name GameCommands
 extends Node
 

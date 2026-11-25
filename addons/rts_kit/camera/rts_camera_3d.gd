@@ -1,3 +1,4 @@
+@icon("res://addons/rts_kit/icons/rts_camera_3d.svg")
 class_name RtsCamera3D
 extends Camera3D
 

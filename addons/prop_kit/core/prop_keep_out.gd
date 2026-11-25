@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_keep_out.svg")
 class_name PropKeepOut
 extends Resource
 

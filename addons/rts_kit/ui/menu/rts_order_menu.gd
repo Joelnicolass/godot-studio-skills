@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_order_menu.svg")
 class_name RtsOrderMenu
 extends Control
 

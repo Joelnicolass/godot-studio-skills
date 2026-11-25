@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_local_server.svg")
 class_name MpLocalServer
 extends Node
 

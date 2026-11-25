@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_lobby_server.svg")
 class_name MpLobbyServer
 extends Node
 

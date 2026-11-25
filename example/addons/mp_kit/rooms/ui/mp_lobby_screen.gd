@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_lobby_screen.svg")
 class_name MpLobbyScreen
 extends Control
 

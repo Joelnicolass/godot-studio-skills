@@ -1,4 +1,4 @@
-# WalletKit
+# <img src="icons/wallet_kit.svg" width="32" height="32" alt=""> WalletKit
 
 Resources and coins for strategy, management, crafting, shop or board games. It has two levels:
 

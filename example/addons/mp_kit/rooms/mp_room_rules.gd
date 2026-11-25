@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_room_rules.svg")
 class_name MpRoomRules
 extends Resource
 

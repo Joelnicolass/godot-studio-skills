@@ -1,5 +1,11 @@
 # CommandKit changes
 
+## 0.2.1
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.2.0
 
 Redone so there is no class to write per command. **Breaks the 0.1 API** (table in "Migrating from 0.1" in the README).

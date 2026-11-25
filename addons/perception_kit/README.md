@@ -1,4 +1,4 @@
-# PerceptionKit
+# <img src="icons/perception_kit.svg" width="32" height="32" alt=""> PerceptionKit
 
 What an actor perceives, in 2D and 3D:
 - **Sight:** a view cone that starts seeing at one distance and keeps seeing until a farther one, all-around awareness up close, and walls that hide.

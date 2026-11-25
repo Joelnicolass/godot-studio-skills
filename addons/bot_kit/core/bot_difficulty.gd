@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/bot_kit/icons/bot_difficulty.svg")
 class_name BotDifficulty
 extends Resource
 

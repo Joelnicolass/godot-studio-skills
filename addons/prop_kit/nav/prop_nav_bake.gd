@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_nav_bake.svg")
 class_name PropNavBake
 extends Resource
 

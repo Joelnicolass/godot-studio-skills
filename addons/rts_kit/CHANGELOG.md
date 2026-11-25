@@ -1,5 +1,11 @@
 # RtsKit changelog
 
+## 0.3.1
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.3.0
 
 - **The command rig is one node.** `rig/rts_command_rig_3d.tscn` and `rig/rts_command_rig_2d.tscn` (`RtsCommandRig`) hold `Command` with its ten pieces and the `View` with its `Box`, all wired. Instance it, assign `camera` and `ground` (in 2D `camera` is enough) and you select and order. `menu` is a third, optional socket for the right button's menu. If a socket is missing, or the camera is of the other dimension, the node shows a warning in the editor.

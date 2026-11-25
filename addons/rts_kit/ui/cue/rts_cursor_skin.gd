@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/rts_kit/icons/rts_cursor_skin.svg")
 class_name RtsCursorSkin
 extends Node
 

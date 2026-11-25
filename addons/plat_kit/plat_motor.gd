@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/plat_kit/icons/plat_motor.svg")
 class_name PlatMotor
 extends Node
 

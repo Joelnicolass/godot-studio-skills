@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/wallet_kit/icons/wallet.svg")
 class_name Wallet
 extends Node
 

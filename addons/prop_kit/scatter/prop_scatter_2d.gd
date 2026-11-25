@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_scatter_2d.svg")
 class_name PropScatter2D
 extends Node2D
 

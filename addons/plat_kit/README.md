@@ -1,4 +1,4 @@
-# PlatKit
+# <img src="icons/plat_kit.svg" width="32" height="32" alt=""> PlatKit
 
 **2D platformer** motor as a child of a `CharacterBody2D`: coyote, jump buffer, apex gravity, corner correction, lift remember. **No** levels, score, dash, or stamina. No autoload, and it depends on no other kit.
 

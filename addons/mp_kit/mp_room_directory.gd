@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_room_directory.svg")
 class_name MpRoomDirectory
 extends Node
 

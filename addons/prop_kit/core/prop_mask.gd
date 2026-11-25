@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_mask.svg")
 class_name PropMask
 extends Resource
 

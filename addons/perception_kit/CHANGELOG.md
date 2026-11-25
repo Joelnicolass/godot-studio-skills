@@ -1,5 +1,11 @@
 # PerceptionKit changelog
 
+## 0.1.2
+
+- **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.
+
+Nothing to update in your project.
+
 ## 0.1.1
 
 - **The sides set in a scene stay when it loads** (found by El Eternauta). 0.1.0 put a new sensor's mask and a new target's layer on layer 32 in `_init()`. Godot sets a node's own properties before its script, so that `_init()` ran after the scene's values and overwrote them: a mask or layer set in the inspector was lost on the next load. Now `_init()` sets only what the kit owns (nothing detects a sensor, a target detects nothing), and the inspector shows a sensor's mask and a target's layer only; the rest is neither shown nor saved.

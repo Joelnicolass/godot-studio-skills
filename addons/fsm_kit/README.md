@@ -1,4 +1,4 @@
-# FsmKit
+# <img src="icons/fsm_kit.svg" width="32" height="32" alt=""> FsmKit
 
 State machine by **composition**: one `FsmMachine` and `FsmState` children. **No** match rules, score, or copy. No autoload.
 

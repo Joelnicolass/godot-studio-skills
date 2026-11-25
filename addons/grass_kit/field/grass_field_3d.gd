@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/grass_kit/icons/grass_field_3d.svg")
 class_name GrassField3D
 extends Node3D
 

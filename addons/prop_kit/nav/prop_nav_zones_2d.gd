@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_nav_zones_2d.svg")
 class_name PropNavZones2D
 extends Node2D
 

@@ -1,3 +1,4 @@
+@icon("res://addons/mp_kit/icons/mp_flow.svg")
 class_name MpFlow
 extends Node
 

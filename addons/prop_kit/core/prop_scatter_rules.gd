@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/prop_kit/icons/prop_scatter_rules.svg")
 class_name PropScatterRules
 extends Resource
 
