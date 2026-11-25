@@ -44,6 +44,15 @@ func undo() -> void:
 			(entry[1] as Object).set(entry[2], entry[3])
 
 
+## Runs all that was recorded for `kind` ("do" or "undo"), methods and properties, in the order it was added.
+func run(kind: String) -> void:
+	for entry: Array in calls:
+		if entry[0] == "add_%s_method" % kind:
+			(entry[1] as Object).callv(entry[2], entry[3])
+		elif entry[0] == "add_%s_property" % kind:
+			(entry[1] as Object).set(entry[2], entry[3])
+
+
 ## The names of the calls, in order.
 func names() -> Array[String]:
 	var list: Array[String] = []

@@ -27,7 +27,7 @@ Habilitá **GridKit**. Si `godot-studio-workflow` está cargado: orquestador →
 Si falta, preguntá en una sola tanda:
 
 1. La forma: hexágonos o cuadrados (y con o sin diagonales), de qué tamaño o con qué radio, y el ancho de una casilla.
-2. Los valores por casilla: terreno, y qué más (dueño, costo de pasar); qué loseta se dibuja por cada valor.
+2. Los valores por casilla: terreno, y qué más (dueño, costo de pasar, altura); qué loseta se dibuja por cada valor.
 3. Si el mapa se pinta a mano en el editor (un `GridLayout`) o lo arma el juego (generado, cargado de un archivo, por red).
 4. Qué hace un clic y qué marca el hover; qué cursores hacen falta (movimientos, selección, camino).
 5. Si hay reglas sobre las casillas (alcance, costo de moverse, caminos): quién las tiene y en qué parte del juego viven.
@@ -57,7 +57,8 @@ Seguí [godot-grid-kit](../skills/godot-grid-kit/SKILL.md) y `addons/grid_kit/RE
 - Las losetas son escenas con un `Node3D` de raíz; `cell_size` es el ancho de lado a lado (hexágonos) o el lado (cuadrados).
 - Las reglas usan un `CellGrid` (`board.grid`, o el del estado de la partida con `board.use_grid`), no los nodos: `neighbors`, `distance`, `cells_in_range`, `find_path(from, to, cost)`, `flood`.
 - Un `GridCursor` por significado, con `highlight(cells)` y `clear()`.
-- Decile a la persona cómo pintar: seleccionar el `GridBoard` muestra la barra **GridKit** (una loseta, **Erase**, **Add cells**, **Remove cells**); un trazo se deshace con Ctrl+Z; lo pintado queda en el `layout`.
+- Si las casillas tienen alturas: `height_key` (por ejemplo `height`) y `height_scale` en el `GridBoard`; todo lo que va sobre el tablero se ubica con `board.cell_to_position(cell)`, que ya trae la altura. Las losetas, macizas hacia abajo.
+- Decile a la persona cómo pintar: seleccionar el `GridBoard` muestra la barra **GridKit** (una loseta, **Erase**, **Add cells**, **Remove cells**, y **Raise**, **Lower** y **Set height** para las alturas); un trazo se deshace con Ctrl+Z; lo pintado queda en el `layout`.
 - Corré `godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_test_runner.gd` si tocás el kit.
 
 ## 4. Listo cuando

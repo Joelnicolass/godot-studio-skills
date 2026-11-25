@@ -7,7 +7,8 @@ description: >-
   mapa como un recurso que se guarda (GridLayout), un GridBoard que lo muestra,
   un GridView3D que dibuja una escena por casilla y reporta clics y hover sin
   colliders, GridCursor para marcar casillas y un pincel en la vista 3D del
-  editor para pintar el terreno y agregar o quitar casillas con deshacer. Usar
+  editor para pintar el terreno, subir y bajar la altura de cada casilla y
+  agregar o quitar casillas con deshacer. Usar
   cuando el usuario quiere un tablero, una grilla de hexágonos o de cuadrados,
   un juego de estrategia por turnos, táctico, de mesa o un puzzle sobre una
   grilla, pintar un mapa en el editor, caminos o rangos de movimiento sobre una
@@ -32,7 +33,8 @@ Habilitá el plugin **GridKit** (la barra del pincel en la vista 3D; los nodos a
 - **Dos formas, una API.** `HexGrid` (pointy-top, odd-r) y `SquareGrid` (`diagonals` apagado: 4 vecinas y Manhattan; encendido: 8 y Chebyshev). Se elige con `shape` en el `GridBoard`. El código del juego no pregunta la forma: usa `grid.neighbors`, `grid.distance`, `grid.cells_in_range`.
 - **Las reglas usan la grilla, no los nodos.** El estado de la partida guarda un `CellGrid` y el tablero lo muestra con `board.use_grid(state.grid)`. Las reglas corren headless y la vista se actualiza sola con `value_changed`.
 - **El mapa es un `GridLayout`.** La forma y el terreno que se arman a mano van en un layout (`GridBoard.layout`), no en un `_ready` que pinta casilla por casilla ni en un diccionario del juego. El juego juega una copia: el `.tres` no se toca al jugar.
-- **Pintar en el editor.** Seleccionar el `GridBoard` muestra la barra **GridKit** en la vista 3D: un botón por cada clave de `tiles`, **Erase**, **Add cells**, **Remove cells**. Un trazo es un paso de deshacer. Si no hay layout, el primer trazo crea uno.
+- **Pintar en el editor.** Seleccionar el `GridBoard` muestra la barra **GridKit** en la vista 3D: un botón por cada clave de `tiles`, **Erase**, **Add cells**, **Remove cells**, y para las alturas **Raise**, **Lower** y **Set height**. Un trazo es un paso de deshacer. Si no hay layout, el primer trazo crea uno.
+- **Las alturas son un valor de la casilla.** `height_key` en el `GridBoard` (por ejemplo `height`; vacía: plano) y `height_scale`. `cell_to_position` ya trae la altura en Y: las losetas, los cursores y las fichas del juego se ubican con ella y no calculan alturas. Los clics eligen la casilla que se ve (una alta tapa a la baja de atrás). Se pintan con la barra, no en un `_ready`.
 - **Los valores por casilla son claves.** `board.set_value(cell, &"terrain", &"forest")`; qué loseta se dibuja la elige `value_key` de la vista. Otras claves (dueño, costo) las lee el juego.
 - **Caminos y rangos.** `find_path(from, to, cost)` con `cost` como `func(from, to) -> float` (`INF` es intransitable); `cells_in_range`, `flood`. Todo en orden fijo (fila, después columna): el mismo resultado en cada corrida.
 - **Clics sin colliders.** `GridView3D.cell_clicked` / `cell_hovered`; un arrastre de cámara no es un clic (`click_max_drag_px`).
@@ -82,7 +84,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 |---|---|
 | `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors(cell, on_board_only)`, `neighbor`, `direction_to`, `distance(a, b)`, `cells_in_range`, `find_path`, `flood`, `outline(rings)`, `cells_with(key, value)`, `center_cell`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
 | `GridLayout` | `make_grid()` (una copia), `GridLayout.from_grid(grid)`, `set_value`, `erase_value`, `add_cell`, `remove_cell` |
-| `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position`, `position_to_cell`; `cell_changed`, `rebuilt` |
+| `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`, `height_key`, `height_scale`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position` (con la altura en Y), `cell_height`, `position_to_cell` (solo X y Z); `cell_changed`, `rebuilt` |
 | `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
 | `GridCursor` | `highlight(cells)`, `clear()`, `highlighted()`; `marker`, `color`, `lift`, `fill` |
 
@@ -101,3 +103,4 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 - Cambiar el `GridLayout` en juego esperando que el tablero lo siga: el tablero juega una copia. El estado de la partida va en su grilla.
 - Reglas del juego (movimiento, alcance de un arma, quién es dueño) dentro de los nodos del kit: van en el juego.
 - Un cursor por casilla en vez de un cursor por significado.
+- Sumar la altura a mano (`position.y = height * …`) o mover las losetas desde el juego: poné `height_key` en el `GridBoard` y usá `cell_to_position`.
