@@ -11,7 +11,7 @@
 
 - `MpBoot.is_dedicated_process()` → `host_dedicated`; primer cliente arranca match.
 - `--world` / `--mp-port` user args.
-- Emote: `send` vs `broadcast`; glue `from_peer != 1`. Kit: guard `_broadcasting_custom`.
+- Emote: `send` vs `broadcast`; código del juego `from_peer != 1`. Kit: guard `_broadcasting_custom`.
 - Snapshot `elapsed` 5 Hz; cliente apaga el ticker.
 - HUD modos incluyen dedicated sin jugador local.
 - `README.md` + artefactos F18.
@@ -35,4 +35,4 @@
 **Riesgo:** Medium hasta probar dedicated + 2 clientes.  
 **Bloqueantes:** ninguno por lectura.
 
-**Autochequeo:** F13–F18 cubiertos en prosa vs archivos `net_glue.gd`, `demo_match.gd`, `README.md`.
+**Autochequeo:** F13–F18 cubiertos en prosa vs archivos `net_session.gd`, `demo_match.gd`, `README.md`.

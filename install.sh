@@ -552,7 +552,7 @@ install_harness() {
     done
     echo
     echo "Listo (skills). Sesión nueva en ${label} para recargar."
-    echo "  capas:        godot-layered-architecture"
+    echo "  arquitectura: godot-layered-architecture"
     echo "  composición:  godot-composition-first"
     echo "  calidad:      godot-code-quality"
     echo "  multiplayer:  godot-mp-kit"

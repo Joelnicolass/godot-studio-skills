@@ -41,12 +41,23 @@ Generá el RULES.md así:
    - Requisitos de testing y expectativas de cobertura (en un juego: opcional salvo que el usuario los pida; si existen, anclar al runner real)
    - Requisitos de manejo de errores y logging
    - En un juego Godot, las convenciones de código son las **estándar**, no propias. Citá la skill `godot-code-quality` en vez de reescribirla, y bajá a RULES solo lo que el proyecto decide encima:
-     - regla 0: el valor en el nodo que lo usa; un `.tres` solo si se comparte o se edita como tipo; nada por tag o texto; cambiar un número abre como mucho 2 archivos;
-     - patrones probados: señales, signal up / call down, `Events` solo con señales, FSM, componente, command, pool, spawner. Sin registries, locators ni managers;
-     - tipado real con los avisos `UNSAFE_*` en *warn*, `##` solo para la API, código y logs en inglés y textos del jugador con `tr()`;
+     - regla 0 (§0 de esa skill): un dueño por número de diseño, cuándo existe un `.tres`, catálogos tipados, `docs/tuning.md`; cambiar un número abre como mucho 2 archivos;
+     - patrones probados: señales, signal up / call down, `Events` solo con señales, FSM, componente, command, pool, spawner, Resource de tipo, catálogo, escena heredada. Sin registries, locators ni managers;
+     - tipado real con los avisos `UNSAFE_*` en *warn*, `##` solo para la API, cada `@export` con `##`, rango y unidad, código y logs en inglés y textos del jugador en el archivo de traducciones;
      - herramientas: `gdformat` y `gdlint` con sus defaults, y GUT + CI (skill `godot-testing`) si hay tests.
-   - **No** inventes reglas propias que el estándar ya cubre o contradice: topes de líneas por script, un lint con grep, citas a fuentes en `##`, una carpeta de datos separada de las escenas por defecto, READMEs largos por carpeta. Una regla propia solo para lo que el estándar no cubre, y dice por qué existe.
-   - Composición, `@export`/inspector, UI en el idioma del producto e IDs en inglés. Citar `godot-layered-architecture` y `godot-composition-first`. Look: si existe `VISUAL.md`, citarlo (autoridad debajo de RULES). Shaders: Godot Shaders y Shadertoy (ver `assets.md` de composición). Sprites 2D: preguntar; referencias; `godot-animation`; MCP Aseprite solo con OK. Si es 3D: preguntar; MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) solo con OK + referencias; export glTF. Citar `godot-mp-kit` **solo** si hay MP: local/WiFi = listen-server; online = dedicated (`host_dedicated`, mismo proyecto, VPS, no fingir LAN). Si no hay MP, no cites el kit. Playtest en el binario (`godot-playtest`, módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) ≠ GUT. Tests automáticos: `godot-testing` (GUT para GDScript, GdUnit4 para C#) **solo** si el usuario los pide. Arquitectura Clean **o** estándar, la ya elegida.
+   - **No** inventes reglas propias que el estándar ya cubre o contradice: topes de líneas por script, un lint con grep, citas a fuentes en `##`, carpetas `scenes/` / `scripts/` / `resources/` / `assets/`, READMEs largos por carpeta. Una regla propia solo para lo que el estándar no cubre, y dice por qué existe.
+   - En un juego Godot, RULES.md **abre** con la sección «Dónde está cada cosa»:
+     - el tamaño elegido (por entidad, o sistemas + contenido; Clean solo si el repo ya lo declara) y el árbol de carpetas **real** del proyecto, con una línea por carpeta (skill `godot-layered-architecture`);
+     - la tabla de sufijos de archivo (`_type.tres`, `_material.tres`, …; `godot-code-quality` §1);
+     - el enlace a `docs/tuning.md` (qué abrir para cambiar cada cosa) y a `docs/architecture.md`;
+     - dónde van los textos del jugador (`locale/`) y las escenas de prueba (`debug/`, fuera del export).
+   - Composición y editor: citar `godot-layered-architecture` y `godot-composition-first`. UI en el idioma del producto e IDs en inglés.
+   - Look: si existe `VISUAL.md`, citarlo (autoridad debajo de RULES).
+   - Shaders: Godot Shaders y Shadertoy (ver `assets.md` de composición).
+   - Sprites 2D: preguntar; referencias; `godot-animation`; MCP Aseprite solo con OK.
+   - Si es 3D: preguntar; MCP Blender ([lab/mcp-server](https://www.blender.org/lab/mcp-server/)) solo con OK + referencias; el `.blend` directo o un `.glb` (`assets.md`).
+   - Multiplayer: citar `godot-mp-kit` **solo** si hay MP: local/WiFi = listen-server; online = dedicated (`host_dedicated`, mismo proyecto, VPS, no fingir LAN). Si no hay MP, no cites el kit.
+   - Playtest en el binario (`godot-playtest`, módulo [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)) ≠ GUT. Tests automáticos: `godot-testing` (GUT para GDScript, GdUnit4 para C#) **solo** si el usuario los pide.
    - No copiar checklist web (responsive, auth, SQL) a un juego que no los tiene
 
 4. PRIORIDADES DE IMPLEMENTACIÓN:

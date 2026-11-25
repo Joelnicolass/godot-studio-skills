@@ -38,9 +38,9 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 
 ```
 [~] project.godot                        # plugin TurnKit
-[+] scenes/turns/turns.tscn              # TurnClock: actions_per_turn, phases = [draw, play], turn_seconds = 30; un TurnSeat por jugador
+[+] turns/turns.tscn              # TurnClock: actions_per_turn, phases = [draw, play], turn_seconds = 30; un TurnSeat por jugador
 [~] game/state.gd                        # TurnCycle de las reglas (si las reglas lo llevan); use_cycle en el reloj
-[~] scenes/hud/hud.gd                    # escucha turn_started, phase_started, turn_timed_out; muestra time_left
+[~] hud/hud.gd                    # escucha turn_started, phase_started, turn_timed_out; muestra time_left
 [~] game/rules.gd                        # en round_ended: set_round_order(iniciativa)
 ```
 

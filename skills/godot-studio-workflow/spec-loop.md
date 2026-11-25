@@ -6,7 +6,7 @@ La **verdad de producto** está en artefactos versionados. El **cómo** escribir
 
 | Artefacto | Qué es |
 |-----------|--------|
-| `RULES.md` | Constitución técnica (stack, capas, MP, no-goals de código) |
+| `RULES.md` | Constitución técnica (stack, carpetas, MP, no-goals de código) |
 | `VISUAL.md` | Constitución de look (estilo, refs, jerarquía, no inventar) |
 | `FEATURES.md` | El contrato del slice: `F<n>`, criterios, path `res://debug/…` si hace falta, acción del InputMap, observable. Crece con `/implement-feature`. |
 | `PRD.md` | Opcional y corto. No es la suite. |

@@ -28,9 +28,9 @@ Ejemplos:
 Minimal3D (minimal_3d.gd)
 ├── Environment, Sun, Camera, Floor
 ├── Camp (Marker3D)      # en el grupo camp: nada se planta a menos de 8 m
-├── Forest               # PropScatter3D: rules, variants = [tree.tscn], ground = PropFlatGround 60 × 60,
+├── %Forest              # PropScatter3D: rules, variants = [tree.tscn], ground = PropFlatGround 60 × 60,
 │                        #   keep_out = [PropKeepOut {group = camp, radius = 8, soft = 0.5}]
-└── Batch                # PropBatch3D: props = [Forest]
+└── %Batch               # PropBatch3D: props = [Forest]
 ```
 
 Un prop es cualquier escena: `tree.tscn` es un `StaticBody3D` con un tronco (su collider, en la capa 2 y en el grupo `prop_obstruction`, cortaría un navmesh) y dos mallas que el lote dibuja.
@@ -41,8 +41,8 @@ En un juego apretás **Scatter** en el editor y guardás: los árboles quedan co
 # minimal_3d.gd
 extends Node3D
 
-@onready var scatter: PropScatter3D = $Forest
-@onready var batch: PropBatch3D = $Batch
+@onready var scatter: PropScatter3D = %Forest
+@onready var batch: PropBatch3D = %Batch
 
 
 func _ready() -> void:

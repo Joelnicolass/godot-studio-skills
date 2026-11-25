@@ -39,10 +39,10 @@ func undo_place(seat: int, cell: Vector2i) -> void:   # opcional: si existe, se 
 ```
 
 2. Agregá un nodo `GameCommands` como hijo de tu juego (o poné tu juego en `game`). El inspector muestra `found_commands`: las jugadas que encontró, por ejemplo `place (can, undo)`.
-3. Corré las jugadas y escuchá los rechazos:
+3. Corré las jugadas y escuchá los rechazos. Un clic en una casilla pone una ficha, y si la jugada se rechaza el HUD muestra el motivo:
 
 ```gdscript
-@onready var commands: GameCommands = $Commands
+@export var commands: GameCommands  # el nodo GameCommands, asignado en el inspector
 
 
 func _ready() -> void:
@@ -110,7 +110,7 @@ Minimal          # minimal.gd (Control): solo la pantalla: botones del tablero, 
 ## Tips
 
 - **Chequeos comunes a todas las jugadas.** Una sola función `can_run(seat: int, command: StringName, args: Array) -> String` en tu juego corre antes que el `can_<nombre>` de cada jugada: ahí va «¿es tu turno?», «¿terminó la partida?». El orden es siempre general → propio. Si un chequeo propio tiene que ir antes que el general (por ejemplo «¿existe esa unidad?» antes de «¿es tu turno?»), no definas `can_run`: escribí una función con los chequeos comunes y llamala primero desde cada `can_<nombre>`, en el orden que necesites.
-- **Las reglas usan `CommandLog`, no el nodo.** Guardalo con el estado de tu partida (`var commands := CommandLog.new(self)`) y mostralo en la escena con `$Commands.use_log(rules.commands)`. Así las reglas y el replay corren headless. `CommandLog` no mantiene vivo a su juego, así que no crea un ciclo de referencias; si el juego se libera, `run` avisa con un error (una vez) y devuelve `unknown_command`.
+- **Las reglas usan `CommandLog`, no el nodo.** Guardalo con el estado de tu partida (`var commands := CommandLog.new(self)`) y mostralo en la escena con `%Commands.use_log(rules.commands)` (con el nodo `Commands` marcado como nombre único: clic derecho › «Acceso como nombre único»). Así las reglas y el replay corren headless. `CommandLog` no mantiene vivo a su juego, así que no crea un ciclo de referencias; si el juego se libera, `run` avisa con un error (una vez) y devuelve `unknown_command`.
 - **Partida repetible.** El azar con semilla vive en tu estado (un `RandomNumberGenerator` con su `seed`). Para reproducirla, armá un estado nuevo con la misma semilla, vaciá el historial con `clear()` y llamá a `replay(history)`: da lo mismo. Compará los dos estados con un `to_dict()` tuyo.
 - **Jugadas que disparan jugadas.** Si un bot o un efecto automático responde a `done` mandando otra jugada, que no haga nada mientras `is_replaying()` sea true:
 

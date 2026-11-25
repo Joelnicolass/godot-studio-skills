@@ -4,14 +4,14 @@ description: >-
   Anima sprites y motion en Godot 4 con los 12 principios básicos
   (squash and stretch, anticipation, staging, pose to pose, follow through,
   slow in/out, arcs, secondary action, timing, exaggeration, solid drawing,
-  appeal). Elegí Tween o AnimationPlayer según el clip; knobs @export en el
+  appeal). Elegí Tween o AnimationPlayer según el clip; perillas @export en el
   inspector. Usar al crear o editar pixel art, juicy, hit-stop, cámara, Aseprite MCP,
   SpriteFrames, AnimatedSprite2D, Tween, create_tween, AnimationPlayer,
   cycles idle/walk/attack, o timing. Preguntá antes de usar MCP o crear
   sprites; pedí referencias.
 ---
 
-# Godot — animación 2D
+# Godot — animación
 
 Composición: [godot-composition-first](../godot-composition-first/SKILL.md). Assets / MCP: [assets.md](../godot-composition-first/assets.md).
 
@@ -51,13 +51,15 @@ Los 12 principios aplican igual. **Evaluá qué conviene en este caso**; no hay 
 
 | Usá | Cuando |
 |-----|--------|
-| `create_tween()` / `Tween` + `@export` | One-shot paramétrico: hit squash, knockback, punch de cámara, fade, overshoot. El feel se tunnea en el inspector del actor. |
-| `AnimationPlayer` | Varios nodos a la vez, curvas pose-a-pose, loop authorado, blend/seek, cinemática, esqueleto importado (`.glb`). El humano edita la **timeline**. |
+| `create_tween()` / `Tween` + `@export` | One-shot paramétrico: hit squash, knockback, punch de cámara, fade, overshoot. Las duraciones, la transición y el ease se ajustan en el inspector. |
+| `AnimationPlayer` | Varios nodos a la vez, curvas pose-a-pose, loop authorado, blend/seek, cinemática, esqueleto importado (`.glb`). El humano edita la **timeline**. También cuando la forma de la curva la ajusta un artista. |
 | `SpriteFrames` / `AnimatedSprite2D` | Ciclos **dibujados** (idle/walk/attack). |
 
 Combinar está bien: clip de esqueleto o walk en `AnimationPlayer` / `SpriteFrames`, squash de impacto en Tween encima (skill [godot-juicy](../godot-juicy/SKILL.md) para shake / VFX / post).
 
-Knobs siempre editables. Tween: `@export` de duración, escala, ease. AnimationPlayer: clips con nombre, `@export` de `speed_scale` / clip a reproducir; no escondas el feel en números mágicos del `.gd`.
+Perillas siempre editables. Tween: `@export` de duración y escala, **y** de su `Tween.TransitionType` y su `Tween.EaseType`: la curva nunca queda en el código. Una forma propia: `@export var curve: Curve`, que se dibuja en el inspector. AnimationPlayer: clips con nombre, `@export` de `speed_scale` / clip a reproducir; no escondas el feel en números mágicos del `.gd`.
+
+Si los tweens viven en un helper estático (`Motion.pop(node, …)`), las perillas no: van como `@export` en el nodo dueño del efecto (`TileEntrance`), con `@export_group` y la unidad en el hint (`"suffix:s"`), y el helper los recibe como argumentos.
 
 No elijas AnimationPlayer “porque es el nodo de animar”, ni Tween “porque el skill lo prioriza”. Si un tween de 4 líneas cubre el clip, usalo. Si hay 6 tracks y easings distintos, usá `AnimationPlayer`.
 

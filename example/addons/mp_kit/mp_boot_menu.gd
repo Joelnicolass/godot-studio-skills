@@ -2,7 +2,7 @@ class_name MpBootMenu
 extends Control
 
 ## Drop-in lobby. Prefers an MpFlow autoload if present.
-## Otherwise assign `world_scene` and `drive_kit` for a zero-glue loop.
+## Otherwise assign `world_scene` and `drive_kit` for a loop with no game code.
 ## Does not decide match rules. Copy is @export so each title localizes it.
 
 signal play_solo_pressed

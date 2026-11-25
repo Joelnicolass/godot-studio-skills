@@ -30,14 +30,17 @@ Habilitá el plugin **GridKit** (tipos `GridBoard`, `GridView3D` y `GridCursor` 
 
 **Por código**
 
+Al hacer clic en una casilla se marcan sus vecinas, y la casilla (2, 3) pasa a ser bosque. Los tres `@export` se asignan en el inspector:
+
 ```gdscript
-@onready var board: GridBoard = $Board
-@onready var moves: GridCursor = $Board/View/Moves
+@export var board: GridBoard
+@export var view: GridView3D
+@export var moves: GridCursor
 
 
 func _ready() -> void:
 	board.set_value(Vector2i(2, 3), &"terrain", &"forest")
-	$Board/View.cell_clicked.connect(_on_cell_clicked)
+	view.cell_clicked.connect(_on_cell_clicked)
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
@@ -69,7 +72,7 @@ Seleccioná un `GridBoard` (o su `GridView3D`) y arriba de la vista 3D aparece l
 - `examples/minimal_3d/minimal_3d.tscn` (F6): un hexágono de radio 4 con agua en el borde, llanura, bosque y montaña, que sale de `map.tres` (un `GridLayout`). Un clic marca la casilla y sus 6 vecinas, y el puntero marca la casilla de abajo.
 
 ```
-Minimal3D                 # minimal_3d.gd: solo conecta las señales
+Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @export (board, view, selection, hover) apuntan a los nodos de abajo
 ├── Camera, Sun
 └── Board                 # GridBoard: layout = map.tres
     └── View              # GridView3D: tiles = {plain, forest, mountain, water}
@@ -170,7 +173,8 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales
   - `click_max_drag_px`: si el puntero se mueve más que esto entre apretar y soltar, es un arrastre y no un clic.
   - `camera`: si queda vacía, usa la cámara actual.
 - **Métodos:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)`, `cell_at_ray(origin, direction, on_board_only := true)` y `board()`.
-- **Señales:** `cell_clicked(cell)` (mouse o toque) y `cell_hovered(cell)` (`NO_CELL` al salir del tablero).
+- **Señales:** `cell_clicked(cell)` (mouse o toque) y `cell_hovered(cell)` (`NO_CELL` al salir del tablero); `tile_created(cell, tile)` cuando arma una loseta, y `drawn` cuando todas las losetas están en su lugar.
+- **Cada loseta sabe su casilla.** La loseta ya está en el centro de su casilla cuando sale `tile_created`, y todavía no entró al árbol: lo que le pongas ahí (su casilla, sus datos) ya está en su `_ready`. `drawn` sale después de un `rebuilt`, de cambiar `tiles`, `default_tile` o `value_key`, o de `redraw()`; una casilla que cambia de valor solo emite `tile_created`.
 - **Clics sin colliders:** el rayo de la cámara se cruza con el plano del tablero.
 - Cuando el tablero gana o pierde casillas, solo se dibujan o se liberan esas losetas. Al borrar un valor (`erase_value`), la casilla vuelve a `default_tile`.
 
@@ -186,6 +190,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales
 ## Tips
 
 - **Las reglas usan `CellGrid`, no los nodos.** Guardá la grilla en el estado de tu partida y mostrala con `board.use_grid(state.grid)`. Así las reglas corren headless y la vista se actualiza sola con `value_changed`. Sin ningún nodo: `layout.make_grid()` o `HexGrid.rect(…)` / `SquareGrid.rect(…)`.
+- **Ver el tablero en el editor aunque la grilla llegue al correr.** Dejá un `layout` (o las columnas y filas) en el `GridBoard`: es lo que muestra el editor, y `use_grid` lo reemplaza al correr.
 - **El arrastre de la cámara no es un clic.** Ajustá `click_max_drag_px`. Si tu cámara tiene su propio estado de arrastre, apagá `input_enabled` mientras arrastra.
 - **Losetas de otros packs.** Si vienen flat-top, rotalas 90° en su escena. En hexágonos `cell_size` es el ancho de lado a lado; en cuadrados, el lado.
 - **Muchas casillas de golpe.** `add_cells` y `remove_cells` emiten una sola señal; `add_cell` en un bucle emite una por casilla (igual la vista y los cursores agrupan lo que dibujan en un cuadro).
@@ -216,7 +221,7 @@ Sale `GRIDKIT TESTS PASS (n)`. Los tests cubren:
 - Hexágonos y cuadrados: formas y coordenadas, vecinos (4 y 8, en orden), distancia, rango, caminos con costo, con y sin diagonales, flood, ida y vuelta casilla ↔ punto.
 - `CellGrid`: `from_dict` elige la clase y lee el formato de 0.2, `add_cells` emite una vez, `erase_value`.
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` y guardar y cargar un `.tres`.
-- Los nodos: forma desde el inspector, `radius` en cuadrados, el layout manda, rearmado agrupado, `paint` y `set_cells` (con y sin layout), `position_to_any_cell`, losetas por casilla, redibujo, `use_grid`, `cell_at_ray`, clic, arrastre y avisos del editor.
+- Los nodos: forma desde el inspector, `radius` en cuadrados, el layout manda, rearmado agrupado, `paint` y `set_cells` (con y sin layout), `position_to_any_cell`, losetas por casilla, `tile_created` y `drawn`, redibujo, `use_grid`, `cell_at_ray`, clic, arrastre y avisos del editor.
 - `GridCursor`: los mismos nodos tras 1000 `add_cell`, que solo se libera la marca de la casilla quitada, `cell_size` mueve sin recrear, marcador cuadrado.
 - El trazo del pincel (sin editor): pintar, repetir, borrar, agregar y quitar casillas con sus valores, crear el layout, y que el resultado deshace todo.
 - Los dos ejemplos jugados con eventos de mouse.

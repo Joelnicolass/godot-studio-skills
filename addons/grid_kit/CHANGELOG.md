@@ -1,5 +1,13 @@
 # Cambios de GridKit
 
+## 0.4.0
+
+- **`GridView3D.tile_created(cell, tile)`:** sale por cada loseta que arma, ya en el centro de su casilla y antes de que entre al árbol, así que lo que le pongas ahí (su casilla, sus datos) ya está en su `_ready`. Antes, el juego tenía que deducir la casilla por la posición.
+- **`GridView3D.drawn`:** todas las losetas están en su lugar (después de un `rebuilt`, de cambiar `tiles`, `default_tile` o `value_key`, o de `redraw()`). Antes no había cómo saber que el tablero terminó de dibujarse.
+- **README:** cómo ver el tablero en el editor cuando la grilla llega al correr (un `layout` o la forma del inspector como vista previa; `use_grid` la reemplaza).
+
+Nada que actualizar en tu proyecto.
+
 ## 0.3.0
 
 - **Cuadrados además de hexágonos, con la misma API.** Nueva base `CellGrid` (casillas, valores, `find_path`, `flood`, `to_dict`, señales) con `HexGrid` y `SquareGrid` encima. `SquareGrid` tiene `diagonals`: apagado, 4 vecinas y distancia Manhattan; encendido, 8 vecinas y distancia Chebyshev. Fábricas: `HexGrid.rect/hexagon`, `SquareGrid.rect/disc`.

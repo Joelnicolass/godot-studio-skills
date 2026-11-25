@@ -1,12 +1,18 @@
 # API de RtsKit por pieza
 
-Todo está en `addons/rts_kit/`. Los puntos del kit son `Vector3` con el suelo en XZ (2D: `(x, 0, y)`).
+Todo está en `addons/rts_kit/`. Los puntos del kit son `Vector3` con el suelo en XZ (2D: `(x, 0, y)`). Las distancias (`RtsUnit.size`, `RtsOrders.spacing_base`, `max_spacing`, `retarget_range`, `RtsSelection.same_type_radius`) van en la unidad del mundo: metros en 3D, píxeles en 2D; el inspector muestra cuál.
+
+## El equipo
+
+| Clase | Miembros |
+|---|---|
+| `RtsCommandRig` (`rig/rts_command_rig_3d.tscn`, `rig/rts_command_rig_2d.tscn`) | sockets `camera` (Camera3D / Camera2D), `ground` (3D: el cuerpo del suelo; 2D: opcional), `menu` (`RtsOrderMenu`, opcional); `dimension` (lo guarda cada escena, no está en el inspector), `is_2d()`; piezas: `command`, `selection`, `orders`, `pointer`, `state`, `armed`, `order_input`, `select_input`, `group_keys`, `order_button`, `probe`, `view`, `box`; avisa en el editor si falta `camera` (o `ground` en 3D) o si la cámara es de la otra dimensión |
 
 ## Núcleo
 
 | Clase | Miembros |
 |---|---|
-| `RtsSpace` (estático) | `ahead(yaw)`, `right(yaw)`, `yaw_of_direction(v)`, `from_2d(v2)`, `to_2d(v3)`, `position_of(node)`, `place(node, point)`, `yaw_of_node(node)`, `screen_of(viewport, point, is_2d)`, `world_2d_at(viewport, screen)` |
+| `RtsSpace` (estático) | `ahead(yaw)`, `right(yaw)`, `yaw_of_direction(v)`, `from_2d(v2)`, `to_2d(v3)`, `position_of(node)`, `place(node, point)`, `yaw_of_node(node)`, `screen_of(viewport, point, is_2d)`, `world_2d_at(viewport, screen)`, `distance_unit(node)` (`"px"` bajo un Node2D, `"m"` bajo un Node3D, `""` si no hay ninguno), `show_distance_unit(property, node)` (para un `_validate_property`) |
 | `RtsUnit` (Node, hijo del cuerpo) | exports `owner_slot`, `team`, `kind`, `tags`, `selectable`, `orderable`, `targetable`, `size`, `center`, `icon`, `refused`, `formation`; `body`, `selected`; `of(node)`, `all(tree)`; `team_id()`, `accepts(cmd)`, `is_foe(other)`, `relation_to(slot, team)` (`own` / `ally` / `neutral` / `enemy`), `position()`, `center_point()`, `facing_yaw()`, `is_2d()`, `has_tag(t)`; cola: `give(order, queue)`, `complete()`, `fail(reason)`, `stop()`, `current_order()`, `queued_orders()`, `is_idle()`; signals `selected_changed`, `order_started(order, replaced)`, `order_ended(order, result)`, `order_queued(order)` |
 | `RtsUnitOrder` | `command`, `type`, `target`, `point`, `slot`, `facing`, `formation`, `queued`; `spot()`, `spot_2d()`, `has_target()`, `is_repeat_of(other)` |
 | `RtsOrder` | `command`, `units`, `point`, `target`, `facing`, `formation`, `queue`; `make(...)`, `to_array(id_of)`, `from_array(data, root, node_of)` (null si está mal formado), `FORMAT`, `MAX_UNITS` |
@@ -30,7 +36,7 @@ Todo está en `addons/rts_kit/`. Los puntos del kit son `Vector3` con el suelo e
 | `RtsPointer` | exports `dimension`, `camera`, `local_slot`, `local_team`, `ground_mask`, `unit_mask`, `pick_mask`, `ground`, `pick_px`, `ground_bounds_2d`; `ground_at(screen)`, `unit_under(screen, skip)`, `body_under(screen, skip)`, `is_empty_at`, `relation(body)`, `is_enemy`, `camera_yaw()`, `camera_dragged()`, `action_pointer()`, `pointer_now()`, `cast_3d` |
 | `RtsCommandInput` | exports `local_slot`, `local_team`, `install_keymap`, `command_on_macos`, `command_keys` (acción -> orden), `formation_action_prefix`, pieces; `run_command(id)`, `set_formation(id)`, `right_at`, `left_at`, `context_kind` |
 | `RtsSelectInput` | `select_action`, `rect_threshold_px`, `view`; `left_at(screen, shift, ctrl)`, `is_boxing()`; signals `armed_clicked(mode, screen)`, `clicked_other(body)`, `clicked_empty` |
-| `RtsOrderButton` | `order_action`, `menu_action`, `menu` (`RtsOrderMenu` opcional), `view`; `is_open()` |
+| `RtsOrderButton` | `order_action`, `menu_action`, `menu` (`RtsOrderMenu` opcional; se puede cambiar con el juego andando), `view`; `is_open()` |
 | `RtsOrderInput` | exports `context_orders`, `point_contexts`, `ground_orders`, `say_orders`; Callable `classify(body)`; `right_at`, `context_of`, `context_kind`, `icon_at`, `aim(command, body, ground)`, `run_entry(entry, screen)`, `run_command(id, screen)`, `retreat`, `order_in_formation`, `set_formation`, `give`; signals `ordered(command, point, target)`, `custom_entry(entry, screen)` |
 | `RtsArmedCommand` | `mode`, `payload`, `commands`; `is_armed()`, `is_order()`, `cancel()`, `arm_order(id, replace)`, `arm(kind, payload, accepts, replace, icon)` |
 | `RtsCommandState` | `armed`, `armed_icon`, `armed_accepts`, `aim_status`, `aim_site`, `cues`; `arm`, `disarm`, `show_aim`, `say`, `is_reason`; signals `armed_changed`, `said(text, cue)`, `aim_changed` |

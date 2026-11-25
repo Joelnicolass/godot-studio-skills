@@ -90,7 +90,7 @@ Al activarlo pasa esto:
 | **MpKit: Setup game...** | El asistente: arma un juego completo (ver [Camino A](#4-camino-a-el-asistente-setup-game)). |
 | **MpKit: Make selection a network actor** | Agrega un `MpActor` a cada nodo seleccionado y, si es un `CharacterBody2D`/`3D`, también un `MpInput`. Se deshace con Ctrl+Z. |
 | **MpKit: New replicated feature...** | Crea `res://features/<id>/<id>.gd` + `.tscn` (camino de bajo nivel). |
-| **MpKit: New session flow...** | Crea un `MpFlow` como autoload en `res://glue/session_flow.tscn`. **No hace falta** si ponés el `MpFlow` en la escena de boot (lo recomendado acá). No uses los dos: ver [15](#15-problemas-comunes), "two flows". |
+| **MpKit: New session flow...** | Crea un `MpFlow` como autoload en `res://autoloads/session_flow.tscn`. **No hace falta** si ponés el `MpFlow` en la escena de boot (lo recomendado acá). No uses los dos: ver [15](#15-problemas-comunes), "two flows". |
 | **MpKit: Install Cursor/VS Code snippets** | Copia snippets a `.vscode/mpkit.code-snippets`. |
 
 ## 4. Camino A: el asistente Setup game
@@ -352,6 +352,8 @@ Las transformaciones (y `velocity`) viajan siempre, en el mismo paquete que la p
 | `buffer_delay_s` | Con `BUFFERED`: lo más en el pasado que puede dibujar (el tope). Más = tapa redes peores | 0.1 |
 | `adaptive_buffer` | Con `BUFFERED`: mide cada cuánto llegan los estados y con cuánto atraso, y dibuja solo lo necesario, hasta `buffer_delay_s`. En una red buena son pocos ticks; en una mala, más. Apagado = siempre `buffer_delay_s` | on |
 | `late_tolerance` | Con `adaptive_buffer`: qué parte de los estados puede llegar tarde (3% = percentil 97, como Photon Fusion). Menos = más parejo en una red mala, un poco más atrasado | 0.03 |
+| `shared_timeline` | Con `adaptive_buffer`: se dibuja en el mismo momento del servidor que todo otro actor con esto prendido, al retraso más grande que necesite alguno. Prendelo en todo lo que se mueve en un juego de pelota (§7.8). `net.draw_delay()` dice cuánto atrás se dibuja | apagado |
+| `max_extrapolate_s` | Con `BUFFERED`: pasado el último estado (un paquete tarde), cuánto sigue con su movimiento antes de esperar. 0 = espera enseguida | 0.1 |
 | `follow_speed` | Con `FOLLOW`: qué tan rápido persigue | 14.0 |
 | `freeze_rigid_if_proxy` | Si el padre es un `RigidBody`, lo congela en los clientes (la física corre en el servidor) | on |
 
@@ -404,15 +406,15 @@ El script del jugador se escribe como el de un juego de un jugador, con tres reg
 
 ### 6.1 El esqueleto
 
-Del ejemplo (`examples/arena_2d/player.gd`):
+Del ejemplo (`examples/arena_2d/player.gd`): el jugador se mueve con las flechas y, al apretar aceptar, suma un punto y todos ven un destello. Los `%Nombre` piden que el nodo esté marcado como nombre único (clic derecho › «Acceso como nombre único»), como `MpActor` y `MpInput` en `player.tscn`:
 
 ```gdscript
 extends CharacterBody2D
 
 const SPEED := 220.0
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
 
 
 func mp_move(keys: MpInput, _delta: float) -> void:
@@ -443,7 +445,7 @@ Por eso:
 3. Sonidos y efectos, detrás de `if not keys.is_replaying():`.
 4. Saltos con `keys.is_action_just_pressed(&"jump")` **sí** van adentro: se ven igual en el dueño, en el servidor y al repetir.
 5. Puntos, daño, disparos: **no** van ahí. Van en `_physics_process` detrás de `is_authority()`.
-6. **Inercia o gravedad**: si `mp_move` usa la velocidad del tick anterior (acelerar, caer), agregá `velocity` a **MpActor › Sync › sync_extra**. Lo mismo con cualquier otro estado que `mp_move` lea (un contador de dash, "en el piso"). Viaja en el mismo paquete que la pose, y la reconciliación parte de ese valor. `net.last_correction()` te dice cuánto se corrigió.
+6. **Inercia o gravedad**: si `mp_move` usa la velocidad del tick anterior (acelerar, caer), agregá `velocity` a **MpActor › Sync › sync_extra**. Lo mismo con cualquier otro estado que `mp_move` lea (un contador de dash, "en el piso"). Con predicción, todo `sync_extra` viaja en el mismo paquete que la pose, en cada envío, y la reconciliación parte de ese valor. `net.last_correction()` te dice cuánto se corrigió. Una escena guardada con MpKit 0.23 o anterior lo mandaba aparte, cuando cambiaba: abrila en el editor y guardala (el kit lo avisa al jugar).
 
 ```gdscript
 # Con gravedad: velocity en Sync › Extra.
@@ -570,6 +572,7 @@ func mp_sv_recolor() -> void:
 
 - `net.to_server(&"nombre", arg1, arg2...)` corre `mp_sv_nombre(arg1, arg2...)` en el servidor.
 - En solo y en el servidor corre al toque.
+- Viaja por `MpKit`: si llega cuando el actor ya no está en el servidor (murió), se descarta sin error.
 - Solo se puede llamar un método que empiece con `mp_sv_` y que acepte esa cantidad de argumentos.
 - Quién puede pedirlo lo decide **MpActor › Owner › callers**: con `OWNER` (por defecto), solo el dueño; con `ANYONE`, cualquier jugador sentado.
 - Dentro de `mp_sv_*`, `net.sender_slot()` dice quién lo pidió (0 = el propio servidor; fuera de un `mp_sv_*` da -1).
@@ -653,7 +656,7 @@ Una puerta, una palanca, una campana: está en el mundo desde el principio y no 
 2. En el `MpActor`: `sync_position` off y `sync_rotation` off (no se mueve), `smoothing` = `NONE`, `sync_extra` = `rings`.
 3. En **Owner**: `callers` = **ANYONE**. Sin esto, con `owner_slot` = 0 solo el servidor podría tocarla.
 4. Guardá la escena.
-5. Instanciala en el mundo (a mano, no por spawner).
+5. Instanciala en el mundo (a mano, no por spawner). Cualquier jugador puede tocar la campana: el servidor suma un toque y todos ven el total y quién la tocó.
 
 ```gdscript
 extends Node2D
@@ -662,9 +665,9 @@ extends Node2D
 	set(value):
 		rings = value
 		if is_node_ready():
-			$Label.text = "Bell %d" % rings
+			%Label.text = "Bell %d" % rings
 
-@onready var net: MpActor = $MpActor
+@onready var net: MpActor = %MpActor
 
 
 func ring() -> void:          # lo llama cualquier jugador en su máquina
@@ -688,7 +691,7 @@ Un nodo estático con `MpActor` no necesita nada más: el spawner del mundo lo r
 4. En **Extra Scenes**, agregá `shot.tscn`. **Obligatorio**: todos los peers necesitan la misma lista; no se puede agregar solo en el servidor.
 5. Para encontrarlo desde el jugador, ponelo en un grupo: pestaña **Nodo › Grupos**, `shot_spawner`.
 
-La bala (`shot.tscn`) tiene su `MpActor` (posición sincronizada, `sync_rotation` off). Desde el servidor:
+La bala (`shot.tscn`) tiene su `MpActor` (posición sincronizada, `sync_rotation` off). Al disparar, el servidor la crea:
 
 ```gdscript
 const SHOT := preload("res://addons/mp_kit/examples/arena_2d/shot.tscn")
@@ -779,14 +782,44 @@ Quién simula es otra pregunta: `is_multiplayer_authority()` / `is_authority()` 
 
 Un `MpMatch` en el mundo dice cuándo empieza la partida, quién se fue y quién volvió, y la termina para todos. Lo que cuenta lo decide la **puerta de arranque** (`MpMatchGate`, en `/root/MpKit/Gate`, `Mp.gate()`), que el `MpFlow` arma en cada camino que hostea (Host LAN, dedicado a mano, una partida en la PC del host, privada u online, y el dedicado de un servidor de salas):
 
-- **Antes del arranque** los asientos libres están abiertos. El mundo queda **pausado en todos los peers** hasta que cargan los asientos que espera: todos por defecto (`start_seats` = 0, igual en Host LAN y en un dedicado a mano; en una partida con ticket, todos los del ticket). `--start-seats=N` cambia ese número sin tocar la escena. Pasado `load_timeout_s` (15 s) desde el primero que entró, arranca con los que cargaron; mientras tanto el HUD dice que espera (`MpWaitingLabel`, `Hud/Waiting`: «Waiting for players (1/4)»). Con **`start_on_timeout`** apagado (inspector del `MpFlow` o `--start-on-timeout=false`) nunca arranca por tiempo: espera a todos, o a que el host la arranque. El host no tiene que esperar: el botón **Start now** del HUD (`MpStartButton`, en `Hud/Start` del `MpWorld`) arranca con los que ya cargaron. Lo ve el listen host (Host LAN, un navegador que hospeda) y, con **`host_can_start`** prendido (apagado por defecto, `--host-can-start=true`), también el que abrió una partida en su PC (privada u online: es el slot 1, y el servidor lo chequea). Aparece cuando cargó otro asiento más, o enseguida si `late_join` está prendido (los demás pueden llegar después). Con `start_on_timeout` apagado en una partida en la PC del host, prendé `host_can_start`: si no, nadie arranca una partida a la que un asiento nunca llega.
-- **Después del arranque** solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`, al mismo slot (*rejoin*), salvo que esté prendido **`late_join`** (inspector del `MpFlow` o `--late-join`; apagado por defecto): entonces un recién llegado todavía toma un asiento que nadie ocupa (uno libre, o uno abandonado pasada la gracia, que queda libre otra vez) y la puerta emite `joined_late(slot)`. En una partida con ticket (privada u online en la PC del host) el recién llegado entra al asiento que nombra su ticket; una sala online con late join sigue en la lista del emisor mientras tenga asientos libres. La partida de un servidor de salas toma `late_join` de su `MpLobbyConfig` (apagado). En LAN el cliente vuelve solo con la credencial que el servidor le dio al sentarlo (en memoria, por `host:puerto`); en una sala, con su ticket. Si el servidor todavía no notó que el cliente se cayó, gana la credencial (o el ticket): se suelta la conexión vieja y el asiento vuelve como rejoin. Cualquier otro peer se rechaza con un motivo: `match_started` (también un ticket válido cuyo asiento nadie tomó antes del arranque), `full`, `grace_over`, `slot_taken`, y `rejected` solo para un ticket que no nombra ningún asiento. El cliente recibe `admission_rejected(motivo)` y el flow lo muestra con `rejection_text(motivo)` (pisalo para traducir).
+- **Antes del arranque** los asientos libres están abiertos. El mundo queda **pausado en todos los peers** (salvo con `pause_while_waiting` apagado: ver «Un lobby que se camina», abajo) hasta que cargan los asientos que espera: todos por defecto (`start_seats` = 0, igual en Host LAN y en un dedicado a mano; en una partida con ticket, todos los del ticket). `--start-seats=N` cambia ese número sin tocar la escena. Pasado `load_timeout_s` (15 s) desde el primero que entró, arranca con los que cargaron; mientras tanto el HUD dice que espera (`MpWaitingLabel`, `Hud/Waiting`: «Waiting for players (1/4)»). Con **`start_on_timeout`** apagado (inspector del `MpFlow` o `--start-on-timeout=false`) nunca arranca por tiempo: espera a todos, o a que el host la arranque. El host no tiene que esperar: el botón **Start now** del HUD (`MpStartButton`, en `Hud/Start` del `MpWorld`) arranca con los que ya cargaron. Lo ve el listen host (Host LAN, un navegador que hospeda) y, con **`host_can_start`** prendido (apagado por defecto, `--host-can-start=true`), también el que abrió una partida en su PC (privada u online: es el slot 1, y el servidor lo chequea). Aparece cuando cargó otro asiento más, o enseguida si `late_join` está prendido (los demás pueden llegar después). Con `start_on_timeout` apagado en una partida en la PC del host, prendé `host_can_start`: si no, nadie arranca una partida a la que un asiento nunca llega.
+- **Después del arranque** solo vuelve un asiento que se fue, dentro de `rejoin_grace_s`, al mismo slot (*rejoin*), salvo que esté prendido **`late_join`** (inspector del `MpFlow` o `--late-join`; apagado por defecto): entonces un recién llegado todavía toma un asiento que nadie ocupa (uno libre, o uno abandonado pasada la gracia, que queda libre otra vez) y la puerta emite `joined_late(slot)`. En una partida con ticket (privada u online en la PC del host) el recién llegado entra al asiento que nombra su ticket; una sala online con late join sigue en la lista del emisor mientras tenga asientos libres. La partida de un servidor de salas toma `late_join` de su `MpLobbyConfig` (apagado). En LAN el cliente vuelve solo con la credencial que el servidor le dio al sentarlo (en memoria, por `host:puerto`); en una sala, con su ticket. Si el servidor todavía no notó que el cliente se cayó, gana la credencial (o el ticket): se suelta la conexión vieja y el asiento vuelve como rejoin. Cualquier otro peer se rechaza con un motivo: `match_started` (también un ticket válido cuyo asiento nadie tomó antes del arranque), `full`, `grace_over`, `slot_taken`, `seat_closed` (un asiento que tu juego cerró: «Un asiento que se cierra», abajo), y `rejected` solo para un ticket que no nombra ningún asiento. El cliente recibe `admission_rejected(motivo)` y el flow lo muestra con `rejection_text(motivo)` (pisalo para traducir).
 - Un asiento que no vuelve a tiempo, o que nunca cargó, **abandona** (`player_abandoned`). Si se fueron todos en un dedicado, nadie abandona: la puerta espera y, cuando pasó la gracia de todos, emite `all_gone`. En un listen host el host sigue jugando: cada asiento que pasa la gracia abandona y no hay `all_gone`.
 - **Mientras un asiento no está**, su peón queda si el spawner lo conserva (`MpSlotSpawner.despawn_on_leave` apagado; prendido por defecto, se borra y se vuelve a crear en el rejoin): no tiene teclas apretadas y, con predicción, el servidor lo sigue simulando sin ninguna (la gravedad o un empujón siguen). Al volver, las teclas de la conexión nueva lo mueven al instante.
 - **Un asiento que nadie ocupa lo puede jugar un bot tuyo** (lo de abajo, «Bots en los asientos libres»): el peón de ese slot en el servidor, con las teclas de `MpInput.bot_press`. Si un jugador toma el asiento (late join, o el que vuelve), el peón queda como está y lo mueven sus teclas.
-- **Un dedicado a mano sirve una partida tras otra** (una VPS arrancada con `--dedicated`): cuando su partida termina (`Mp.finish()`) y se va el último jugador, o todos quedaron afuera pasada la gracia (`all_gone`), carga un mundo nuevo (puntos y actores desde cero) y abre otra vez todos los asientos. Un juego con pantalla de revancha puede llamar él mismo a `MpFlow.next_open_match()` cuando se fueron sus jugadores. **Si tu juego termina la partida a su manera** (no con `Mp.finish()`), avisale al kit en el servidor con `MpKit.broadcast_session_ended(result)`, o llamá a `MpFlow.next_open_match()` cuando terminó y quedó vacío; si no, la partida siguiente recién se abre cuando pasó la gracia de todos, y el que llega antes se rechaza (`match_started`). Los clientes reciben el estado de la puerta al ser admitidos y se pausan apenas cargan su mundo, así que su `MatchClock` arranca en 0.
+- **Un dedicado a mano sirve una partida tras otra** (una VPS arrancada con `--dedicated`): cuando su partida termina (`Mp.finish()`) y se va el último jugador, o todos quedaron afuera pasada la gracia (`all_gone`), carga un mundo nuevo (puntos y actores desde cero) y abre otra vez todos los asientos. Un juego con pantalla de revancha puede llamar él mismo a `MpFlow.next_open_match()` cuando se fueron sus jugadores. **Si tu juego termina la partida a su manera** (no con `Mp.finish()`), avisale al kit en el servidor con `MpKit.broadcast_session_ended(result)`, o llamá a `MpFlow.next_open_match()` cuando terminó y quedó vacío; si no, la partida siguiente recién se abre cuando pasó la gracia de todos, y el que llega antes se rechaza (`match_started`). Los clientes reciben el estado de la puerta al ser admitidos y, con la pausa, se pausan apenas cargan su mundo, así que su `MatchClock` arranca en 0.
 
-Los knobs están en el inspector del `MpFlow`, grupo **Match start** (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_clients`, `match_started_status`). Todo lo nuevo viene apagado: sin tocarlos, la partida arranca como siempre. Una partida en la PC del host (privada u online, `MpLocalServer`) toma `start_on_timeout`, `late_join` y `host_can_start` del `MpFlow` del juego; la gracia y el tiempo de carga, de su `MpLobbyConfig` (60 s cada uno). La partida de un servidor de salas toma todo de su `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`). En el Remote del editor, `/root/MpKit/Gate` muestra `phase`, `expected`, `loaded` y `away`. El host puede arrancar con los que ya cargaron: `MpStartButton`, o `Mp.gate().can_start_now()` / `Mp.gate().start_now()` desde un botón propio (en el cliente del slot 1 de una partida en su PC, con `host_can_start`, `start_now()` le pide al servidor que arranque).
+Los knobs están en el inspector del `MpFlow`, grupo **Match start** (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`, `seat_closed_status`) y grupo **Match end** (`stay_after_finish_s`: «Una pantalla de fin que espera al jugador», abajo). Todo lo nuevo viene apagado: sin tocarlos, la partida arranca como siempre. Una partida en la PC del host (privada u online, `MpLocalServer`) toma `start_on_timeout`, `late_join`, `host_can_start` y `pause_while_waiting` del `MpFlow` del juego; la gracia y el tiempo de carga, de su `MpLobbyConfig` (60 s cada uno). La partida de un servidor de salas toma todo de su `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). En el Remote del editor, `/root/MpKit/Gate` muestra `phase`, `expected`, `loaded` y `away`. El host puede arrancar con los que ya cargaron: `MpStartButton`, o `Mp.gate().can_start_now()` / `Mp.gate().start_now()` desde un botón propio (en el cliente del slot 1 de una partida en su PC, con `host_can_start`, `start_now()` le pide al servidor que arranque).
+
+#### Un lobby que se camina
+
+Por defecto el mundo queda pausado mientras la partida espera: nadie camina antes de tiempo. Con **`pause_while_waiting`** apagado (inspector del `MpFlow`, grupo **Match start**, o `--pause-while-waiting=false`) nadie se pausa: los jugadores que ya cargaron mueven su peón, con predicción, igual que después del arranque, mientras llegan los demás. Sirve para una habitación de espera, un refugio con un mapa para elegir partida o un campo de práctica.
+
+La puerta no cambia: cuenta las cargas, arranca por `all_loaded`, por **Start now** o por `load_timeout_s`, y el que llega durante la espera se sienta en su asiento y camina también. Con `world_reports_loaded`, un asiento cuenta cuando su mundo avisa, igual que con la pausa. Anda por ENet, WebSocket y el relay, en Host LAN, en un dedicado y en una partida de sala.
+
+| Durante la espera sin pausa | Lo hace |
+|---|---|
+| Admitir, cargar el mundo de cada uno, crear su peón, sincronizar y predecir | el kit, como en una partida |
+| Decir que espera (`MpWaitingLabel`) y dejar arrancar al host (`MpStartButton`) | el kit |
+| Frenar lo que es de la partida: el reloj del día, las amenazas, los bots, el puntaje, sus temporizadores | **tu juego**, hasta el arranque |
+| Mantener a los jugadores en el lobby (paredes, una zona) | tu juego |
+
+Tu juego sabe que espera con `MpMatch.waiting` (en todos los peers), `MpMatch.waiting_changed(waiting)` (en todos, `false` al arrancar) y `MpMatch.all_loaded` (en el servidor, al arrancar):
+
+```gdscript
+# world.gd: lo de la partida arranca recién cuando arranca la partida.
+@onready var match_node: MpMatch = %MpMatch
+
+func _ready() -> void:
+	match_node.all_loaded.connect(_spawn_threats)  # servidor: el arranque
+
+func _physics_process(delta: float) -> void:
+	if match_node.waiting:
+		return  # el lobby: se camina, el reloj del día no corre
+	day_clock.advance(delta)
+```
+
+Una partida en la PC del host (privada u online) toma `pause_while_waiting` del `MpFlow` del juego; la de un servidor de salas, de su `MpLobbyConfig`. `pause_clients` solo cuenta con `pause_while_waiting` prendido: ahí, apagarlo pausa el servidor y deja correr a los clientes.
 
 #### Bots en los asientos libres
 
@@ -797,13 +830,15 @@ El kit no trae IA: dice qué asientos nadie ocupa y deja que un bot tuyo los jue
 | `Mp.gate().vacant_slots()` | Los asientos que nadie ocupa: nunca tomados, o abandonados. No incluye uno ausente dentro de la gracia (su jugador puede volver) |
 | `Mp.gate().started(why)` | Arrancó la partida: el momento de poner los bots |
 | `Mp.gate().joined_late(slot)` | Con `late_join`, un jugador tomó un asiento que nadie ocupaba: el bot de ahí lo suelta |
-| `MpSlotSpawner.spawn_slot(slot)` | El peón de ese slot, sin jugador. Cuando alguien entra al slot, el spawner le da ese mismo peón (no crea otro) |
+| `MpSlotSpawner.spawn_slot(slot)` | El peón de ese slot, sin jugador. Cuando alguien entra al slot, el spawner le da ese mismo peón (no crea otro). Si el que tenía se liberó (murió: `MpActor.despawn`), crea uno nuevo |
 | `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | Las teclas del bot: se leen igual que las de un jugador (`get_vector`, `is_action_just_pressed`, `mp_move`). Valen mientras nadie juega el asiento; cuando entra un jugador quedan sueltas y mandan las suyas |
 | `MpInput.has_player()` | Verdadero mientras un jugador juega ese asiento. Falso también mientras su jugador está ausente dentro de la gracia |
 
+Cuando arranca la partida, cada asiento libre se llena con un bot:
+
 ```gdscript
 ## arena.gd (el mundo): cuando arranca, un bot en cada asiento libre.
-@onready var players: MpSlotSpawner = $Players
+@onready var players: MpSlotSpawner = %Players
 
 
 func _ready() -> void:
@@ -816,6 +851,8 @@ func _ready() -> void:
 			players.spawn_slot(slot).add_child(Bot.new()))
 ```
 
+El bot aprieta las teclas del asiento mientras no haya un jugador sentado:
+
 ```gdscript
 ## bot.gd: hijo del peón, solo en el servidor. Decide teclas; el movimiento es el del jugador (mp_move).
 class_name Bot
@@ -825,7 +862,7 @@ var input: MpInput
 
 
 func _ready() -> void:
-	input = get_parent().get_node("MpInput")
+	input = get_parent().get_node("%MpInput")
 
 
 func _physics_process(_delta: float) -> void:
@@ -839,6 +876,47 @@ func _physics_process(_delta: float) -> void:
 - En una partida con ticket, el jugador tarde entra al asiento que le dio el emisor (el primero libre): si ahí juega un bot, toma ese peón tal cual (posición, vida, lo sincronizado) y el `MpInput` sigue sus teclas desde el tick siguiente.
 - Solo no tiene asientos en la puerta (`vacant_slots()` vacío): ahí los bots los ponés vos, con `spawn_slot(2..N)`. `bot_press` anda igual.
 - Si tu bot no debe mover el peón de un jugador ausente dentro de la gracia, chequeá `Mp.gate().vacant_slots().has(slot)` además de `has_player()`.
+
+#### Un asiento que se cierra
+
+Cuando el peón de un asiento queda afuera de la partida para siempre (murió, escapó) y tu juego lo sacó, cerrá ese asiento en el servidor: nadie vuelve a sentarse ahí en esta partida.
+
+```gdscript
+## world.gd (servidor): el peón del slot murió o escapó; su asiento no vuelve a jugar esta partida.
+func _on_pawn_out(slot: int) -> void:
+	players.pawn_for(slot).queue_free()
+	Mp.gate().close_seat(slot)
+```
+
+Si en vez de cerrar el asiento el peón tiene que volver (otra vida), no cierres nada: `players.spawn_slot(slot)` crea uno nuevo, también en el mismo frame en que murió (entra apenas sale el viejo, con el mismo nombre `Pawn_<slot>` en todos los peers). Mientras no tenga peón, `players.pawn_for(slot)` da `null`.
+
+| Después de `close_seat(slot)` | Pasa |
+|---|---|
+| Su jugador sigue conectado | Se queda: tu juego decide qué ve (una cámara de espectador, su pantalla de fin) |
+| Su jugador se va | El asiento abandona al instante (`player_abandoned`, motivo `seat_closed`): no hay gracia que esperar, porque no puede volver |
+| Su jugador vuelve (rejoin, o su ticket) | Se lo rechaza con `seat_closed`; el flow lo muestra con `seat_closed_status` |
+| Un recién llegado con `late_join` | No le toca ese asiento (si no queda otro: `full`) |
+| Tus bots | `vacant_slots()` ya no lo da; `seat_closed(slot)` avisa |
+| Una sala online o privada | El emisor deja de repartirlo (`closed_slots()`), y `held_slots()` ya no lo cuenta |
+| Antes del arranque | La partida deja de esperarlo |
+| La partida siguiente (`reset`: un dedicado a mano) | Todos los asientos, abiertos otra vez |
+
+#### Una pantalla de fin que espera al jugador
+
+Por defecto, una partida con ticket (la de la PC del host, privada u online, y la de un servidor de salas) cierra su proceso `result_quit_delay_s` (3 s) después de `MpMatch.finish`, y el que sigue adentro vuelve al lobby o al menú. Que el servidor se vaya después del final es el fin normal: el cliente recibe `MpKit.server_closed` (no `server_lost`) y el flow vuelve sin decir «Lost the server».
+
+Para que tu pantalla de fin quede hasta que el jugador haga clic, poné **`stay_after_finish_s`** (inspector del `MpFlow`, grupo **Match end**, o `--stay-after-finish-s=120`). La partida terminada sigue arriba mientras haya jugadores adentro y se cierra cuando se va el último: nunca antes de `result_quit_delay_s`, como mucho a los `stay_after_finish_s`. Cada uno sale con un `MpLeaveButton` en tu pantalla (o `leave_match()` desde tu botón):
+
+```gdscript
+func _on_finished(result: Dictionary) -> void:
+	%Result.text = "%s wins!" % str(result.get("winner", "?")).to_upper()
+	%EndScreen.visible = true  # con un MpLeaveButton adentro; Process › Mode = Always si el mundo está pausado
+```
+
+- Una partida en la PC del host (privada u online) toma `stay_after_finish_s` del `MpFlow` del juego; la de un servidor de salas, de su `MpLobbyConfig`.
+- Mientras sigue arriba, nadie más entra (tampoco con su ticket), la sala online no reparte asientos y la invitación desaparece del HUD (`MpInviteLabel`).
+- Si el host abre otra partida (`MpLocalServer.start_on`, `host_online`), la terminada le deja el lugar: los que seguían leyendo vuelven al menú, sin «server lost».
+- Si el servidor se va igual (pasaron los `stay_after_finish_s`, se cerró el juego del host), el cliente vuelve al lobby o al menú sin aviso de error.
 
 Señales:
 
@@ -863,9 +941,12 @@ Métodos y propiedades:
 Mientras espera, el árbol está pausado. La red del kit sigue andando (MpKit, el lobby, el agente, el lanzador, el beacon LAN corren igual), y también el botón Leave y la línea de invitación. Lo tuyo no: si querés mostrar "Esperando jugadores…", poné ese nodo del HUD con **Process › Mode = Always** y escuchá `waiting_changed`.
 
 ```gdscript
+@export var match_node: MpMatch  # el MpMatch del mundo, asignado en el inspector
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	$"../Match".waiting_changed.connect(func(on: bool) -> void: $Waiting.visible = on)
+	match_node.waiting_changed.connect(func(on: bool) -> void: %Waiting.visible = on)
 ```
 
 Del ejemplo (`arena.gd`): gana el primero que llega a 3; el que abandona pierde.
@@ -873,8 +954,8 @@ Del ejemplo (`arena.gd`): gana el primero que llega a 3; el que abandona pierde.
 ```gdscript
 const WIN_SCORE := 3
 
-@onready var score: MpState = $Score
-@onready var match_node: MpMatch = $Match
+@onready var score: MpState = %Score
+@onready var match_node: MpMatch = %Match
 
 
 func _ready() -> void:
@@ -937,6 +1018,126 @@ Con `world_reports_loaded` prendido cambia quién cuenta:
 - **Solo** («Jugar solo» o contra la IA): la puerta se arma también, sin asientos ni red (`arm([], 0)`), y solo espera al host. El árbol queda pausado hasta que el mundo avisa, así el reloj de la partida y la IA no corren detrás de la pantalla. Sin `world_reports_loaded` arranca enseguida, como antes.
 
 Si leer el mundo en el hilo falla (un arranque en frío justo después de importar, un pedido que el motor rechaza), el loader lo lee en el hilo principal en vez de quedarse sin mundo.
+
+### 7.8 Un deportivo en tiempo real: pocos jugadores, una pelota, contacto
+
+Un fútbol, un hockey o un básquet de dos contra dos: todos pelean por la misma pelota, se barren y se chocan. Es el caso más exigente para la red, porque cada uno mira su propio jugador, el de los demás y la pelota a la vez. Lo que se siente bien:
+
+- **tu jugador responde al instante**, también cuando se barre o patea;
+- **los demás y la pelota se mueven parejos**, sin saltos ni frenadas;
+- **una barrida que tocó en tu pantalla gana la pelota**, aunque tengas ping;
+- **el partido arranca cuando entraron todos.**
+
+Todo eso ya está en el kit. `examples/sports_2d/` (dos contra dos) lo arma con pocas líneas, y `mpkit_lab/run/sports.sh` lo prueba con red mala.
+
+```
+Pitch (pitch.gd)                  # dibuja la cancha; un gol suma en MpState y saca del medio
+├── Walls (StaticBody2D)          # los bordes: los jugadores chocan con ellos, no entre sí
+├── Ball (ball.gd)                # del servidor: MpActor sin dueño, BUFFERED, shared_timeline; sync_extra: holder
+└── MpWorld                       # seats 4: 1 y 3 juegan a la izquierda, 2 y 4 a la derecha
+    ├── SpawnPoints, Actors, Players (MpSlotSpawner: player.tscn)
+    ├── State (MpState: home, away), Match (MpMatch)
+    └── Hud                       # el tanteador, Leave, Start, Waiting
+```
+
+**1. Todo lo que se mueve es un `MpActor`.** Los jugadores (con predicción) y la pelota (del servidor, dibujada `BUFFERED`). No mandes vos un estado entero cada tantos ticks para pegarlo al llegar y estirarlo con la velocidad: eso da saltos y frenadas, sobre todo por WebSocket, donde los paquetes llegan en ráfagas. `BUFFERED` dibuja un poco en el pasado, entre dos estados reales, con un buffer que mide la red sola. Con `shared_timeline` en todos, la pelota y los jugadores se dibujan en un mismo momento del servidor.
+
+**2. `mp_move` es el único movimiento, con las acciones adentro.** El servidor corre la misma función, con las mismas teclas, una vez por cada frame del dueño. Una barrida es movimiento: arranca con la tecla, cuenta sus ticks adentro, y todo lo que `mp_move` lee va en **Sync › sync_extra**. Con predicción, esos valores viajan en el mismo paquete que la pose, así que la reconciliación repite desde el estado correcto.
+
+```gdscript
+# player.gd (lo esencial). sync_extra: velocity, facing, slide_ticks, stun_ticks
+func mp_move(keys: MpInput, delta: float) -> void:
+	if slide_ticks > 0:
+		slide_ticks -= 1
+		velocity = velocity.move_toward(Vector2.ZERO, SLIDE_BRAKE * delta)
+		if slide_ticks == 0:
+			stun_ticks = RECOVER_TICKS
+	elif stun_ticks > 0:
+		stun_ticks -= 1
+		velocity = velocity.move_toward(Vector2.ZERO, BRAKE * delta)
+	else:
+		var move := keys.get_vector(&"ui_left", &"ui_right", &"ui_up", &"ui_down")
+		if move.length() > 0.1:
+			facing = move.normalized()
+		velocity = velocity.move_toward(move * RUN, ACCEL * delta)
+		if keys.is_action_just_pressed(&"ui_select"):
+			slide_ticks = SLIDE_TICKS
+			velocity = facing * SLIDE_SPEED
+	move_and_slide()
+```
+
+**3. Lo que decide el servidor va en esos mismos valores.** Una barrida rival te tira, un gol te devuelve a tu lugar: el servidor escribe `stun_ticks` y `velocity` (o la posición y `net.snap()` para un salto), y tu pantalla repite desde ahí, con la corrección suavizada. Es lo de §6.2, con el stun y el empujón.
+
+```gdscript
+func knock(from: Vector2) -> void:   # en el servidor
+	slide_ticks = 0
+	stun_ticks = KNOCKED_TICKS
+	velocity = (position - from).normalized() * KNOCK_SPEED
+```
+
+**4. Los contactos se juzgan contra lo que vio quien los hizo.** Ves a los demás un poco en el pasado. Si el servidor comparara tu barrida con dónde está el rival ahora, fallaría la que en tu pantalla tocó. El servidor pregunta dónde lo veía el que se barre (§6.8):
+
+```gdscript
+# ball.gd, en el servidor: un rival que se barre y alcanza al que la lleva donde LO VEÍA
+for node in get_tree().get_nodes_in_group(Player.GROUP):
+	var player := node as Player
+	if player.slide_ticks <= 0 or player.team() == feet.team():
+		continue
+	var seen: Vector2 = player.net.seen_position_of(feet)
+	if seen.distance_to(player.position) <= Player.TACKLE_REACH:
+		return player
+```
+
+Medido con `sports.sh`, a 40 ms por tramo con jitter: con compensación, las barridas que tocaron en la pantalla de quien barre ganan la pelota 6 de 6; sin ella (`--lag-comp=off`), entre 0 y 3 de 6.
+
+**5. La pelota en tus pies se dibuja en tus pies.** La pelota es del servidor y se ve en el pasado; tu jugador va en el presente. Mientras la llevás vos, dibujala donde están tus pies predichos, después de que el kit dibuja (`process_priority` mayor que 10000). Para los demás sigue siendo la del servidor.
+
+```gdscript
+# ball.gd
+func _process(_delta: float) -> void:
+	var mine := holder > 0 and holder == MpKit.local_slot() and not net.is_authority()
+	var feet := carrier() if mine else null
+	if feet != null:
+		%Body.global_position = feet.global_position + feet.facing * DRIBBLE
+	else:
+		%Body.position = Vector2.ZERO
+```
+
+**6. El partido espera a todos.** `MpFlow.start_seats` en 0 (lo de entrada) espera cada asiento, y `MpMatch` tiene el mundo en pausa hasta entonces. No arranques el partido a mano al cargar el host: escuchá `MpMatch.all_loaded`. Para arrancar igual si alguien no llega: `start_on_timeout` con `load_timeout_s`, o `MpStartButton` para el host.
+
+**7. Lo que sigue a un nodo de red se lee después del kit.** Una cámara, la pelota en los pies, una barra: `process_priority` mayor que 10000. Antes, leés la pose sin la corrección suavizada, y se ve a los saltos.
+
+**Si tu partido es un motor central** (un paso que mueve todos los cuerpos juntos, determinista): dejalo en el servidor, pero sacá el paso de un solo cuerpo a una función pura que usen el motor y el `mp_move` del peón de cada asiento. El servidor mueve ese cuerpo con `mp_move` (no con las teclas leídas en vivo en su propio paso), y el motor toma esa posición. Cada cuerpo que no maneja un asiento, y la pelota, son un `MpActor` del servidor que el motor escribe.
+
+**Sin predicción: todo en una línea de tiempo.** Con predicción tu jugador va en el presente, y la pelota y los rivales un poco en el pasado. En un juego de pelota eso se nota: llegás a la pelota en tu pantalla y no es tuya hasta que lo dice el servidor, y un quite te tira de golpe. Si preferís que el ping se sienta como lag de las teclas, constante y sin saltos (como LoL, que no predice el movimiento), apagá la predicción y dibujá todo junto:
+
+- **`MpActor › Prediction › predict` apagado** en tu jugador (y guardá la escena: el kit rehace su `MpSync`). El kit ya no llama a `mp_move`: el servidor lo corre él mismo en `_physics_process`, y tu pantalla dibuja tu jugador como a los demás. El servidor aplica las teclas más nuevas que le llegaron: sin predicción no hay cola de teclas que esperar.
+
+  ```gdscript
+  # player.gd de examples/sports_2d: el mismo mp_move, con y sin predicción
+  func _physics_process(delta: float) -> void:
+  	if not net.is_authority():
+  		return
+  	if not net.predict:
+  		mp_move(input, delta)   # sin predicción, el servidor mueve acá
+  	# ...las reglas del jugador, como siempre
+  ```
+- **`Smoothing › shared_timeline` prendido** en todo lo que se mueve (jugadores, pelota): se dibujan en un mismo momento del servidor, al retraso que necesite el que más necesita.
+- **`adaptive_buffer` prendido** (lo de entrada): dibuja solo el atraso que pide la red. Un `buffer_delay_s` fijo agrega todo ese tiempo siempre.
+- **`max_extrapolate_s` en 0** en un juego de pelota: un paquete tarde espera en el último estado en lugar de adivinarse siguiendo su movimiento (0,1 s de entrada), que después se corrige. Medido en un partido 2 contra 2 a 80 ms por tramo con 2 % de pérdida: el mismo lag de la tecla a la pantalla (240-250 ms), sin dibujar nunca más allá del último estado, y la pelota con 0 o 1 tirones en 23 s contra 2 con 0,1.
+- **Una respuesta instantánea en tu pantalla, solo cosmética**: un sonido, el flash del botón, el arranque de la animación de la patada. Nunca el cuerpo.
+
+Medido de la tecla a tu jugador moviéndose en tu pantalla, a 80 ms por tramo con 2 % de pérdida (160 ms de ida y vuelta), sin aceleración:
+
+| Buffer | WebSocket | ENet |
+|---|---|---|
+| `buffer_delay_s` fijo en 0,1 | 290 ms | 283 ms |
+| adaptativo (lo de entrada) | 235 ms | 234 ms |
+| fijo en 0 | 200 ms, adivinando cada paquete tarde | 199 ms |
+
+Lo que queda por encima de la ida y vuelta sin buffer (unos 40 ms) es esperar el tick siguiente en cada máquina: la tecla, el servidor y el dibujo. Por WebSocket (TCP), un paquete perdido frena a los que siguen hasta que se reenvía: con pérdida, el buffer adaptativo crece para taparlo, o se ve la frenada.
+
+**Lo que no hace el ejemplo:** predecir la patada. Después de un pase o un tiro, la pelota sale cuando llega la palabra del servidor: un ping más el buffer de la pelota (alrededor de 100 ms con 60 ms de ping, estimado). Para predecirla, el dueño la simula al patear hasta que llega la del servidor, y la reemplaza. Tampoco compensa el lag al tomar una pelota suelta: lo decide el servidor con las posiciones de ahora.
 
 ## 8. Probar
 
@@ -1144,6 +1345,8 @@ Un script que extiende `MpRoomRules` y pisa las funciones que necesitás. Todas 
 | `accept_bot(pick) -> bool` | ¿Vale el bot que puso el anfitrión? Falso = `bad_bot` | true |
 | `build_ticket(seats, options) -> Dictionary` | Qué recibe la partida. Mantené `seats`; agregá lo que haga falta (semilla, mapa) | `{"options": ..., "seats": ...}` |
 
+Una sala de 4 asientos si el modo es 2v2 y de 2 si no, y solo deja elegir al caballero o al arquero:
+
 ```gdscript
 # my_rules.gd
 extends MpRoomRules
@@ -1269,6 +1472,8 @@ La partida usa el mismo transporte que tu juego (ENet, WebSocket o relay). Por i
 
 ### 10.2 Por código
 
+Para levantar un servidor local de 2 asientos y enterarte de su dirección y de los códigos de sala:
+
 ```gdscript
 var server := MpLocalServer.start_on(get_tree(), 2)
 server.server_ready.connect(func(address: String, port: int, codes: Dictionary) -> void:
@@ -1281,10 +1486,11 @@ server.server_failed.connect(func(reason: String) -> void: print("falló: ", rea
 | `MpLocalServer.start_on(tree, seats, options, join_host)` | Crea el nodo bajo la raíz y arranca. El slot 1 sos vos |
 | `server_ready(address, port, codes)` | Listo. `codes`: slot → código para cada otro asiento |
 | `server_failed(reason)` | No pudo arrancar |
-| `server_ended(result)` | Terminó la partida |
+| `server_ended(result)` | Terminó la partida y se cerró su proceso |
 | `stop()` | Mata la partida |
 | `invites()` / `invite_text()` | Lo que escriben los amigos, uno por asiento libre: `192.168.1.5:7801#K7P2QX` (por relay, `:7801#K7P2QX`) |
-| `MpLocalServer.running(tree)` | El servidor privado que corre en este proceso, o `null`. `start_on` con uno corriendo lo devuelve |
+| `is_finished()` | Su partida terminó (`MpMatch.finish`). Con `stay_after_finish_s` el proceso sigue arriba un rato para sus jugadores; nadie más entra |
+| `MpLocalServer.running(tree)` | El servidor privado que corre en este proceso, o `null` (no uno cuya partida terminó). `start_on` con uno corriendo lo devuelve; uno terminado le deja el lugar al nuevo |
 
 Usa los tiempos y puertos de un `MpLobbyConfig` por defecto (partidas en 7800-7899) y la red de tu `game.tres` (transporte, relay, TLS). Con relay, busca puerto desde uno al azar del rango, y si el relay lo rechaza porque otro lo usa, prueba el siguiente.
 
@@ -1324,6 +1530,8 @@ Probalo todo antes en tu PC: `bash mpkit_lab/run/online.sh` en el repo del kit l
 
 ### 10.5 En tu juego
 
+Alojar una sala online para 4, unirse con el código de un amigo y listar las salas públicas con lugar:
+
 ```gdscript
 var flow := MpFlow.find_in_tree(self)
 
@@ -1354,7 +1562,7 @@ for row in await flow.online_rooms():
 | `MpInviteLabel` | En el HUD de la partida del host muestra el código |
 | `MpNetConfig.can_host_online()` | Verdadero cuando `issuer_url` está puesto (cualquier build puede hospedar, también un navegador) |
 
-La sala vive mientras vive el host: cada 10 s le dice al emisor quién está, y la cierra cuando termina la partida o se va. Un host cuyo juego se cierra sin avisar (una pestaña cerrada) el emisor lo olvida a los 30 s.
+La sala vive mientras vive el host: cada 10 s le dice al emisor quién está, y la cierra cuando termina la partida o se va (con `stay_after_finish_s`, cuando se cierra el proceso de la partida; mientras tanto no reparte asientos). Un host cuyo juego se cierra sin avisar (una pestaña cerrada) el emisor lo olvida a los 30 s.
 
 Cuándo arranca y quién entra después lo dicen los knobs **Match start** del `MpFlow` (7.5), los mismos en escritorio y en navegador:
 
@@ -1942,11 +2150,19 @@ Es de Godot 4.7, no del kit ni de tu juego: cargar en un hilo un script que tien
 6. ¿El `MpSlotSpawner` (el `Players` del `MpWorld`) tiene `spawn_path` y `pawn_scene`?
 7. ¿La partida espera asientos? El mundo está pausado hasta que cargan los que espera (`MpMatch.waiting`, `Mp.gate().is_waiting()`). Arranca sola pasado `load_timeout_s`; en Host LAN tocá **Start now** (`MpStartButton`), o probá `--start-seats=1`.
 
+**Mi jugador se corrige cada vez que hace una acción (un dash, una barrida, un salto con contador).**
+1. ¿Todo lo que lee `mp_move` (el contador, la dirección, la velocidad) está en **Sync › sync_extra**? Lo que falta ahí, la reconciliación lo toma de tu pantalla, no del servidor.
+2. ¿La escena se guardó con MpKit 0.24 o más nuevo? Antes, esos valores viajaban aparte de la pose y la repetición partía del tick equivocado (35 px de corrección a 40 ms con jitter, contra 1 px). El kit avisa «its saved MpSync is out of date»: abrí la escena y guardala.
+3. ¿La acción arranca dentro de `mp_move` con `keys.is_action_just_pressed`, y no en `_physics_process`?
+
 **Un cliente se rechaza enseguida con `timeout`, solo contra un servidor o relay remoto.**
 El log del servidor dice `MpKit: the server turned peer N away (timeout)`: su ticket no llegó en `admission_timeout_s`. Los timeouts de red del kit cuentan tiempo real, así que un servidor lejos no es problema. Si el servidor corre temporizadores tuyos para cosas de red, usá `MpKit.after_real(segundos, callable)`, no `create_timer`: con `--fixed-fps` (deja de sincronizar con el reloj y puede correr miles de cuadros por segundo) o `Engine.time_scale`, el tiempo de juego no es tiempo real.
 
 **Un segundo cliente no entra: «The match already started» (`match_started`).**
 La puerta ya arrancó la partida: después del arranque solo vuelve un asiento que se fue. Para que entren varios, que carguen antes del arranque (`start_seats` = 0 espera todos los asientos, `--start-seats=N`), o prendé `late_join` (`--late-join`) para un juego de entrar y salir. En un dedicado a mano, la partida siguiente se abre sola cuando esta termina y se fueron todos.
+
+**Al terminar la partida, el cliente vuelve al menú a los 3 s (antes decía «Lost the server»).**
+Una partida con ticket cierra su proceso `result_quit_delay_s` después de `MpMatch.finish`, y el cliente vuelve al lobby o al menú (`MpKit.server_closed`: el fin normal, sin aviso). Para que tu pantalla de fin espere el clic del jugador, poné `stay_after_finish_s` en el `MpFlow` (grupo **Match end**) y salí con `leave_match()` o un `MpLeaveButton` (7.5, «Una pantalla de fin que espera al jugador»).
 
 **Se mueve, pero los otros jugadores tironean.**
 Usá `smoothing = BUFFERED` con `adaptive_buffer` prendido; si sigue, bajá `late_tolerance` (0.01) o subí el tope `buffer_delay_s` (0.15, 0.2). Si bajaste `send_hz`, subilo o dejalo en 0.

@@ -42,9 +42,9 @@ Lo de abajo es el **bajo nivel** (RPC, snapshots, túnel): para lo que la capa d
 extends MpFlow
 
 func _ready() -> void:
-	boot_path = "res://scenes/ui/boot.tscn"
-	add_world(&"2d", "res://scenes/world/match_2d.tscn")
-	add_world(&"3d", "res://scenes/world/match_3d.tscn")
+	boot_path = "res://main/boot.tscn"
+	add_world(&"2d", "res://levels/match_2d/match_2d.tscn")
+	add_world(&"3d", "res://levels/match_3d/match_3d.tscn")
 	start_when = StartWhen.DEDICATED_FIRST_CLIENT
 	super._ready()
 ```
@@ -66,7 +66,7 @@ func try_action(dir: Vector2, strength: float) -> void:
 		apply_action(dir, strength)
 ```
 
-## Glue: listen (2.º peer) vs dedicated (N clientes)
+## Código del juego: listen (2.º peer) vs dedicated (N clientes)
 
 ```gdscript
 func _on_peer_joined(peer_id: int, slot: int) -> void:
@@ -117,7 +117,7 @@ func _push_if_server() -> void:
 MpKit.send_custom(&"emote", {"id": "wave"})
 # Listen host / server origin (everyone must see it): broadcast_custom, not send_custom
 
-# Servidor (glue): reflejá solo paquetes de cliente. from_peer == 1 ya es emit del server
+# Servidor (código del juego): reflejá solo paquetes de cliente. from_peer == 1 ya es emit del server
 # (broadcast o send local). Sin este check, broadcast_custom se llama a sí mismo.
 func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
 	if channel != &"emote":
@@ -142,7 +142,7 @@ MpAuthority.ensure_sync(self, PackedStringArray([
 ]))
 ```
 
-`add_child` bajo el `spawn_path`. `MpSpawner` revela el actor al peer cuando su spawner está listo (Godot manda spawn + sync). Un `MpSlotSpawner` hace el pawn por slot; no hace falta `ensure_pawn` en glue.
+`add_child` bajo el `spawn_path`. `MpSpawner` revela el actor al peer cuando su spawner está listo (Godot manda spawn + sync). Un `MpSlotSpawner` hace el pawn por slot; no hace falta `ensure_pawn` en el código del juego.
 
 ## Un deportivo: una acción predicha y un contacto con lag
 

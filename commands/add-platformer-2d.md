@@ -22,7 +22,7 @@ Si falta, preguntá en un lote:
 
 1. ¿Ya hay un `CharacterBody2D` jugador? ¿Solo tunear / reemplazar el salto?
 2. ¿Wall jump? Default **no**.
-3. ¿Dash / one-way / stamina? Default **no** (glue; ver catálogo).
+3. ¿Dash / one-way / stamina? Default **no** (código del juego; ver catálogo).
 4. Intensidad de ventanas: tight / medio / generoso (default medio: coyote 0.08, buffer 0.12).
 
 ## 2. Plan

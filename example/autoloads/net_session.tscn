@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://autoloads/net_session.gd" id="1"]
+
+[node name="NetSession" type="Node"]
+script = ExtResource("1")
+world_2d_path = "res://levels/match_2d/match_2d.tscn"
+world_3d_path = "res://levels/match_3d/match_3d.tscn"
+max_players = 4
+room_name = "MpKit demo"
+advertise_lan = true
+custom_channels = PackedStringArray("emote")
+start_when = 1
+boot_path = "res://main/boot.tscn"

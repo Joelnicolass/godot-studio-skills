@@ -52,13 +52,15 @@ Escena del jugador (`CharacterBody2D`, `CharacterBody3D`...) con dos hijos:
 - **MpActor**: tildá qué se sincroniza (posición, rotación, visible, y en *Extra* cualquier propiedad, por ejemplo `health` o `Health:current`) y prendé **Prediction › predict** para el jugador. Guardá la escena: el editor arma el sincronizador y lo guarda.
 - **MpInput**: la lista de acciones del InputMap que manda el jugador (por defecto las flechas y Enter).
 
+Marcá los dos como nombre único (clic derecho › «Acceso como nombre único»): el script de abajo los usa como `%MpActor` y `%MpInput`.
+
 ## 6. Script del jugador
 
 ```gdscript
 extends CharacterBody2D
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
 
 # Movimiento: lo corre el servidor y, con predict, también el dueño al instante (sin lag).
 func mp_move(keys: MpInput, _delta: float) -> void:

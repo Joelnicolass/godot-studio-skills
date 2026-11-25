@@ -11,9 +11,9 @@ const MAX_HP := 100.0
 const HIT := 20.0
 const HEAVY_HIT := 50.0
 
-@onready var spill: SpillSource3D = $Dummy/Spill
-@onready var camera: Camera3D = $Camera3D
-@onready var label: Label = $Label
+@onready var spill: SpillSource3D = %Spill
+@onready var camera: Camera3D = %Camera3D
+@onready var label: Label = %Label
 
 var hp := MAX_HP
 

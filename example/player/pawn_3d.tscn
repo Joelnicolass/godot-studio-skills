@@ -1,0 +1,63 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://player/pawn_3d.gd" id="1"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_replicate.gd" id="2"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_custom_pipe.gd" id="3"]
+[ext_resource type="Script" path="res://shared/components/pawn_input.gd" id="4"]
+[ext_resource type="Resource" path="res://player/pawn_catalog.tres" id="5"]
+[ext_resource type="Material" path="res://player/pawn_material.tres" id="6"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(1, 1.4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(1, 1.4, 1)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:visible")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:player_slot")
+properties/3/spawn = true
+properties/3/replication_mode = 0
+
+[node name="Pawn3D" type="CharacterBody3D"]
+floor_snap_length = 0.4
+script = ExtResource("1")
+catalog = ExtResource("5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_1")
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+mesh = SubResource("BoxMesh_1")
+material_override = ExtResource("6")
+
+[node name="Badge" type="Label3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+font_size = 64
+outline_size = 8
+billboard = 1
+
+[node name="MpReplicate" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_1")
+
+[node name="MpCustomPipe" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3")
+channel = &"emote"
+
+[node name="PawnInput" type="Node" parent="." node_paths=PackedStringArray("body")]
+script = ExtResource("4")
+body = NodePath("..")

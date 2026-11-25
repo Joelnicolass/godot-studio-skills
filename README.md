@@ -16,9 +16,10 @@ Sin este kit, un agente suele:
 
 Con el kit:
 
-- **Vos** elegís Clean o estándar Godot **antes** de scaffoldear. Dandote una estructura clara para el desarrollo.
+- **Vos** elegís el tamaño del proyecto (por entidad, el recomendado, o sistemas + contenido) **antes** de crear carpetas. Queda una estructura donde cada cosa se encuentra: `docs/tuning.md` dice qué abrir para cambiar cada valor.
 - **Vos** elegís si hay multiplayer y de qué tipo (sin MP · local/WiFi · online)
-- Se prioriza lo simple y predecible: cada feature es escena(s) con sus números en `@export` del nodo que los usa, Resources `.tres` solo para tipos que se comparten, no un `match kind`. Si cambiar un número exige abrir más de 2 archivos, el diseño está mal.
+- Se prioriza lo simple y predecible: cada feature es escena(s) con un dueño por número (el `.tres` de su tipo, o la raíz de la escena), no un `match kind`. Si cambiar un número exige abrir más de 2 archivos, el diseño está mal.
+- Un humano lo ve y lo ajusta en el editor: cada `@export` con tooltip, rango y unidad, y lo que se ve al correr se ve al abrir la escena.
 - Código estándar de Godot: patrones probados (señales, bus `Events`, FSM, componentes…), tipado real, `gdformat` / `gdlint`, y GUT + CI si hay tests (skill `godot-code-quality`).
 - Un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
 - MpKit aparte del gameplay; notas entre sesiones en Engram o `.studio/MEMORY.md` si hace falta.
@@ -27,7 +28,7 @@ Con el kit:
 | Pieza               | Dónde                                                                          | Qué es                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orquestador         | `skills/godot-studio-workflow/`                                                | El agente del chat: entrevista + `/implement-feature` (PRD/RFC opcionales)                       |
-| Cómo escribir Godot | `skills/`                                                                      | Capas, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, percepción, sangre y otras sustancias, bots, tableros, turnos, recursos y jugadas, juicy, materiales, investigar features, visual, memoria, tests y CI, un banco de determinismo (con AgentKit) |
+| Cómo escribir Godot | `skills/`                                                                      | Arquitectura, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, percepción, sangre y otras sustancias, bots, tableros, turnos, recursos y jugadas, juicy, materiales, investigar features, visual, memoria, tests y CI, un banco de determinismo (con AgentKit) |
 | Subagentes          | `agents/`                                                                      | Tech lead, developer, reviewer; tester y visual opcionales. Playtester: módulo playtest          |
 | Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/add-bots`, `/add-grid`, `/add-turns`, `/add-wallet`, `/add-commands`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer con nodos y sin RPCs a mano: el juego en un `.tres` (`MpGame`), el mundo en un nodo (`MpWorld`), los verbos de la partida en `Mp`, más `MpActor`, `MpInput`, `MpState`, `MpMatch`. Predicción, buffers adaptativos, compensación de lag y calidad de red; LAN, dedicated, salas online, partida privada, web, relay para servidores sin IP pública (Railway), deploy a VPS y asistente *Setup game*. **Cero** gameplay. Empezá por `addons/mp_kit/QUICKSTART.md` (paso a paso: `GUIDE.md`); pruebas sin juego en `mpkit_lab/run/all.sh`. |
@@ -45,11 +46,11 @@ Con el kit:
 | WalletKit           | `addons/wallet_kit/`                                                           | Recursos y monedas: `Purse` (datos puros: montos por clave, topes que devuelven lo perdido, pagar todo o nada, sustitutos con tasa que cubren lo que falta (`WalletSubstitute`), `payment_for` para mostrar el costo, `to_dict`) y el nodo `Wallet`. Sin precios ni UI, sin red. Empezá por `addons/wallet_kit/README.md`; tests en `walletkit_lab/`. |
 | CommandKit          | `addons/command_kit/`                                                          | Jugadas validadas con historial: cada jugada es una función de tu juego (`do_<nombre>(seat, args…)`, con `can_<nombre>` que da el motivo de rechazo y `undo_<nombre>` opcional); `CommandLog` (datos puros: corre solo las válidas, guarda `{name, seat, args}`, deshace la última, repite un historial) y el nodo `GameCommands`. Sin reglas de juego, sin azar, sin red. Empezá por `addons/command_kit/README.md`; tests en `commandkit_lab/`. |
 
-Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es glue del juego.
+Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es código del juego.
 
 ## Cómo funciona
 
-El detalle (diagramas del orquestador, roles, Clean vs estándar, tipos de multiplayer, flujo de una iteración, arte/shaders) está en [docs/architecture.md](docs/architecture.md). Diagramas interactivos: [el flujo de una feature](https://joelnicolass.github.io/godot-studio-skills/) y [un kit en tu juego](https://joelnicolass.github.io/godot-studio-skills/kits.html) (fuentes en [docs/diagram/](docs/diagram/README.md)). En corto: entrevista → `/implement-feature` → un OK sobre el árbol (incluye `res://debug/` si hace falta) → developer → reviewer → playtester sobre esa escena → el orquestador clasifica el FAIL → cierre en `FEATURES.md`. El pase visual se pregunta. El contrato del slice es el `F<n>`, no un RFC obligatorio.
+El detalle (diagramas del orquestador, roles, los dos tamaños de proyecto, tipos de multiplayer, flujo de una iteración, arte/shaders) está en [docs/architecture.md](docs/architecture.md). Diagramas interactivos: [el flujo de una feature](https://joelnicolass.github.io/godot-studio-skills/) y [un kit en tu juego](https://joelnicolass.github.io/godot-studio-skills/kits.html) (fuentes en [docs/diagram/](docs/diagram/README.md)). En corto: entrevista → `/implement-feature` → un OK sobre el árbol (incluye `res://debug/` si hace falta) → developer → reviewer → playtester sobre esa escena → el orquestador clasifica el FAIL → cierre en `FEATURES.md`. El pase visual se pregunta. El contrato del slice es el `F<n>`, no un RFC obligatorio.
 
 ## Instalar (Claude Code o Cursor)
 

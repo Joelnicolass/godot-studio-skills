@@ -27,7 +27,7 @@ signal match_finished(result: Dictionary)
 enum StartWhen {
 	LISTEN_IMMEDIATE, ## enter the world at once (the default; the name is older than the other two)
 	DEDICATED_FIRST_CLIENT, ## a "Dedicated Server" export without --dedicated: enter when the first client joins
-	MANUAL, ## never load the world by itself; glue calls start_match() / goto_world()
+	MANUAL, ## never load the world by itself; the game calls start_match() / goto_world()
 }
 
 ## Every network setting in one .tres (transport, port, players, TLS). Set = it replaces max_players,

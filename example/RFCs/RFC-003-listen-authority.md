@@ -16,15 +16,15 @@ Dedicated **no** se implementa aquí (RFC-004). El botón Host usa `MpKit.host()
 ## Archivos
 
 ```
-example/glue/net_glue.gd           # host_lan, join_lan, peer_joined, load_world, signals
-example/scenes/ui/boot.gd          # Host, Join, IP, mensajes error
-example/scenes/ui/boot.tscn
-example/glue/demo_copy.gd          # HOST, JOIN, BAD_IP, JOINING, JOIN_FAIL, SERVER_LOST, HOST_FAIL
-example/scenes/world/demo_match.gd # world_ready, peer_left, listen host spawn
-example/scenes/actors/pawn_2d.gd   # submit_move
-example/scenes/actors/pawn_3d.gd   # submit_move
-example/scenes/ui/match_hud.gd     # Salir (mínimo; HUD rico es RFC-004)
-example/scenes/ui/match_hud.tscn   # o Control en cada match
+example/autoloads/net_session.gd           # host_lan, join_lan, peer_joined, load_world, signals
+example/main/boot.gd          # Host, Join, IP, mensajes error
+example/main/boot.tscn
+example/locale/texts.csv          # HOST, JOIN, BAD_IP, JOINING, JOIN_FAIL, SERVER_LOST, HOST_FAIL
+example/match/demo_match.gd # world_ready, peer_left, listen host spawn
+example/player/pawn_2d.gd   # submit_move
+example/player/pawn_3d.gd   # submit_move
+example/ui/hud/match_hud.gd     # Salir (mínimo; HUD rico es RFC-004)
+example/ui/hud/match_hud.tscn   # o Control en cada match
 ```
 
 ## Política de arranque (PRD)
@@ -60,9 +60,9 @@ Input solo si `player_slot == MpKit.local_slot()` y `local_slot() != 0`.
 ## Criterios de aceptación
 
 1. Host LAN: el host entra al mundo y controla pawn slot 1.
-2. Segundo proceso Join `127.0.0.1`: carga el mismo `world_kind`, dos pawns, looks distintos, sin actor duplicado por peer.
+2. Segundo proceso Join `127.0.0.1`: carga el mismo `world_kind`, dos pawns, tipos distintos, sin actor duplicado por peer.
 3. El cliente **no** aplica movimiento local como autoridad: el cuerpo se mueve porque el server `apply_move` + `MpReplicate`/synchronizer.
-4. IP inválida no llama `join`; muestra `DemoCopy.STATUS_BAD_IP`.
+4. IP inválida no llama `join`; muestra `STATUS_BAD_IP`.
 5. `join_failed` y `server_lost` vuelven a boot con mensaje.
 6. Botón Salir en match: `leave` + boot (1P y listen).
 7. `peer_left`: el pawn de ese slot se `queue_free`; el slot queda reservado por el kit.

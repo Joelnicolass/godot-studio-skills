@@ -4,7 +4,7 @@ extends Node
 ## Room-server side. One dedicated process per match: picks a free port from a range, writes the
 ## ticket, spawns the process, follows its state.json / result.json, and kills what stops
 ## beating, runs too long, or was left behind by a previous run. Nothing here knows the game.
-## The caller (glue) builds the ticket content; the launcher adds match_id, port, room_pid,
+## The caller (the game) builds the ticket content; the launcher adds match_id, port, room_pid,
 ## expires_ms and replaces each seat's `token` with `token_sha256`.
 
 signal match_listening(match_id: String, port: int)
@@ -91,7 +91,7 @@ func is_finished(match_id: String) -> bool:
 	return int(_matches.get(match_id, {}).get("result_seen_ms", 0)) > 0
 
 
-## `ticket`: {world, options, seed, seats: [{slot, token, meta}], ...} (glue content, any keys).
+## `ticket`: {world, options, seed, seats: [{slot, token, meta}], ...} (game content, any keys).
 ## ERR_BUSY = max_matches reached. ERR_UNAVAILABLE = no free port. ERR_ALREADY_EXISTS = id in use.
 func launch(match_id: String, ticket: Dictionary) -> Error:
 	if not MpMatchFiles.is_valid_id(match_id):

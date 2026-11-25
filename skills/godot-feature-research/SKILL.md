@@ -28,7 +28,7 @@ Buscá en la web (las herramientas de búsqueda y lectura del agente) y decí de
 
 Si las fuentes no coinciden, quedate con la más directa (el código del juego, un desarrollador, un conteo de frames) y anotá las otras. Lo que ninguna fuente muestra queda **desconocido**: proponé un valor razonable para ajustar, marcado como supuesto.
 
-El código que aparezca en una fuente o en el juego se puede usar: adaptalo a las capas y la composición del proyecto, con los números en `@export` / `.tres`. Assets del original (sprites, audio, niveles, textos): preguntale al usuario antes de traerlos al juego.
+El código que aparezca en una fuente o en el juego se puede usar: adaptalo a las carpetas y la composición del proyecto, con cada número en su dueño (regla 0 de `godot-code-quality`). Assets del original (sprites, audio, niveles, textos): preguntale al usuario antes de traerlos al juego.
 
 ## Flujo
 
@@ -36,6 +36,6 @@ El código que aparezca en una fuente o en el juego se puede usar: adaptalo a la
 2. **Investigación**: la corre el orquestador (este chat), no `studio-developer`. Primero la web; si el usuario tiene el juego y se puede abrir, ofrecé decompilarlo. Resumí para el usuario con los links; no pegues páginas enteras.
 3. **Deducí** el modelo: una fórmula, una tabla de valores o una máquina de estados que explique lo que muestran las fuentes (o el código encontrado), y lo desconocido.
 4. **Informe** en el `F<n>` de `FEATURES.md` (o `research/<slug>.md` si es largo): qué hace, el modelo o el código, las fuentes y qué pasa a `@export` / `.tres`.
-5. **Implementación**: `/implement-feature`. El tech lead planifica piezas que encajen en las capas del proyecto (los números van a `@export` / `.tres`); el developer escribe o adapta el código.
+5. **Implementación**: `/implement-feature`. El tech lead planifica piezas que encajen en las carpetas del proyecto (cada número en su dueño, con su fila en `docs/tuning.md`); el developer escribe o adapta el código.
 
 Los criterios del playtest usan los valores encontrados ("coyote time de 6 frames", "el knockback se duplica a velocidad máxima").

@@ -8,7 +8,7 @@ Si no hay `addons/mp_kit` en el juego, pará y pedí instalar el addon. Si el ju
 
 Cargar: `godot-mp-kit`.
 
-1. Preguntá: id (`snake_case`), carpeta (`res://features` por defecto, o `src/features` si es Clean), root (`CharacterBody2D` / `CharacterBody3D` / `Node2D` / `Node3D`), si lo maneja un jugador (`MpInput`, y `predict` si es su personaje), qué se ve igual en todos (*Sync*: posición, rotación, visible, extras).
+1. Preguntá: id (`snake_case`), carpeta (la de la entidad según RULES.md: `res://<entidad>/` por entidad, `res://content/<familia>/<entidad>/` en sistemas + contenido, `src/features` si el repo declara Clean), root (`CharacterBody2D` / `CharacterBody3D` / `Node2D` / `Node3D`), si lo maneja un jugador (`MpInput`, y `predict` si es su personaje), qué se ve igual en todos (*Sync*: posición, rotación, visible, extras).
 2. Mostrá el árbol (`[+] res://…/<id>/<id>.gd`, `[+] <id>.tscn`, `[~]` el mundo si lo agregás a las *Extra Scenes* del `MpSpawner`) y esperá el OK.
 3. Creá `<id>.tscn`: el root, su look, un hijo `MpActor` (Sync tildado, `predict` si corresponde) y, si lo maneja un jugador, `MpInput` con sus acciones. El `MpSync` lo arma el editor al guardar la escena: si no hay editor abierto, decile al usuario que abra y guarde la escena una vez (el inspector del `MpActor` lo avisa).
 4. Creá `<id>.gd` desde la plantilla **MpKit actor** (`addons/mp_kit/script_templates/CharacterBody2D/mpkit_actor.gd`): reglas tras `net.is_authority()`, movimiento en `mp_move(keys, delta)` si predice, órdenes `mp_sv_*` y efectos `mp_all_*`. Sin `@rpc` a mano.

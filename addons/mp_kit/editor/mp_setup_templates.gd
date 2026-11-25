@@ -30,8 +30,8 @@ static func player_script(is_3d: bool) -> String:
 
 const SPEED := %s
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %%MpActor
+@onready var input: MpInput = %%MpInput
 
 
 func mp_move(keys: MpInput, _delta: float) -> void:
@@ -49,8 +49,8 @@ func _physics_process(_delta: float) -> void:
 
 
 func mp_all_flash() -> void:
-	$Visual.scale = Vector%s(1.4, 1.4%s)
-	create_tween().tween_property($Visual, "scale", Vector%s(1, 1%s), 0.2)
+	%%Visual.scale = Vector%s(1.4, 1.4%s)
+	create_tween().tween_property(%%Visual, "scale", Vector%s(1, 1%s), 0.2)
 """ % [base, speed, move, "3" if is_3d else "2", ", 1.4" if is_3d else "", "3" if is_3d else "2", ", 1" if is_3d else ""]
 
 
@@ -62,6 +62,7 @@ static func player(is_3d: bool, script: Script) -> Node:
 	if is_3d:
 		var mesh := MeshInstance3D.new()
 		mesh.name = "Visual"
+		mesh.unique_name_in_owner = true
 		mesh.mesh = CapsuleMesh.new()
 		_add(root, mesh)
 		var shape := CollisionShape3D.new()
@@ -71,6 +72,7 @@ static func player(is_3d: bool, script: Script) -> Node:
 	else:
 		var body := Polygon2D.new()
 		body.name = "Visual"
+		body.unique_name_in_owner = true
 		body.polygon = PackedVector2Array([Vector2(-16, -16), Vector2(16, -16), Vector2(16, 16), Vector2(-16, 16)])
 		_add(root, body)
 		var shape := CollisionShape2D.new()
@@ -81,11 +83,13 @@ static func player(is_3d: bool, script: Script) -> Node:
 		_add(root, shape)
 	var actor: Node = load(ACTOR).new()
 	actor.name = "MpActor"
+	actor.unique_name_in_owner = true
 	actor.set("predict", true)
 	actor.set("sync_rotation", is_3d)
 	_add(root, actor)
 	var mp_input: Node = load(INPUT).new()
 	mp_input.name = "MpInput"
+	mp_input.unique_name_in_owner = true
 	_add(root, mp_input)
 	var spawn_only := PackedStringArray(["MpActor:owner_slot"])
 	MpSyncBuilder.ensure(actor, "MpSync", ^"../..", MpActorSync.entries(actor), spawn_only, root, MpActorSync.always(actor))

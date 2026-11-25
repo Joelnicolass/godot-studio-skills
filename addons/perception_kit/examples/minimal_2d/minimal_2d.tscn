@@ -29,6 +29,7 @@ color = Color(0.62, 0.6, 0.56, 1)
 polygon = PackedVector2Array(-18, -110, 18, -110, 18, 110, -18, 110)
 
 [node name="Guard" type="Node2D" parent="." unique_id=205088520]
+unique_name_in_owner = true
 position = Vector2(260, 380)
 
 [node name="Body" type="Polygon2D" parent="Guard" unique_id=1363796560]
@@ -36,6 +37,7 @@ color = Color(0.85, 0.3, 0.25, 1)
 polygon = PackedVector2Array(22, 0, -14, -16, -14, 16)
 
 [node name="Sensor" type="Area2D" parent="Guard" unique_id=1003684221]
+unique_name_in_owner = true
 script = ExtResource("2_kk2fw")
 sight_radius_px = 340.0
 lose_radius_px = 440.0
@@ -44,6 +46,7 @@ near_radius_px = 50.0
 show_in_game = true
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=1651093723]
+unique_name_in_owner = true
 position = Vector2(640, 200)
 motion_mode = 1
 
@@ -58,6 +61,7 @@ polygon = PackedVector2Array(14, 0, 13.314792, 4.326238, 11.326238, 8.228993, 8.
 script = ExtResource("3_0ikqw")
 
 [node name="Label" type="Label" parent="." unique_id=221867541]
+unique_name_in_owner = true
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 16.0

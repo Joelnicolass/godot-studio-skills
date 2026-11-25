@@ -1,6 +1,6 @@
 # Recetas juicy (Godot 4)
 
-Knobs `@export`. IDs en inglés. El padre llama `play()` / `play_hit()`.
+Perillas `@export`. IDs en inglés. El padre llama `play()` / `play_hit()`.
 
 ## Camera shake (2D)
 

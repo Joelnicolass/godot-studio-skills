@@ -1,6 +1,6 @@
 # Perdón de plataformas (catálogo)
 
-Fuente: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and_forgiveness/index.html). El addon cubre 1–4 y 7 genéricos. El resto es glue **si el juego tiene** dash / one-way / stamina.
+Fuente: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and_forgiveness/index.html). El addon cubre 1–4 y 7 genéricos. El resto es código del juego **si el juego tiene** dash / one-way / stamina.
 
 ## En PlatKit
 
@@ -12,7 +12,7 @@ Fuente: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and
 
 Wall jump con `wall_extra_pixels` (el artículo: 2 px en 320×180 ≈ ¼ tile). Off por default.
 
-## Glue del juego
+## Código del juego
 
 ### Dash corner / one-way pop
 

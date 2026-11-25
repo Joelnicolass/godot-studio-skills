@@ -45,6 +45,7 @@ position = Vector2(930, 270)
 shape = SubResource("RectangleShape2D_tall")
 
 [node name="Ball" parent="." instance=ExtResource("2_ball")]
+unique_name_in_owner = true
 position = Vector2(480, 270)
 
 [node name="MpWorld" type="Node" parent="."]
@@ -52,6 +53,7 @@ script = ExtResource("3_world")
 player_scene = ExtResource("4_player")
 
 [node name="SpawnPoints" type="Node2D" parent="MpWorld"]
+unique_name_in_owner = true
 
 [node name="P1" type="Marker2D" parent="MpWorld/SpawnPoints"]
 position = Vector2(220, 270)
@@ -85,6 +87,7 @@ script = ExtResource("7_match")
 [node name="Hud" type="CanvasLayer" parent="MpWorld"]
 
 [node name="Score" type="Label" parent="MpWorld/Hud"]
+unique_name_in_owner = true
 offset_left = 430.0
 offset_top = 4.0
 offset_right = 530.0

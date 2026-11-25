@@ -9,7 +9,7 @@ extends Node
 
 ## The kit's version (plugin.cfg says the same; a test checks it). An exported game has no plugin.cfg: this is what the
 ## MpKit issuer is told.
-const VERSION := "0.25.0"
+const VERSION := "0.25.1"
 
 signal peer_joined(peer_id: int, slot: int)
 signal peer_left(peer_id: int, slot: int)
@@ -62,7 +62,7 @@ var matchmaker: MpMatchmaker
 ## The door of the match (armed by MpFlow / MpMatchAgent). Armed = every peer presents itself and the gate seats it.
 var gate: MpMatchGate
 
-## `MpTransport.ENET` (default) or `MpTransport.WS`. Read from `--transport=` at startup; glue may set it
+## `MpTransport.ENET` (default) or `MpTransport.WS`. Read from `--transport=` at startup; the game may set it
 ## before `host()` / `join()`. Same API and RPCs with both.
 var transport: String = MpTransport.ENET
 ## Client: seconds without the server's beat before host_silent.
@@ -414,7 +414,7 @@ func send_custom(channel: StringName, data: Dictionary) -> void:
 
 
 ## Server → every client (and emit on the server). call_remote: clients only get the RPC.
-## Re-entrant: glue must not `broadcast_custom` again from this emit without checking `from_peer`.
+## Re-entrant: the game must not `broadcast_custom` again from this emit without checking `from_peer`.
 ## A nested call is ignored so a naive `if is_server(): broadcast_custom` cannot recurse.
 ## Server: the peers whose world is loaded (a slot and world_ready), the ones that can play a one-off effect of yours now. A peer
 ## still loading would play it with no world and lose it. With your own @rpc: `for peer_id in MpKit.ready_peers(): node.fx.rpc_id(
@@ -543,7 +543,7 @@ func _on_admission_timeout(id: int) -> void:
 		_reject_peer(id, "timeout")
 
 
-## Server side: tells `id` why it is turned away and disconnects it (the glue judged something the kit cannot, e.g. an invalid pick).
+## Server side: tells `id` why it is turned away and disconnects it (the game judged something the kit cannot, e.g. an invalid pick).
 func reject_peer(id: int, reason: String) -> void:
 	_reject_peer(id, reason)
 

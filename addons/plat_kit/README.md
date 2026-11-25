@@ -55,7 +55,7 @@ Si usás una máquina de estados, va como **otro** hijo del actor (abajo, [Manej
 
 La altura de un salto mantenido es más o menos `jump_speed² / (2 · gravity)` píxeles: 320 y 980 (los valores por defecto) dan unos 52 px; el ejemplo sube `jump_speed` a 420, unos 90 px.
 
-Dash, one-way pop, stamina refund: **glue del juego**, no este addon.
+Dash, one-way pop, stamina refund: **código del juego**, no este addon.
 
 ## Manejarlo desde otro script
 

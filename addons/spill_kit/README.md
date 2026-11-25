@@ -51,9 +51,11 @@ Minimal3D (minimal_3d.gd)
 ├── Floor (StaticBody3D)               # en la capa 1: el piso que buscan las manchas
 ├── SpillPool3D                        # types: [blood.tres]
 ├── Dummy (StaticBody3D)               # en la capa 2: los rayos del piso no lo ven
-│   └── Spill (SpillSource3D)          # en el pecho, a 1,25 m; type: blood.tres
+│   └── %Spill (SpillSource3D)         # en el pecho, a 1,25 m; type: blood.tres
 └── Label
 ```
+
+Un golpe salpica gotas que vuelan lejos de la cámara, y al morir crece un charco debajo del muñeco:
 
 ```gdscript
 # minimal_3d.gd (lo esencial)
@@ -73,7 +75,7 @@ func strike(damage: float) -> void:
 
 El kit no tiene red. Un juego en red llama a `hit()` y `die()` solo donde se decide el daño (el servidor) y sincroniza una propiedad del componente, `wound` (un `Vector4`). Cada máquina dibuja lo que cambió: la salpicadura y sus manchas, o el charco. Una máquina que se encuentra con el cuerpo tarde arranca desde el valor que trae y no dibuja nada viejo.
 
-**Con MpKit:** en el `MpActor` del cuerpo, agregá `Spill:wound` a **Sync › sync_extra**. Todo viaja al nacer, así que quien entra tarde arranca desde el valor actual.
+**Con MpKit:** en el `MpActor` del cuerpo, agregá `Spill:wound` a **Sync › sync_extra**. Todo viaja al nacer, así que quien entra tarde arranca desde el valor actual. El servidor decide el daño y los clientes dibujan la sangre (`%Spill` es el nodo `Spill` marcado como nombre único):
 
 ```gdscript
 # enemy.gd: el servidor decide el daño; los clientes solo dibujan lo que llega en wound
@@ -81,9 +83,9 @@ func take_damage(amount: float, from: Vector3) -> void:
 	if not MpKit.is_authority():
 		return
 	hp -= amount
-	$Spill.hit(amount, max_hp, from)
+	%Spill.hit(amount, max_hp, from)
 	if hp <= 0.0:
-		$Spill.die()
+		%Spill.die()
 ```
 
 **Con el `MultiplayerSynchronizer` de Godot:** en su Replication agregá la propiedad `Spill:wound`, con **Spawn** prendido y **Replicate: On Change**. Llamá a `hit()` y `die()` detrás de `multiplayer.is_server()`.
@@ -176,10 +178,10 @@ Uno por mundo (un nivel). Arma todo una vez por tipo y lo reusa: un golpe no cre
 
 | Querés | Escribí |
 |---|---|
-| Que un golpe sangre | `$Spill.hit(damage, max_hp, attacker.global_position)` |
-| El tercer golpe del combo siempre fuerte | `$Spill.hit(damage, max_hp, from, true)` |
-| Que muera con un charco | `$Spill.die()` |
-| Una herida sin reglas (un guion, una trampa) | `$Spill.spray(true)` |
+| Que un golpe sangre | `%Spill.hit(damage, max_hp, attacker.global_position)` |
+| El tercer golpe del combo siempre fuerte | `%Spill.hit(damage, max_hp, from, true)` |
+| Que muera con un charco | `%Spill.die()` |
+| Una herida sin reglas (un guion, una trampa) | `%Spill.spray(true)` |
 | La opción «sangre» del jugador | `pool.shown = prefs.blood` (lo que ya está en el piso queda) |
 | Una ronda nueva | `pool.clear()` |
 | Aceite que pierde un barril, sin cuerpo | `pool.spill(oil, barrel.global_position)` y `pool.puddle(oil, barrel.global_position)` |

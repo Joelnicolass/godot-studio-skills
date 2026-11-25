@@ -2,8 +2,8 @@ extends "res://addons/rts_kit/tests/rts_test.gd"
 
 ## The examples played end to end, headless, through the same events a player makes: a box of
 ## mouse events selects the own units, a right tap on the ground orders them, they walk to their
-## slots and report `complete()`; a group key and Alt+N work on the real rig. The minimal example's
-## soldiers are the GUIDE's unit script in 2D.
+## slots and report `complete()`; a group key and Alt+N work on the real rig. Every example has the
+## kit's rig as one node (`Rig`). The minimal example's soldiers are the GUIDE's unit script in 2D.
 
 const SCENE_3D := preload("res://addons/rts_kit/examples/skirmish_3d/skirmish_3d.tscn")
 const SCENE_2D := preload("res://addons/rts_kit/examples/skirmish_2d/skirmish_2d.tscn")
@@ -26,8 +26,12 @@ func _play(scene: PackedScene, ground_screen: Vector2) -> void:
 	var example := scene.instantiate()
 	root.add_child(example)
 	await physics(3)
-	var command: RtsCommandInput = example.get_node("Command")
-	var selection := command.selection
+	var rig: RtsCommandRig = example.get_node("Rig")
+	var command := rig.command
+	var selection := rig.selection
+	check(rig.state.cues != null, "%s: the scene gave the rig's State its cues" % example.name)
+	var menu := example.get_node_or_null("Hud/RadialMenu")
+	check(rig.order_button.menu == menu, "%s: the right button has the scene's menu" % example.name)
 	var own := _own(selection)
 	check(own.size() == 12, "%s: twelve own units to select" % example.name)
 	# A box around every own unit, as mouse events on the world view.
@@ -39,7 +43,7 @@ func _play(scene: PackedScene, ground_screen: Vector2) -> void:
 		high = high.max(at)
 	low -= Vector2(30, 30)
 	high += Vector2(30, 30)
-	var view: Control = example.get_node("Hud/View")
+	var view := rig.view
 	view.gui_input.emit(_button(MOUSE_BUTTON_LEFT, true, low))
 	view.gui_input.emit(_motion(high))
 	view.gui_input.emit(_button(MOUSE_BUTTON_LEFT, false, high))
@@ -100,8 +104,8 @@ func test_minimal_2d() -> void:
 	var example := SCENE_MINIMAL.instantiate()
 	root.add_child(example)
 	await physics(3)
-	var command: RtsCommandInput = example.get_node("Command")
-	var selection := command.selection
+	var rig: RtsCommandRig = example.get_node("Rig")
+	var selection := rig.selection
 	var own := _own(selection)
 	check(own.size() == 6, "six soldiers to select (%d)" % own.size())
 	var low := Vector2(INF, INF)
@@ -109,7 +113,7 @@ func test_minimal_2d() -> void:
 	for unit in own:
 		low = low.min(_screen(unit))
 		high = high.max(_screen(unit))
-	var view: Control = example.get_node("Hud/View")
+	var view := rig.view
 	view.gui_input.emit(_button(MOUSE_BUTTON_LEFT, true, low - Vector2(30, 30)))
 	view.gui_input.emit(_motion(high + Vector2(30, 30)))
 	view.gui_input.emit(_button(MOUSE_BUTTON_LEFT, false, high + Vector2(30, 30)))

@@ -41,9 +41,9 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 [~] project.godot                        # plugin GridKit
 [+] maps/level_1.tres                    # GridLayout: la forma y el terreno (se pinta con la barra GridKit)
 [+] tiles/plain.tscn, forest.tscn, water.tscn   # una escena por valor de terrain
-[+] scenes/board.tscn                    # GridBoard (layout) → GridView3D (tiles) → Moves, Hover (GridCursor)
-[+] scenes/board.gd                      # clic → Moves.highlight(cells_in_range); hover → Hover
-[~] scenes/level.tscn                    # instancia el tablero y la cámara
+[+] board/board.tscn                    # GridBoard (layout) → GridView3D (tiles) → Moves, Hover (GridCursor)
+[+] board/board.gd                      # clic → Moves.highlight(cells_in_range); hover → Hover
+[~] levels/level/level.tscn                    # instancia el tablero y la cámara
 [~] game/rules.gd                        # usa un CellGrid: find_path con el costo del terreno
 ```
 

@@ -29,7 +29,7 @@
 
 ## 5. Mantenibilidad
 
-**Veredicto:** PASS — `match_2d.gd` / `match_3d.gd` vacíos a propósito; la lógica vive en `DemoMatch`.
+**Veredicto:** PASS — los niveles no llevan script; la lógica vive en `DemoMatch`.
 
 **Riesgo:** Low  
 **Bloqueantes:** ninguno por lectura.

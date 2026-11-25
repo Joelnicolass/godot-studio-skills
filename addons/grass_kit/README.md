@@ -58,14 +58,14 @@ Minimal3D (minimal_3d.gd)
 ├── Floor (StaticBody3D)
 │   ├── Shape            # BoxShape3D: de acá lee el suelo el pasto
 │   └── Mesh             # su material usa floor.gdshader
-└── GrassField3D         # ground (área por defecto), look = meadow.tres, quality (media), wind
+└── %GrassField3D        # ground (área por defecto), look = meadow.tres, quality (media), wind
 ```
 
 El script hornea el suelo al arrancar. En un juego no hace falta: apretás **Bake ground** en el editor, pintás y guardás, y el suelo viene horneado en su archivo.
 
 ```gdscript
 # minimal_3d.gd (lo esencial)
-@onready var field: GrassField3D = $GrassField3D
+@onready var field: GrassField3D = %GrassField3D
 
 
 func _ready() -> void:

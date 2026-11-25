@@ -63,13 +63,16 @@ Arrancá desde `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexágonos
 
 ## API esencial
 
+Al hacer clic en una casilla se marcan las que quedan a 2 pasos, y la casilla (2, 3) pasa a ser bosque. Los tres `@export` se asignan en el inspector:
+
 ```gdscript
-@onready var board: GridBoard = $Board
-@onready var moves: GridCursor = $Board/View/Moves
+@export var board: GridBoard
+@export var view: GridView3D
+@export var moves: GridCursor
 
 func _ready() -> void:
 	board.set_value(Vector2i(2, 3), &"terrain", &"forest")
-	$Board/View.cell_clicked.connect(_on_cell_clicked)
+	view.cell_clicked.connect(_on_cell_clicked)
 
 func _on_cell_clicked(cell: Vector2i) -> void:
 	moves.highlight(board.cells_in_range(cell, 2))
@@ -80,7 +83,7 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 | `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors`, `distance(a, b)`, `cells_in_range`, `find_path`, `flood`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
 | `GridLayout` | `make_grid()` (una copia), `GridLayout.from_grid(grid)`, `set_value`, `erase_value`, `add_cell`, `remove_cell` |
 | `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position`, `position_to_cell`; `cell_changed`, `rebuilt` |
-| `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_hovered`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
+| `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
 | `GridCursor` | `highlight(cells)`, `clear()`, `highlighted()`; `marker`, `color`, `lift`, `fill` |
 
 ## Listo cuando

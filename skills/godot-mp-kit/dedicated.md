@@ -38,9 +38,9 @@ Si «Anular Argumentos Principales» está **desmarcado**, Godot **puede ignorar
 
 **No** uses solo `--headless` como señal: GUT/CI también van headless, y un cliente headless no abre el puerto.
 
-Puerto opcional en glue: `int(MpBoot.user_value("mp-port", "7777"))`.
+Puerto opcional en el código del juego: `int(MpBoot.user_value("mp-port", "7777"))`.
 
-## Glue al arrancar
+## Código del juego al arrancar
 
 ```gdscript
 func _ready() -> void:
@@ -64,7 +64,7 @@ HUD: si `MpKit.local_slot() == 0`, no hay jugador local (proceso dedicated). No 
 
 Spawn: `for slot in MpKit.occupied_slots()`. Dedicated no incluye peer 1. Listen: el host slot sí está ocupado.
 
-`rpc_load_world` es `call_remote`: el servidor **no** lo recibe. Dedicated también entra al mundo por glue (`goto_world()`), igual que el listen host.
+`rpc_load_world` es `call_remote`: el servidor **no** lo recibe. Dedicated también entra al mundo por el código del juego (`goto_world()`), igual que el listen host.
 
 ## Export y VPS
 

@@ -23,10 +23,10 @@ Habilitá el plugin **TurnKit** (tipos `TurnClock` y `TurnSeat` en Create Node).
 
 1. Agregá un `TurnClock` y elegí en el inspector `actions_per_turn`, `rounds_per_cycle` y `cycles` (0 = sin fin). Si querés fases, tiempo o un jugador inicial que rota, están en los grupos Round, Phases y Time.
 2. Agregale un hijo `TurnSeat` por jugador, en el orden en que juegan. El primero es el asiento 0.
-3. Conectá las señales y gastá acciones:
+3. Conectá las señales y gastá acciones. Cada jugador mueve gastando acciones en su turno, y el juego se entera de cuándo empieza un turno y de cuándo termina una era:
 
 ```gdscript
-@onready var turns: TurnClock = $Turns
+@onready var turns: TurnClock = %Turns
 
 
 func _ready() -> void:
@@ -43,7 +43,7 @@ func _on_end_pressed() -> void:
 	turns.end_turn()
 ```
 
-Con fases y tiempo:
+Con fases y tiempo, el juego se entera de cada fase nueva y de cuándo a un jugador se le acaba el tiempo:
 
 ```gdscript
 turns.phase_started.connect(func(phase: StringName) -> void: print("Fase ", phase))
@@ -58,7 +58,7 @@ turns.next_phase()  # en la última fase cierra el turno
 ```
 Minimal              # minimal.gd: muestra el estado y conecta los botones
 ├── Box              # estado con fase y tiempo, botones Spend action, Next phase y End turn, registro
-└── Turns            # TurnClock: rounds_per_cycle = 2, cycles = 2, first_seat_rotates, phases = [draw, play], turn_seconds = 10
+└── %Turns           # TurnClock: rounds_per_cycle = 2, cycles = 2, first_seat_rotates, phases = [draw, play], turn_seconds = 10
     ├── Ana, Beto    # TurnSeat
     └── Bot          # TurnSeat: is_bot = true
 ```

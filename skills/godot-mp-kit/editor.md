@@ -7,7 +7,7 @@ El plugin, habilitado, registra el autoload y el menú **Project → Tools**.
 | **Setup game...** | Un juego multijugador entero desde un diálogo: `game.tres`, boot, mundo con `MpWorld`, jugador predicho, salas opcionales. Muestra el árbol (`[+]` / `[~]`) y nunca pisa un archivo. `addons/mp_kit/examples/minimal_2d/` es lo que escribe en 2D sin salas. |
 | **Make selection a network actor** | Hijo `MpActor` (su `MpSync` se arma y se guarda con la escena) y, en un `CharacterBody`, `MpInput` (undo). El camino de código nuevo. |
 | **New replicated feature...** | Bajo nivel: crea `res://features/<id>/` (o la carpeta que indiques), `.gd` + `.tscn` con `MpReplicate`, sync, `submit_*` / `apply_*` y opcional `MpCustomPipe`. |
-| **New session flow...** | Escribe `res://glue/session_flow.tscn` + `.gd` (`extends MpFlow`) y lo registra como autoload. |
+| **New session flow...** | Escribe `res://autoloads/session_flow.tscn` + `.gd` (`extends MpFlow`) y lo registra como autoload. |
 | **Install Cursor/VS Code snippets** | Copia `.vscode/mpkit.code-snippets`. Recargá la ventana del editor. Prefijos: `mpkit-submit`, `mpkit-custom`, `mpkit-boot`, `mpkit-flow`, `mpkit-lan-adv`, `mpkit-lan-browse`. |
 
 Al Enable también copia **script templates** a `res://script_templates/` (con `.gdignore`). Al adjuntar un script: **MpKit actor** (`CharacterBody2D/3D`: reglas en el servidor, `mp_sv_*` / `mp_all_*`; necesita los hijos `MpActor` + `MpInput`) o, de bajo nivel, **MpKit replicated** (`submit_*` / `apply_*`).
@@ -23,7 +23,7 @@ Sin Godot abierto (Claude Code o Cursor): command `/new-mp-feature` (un actor co
 | `MpReplicate` | Hijo del actor. Authority peer 1, props de sync, freeze RigidBody proxy. `interpolate` opcional en proxies. |
 | `MpSpawner` | `MultiplayerSpawner` + `extra_scenes`. `spawn_path` = padre de actores. Retiene por peer sus synchronizers (spawneados y estáticos); el cliente avisa que está listo. `room_id` para salas hub. Un nodo por mundo (o por sala). |
 | `MpSlotSpawner` | Igual + un `pawn_scene` por slot ocupado (`Pawn_<n>`). Dedicated no spawnea slot 0. |
-| `MpBootMenu` | Lobby drop-in. Usa `MpFlow` si está en el árbol; si no, `world_scene` para zero-glue. Copy por `@export`. |
+| `MpBootMenu` | Lobby drop-in. Usa `MpFlow` si está en el árbol; si no, `world_scene` para andar sin código del juego. Copy por `@export`. |
 | `MpFlow` | Autoload de sesión: boot/world(s), host/join/1P, arma la puerta de arranque (rejoin dentro de la gracia; `late_join` apagado por defecto; un dedicado a mano abre solo la partida siguiente); carga el mundo en un hilo con pantalla de carga opcional (`world_reports_loaded`, `world_load_progressed`). Varios mapas: `add_world` / `select_world`. |
 | `MpWorldReady` | Legado. No hace falta si hay `MpSpawner`. |
 | `MpCustomPipe` | Un canal del túnel `Dictionary`. |

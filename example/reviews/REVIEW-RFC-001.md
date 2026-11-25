@@ -9,15 +9,15 @@
 
 **Veredicto:** PASS (unverified runtime)
 
-- Addon copiado, autoloads `MpKit` antes de `NetGlue`, main_scene boot, InputMap `move_*` + `emote`.
-- `play_solo` no llama `host()`. Looks `.tres` + `ActorLook`. Pawn 2D placeholder + `PawnInput`.
-- `AGENTS.md` y `DemoCopy` presentes.
+- Addon copiado, autoloads `MpKit` antes de `NetSession`, main_scene boot, InputMap `move_*` + `emote`.
+- `play_solo` no llama `host()`. Tipos `_type.tres` + `PawnType`. Pawn 2D placeholder + `PawnInput`.
+- `AGENTS.md` y `locale/texts.csv` presentes.
 - Host/Join existen en UI (RFC-003) porque se implementaron los cuatro RFCs juntos; el camino 1P no los requiere. No bloquea F1–F5.
 
 ## 2. RULES
 
 **Veredicto:** PASS  
-Estándar, IDs en inglés, copy en `DemoCopy`, sin `src/domain/`.
+Por entidad, IDs en inglés, textos en `locale/texts.csv`, sin `src/domain/`.
 
 ## 3. Seguridad
 

@@ -24,10 +24,12 @@ properties/4/replication_mode = 0
 script = ExtResource("1_ball")
 
 [node name="Body" type="Polygon2D" parent="."]
+unique_name_in_owner = true
 color = Color(0.97, 0.97, 0.92, 1)
 polygon = PackedVector2Array(-3, -7, 3, -7, 7, -3, 7, 3, 3, 7, -3, 7, -7, 3, -7, -3)
 
 [node name="MpActor" type="Node" parent="."]
+unique_name_in_owner = true
 script = ExtResource("2_actor")
 sync_rotation = false
 sync_extra = PackedStringArray("holder")

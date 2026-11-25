@@ -9,7 +9,8 @@ extends RefCounted
 ## An entry is a property of the synchronizer's root ("position") or of a node under it ("Health:current").
 ## Every entry is sent when the node spawns. Transforms (and MpActor's stamp and teleports / MpInput's ack, which must travel in
 ## the same packet as them) are sent every interval (ALWAYS); anything else
-## only when it changes (ON_CHANGE, reliable). `spawn_only` entries are sent once at spawn (NEVER).
+## only when it changes (ON_CHANGE, reliable), unless it is in `always` (a predicted actor's own state, which its reconciliation
+## needs in the pose's packet). `spawn_only` entries are sent once at spawn (NEVER).
 
 const ALWAYS_PROPS: PackedStringArray = [
 	"position", "rotation", "rotation_degrees", "scale", "transform", "quaternion", "basis",
@@ -33,8 +34,13 @@ static func mode_of(entry: String) -> int:
 	return SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE
 
 
-static func build(entries: PackedStringArray, spawn_only: PackedStringArray = PackedStringArray()) -> SceneReplicationConfig:
+static func build(
+	entries: PackedStringArray, spawn_only: PackedStringArray = PackedStringArray(), always: PackedStringArray = PackedStringArray()
+) -> SceneReplicationConfig:
 	var cfg := SceneReplicationConfig.new()
+	var every_time := {}
+	for entry in always:
+		every_time[path_of(entry)] = true
 	for entry in entries:
 		if entry.strip_edges().is_empty():
 			continue
@@ -43,7 +49,8 @@ static func build(entries: PackedStringArray, spawn_only: PackedStringArray = Pa
 			continue
 		cfg.add_property(path)
 		cfg.property_set_spawn(path, true)
-		cfg.property_set_replication_mode(path, mode_of(entry))
+		var mode := SceneReplicationConfig.REPLICATION_MODE_ALWAYS if every_time.has(path) else mode_of(entry)
+		cfg.property_set_replication_mode(path, mode)
 	for entry in spawn_only:
 		var path := path_of(entry)
 		if cfg.has_property(path):
@@ -55,10 +62,13 @@ static func build(entries: PackedStringArray, spawn_only: PackedStringArray = Pa
 
 
 ## True when `cfg` already holds exactly what `build` would make (the editor rebuilds only on a difference).
-static func matches(cfg: SceneReplicationConfig, entries: PackedStringArray, spawn_only: PackedStringArray = PackedStringArray()) -> bool:
+static func matches(
+	cfg: SceneReplicationConfig, entries: PackedStringArray, spawn_only: PackedStringArray = PackedStringArray(),
+	always: PackedStringArray = PackedStringArray()
+) -> bool:
 	if cfg == null:
 		return false
-	var want := build(entries, spawn_only)
+	var want := build(entries, spawn_only, always)
 	var have := cfg.get_properties()
 	if have.size() != want.get_properties().size():
 		return false
@@ -75,7 +85,7 @@ static func matches(cfg: SceneReplicationConfig, entries: PackedStringArray, spa
 ## The synchronizer child named `sync_name` of `holder`, created (and owned by `scene_owner`, so it is saved) when
 ## missing, with `root_path` pointing at the node whose properties it sends. Returns it updated.
 static func ensure(holder: Node, sync_name: String, root_path: NodePath, entries: PackedStringArray,
-		spawn_only: PackedStringArray, scene_owner: Node) -> MultiplayerSynchronizer:
+		spawn_only: PackedStringArray, scene_owner: Node, always: PackedStringArray = PackedStringArray()) -> MultiplayerSynchronizer:
 	var sync := holder.get_node_or_null(sync_name) as MultiplayerSynchronizer
 	if sync == null:
 		sync = MultiplayerSynchronizer.new()
@@ -85,6 +95,6 @@ static func ensure(holder: Node, sync_name: String, root_path: NodePath, entries
 			sync.owner = scene_owner
 	if sync.root_path != root_path:
 		sync.root_path = root_path
-	if not matches(sync.replication_config, entries, spawn_only):
-		sync.replication_config = build(entries, spawn_only)
+	if not matches(sync.replication_config, entries, spawn_only, always):
+		sync.replication_config = build(entries, spawn_only, always)
 	return sync

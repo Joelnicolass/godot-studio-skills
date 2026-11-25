@@ -35,10 +35,10 @@ Si falta, preguntá en una sola tanda:
 Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia, `[-]` se borra), por ejemplo:
 
 ```
-[+] scenes/props/tree.tscn             # StaticBody3D, grupo prop_obstruction, su propia capa de colisión
-[~] scenes/maps/forest/map.tscn        # PropScatter3D (+ PropBatch3D, PropNavZones3D)
-[+] scenes/maps/forest/map_nav.res     # lo escribe «Bake»
-[+] scenes/maps/terrain_ground.gd      # solo si el suelo es del juego: extends PropGround, @tool
+[+] props/tree.tscn             # StaticBody3D, grupo prop_obstruction, su propia capa de colisión
+[~] levels/forest/map.tscn        # PropScatter3D (+ PropBatch3D, PropNavZones3D)
+[+] levels/forest/map_nav.res     # lo escribe «Bake»
+[+] levels/forest/terrain_ground.gd      # solo si el suelo es del juego: extends PropGround, @tool
 [~] project.godot                      # plugin PropKit; una capa de colisión para los props
 ```
 

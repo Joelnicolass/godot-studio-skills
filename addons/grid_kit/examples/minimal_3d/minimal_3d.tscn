@@ -10,8 +10,12 @@
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/mountain.tscn" id="7_mountain"]
 [ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/water.tscn" id="8_water"]
 
-[node name="Minimal3D" type="Node3D"]
+[node name="Minimal3D" type="Node3D" node_paths=PackedStringArray("board", "view", "selection", "hover")]
 script = ExtResource("1_main")
+board = NodePath("Board")
+view = NodePath("Board/View")
+selection = NodePath("Board/View/Selection")
+hover = NodePath("Board/View/Hover")
 
 [node name="Camera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 7.5, 9.5)

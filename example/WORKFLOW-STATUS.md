@@ -12,7 +12,7 @@ Generado como `/workflow-status`. Tipo: juego Godot (demo). Tests (etapa 6): **o
 | 4 | Generar rules | `RULES.md` | Done |
 | 5 | Generar RFCs | `RFCS.md` + `RFCs/` | Done |
 | 6 | Estrategia de testing | `TEST-STRATEGY.md` | Missing (N/A — F23) |
-| 7 | Implementar RFCs | código en `glue/`, `scenes/`, `resources/` | Done (001–004) |
+| 7 | Implementar RFCs | código en `autoloads/`, `player/`, `levels/`, `match/`, `main/`, `ui/` | Done (001–004) |
 | 8 | Revisar | `reviews/REVIEW-RFC-00{1,2,3,4}.md` | Done (lectura; runtime Godot unverified en CI de agente) |
 | 9 | Change requests | `changes/` | Missing (ninguno abierto) |
 | 10 | Este reporte | `WORKFLOW-STATUS.md` | Done |
@@ -30,7 +30,7 @@ RFC-004  implemented ✅   reviewed ✅
 
 | RFC | Evidencia |
 |-----|-----------|
-| 001 | `boot.tscn` main scene, `play_solo` sin `host()`, pawn 2D + `ActorLook` `.tres`, InputMap |
+| 001 | `boot.tscn` main scene, `play_solo` sin `host()`, pawn 2D + `PawnType` `.tres`, InputMap |
 | 002 | `match_3d.tscn`, `pawn_3d.tscn`, `demo_match.gd` en ambos mundos, toggle 2D/3D |
 | 003 | `host_lan` / `join_lan`, `submit_move`, handshake `MpWorldReady`, Leave / `server_lost` |
 | 004 | `MpBoot` + `host_dedicated`, canal `emote`, snapshot `elapsed`, `README.md` |
@@ -38,7 +38,7 @@ RFC-004  implemented ✅   reviewed ✅
 ## Inconsistencias
 
 - Los RFC se implementaron en un solo lote (el chat de producto aprobó el alcance entero). El orden topológico 001→004 se respetó en dependencias, no como PRs separados.
-- Reviews marcan runtime F5/LAN/dedicated **unverified** si no hay binario `godot` en el agente. Abrí el proyecto en el editor local (cache `.godot/`, class cache OK: `ActorLook`, `DemoMatch`, nodos MpKit).
+- Reviews marcan runtime F5/LAN/dedicated **unverified** si no hay binario `godot` en el agente. Abrí el proyecto en el editor local (cache `.godot/`, class cache OK: `PawnType`, `DemoMatch`, nodos MpKit).
 - Etapa 6 ausente: no es drift; RULES/PRD prohíben inventar tests.
 
 ## Siguiente paso

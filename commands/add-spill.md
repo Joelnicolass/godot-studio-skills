@@ -42,12 +42,12 @@ Mostrá el árbol de archivos antes de tocar el juego (`[+]` nuevo, `[~]` cambia
 
 ```
 [~] project.godot                        # plugin SpillKit; nombre de la capa del piso
-[+] resources/spill/blood.tres           # SpillType: rojo, el aspecto del kit
-[+] resources/spill/green_blood.tres     # SpillType: verde, con mark_material = el material PS1 del juego
-[~] scenes/levels/level_1.tscn           # SpillPool3D: types [blood, green_blood]; floor_mask: el piso
-[~] scenes/enemies/enemy.tscn            # Spill (SpillSource3D) en el pecho, type green_blood; Spill:wound en lo que sincroniza el juego
-[~] scenes/enemies/enemy.gd             # al sacar vida: $Spill.hit(damage, max_hp, from); al morir: $Spill.die()
-[~] scenes/ui/pause_menu.gd              # la opción «sangre» pone pool.shown
+[+] spill/blood.tres           # SpillType: rojo, el aspecto del kit
+[+] spill/green_blood.tres     # SpillType: verde, con mark_material = el material PS1 del juego
+[~] levels/level_1/level_1.tscn           # SpillPool3D: types [blood, green_blood]; floor_mask: el piso
+[~] enemies/enemy.tscn            # Spill (SpillSource3D) en el pecho, type green_blood; Spill:wound en lo que sincroniza el juego
+[~] enemies/enemy.gd             # al sacar vida: %Spill.hit(damage, max_hp, from); al morir: %Spill.die()
+[~] ui/pause_menu.gd              # la opción «sangre» pone pool.shown
 ```
 
 Arrancá desde `addons/spill_kit/examples/minimal_3d` (un muñeco que sangra) o `substances_3d` (seis sustancias: aspecto del kit, PBR propio, shader propio, pendiente, cordón, noche). Copiá los tipos de `addons/spill_kit/examples/types/`.
