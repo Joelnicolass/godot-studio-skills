@@ -6,11 +6,14 @@ extends Node
 ## A board of hexagons or squares in the scene tree. It owns a grid built from its inspector values (a rectangle of
 ## `columns` × `rows`, or every cell within `radius` of (0, 0)) or from a saved map (`layout`), or shows one your game
 ## already has (`use_grid`). Views (`GridView3D`) are its children and draw it. Every query goes to the grid:
-## `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path`, `flood`.
+## `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path`, `flood`. With a `height_key`, each
+## cell stands at the height its data says: `cell_to_position` carries it, so tiles, cursors and whatever the game
+## places with it go up together.
 
 ## A value of a cell changed (from the board or from the grid it shows).
 signal cell_changed(cell: Vector2i, key: StringName, value: Variant)
-## The board got a new set of cells (inspector change, `use_grid`, or cells added or removed): views draw it again.
+## The board got a new set of cells (inspector change, `use_grid`, or cells added or removed) or places them somewhere
+## else (`cell_size`, `height_key`, `height_scale`): views draw it again.
 signal rebuilt
 
 enum Shape { HEXAGONS, SQUARES }
@@ -58,6 +61,21 @@ enum Shape { HEXAGONS, SQUARES }
 	set(value):
 		cell_size = value
 		rebuilt.emit()
+## Which value of a cell is its height (a number, for example `&"height"`). Empty: the board is flat.
+@export var height_key: StringName = &"":
+	set(value):
+		if height_key == value:
+			return
+		height_key = value
+		_height_warned = false
+		rebuilt.emit()
+## World units for a height of 1: a cell with height 2 stands at Y = 2 × `height_scale`.
+@export_range(0.0, 10.0, 0.01, "or_greater", "suffix:m") var height_scale := 1.0:
+	set(value):
+		if height_scale == value:
+			return
+		height_scale = value
+		rebuilt.emit()
 
 ## The grid this board shows.
 var grid: CellGrid:
@@ -73,6 +91,8 @@ var _rebuild_queued := false
 var _in_editor := Engine.is_editor_hint()
 # Set while this board writes the layout itself, so its own `changed` does not rebuild the grid.
 var _writing_layout := false
+# One warning per board and key for a height that is not a number, not one per cell and frame.
+var _height_warned := false
 
 
 ## Shows `other` instead of the board's own grid (your game's rules keep it). The inspector shape and the layout no
@@ -200,19 +220,37 @@ func set_cells(add: Array[Vector2i], remove: Array[Vector2i], values: Dictionary
 	_writing_layout = false
 
 
-## The center of `cell` in the board's local space (on the XZ plane, Y = 0).
+## The center of `cell` in the board's local space: on the XZ plane, with Y = `cell_height(cell)` (0 on a flat board).
 func cell_to_position(cell: Vector2i) -> Vector3:
 	var flat := grid.cell_to_local(cell, cell_size)
-	return Vector3(flat.x, 0.0, flat.y)
+	return Vector3(flat.x, cell_height(cell), flat.y)
 
 
-## The cell under a point of the board's local space; `CellGrid.NO_CELL` when it is off the board.
+## How high `cell` stands, in world units: its `height_key` value × `height_scale`. 0 without a `height_key`, for a
+## cell that is off the board or has no height, and for a value that is not a number (with one warning).
+func cell_height(cell: Vector2i) -> float:
+	if height_key == &"":
+		return 0.0
+	var value: Variant = grid.get_value(cell, height_key)
+	if value == null:
+		return 0.0
+	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+		return float(value) * height_scale
+	if not _height_warned:
+		_height_warned = true
+		push_warning("GridBoard: the %s of %s is %s, not a number: it counts as 0" % [height_key, cell, value])
+	return 0.0
+
+
+## The cell under (or over) a point of the board's local space; `CellGrid.NO_CELL` when it is off the board. Only X and
+## Z count: the point's Y and the heights of the cells do not change the answer.
 func position_to_cell(point: Vector3) -> Vector2i:
 	var cell := position_to_any_cell(point)
 	return cell if grid.has_cell(cell) else CellGrid.NO_CELL
 
 
-## The cell under a point of the board's local space, on the board or not (to add cells next to it).
+## The cell under (or over) a point of the board's local space, on the board or not (to add cells next to it). Only X
+## and Z count, as in `position_to_cell`.
 func position_to_any_cell(point: Vector3) -> Vector2i:
 	return grid.local_to_cell(Vector2(point.x, point.z), cell_size)
 

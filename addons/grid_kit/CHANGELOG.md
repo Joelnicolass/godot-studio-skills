@@ -1,5 +1,18 @@
 # GridKit changes
 
+## 0.6.0
+
+Heights per cell: plateaus, pits, a taller frame of stones.
+
+- **`GridBoard.height_key` and `height_scale`:** `height_key` says which value of a cell is its height (for example `height`; a number, int or float) and `height_scale` how many world units a height of 1 is worth. `cell_to_position(cell)` returns the height in Y, so tiles, `GridCursor` marks and whatever the game places with `cell_to_position` go up together. `cell_height(cell)` gives the height in world units. A value that is not a number counts as 0, with a warning.
+- **Clicks pick what you see.** With heights, `GridView3D.cell_at_ray` and `cell_at_screen` (and with them `cell_clicked`, `cell_hovered` and the editor brush) treat each cell as a column that goes up to its height and pick the first one the ray meets, by its top or by its side. A cell off the board counts as height 0.
+- **`position_to_cell` and `position_to_any_cell`** only look at X and Z: height does not change the answer.
+- **What changes moves, it is not made again.** When the height of a cell changes (`set_value`, `paint`, undo), its tile and its mark move. Changing `height_key` or `height_scale` emits `rebuilt` and places everything again, as `cell_size` does.
+- **Height brush** in the GridKit bar: **Raise** and **Lower** move each cell of the stroke one step up or down (Shift does the opposite) and **Set height** writes a number. A stroke is one undo step and is stored in the `GridLayout`; if the board had no `height_key`, the first stroke sets it to `height`. The editor's 3D view shows the map with its heights.
+- **Fix:** `set_value` (on `CellGrid` and on `GridLayout`) failed when replacing a value with one of another type (a text with a number). It now replaces it.
+
+Nothing to update in your project: without a `height_key` the board is flat, and clicks and their cost are the same as before.
+
 ## 0.5.0
 
 Four queries every game used to write on its own, in `CellGrid` (hexes and squares) and as shortcuts on `GridBoard`:

@@ -92,3 +92,14 @@ func test_cells_with() -> void:
 	layout.set_value(Vector2i(1, 0), &"start", 0)
 	var seat_one: Array[Vector2i] = [Vector2i(2, 0), Vector2i(0, 1)]
 	check(layout.cells_with(&"start", 1) == seat_one, "the layout answers too: %s" % [layout.cells_with(&"start", 1)])
+
+
+func test_a_value_can_change_its_type() -> void:
+	var layout := GridLayout.new()
+	layout.set_value(Vector2i(0, 0), &"height", "tall")
+	var changes: Array[int] = [0]
+	layout.changed.connect(func() -> void: changes[0] += 1)
+	layout.set_value(Vector2i(0, 0), &"height", 2)
+	check(layout.get_value(Vector2i(0, 0), &"height") == 2 and changes[0] == 1, "a number replaces a text")
+	layout.set_value(Vector2i(0, 0), &"height", 2)
+	check(changes[0] == 1, "the same value again is no change")
