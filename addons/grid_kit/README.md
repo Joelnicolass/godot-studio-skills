@@ -30,14 +30,17 @@ Enable the **GridKit** plugin (types `GridBoard`, `GridView3D` and `GridCursor` 
 
 **In code**
 
+Clicking a cell marks its neighbors, and cell (2, 3) becomes forest. The three `@export`s are assigned in the inspector:
+
 ```gdscript
-@onready var board: GridBoard = $Board
-@onready var moves: GridCursor = $Board/View/Moves
+@export var board: GridBoard
+@export var view: GridView3D
+@export var moves: GridCursor
 
 
 func _ready() -> void:
 	board.set_value(Vector2i(2, 3), &"terrain", &"forest")
-	$Board/View.cell_clicked.connect(_on_cell_clicked)
+	view.cell_clicked.connect(_on_cell_clicked)
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
@@ -69,7 +72,7 @@ Select a `GridBoard` (or its `GridView3D`) and the **GridKit** bar shows up on t
 - `examples/minimal_3d/minimal_3d.tscn` (F6): a hexagon of radius 4 with water on the rim, plain, forest and mountain, read from `map.tres` (a `GridLayout`). A click marks the cell and its 6 neighbors, and the pointer marks the cell under it.
 
 ```
-Minimal3D                 # minimal_3d.gd: only connects the signals
+Minimal3D                 # minimal_3d.gd: only connects the signals; its @export (board, view, selection, hover) point at the nodes below
 ├── Camera, Sun
 └── Board                 # GridBoard: layout = map.tres
     └── View              # GridView3D: tiles = {plain, forest, mountain, water}

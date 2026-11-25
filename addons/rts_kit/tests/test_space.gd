@@ -27,3 +27,44 @@ func test_2d_is_the_ground_seen_from_above() -> void:
 	root.add_child(body3)
 	body3.rotation.y = 0.9
 	check(near(RtsSpace.yaw_of_node(body3), 0.9), "a Node3D faces +Z of its basis (rotation.y)")
+
+
+func test_distance_unit_follows_the_scene() -> void:
+	var flat := Node2D.new()
+	root.add_child(flat)
+	var deep := Node3D.new()
+	root.add_child(deep)
+	check(RtsSpace.distance_unit(flat) == "px", "a Node2D measures in pixels")
+	check(RtsSpace.distance_unit(deep) == "m", "a Node3D in meters")
+	check(RtsSpace.distance_unit(root) == "", "neither above: no unit")
+	var hud := CanvasLayer.new()
+	flat.add_child(hud)
+	var inner := Node.new()
+	hud.add_child(inner)
+	check(RtsSpace.distance_unit(inner) == "px", "the nearest of the two above it decides")
+	var suffix := func(node: Node, property: String) -> String:
+		for info in node.get_property_list():
+			if info["name"] == property:
+				return info["hint_string"]
+		return "?"
+	# What the inspector shows next to each world distance of the kit.
+	var unit_2d := RtsUnit.new()
+	flat.add_child(unit_2d)
+	var unit_3d := RtsUnit.new()
+	deep.add_child(unit_3d)
+	check(suffix.call(unit_2d, "size") == "suffix:px", "RtsUnit.size under a 2D body: px")
+	check(suffix.call(unit_3d, "size") == "suffix:m", "under a 3D body: m")
+	for parent: Node in [flat, deep, root]:
+		var unit: String = RtsSpace.distance_unit(parent)
+		var expected := "" if unit.is_empty() else "suffix:%s" % unit
+		var orders := RtsOrders.new()
+		parent.add_child(orders)
+		var selection := RtsSelection.new()
+		parent.add_child(selection)
+		for property: String in ["spacing_base", "max_spacing", "retarget_range"]:
+			check(suffix.call(orders, property) == expected, "Orders.%s: '%s'" % [property, unit])
+		check(suffix.call(orders, "spacing_per_size") == "", "a factor has no unit")
+		check(
+			suffix.call(selection, "same_type_radius") == expected,
+			"Selection.same_type_radius: '%s'" % expected
+		)

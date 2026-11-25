@@ -2,6 +2,12 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.25.1
+
+- **The wizard generates unique names (`%`) instead of `$` paths.** `Setup game...` writes the player script with `%MpActor`, `%MpInput` and `%Visual`, and marks those nodes as unique names in the scene (`unique_name_in_owner`). `examples/minimal_2d` stays what it generates. **MpKit: New session flow...** writes `res://autoloads/session_flow.tscn` (plus its `.gd`) instead of `res://glue/`, and the kit's example paths (`main/boot.tscn`, `levels/<level>/<level>.tscn`) follow the one-folder-per-subject layout. `examples/bots_2d`: the bot no longer looks for the `MpInput` in its parent; `world.gd`, which creates it, hands it over, and keeps its own registry of pawn to bot.
+
+What to update: nothing in your project. `MpKit.VERSION` goes to 0.25.1, so server and clients must run the same build.
+
 ## 0.25.0
 
 - **One timeline.** `MpActor › Smoothing › shared_timeline`: every `BUFFERED` actor with it on is drawn at the same moment of the server, at the largest adaptive delay any of them needs (it rises and falls gently, as one actor's own does). Before, each actor worked out its own, and the ball could show a tick apart from the feet that touch it. Off by default. Asked for by futbolito-match.

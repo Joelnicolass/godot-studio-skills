@@ -8,7 +8,8 @@ extends RefCounted
 ##              (1 - late_tolerance) of the gaps between states plus the same percentile of how late they arrive,
 ##              plus one tick, at most `delay_s`. A steady network ends a few ticks behind; a lossy or jittery one
 ##              further. It moves toward that a fraction of the error per frame (as Unity's netcode), never so fast
-##              that the drawn time goes back.
+##              that the drawn time goes back. With `shared`, every proxy that shares it draws at one delay, the
+##              largest any of them needs: they all show the same moment of the server.
 ## The synchronizer writes the server's pose into MpActor (net_position / net_rotation), never into the node, so
 ## this is the only writer of the node's pose on a client. Not: the owner's predicted node, the server.
 
@@ -16,6 +17,14 @@ var delay_s: float = 0.1
 var adaptive: bool = true
 ## Share of states allowed to arrive too late to be drawn on time (they are extrapolated over instead).
 var late_tolerance: float = 0.03
+## Adaptive: drawn at the delay shared by every proxy with `shared` (the largest need among them), not its own.
+var shared: bool = false
+## Past the newest state, how long it goes on along its last motion before it waits (0: it waits at once).
+var max_extrapolate_s: float:
+	get:
+		return _buffer.max_extrapolate_s
+	set(value):
+		_buffer.max_extrapolate_s = maxf(value, 0.0)
 
 ## States measured (about 2 s at 60 Hz).
 const WINDOW := 120
@@ -28,6 +37,14 @@ const LOWER_PER_S := 0.03
 ## The first states (about half a second at 60 Hz): the delay goes straight to what they need, before the proxy
 ## has moved much; gradual after that.
 const SETTLE_STATES := 30
+
+## The shared timeline: the delay every shared proxy draws at, the largest need seen this frame and the last one, and
+## when it last moved (one step per frame, whichever proxy draws first).
+static var _shared_delay: float = -1.0
+static var _shared_need: float = 0.0
+static var _shared_last_need: float = 0.0
+static var _shared_frame: int = -1
+static var _shared_time: float = 0.0
 
 var _gaps := PackedFloat64Array()
 var _lates := PackedFloat64Array()
@@ -114,12 +131,43 @@ func current_delay(delta: float = 0.0) -> float:
 	if _target < 0.0:
 		_target = target_delay()
 	var target := _target
+	if shared and _states >= 2:
+		return _shared_with(target)
 	if _delay < 0.0 or _states < SETTLE_STATES:
 		_delay = target if _states >= 2 else delay_s
 	else:
 		var step := clampf((target - _delay) * CORRECTION, -LOWER_PER_S * delta, RAISE_PER_S * delta)
 		_delay += step
 	return _delay
+
+
+## The shared delay, with `need` (this proxy's) counted in. It moves once per frame toward the largest need of the
+## frame before, at the same rates as one proxy's own delay, so no shared proxy ever jumps.
+static func _shared_with(need: float) -> float:
+	var frame := Engine.get_process_frames()
+	if frame != _shared_frame:
+		var now := MpNetClock.local_time()
+		var dt := clampf(now - _shared_time, 0.0, 0.1) if _shared_frame >= 0 else 0.0
+		_shared_frame = frame
+		_shared_time = now
+		_shared_last_need = _shared_need
+		_shared_need = 0.0
+		if _shared_delay >= 0.0 and _shared_last_need > 0.0:
+			var step := clampf((_shared_last_need - _shared_delay) * CORRECTION, -LOWER_PER_S * dt, RAISE_PER_S * dt)
+			_shared_delay += step
+	_shared_need = maxf(_shared_need, need)
+	if _shared_delay < 0.0:
+		_shared_delay = need
+	return _shared_delay
+
+
+## A new server, or the tests: the shared timeline starts over.
+static func reset_shared() -> void:
+	_shared_delay = -1.0
+	_shared_need = 0.0
+	_shared_last_need = 0.0
+	_shared_frame = -1
+	_shared_time = 0.0
 
 
 ## What the measured states need now (before the gradual correction).

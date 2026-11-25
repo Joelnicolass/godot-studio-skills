@@ -11,14 +11,14 @@ config_version=5
 [application]
 
 config/name="MpKit Example"
-run/main_scene="res://scenes/ui/boot.tscn"
+run/main_scene="res://main/boot.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
 MpKit="*res://addons/mp_kit/mp_kit.gd"
-NetGlue="*res://glue/net_glue.gd"
+NetSession="*res://autoloads/net_session.tscn"
 AgentKit="*res://addons/agent_kit/agent_kit.gd"
 
 [display]
@@ -29,6 +29,12 @@ window/stretch/aspect="expand"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/agent_kit/plugin.cfg", "res://addons/mp_kit/plugin.cfg")
+
+[internationalization]
+
+locale/fallback="en"
+locale/test="en"
+locale/translations=PackedStringArray("res://locale/texts.en.translation", "res://locale/texts.es.translation")
 
 [input]
 

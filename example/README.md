@@ -2,7 +2,7 @@
 
 Minimal demo of the [Godot studio kit](../README.md): **not a game**. It shows MpKit (1P, listen-server, dedicated), composition, `.tres` Resources, and the product flow (PRD → FEATURES → RULES → RFCs → code).
 
-Architecture: **standard Godot** (`scenes/` + script next to the scene). Art: placeholders. UI in English on this branch.
+Architecture: **by entity** (one folder per topic; see [`docs/architecture.md`](docs/architecture.md)). Art: placeholders. UI in English on this branch: the texts are in `locale/texts.csv` and the language comes from `internationalization/locale/*` in `project.godot`. Where to change each thing: [`docs/tuning.md`](docs/tuning.md).
 
 ## Open
 
@@ -14,7 +14,7 @@ If the addon is missing or stale, from the studio kit root:
 ./install.sh --addon-only example
 ```
 
-The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetGlue`. For the agent CLI, install AgentKit from [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh --addon-only example agent_kit` from this kit).
+The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetSession`. For the agent CLI, install AgentKit from [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) (`./install.sh --addon-only example agent_kit` from this kit).
 
 ## Play
 
@@ -24,7 +24,7 @@ The **MpKit** plugin is already enabled. Autoload `MpKit` comes **before** `NetG
 | **LAN** | Instance A: Host LAN (shows under **LAN rooms**). Instance B: click a room or Join `127.0.0.1`. Debug → Run Multiple Instances. |
 | **Dedicated** | See below. The server process is **not** a player. |
 
-F6: `scenes/actors/pawn_2d.tscn`, `pawn_3d.tscn`, `scenes/world/match_2d.tscn`, `match_3d.tscn`.
+F6: `player/pawn_2d.tscn`, `player/pawn_3d.tscn`, `levels/match_2d/match_2d.tscn`, `levels/match_3d/match_3d.tscn`. To see the 3D pawn with a camera and a floor: `debug/pawn_3d_preview.tscn`.
 
 ## Dedicated (same project)
 
@@ -42,13 +42,14 @@ Then a client in the editor: Join `127.0.0.1`.
 | Piece | Where | Role |
 |-------|--------|------|
 | Transport | `addons/mp_kit/` | ENet, slots, tunnel. Zero gameplay. |
-| Glue | `glue/net_glue.gd` | `extends MpFlow`: `2d`/`3d` catalog + emote |
-| UI copy | `glue/demo_copy.gd` | Product language |
-| Match | `scenes/world/demo_match.gd` | `elapsed` snapshot (no spawn) |
-| Spawn | `MpSlotSpawner` on `match_2d` / `match_3d` | One pawn per slot |
+| Autoload | `autoloads/net_session.tscn` | `extends MpFlow`: `2d`/`3d` catalog + emote; its numbers are in the inspector |
+| Texts | `locale/texts.csv` | One key per text, columns `es` and `en` |
+| Match | `match/demo_match.tscn` | `elapsed` snapshot (no spawn) |
+| Spawn | `MpSlotSpawner` in `levels/match_2d/` and `levels/match_3d/` | One pawn per slot |
 | Network checks | `debug/spawn_lab/`, `agent/` | Spawn lab + AgentKit playtest |
-| Pawns | `scenes/actors/` | `submit_move` / `apply_move`, `MpReplicate`, pipe |
-| Looks | `resources/looks/*.tres` | Tint/badge/speed — no `if kind` |
+| Pawns | `player/` | `submit_move` / `apply_move`, `MpReplicate`, pipe |
+| Types | `player/pawn_*_type.tres` | Color, letter, speed — no `if kind` |
+| Knobs | `docs/tuning.md` | What to change, and in which file, node and property |
 | Product | `PRD.md`, `FEATURES.md`, `RULES.md`, `RFCs/` | Studio flow |
 
 ## Network checks

@@ -8,7 +8,7 @@
 
 | Topic | Choice |
 |-------|--------|
-| Architecture | **Standard Godot** (`scenes/` + script next to the scene). Not Clean, no `src/domain/`. |
+| Architecture | **By entity** (one folder per topic, each entity's files inside). Not Clean, no `src/domain/`. |
 | Multiplayer | **All three modes** in one demo: 1P (no `host()`), local/Wi-Fi (`MpKit.host()`), online (`MpKit.host_dedicated()` + `join`). |
 | Dimension | **2D and 3D** (two match scenes). |
 | Art | **Placeholders** (`PlaceholderTexture2D`, `BoxMesh`). No Aseprite, no Blender MCP. |
@@ -20,9 +20,9 @@
 
 ## Summary
 
-A minimal playable demo that teaches **MpKit** and the studio skills (standard architecture, composition, Resources, host-authoritative) **without being a real game**. Lobby, a placeholder pawn that moves, an emote on the `Dictionary` tunnel, and the same tree for 1P, LAN listen-server, and dedicated.
+A minimal playable demo that teaches **MpKit** and the studio skills (by-entity architecture, composition, Resources, host-authoritative) **without being a real game**. Lobby, a placeholder pawn that moves, an emote on the `Dictionary` tunnel, and the same tree for 1P, LAN listen-server, and dedicated.
 
-Value: clone the kit, open `example/`, follow this PRD → RFCs → code, and see where the addon ends and title glue begins.
+Value: clone the kit, open `example/`, follow this PRD → RFCs → code, and see where the addon ends and the title's autoload begins.
 
 ## Goals
 
@@ -30,7 +30,7 @@ Value: clone the kit, open `example/`, follow this PRD → RFCs → code, and se
 2. Two instances on one machine: **Host LAN + Join** (`127.0.0.1`) with replicated pawns (not duplicated).
 3. `godot --headless --path example -- --dedicated` + a client shows **online** (dedicated, peer 1 is not a player).
 4. No score, title copy, or round rules inside `addons/mp_kit`.
-5. Relevant packed scenes run with **F6** (or warn). Look types = `.tres`, not `if kind`.
+5. Relevant packed scenes run with **F6** (or warn). Pawn types are `_type.tres`, not `if kind`.
 
 ## Scope
 
@@ -38,11 +38,11 @@ Value: clone the kit, open `example/`, follow this PRD → RFCs → code, and se
 
 - Lobby: Play solo, Host LAN, Join (IP), 2D/3D toggle, local IP, Leave.
 - Match 2D and 3D with placeholders, `MpSpawner`, `MpWorldReady`, per-slot spawn.
-- Pawn 2D / 3D: host-authoritative `submit_*` / `apply_*`, `MpReplicate`, look Resource.
+- Pawn 2D / 3D: host-authoritative `submit_*` / `apply_*`, `MpReplicate`, type Resource (`PawnType`).
 - `MpCustomPipe` channel `emote` (server decides broadcast; no auto-reflect).
 - Minimal snapshot (`elapsed`); the client does not tick the clock.
 - Dedicated boot via `MpBoot`.
-- UI copy in the product language (`DemoCopy`); code IDs in English.
+- UI texts live in `locale/texts.csv` (es and en; each branch picks its language in `project.godot`); code IDs in English.
 - Demo README.
 
 ### Out (Won't)
@@ -66,7 +66,7 @@ MoSCoW detail is in `FEATURES.md`.
 
 | Priority | Capability |
 |----------|------------|
-| Must | Lobby + 1P + 2D/3D match + placeholder pawns + InputMap + look Resources |
+| Must | Lobby + 1P + 2D/3D match + placeholder pawns + InputMap + pawn type Resources |
 | Must | Listen-server: host is a player (slot 1); spawn handshake; `submit_move` |
 | Must | Dedicated: `local_slot() == 0`, no server pawn; clients `join` |
 | Must | Emote tunnel + elapsed snapshot + mode/slots HUD |
@@ -77,7 +77,7 @@ MoSCoW detail is in `FEATURES.md`.
 ## Non-functional
 
 - Godot **4.7** (`project.godot`). GDScript. 3D physics: Jolt.
-- Autoload: `MpKit` **before** `NetGlue`. MpKit plugin enabled.
+- Autoload: `MpKit` **before** `NetSession`. MpKit plugin enabled.
 - Default port **7777**; override `MpBoot.user_value("mp-port", "7777")`.
 - Max **4** players.
 - Copy the kit with `./install.sh --addon-only example`; do not fork.
@@ -104,8 +104,8 @@ Desktop. Keyboard. Actions: `move_left`, `move_right`, `move_up`, `move_down`, `
 ## Success metrics
 
 - All three modes demo on one machine.
-- A reader can tell `addons/mp_kit` (transport) from `glue/` + `scenes/` (game).
-- No `if look_id ==` and no score in the addon.
+- A reader can tell `addons/mp_kit` (transport) from `autoloads/` + `player/` + `levels/` (game).
+- No `if type_id ==` and no score in the addon.
 
 ## Schedule
 
@@ -122,7 +122,7 @@ Implement with `/implement-rfc` in order.
 
 | Item | Resolution |
 |------|------------|
-| Clean vs standard? | Standard. |
+| Clean vs by entity? | By entity. |
 | One MP type or three? | Three, as a guide. Listen starts on host; dedicated starts on the **first** client. |
 | Art? | Placeholders. |
 | Tests? | No. |

@@ -12,7 +12,7 @@ const LOOKS: Array[GrassLook] = [
 	preload("res://addons/grass_kit/looks/steppe.tres"),
 ]
 
-@onready var field: GrassField3D = $GrassField3D
+@onready var field: GrassField3D = %GrassField3D
 
 
 func _ready() -> void:

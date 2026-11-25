@@ -7,7 +7,8 @@ Do not invent art or FX from memory when a catalog or tool exists. The game (PNG
 Search first, adapt, wrap in a **pass** (packed scene). One effect = one `.gdshader` file. Knobs on the material (`shader_parameter`), not 80 floats in an autoload.
 
 - Every numeric `uniform` takes a `hint_range` (colors, `source_color`), and they are grouped with `group_uniforms` once there are more than a few: 27 loose uniforms are unreadable in the inspector.
-- The `.gdshader` lives next to the component or pass that uses it, or in `assets/shaders/` if RULES.md chose art by type.
+- The `.gdshader` lives next to the component or pass that uses it. If two or more entities use it, in `shared/shaders/` (or `content/shaders/` in systems + content).
+- The material that carries it is a named file (`hit_flash_material.tres`) if someone will tweak its values.
 
 | Source | Use |
 |--------|-----|
@@ -34,7 +35,7 @@ Repo: [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp)
 
 1. User OK + references.
 2. If MCP tools **already exist**: use them. If **not**: install (below), new session, then draw.
-3. Export PNG / spritesheet into the game (`res://assets/…`) → `Sprite2D` / `AnimatedSprite2D`. The `.aseprite` can sit next to the PNG.
+3. Export PNG / spritesheet into the entity's folder (`res://player/`, or its `textures/` subfolder) → `Sprite2D` / `AnimatedSprite2D`. The `.aseprite` can sit next to the PNG.
 
 Short loop: palette (`generate_color_ramp` or a preset) → layers → silhouette → `export_frame` at 8× to look → iterate → `export_sprite` / `export_spritesheet` into the Godot project.
 
@@ -76,7 +77,7 @@ For a pixel art game, the font can be an image: a grid of equal cells, one chara
 2. **The Aseprite script** draws each glyph in its cell and exports the PNG:
 
    ```lua
-   -- pixel_font.lua: aseprite -b --script-param out=assets/fonts/pixel_font.png --script pixel_font.lua
+   -- pixel_font.lua: aseprite -b --script-param out=ui/fonts/pixel_font.png --script pixel_font.lua
    local CW, CH, COLS = 6, 8, 16
    local GLYPHS = {
      A = {".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"},
@@ -125,7 +126,7 @@ Tested in Godot 4.7.2 with a PNG made this way: each character lands in its cell
 
 ## Sprites in a 3D world
 
-A sprite in 3D is a `Sprite3D` (or a component node with an `@export var texture`), with the texture in the inspector. Not one `.tres` material per sprite.
+A sprite in 3D is a `Sprite3D` (or a component node with an `@export var texture`), with the texture in the inspector. Not one `.tres` material per sprite, and not a sprite → material table.
 
 ## 3D models (Blender MCP)
 
@@ -138,9 +139,9 @@ If they said yes:
 1. Install and configure the official MCP (below). Blender must be **open** with the add-on started.
 2. Model / tweak in Blender via MCP.
 3. Pick how it enters the game:
-   - **The `.blend` itself** (official import since Godot 4.0) if the team edits in Blender: save it in `res://assets/…` and every change reimports on its own. It needs the Blender path in Editor Settings › FileSystem › Import › Blender; every machine that imports, CI included, needs Blender or a cached `.godot/imported` folder.
-   - **A `.glb`** (File › Export › glTF 2.0) into `res://assets/…` if the model comes from elsewhere or CI has no Blender. The `.blend` stays outside the project (one inside gets imported too).
-4. Materials outside the model: in the import, **Advanced…** › Materials › the material › **Use External** with one `.tres` per material (or **Actions… › Extract Materials** to pull them all out). They are edited and swapped in the inspector, not in code or by the slot name.
+   - **The `.blend` itself** (official import since Godot 4.0) if the team edits in Blender: save it in the entity's folder (`res://player/model/`) and every change reimports on its own. It needs the Blender path in Editor Settings › FileSystem › Import › Blender; every machine that imports, CI included, needs Blender or a cached `.godot/imported` folder.
+   - **A `.glb`** (File › Export › glTF 2.0) into the entity's folder if the model comes from elsewhere or CI has no Blender. The `.blend` stays outside the project (one inside gets imported too).
+4. Materials outside the model: in the import, **Advanced…** › Materials › the material › **Use External** with one `_material.tres` per material (or **Actions… › Extract Materials** to pull them all out). They are edited and swapped in the inspector, not in code or by the slot name.
 5. In Godot: the imported scene as a packed scene, or its mesh on a `MeshInstance3D`.
 
 The server executes LLM-generated Python **with no** sandbox. Do not use it on files with sensitive data. Prefer a working copy.

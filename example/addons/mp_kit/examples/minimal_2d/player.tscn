@@ -29,12 +29,14 @@ motion_mode = 1
 script = ExtResource("1_tci5j")
 
 [node name="Visual" type="Polygon2D" parent="." unique_id=330365018]
+unique_name_in_owner = true
 polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
 
 [node name="Shape" type="CollisionShape2D" parent="." unique_id=1018623777]
 shape = SubResource("RectangleShape2D_3mokw")
 
 [node name="MpActor" type="Node" parent="." unique_id=1739208583]
+unique_name_in_owner = true
 script = ExtResource("2_xm08m")
 sync_rotation = false
 sync_extra = PackedStringArray()
@@ -45,5 +47,6 @@ root_path = NodePath("../..")
 replication_config = SubResource("SceneReplicationConfig_2ig7v")
 
 [node name="MpInput" type="Node" parent="." unique_id=168178541]
+unique_name_in_owner = true
 script = ExtResource("3_dumu7")
 actions = PackedStringArray("ui_left", "ui_right", "ui_up", "ui_down", "ui_accept")

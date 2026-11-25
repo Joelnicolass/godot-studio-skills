@@ -6,8 +6,8 @@ extends Node2D
 
 const WIN_SCORE := 3
 
-@onready var score: MpState = $Score
-@onready var match_node: MpMatch = $Match
+@onready var score: MpState = %Score
+@onready var match_node: MpMatch = %Match
 
 
 func _ready() -> void:

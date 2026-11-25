@@ -15,7 +15,7 @@
 | Gap | Impact | Treatment |
 |-----|--------|-----------|
 | Startup policy listen vs dedicated | High | Listen on host; dedicated on 1st client |
-| UI language vs code IDs | Medium | Product language + `DemoCopy`; English IDs |
+| UI language vs code IDs | Medium | Product language + `locale/texts.csv`; English IDs |
 | Rejoin | Medium | Pawn freed; slot reserved by kit |
 | VPS export | Low | Won't: headless command only |
 | Tests | Low | Explicitly not requested |

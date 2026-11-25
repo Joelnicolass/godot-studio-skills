@@ -10,8 +10,8 @@ const JUMP_VELOCITY := 4.5
 ## Seconds between shots while fire is held.
 const FIRE_EVERY_S := 0.15
 
-@onready var bot: Bot3D = $Bot3D
-@onready var head: Node3D = $Head
+@onready var bot: Bot3D = %Bot3D
+@onready var head: Node3D = %Head
 
 var _cooldown_s := 0.0
 

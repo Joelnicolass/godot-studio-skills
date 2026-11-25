@@ -28,7 +28,7 @@ Search the web (the agent's search and fetch tools) and say where each fact come
 
 When sources disagree, keep the most direct one (the game's code, a developer, a frame count) and note the rest. What no source shows stays **unknown**: propose a reasonable value to tune, marked as an assumption.
 
-Code found in a source or in the game can be used: adapt it to the project's layers and composition, with the numbers in `@export` / `.tres`. Assets of the original (sprites, audio, levels, text): ask the user before bringing them into the game.
+Code found in a source or in the game can be used: adapt it to the project's folders and composition, with each number on its owner (rule 0 of `godot-code-quality`). Assets of the original (sprites, audio, levels, text): ask the user before bringing them into the game.
 
 ## Flow
 
@@ -36,6 +36,6 @@ Code found in a source or in the game can be used: adapt it to the project's lay
 2. **Research**: the orchestrator (this chat) runs it, not `studio-developer`. Web first; if the user has the game and it can be opened, offer to decompile it. Summarize for the user with the links; do not paste whole pages.
 3. **Deduce** the model: a formula, a value table or a state machine that explains what the sources show (or the code found), and the unknowns.
 4. **Report** in the `F<n>` of `FEATURES.md` (or `research/<slug>.md` if it is long): what it does, the model or the code, the sources, and what becomes `@export` / `.tres`.
-5. **Implementation**: `/implement-feature`. The tech lead plans pieces that fit the project's layers (the numbers go to `@export` / `.tres`); the developer writes or adapts the code.
+5. **Implementation**: `/implement-feature`. The tech lead plans pieces that fit the project's folders (each number on its owner, with its row in `docs/tuning.md`); the developer writes or adapts the code.
 
 Playtest criteria use the values found ("6-frame coyote time", "knockback doubles at max speed").

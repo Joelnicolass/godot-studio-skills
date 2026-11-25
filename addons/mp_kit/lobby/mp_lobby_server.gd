@@ -4,7 +4,7 @@ extends Node
 ## Room-server side of the lobby protocol. Puts `MpLobbyRooms` on the network (ENet or WebSocket, `config.transport`) and validates
 ## every client message: version, name, sizes, chat rate, who may do what. A client never picks a
 ## slot, a port or a seed. Nothing here knows the game: the pick (`meta`), the room `options` and the
-## ticket are checked / built by Callables the glue sets before `start()`.
+## ticket are checked / built by Callables the game sets before `start()`.
 ## Lives under a `MpLobby` container (own `SceneMultiplayer`, so it never clashes with `MpKit`).
 ## Error codes sent to the client: version, bad_name, timeout, bad_text, rate, bad_options, bad_meta, bad_bot, not_host
 ## and every code of `MpLobbyRooms`.

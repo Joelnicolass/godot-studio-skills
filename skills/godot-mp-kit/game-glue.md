@@ -1,14 +1,14 @@
-# Game glue (what you write)
+# Game code (what you write)
 
-For a one-world title, **you do not need a `NetGlue`**. Tools → **MpKit: New session flow...** writes an `extends MpFlow` autoload. The lobby is `MpBootMenu` or buttons that call `play_solo` / `host_lan` / `join_lan`.
+For a one-world title, **you do not need a class of your own**. Tools → **MpKit: New session flow...** writes an `extends MpFlow` autoload. The lobby is `MpBootMenu` or buttons that call `play_solo` / `host_lan` / `join_lan`.
 
-Write your own glue only if:
+Write your own game code only if:
 
 1. Copy or a tunnel (like the demo: emote) → `extends MpFlow` and override.
-2. Clean: `GameSession` + `SceneDirector` on top of `MpFlow`, or skip it if the director already changes scenes.
+2. Your own session: `GameSession` + `SceneDirector` on top of `MpFlow`, or skip it if the director already changes scenes.
 3. The round waits for N players / a “ready” → `start_when` is not enough; call `start_match()` yourself.
 
-Several maps are not glue: `add_world` / `worlds` + `select_world(&"id")`.
+Several maps need no game code of your own: `add_world` / `worlds` + `select_world(&"id")`.
 
 Autoload order: `MpKit` → `MpFlow` (or your subclass) → the rest.
 
@@ -20,8 +20,8 @@ Dedicated / VPS: [dedicated.md](dedicated.md).
 extends MpFlow
 
 func _ready() -> void:
-	boot_path = "res://scenes/ui/boot.tscn"
-	world_path = "res://scenes/world/match.tscn"
+	boot_path = "res://main/boot.tscn"
+	world_path = "res://levels/match/match.tscn"
 	room_name = "My room"
 	start_when = StartWhen.DEDICATED_FIRST_CLIENT
 	super._ready()
@@ -30,8 +30,8 @@ func _ready() -> void:
 Several worlds:
 
 ```gdscript
-add_world(&"2d", "res://scenes/world/match_2d.tscn")
-add_world(&"3d", "res://scenes/world/match_3d.tscn")
+add_world(&"2d", "res://levels/match_2d/match_2d.tscn")
+add_world(&"3d", "res://levels/match_3d/match_3d.tscn")
 select_world(&"2d")
 ```
 
@@ -76,7 +76,7 @@ On server end: `broadcast_session_ended` + go to results.
 
 ## World (`_ready`)
 
-Prefer an `MpSlotSpawner` in the scene (`pawn_scene`, `spawn_path`, markers). Then glue **does not** call `ensure_pawn` or `request_world_ready`.
+Prefer an `MpSlotSpawner` in the scene (`pawn_scene`, `spawn_path`, markers). Then your game code **does not** call `ensure_pawn` or `request_world_ready`.
 
 Manual spawn (projectiles, enemies, or a custom pawn):
 
@@ -108,7 +108,7 @@ func _on_client_world_ready(peer_id: int) -> void:
 
 Dedicated: **do not** spawn a pawn for `local_slot() == 0`.
 
-`MpSpawner` reveals the actors to the ready peer (native synchronizer visibility). Do not `remove_child` + `add_child` in glue.
+`MpSpawner` reveals the actors to the ready peer (native synchronizer visibility). Do not `remove_child` + `add_child` in game code.
 
 ## Disconnect (define product)
 

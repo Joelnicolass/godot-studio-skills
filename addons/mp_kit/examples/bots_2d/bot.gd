@@ -9,19 +9,21 @@ const AREA := Rect2(160, 100, 640, 340)
 ## Closer than this (pixels) to its point: there.
 const ARRIVED := 12.0
 
-var _input: MpInput
+## The pawn it plays and its keys: world.gd, which creates the bot, hands them over before adding it.
+var pawn: Node2D
+var input: MpInput
+
 var _target := Vector2.ZERO
 
 
 func _ready() -> void:
-	_input = get_parent().get_node(^"MpInput")
 	_target = _pick()
 
 
 func _physics_process(_delta: float) -> void:
-	if _input.has_player():
+	if input.has_player():
 		return
-	var to := _target - (get_parent() as Node2D).global_position
+	var to := _target - pawn.global_position
 	if to.length() < ARRIVED:
 		_target = _pick()
 		return
@@ -32,8 +34,8 @@ func _physics_process(_delta: float) -> void:
 
 ## One axis: the key on the side to go, as strong as that side of the direction; the other key let go.
 func _hold(positive: StringName, negative: StringName, amount: float) -> void:
-	_input.bot_press(positive if amount > 0.0 else negative, absf(amount))
-	_input.bot_release(negative if amount > 0.0 else positive)
+	input.bot_press(positive if amount > 0.0 else negative, absf(amount))
+	input.bot_release(negative if amount > 0.0 else positive)
 
 
 func _pick() -> Vector2:

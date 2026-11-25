@@ -37,7 +37,7 @@ const SPAWNED_META := &"mp_spawned"
 ## synchronizer named GATE_NAME on every peer as they enter spawn_path.
 @export var gate_unsynced_spawns: bool = true
 ## Hub rooms: reveal only to peers seated in this room (MpKit.rooms). Empty = every
-## ready peer. Usually set by glue at runtime, on the server.
+## ready peer. Usually set by the game at runtime, on the server.
 @export var room_id: StringName = &"":
 	set(value):
 		if room_id == value:

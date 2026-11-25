@@ -1,48 +1,40 @@
-# Clean path — layers
+# Clean layered (only repos that already declare it)
 
-Use **only** if the user chose Clean (or the repo already declares it). Dependencies inward:
+Not offered to a new project. Use **only** if the repo already declares it or the user asked for it by name. For a new game: [by-entity.md](by-entity.md) or [systems-content.md](systems-content.md). What Clean was after, rules you can test without a scene, comes from the pure core of [SKILL.md](SKILL.md) §2.
+
+Dependencies inward:
 
 ```
-features (Nodes, .tscn, physics, RPCs, spawners)
-    → core (autoloads: session, events, director, net glue)
+features (nodes, .tscn, physics, spawners)
+    → core (autoloads: session, events, scene changes)
         → domain (RefCounted: match rules)
 ```
 
 ```
 src/
-  core/autoload/     # MatchRules.tres, Events, GameSession, SceneDirector
-  domain/            # pure trackers and resolvers (round state, not catalogs)
-  features/<name>/   # scripts + scenes together
-  shared/            # components (a script or a scene): StateMachine, PostFx, Health; no loose shaders
-  resources/         # class_name + .tres of types several features share
-assets/              # only if RULES.md chose art by type: art/, shaders/, materials/, environment/
-addons/              # MpKit and framework plugins (zero gameplay)
+  core/              # Events, GameSession, SceneDirector
+  domain/            # pure rules: round state, not catalogs
+  features/<name>/   # scripts + scenes together, with their .tres files
+  shared/            # components, and shaders and materials several features use
+  balance/           # match_config.tres and other balance .tres files
+addons/              # kits (zero gameplay)
+docs/                # architecture.md, tuning.md
 ```
 
-Facade names: `GameSession`, `Events`, `SceneDirector`. Do not reuse names from a previous title.
-
-`GameSession` as an autoload **only** if it must survive scene change; otherwise a node under `Main`. Tests: [godot-testing](../godot-testing/SKILL.md).
+File names and suffixes: [godot-code-quality](../godot-code-quality/SKILL.md) §1. `docs/tuning.md` is required here too.
 
 ### Domain
 
-- `extends RefCounted`. `new()` in tests and in the session.
-- Forbidden: `Node`, `Input`, `MultiplayerAPI`, `get_tree()`, `@rpc`, scene `await`.
-- Receives numbers **or definition Resources** via constructor. Does not read autoloads in tests.
-- **Not** the place for “how the projectile looks”. That is the `.tres`. Domain uses `data.damage`, not type strings.
+The pure-core rules of [SKILL.md](SKILL.md) §2, in the `src/domain/` folder. It uses `type.damage`, not type strings. It does not decide how anything looks.
 
 ### Core
 
-- **GameSession**: trackers per slot, `start` / `abort`, `submit_*`, `to_snapshot` / `apply_snapshot`. The client turns off the tick when applying a snapshot.
-- **Events**: event bus, typed `signal` declarations only (no state, no methods). HUD/FX listen; the actor does not store the score.
+- **GameSession**: the match state and `start` / `abort`. An autoload **only** if it must survive a scene change; otherwise a node under `Main`. If it has values to tune, it is registered as a `.tscn` or reads `balance/match_config.tres`.
+- **Events**: event bus, typed `signal` declarations only (no state, no methods). HUD and effects listen; the actor does not store the score.
 - **SceneDirector**: changes scenes. Prefer swapping `World` children and leaving `GUI` alive. Does not score.
-- **`MatchRules.tres`**: **round** tunables (duration, lives, layers) that the session and the features read. Not 80 floats per enemy: those go on the node's `@export` or on its type's `.tres`.
 
-1P = local host. Same rules as 2P.
+Only if networked: `GameSession` adds `submit_*` and `to_snapshot` / `apply_snapshot`; the client turns off its tick when applying a snapshot; a single player is a local host with the same rules. Without a network, none of that exists.
 
 ### Features
 
-Nodes. `@rpc`, physics, spawners. `@export var data: EnemyData`. No `match kind`.
-
-### Shared + resources
-
-Components (a script or a scene) in `shared/`; loose shaders, materials and art do not go there, they go with their feature or in `assets/` (RULES.md decides). A `.tres` that a single feature uses lives in `features/<name>/`; `resources/<family>/` is for shared types.
+Nodes, physics, spawners. `@export var type: EnemyType`. No `match kind`.

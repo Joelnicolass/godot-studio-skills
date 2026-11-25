@@ -33,9 +33,9 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` rem
 
 ```
 [~] project.godot                        # PerceptionKit plugin; layer names for the sides (survivors, threats)
-[~] scenes/enemies/guard.tscn            # Head > PerceptionSensor3D (mask: survivors; values dragged with its handles)
-[~] scenes/player/player.tscn            # PerceptionTarget3D at the chest, on the survivors layer
-[~] scenes/enemies/guard_states/*.gd     # the actor's states read the sensor: latest(), sees_any(), is_aware()
+[~] enemies/guard.tscn            # Head > PerceptionSensor3D (mask: survivors; values dragged with its handles)
+[~] player/player.tscn            # PerceptionTarget3D at the chest, on the survivors layer
+[~] enemies/guard_states/*.gd     # the actor's states read the sensor: latest(), sees_any(), is_aware()
 [~] scripts/noise.gd                     # the game's noise signal calls sensor.hear(position, radius, source)
 ```
 

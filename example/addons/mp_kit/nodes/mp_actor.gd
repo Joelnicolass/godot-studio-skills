@@ -68,6 +68,13 @@ static var server_calls := MpRateLimit.new(60.0, 120.0)
 ## BUFFERED, adaptive: share of states allowed to come too late to be drawn on time (3 % = the 97th percentile, as
 ## Photon Fusion). Lower = smoother on a bad network, a little more behind.
 @export_range(0.0, 0.2, 0.005) var late_tolerance: float = 0.03
+## BUFFERED, adaptive: drawn at the same moment of the server as every other actor with it on, at the largest delay any
+## of them needs. A ball game turns it on in everything that moves (the ball, the players, your own without
+## prediction): on their own delays the ball could show a tick apart from the feet that touch it.
+@export var shared_timeline: bool = false
+## BUFFERED: past the newest state (a late packet), how long it goes on along its last motion before it waits. 0: it
+## waits at once (a short stop instead of a guess that may be corrected).
+@export_range(0.0, 0.5, 0.01) var max_extrapolate_s: float = 0.1
 ## FOLLOW: how fast proxies chase the newest state.
 @export var follow_speed: float = 14.0
 @export var freeze_rigid_if_proxy: bool = true
@@ -124,6 +131,8 @@ static var _checked_scenes: Dictionary = {}
 var _sender_slot: int = -1
 ## Inside an mp_sv_* call from a client: the server time that client was seeing (0 = unknown).
 var _call_view: float = 0.0
+## This actor's key for the to_server calls MpKit routes (0 outside the tree).
+var _route_key: int = 0
 ## Server, solo, and proxies without smoothing: the pose at the last physics tick, and how fast it moved since the one
 ## before (motion_velocity).
 var _tick_pos := Vector3.INF
@@ -142,11 +151,16 @@ static func of(node: Node) -> MpActor:
 
 func _enter_tree() -> void:
 	_editor_rebuild()
+	if not Engine.is_editor_hint():
+		_route_key = MpKit.add_route(self)
 
 
 func _exit_tree() -> void:
 	if not Engine.is_editor_hint() and _root:
 		MpLagComp.forget(_root)
+	if _route_key != 0:
+		MpKit.remove_route(_route_key, self)
+		_route_key = 0
 
 
 func _ready() -> void:
@@ -185,6 +199,8 @@ func _ready() -> void:
 	_motion.delay_s = buffer_delay_s
 	_motion.adaptive = adaptive_buffer
 	_motion.late_tolerance = late_tolerance
+	_motion.shared = shared_timeline
+	_motion.max_extrapolate_s = max_extrapolate_s
 	_motion.follow_speed = follow_speed
 	_motion.move_position = sync_position
 	_motion.move_rotation = sync_rotation
@@ -276,6 +292,14 @@ func is_authority() -> bool:
 ## Owner with prediction: how far the drawn node still is from the real one, while a correction fades (0 = none).
 func correction_offset() -> float:
 	return _smoother.offset() if _smoother else 0.0
+
+
+## How far in the past this node is drawn now, in seconds: a BUFFERED proxy's delay (with `shared_timeline`, the one it
+## shares). 0 on the server, for the predicted owner, and with FOLLOW or NONE.
+func draw_delay() -> float:
+	if _motion == null or is_authority() or smoothing != Smoothing.BUFFERED or (predict and is_local()):
+		return 0.0
+	return _motion.current_delay()
 
 
 ## Owner with prediction: how far the last server correction moved this node (0 = the prediction was right).
@@ -383,8 +407,9 @@ func to_server(action: StringName, ...args: Array) -> void:
 	if callers == Callers.OWNER and not is_local():
 		push_warning("MpActor '%s': to_server(%s) from a peer that does not own it (callers = OWNER)" % [_root.name, action])
 		return
-	## With what this player sees, so the server can rewind the others to it (lag compensation).
-	rpc_server_call_seen.rpc_id(MpAuthority.SERVER_PEER, action, args, MpNetClock.view_stamp())
+	## With what this player sees, so the server can rewind the others to it (lag compensation). Through MpKit: a call that
+	## arrives once this actor is gone on the server (it died) is dropped without a word.
+	MpKit.rpc_actor_call.rpc_id(MpAuthority.SERVER_PEER, _route_key, action, args, MpNetClock.view_stamp())
 
 
 ## Server only: run mp_all_<action>(args...) here and on every peer that has this node.
@@ -414,23 +439,18 @@ func sync_entries() -> PackedStringArray:
 	return MpActorSync.entries(self)
 
 
-@rpc("any_peer", "call_remote", "reliable")
-func rpc_server_call(action: StringName, args: Array) -> void:
-	if not multiplayer.is_server():
+## MpKit only (server): `sender` called to_server(action, args) on this actor (MpKit.rpc_actor_call), seeing the server time
+## `view` (lag compensation reads it as view_stamp()). Only a seated player, its owner with callers = OWNER, within the limits.
+func take_server_call(sender: int, action: StringName, args: Array, view: float) -> void:
+	if not MpKit.is_server():
 		return
-	var slot := MpKit.slot_for_peer(multiplayer.get_remote_sender_id())
+	var slot := MpKit.slot_for_peer(sender)
 	if slot <= 0 or (callers == Callers.OWNER and slot != owner_slot):
 		return
-	if var_to_bytes(args).size() > MAX_ARGS_BYTES or not server_calls.allow(multiplayer.get_remote_sender_id()):
+	if var_to_bytes(args).size() > MAX_ARGS_BYTES or not server_calls.allow(sender):
 		return
-	_run_sv(action, args, slot)
-
-
-## to_server with the server time the caller was seeing (lag compensation reads it as view_stamp()).
-@rpc("any_peer", "call_remote", "reliable")
-func rpc_server_call_seen(action: StringName, args: Array, view: float) -> void:
 	_call_view = view if is_finite(view) else 0.0
-	rpc_server_call(action, args)
+	_run_sv(action, args, slot)
 	_call_view = 0.0
 
 
@@ -472,7 +492,7 @@ func _check_saved_sync() -> void:
 		return
 	_checked_scenes[scene] = true
 	var sync := get_node_or_null(SYNC_NAME) as MultiplayerSynchronizer
-	if sync and not MpSyncBuilder.matches(sync.replication_config, sync_entries(), MpActorSync.spawn_only(self)):
+	if sync and not MpSyncBuilder.matches(sync.replication_config, sync_entries(), MpActorSync.spawn_only(self), MpActorSync.always(self)):
 		push_warning("MpActor on '%s' (%s): its saved %s is out of date for this MpKit. Open the scene in the editor and save it." % [_root.name, scene, SYNC_NAME])
 
 

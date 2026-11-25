@@ -1,13 +1,13 @@
 # RFCs — MpKit Example
 
 **Product type:** Godot game (demo).  
-**Omitted on every RFC (auditable):** SQL schema, user auth, browsers, REST, “Database Schema Changes”. Instead: scenes, Resources, MpKit glue.
+**Omitted on every RFC (auditable):** SQL schema, user auth, browsers, REST, “Database Schema Changes”. Instead: scenes, Resources, MpKit game code.
 
 **Authority:** PRD.md > FEATURES.md > RULES.md > these RFCs.
 
 Each RFC is implemented with `/implement-rfc <id>`. This demo’s product chat approved the full scope: implement 001→004 in order.
 
-RFC-001 is the **vertical 1P 2D slice**. 3D is RFC-002. LAN is RFC-003. Dedicated / tunnel / snapshot is RFC-004 (online glue is not mixed into the gameplay slice).
+RFC-001 is the **vertical 1P 2D slice**. 3D is RFC-002. LAN is RFC-003. Dedicated / tunnel / snapshot is RFC-004 (online game code is not mixed into the gameplay slice).
 
 | RFC | Title | Features | Predecessors | Successors | Complexity |
 |-----|--------|----------|--------------|------------|------------|

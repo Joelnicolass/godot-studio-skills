@@ -21,14 +21,14 @@ var hits: int = 0
 
 const GROUP := &"arena_player"
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
-@onready var body: Polygon2D = $Body
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
+@onready var body: Polygon2D = %Body
 
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	$Tag.text = "P%d" % net.owner_slot
+	%Tag.text = "P%d" % net.owner_slot
 	_paint()
 
 

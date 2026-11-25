@@ -100,6 +100,7 @@ material_override = SubResource("StandardMaterial3D_vgh5b")
 mesh = SubResource("BoxMesh_pb6vf")
 
 [node name="Head" type="Node3D" parent="Guard" unique_id=555740974]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 
 [node name="Nose" type="MeshInstance3D" parent="Guard/Head" unique_id=707145631]
@@ -108,6 +109,7 @@ material_override = SubResource("StandardMaterial3D_wjd2y")
 mesh = SubResource("BoxMesh_rqoa1")
 
 [node name="Sensor" type="Area3D" parent="Guard/Head" unique_id=388063794]
+unique_name_in_owner = true
 script = ExtResource("2_rodr6")
 sight_radius_m = 12.0
 lose_radius_m = 16.0
@@ -116,6 +118,7 @@ near_radius_m = 2.0
 show_in_game = true
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=206087843]
+unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.9, -9)
 motion_mode = 1
 
@@ -131,6 +134,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
 script = ExtResource("3_2d6hr")
 
 [node name="Label" type="Label" parent="." unique_id=1800025554]
+unique_name_in_owner = true
 offset_left = 16.0
 offset_top = 12.0
 offset_right = 16.0

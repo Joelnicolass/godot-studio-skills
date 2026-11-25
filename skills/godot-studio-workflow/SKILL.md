@@ -2,7 +2,7 @@
 name: godot-studio-workflow
 description: >-
   Orchestrates a Godot 4 game from idea to a simple scalable base: interviews
-  the user (Clean vs standard, multiplayer type, 2D/3D, Aseprite/Blender MCP,
+  the user (project size, multiplayer type, 2D/3D, Aseprite/Blender MCP,
   Material Maker, web research of a similar game's feature),
   runs product commands (PRD, features, rules, RFCs, visual guide), researches
   when needed, then delegates tech-lead / developer / reviewer (optional
@@ -17,7 +17,7 @@ The **main agent in this chat** is the orchestrator. It talks to the user. It do
 
 Load: [spec-loop.md](spec-loop.md), [compact-rules.md](compact-rules.md), [file-tree.md](file-tree.md), [godot-layered-architecture](../godot-layered-architecture/SKILL.md), [godot-composition-first](../godot-composition-first/SKILL.md), [godot-code-quality](../godot-code-quality/SKILL.md). Notes across chats: [godot-studio-memory](../godot-studio-memory/SKILL.md). Networking: [godot-mp-kit](../godot-mp-kit/SKILL.md) **only** if there is multiplayer. Captures / flows: skill `godot-agent-kit` from the [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) module (this kit’s `./install.sh` fetches it). Tests: [godot-testing](../godot-testing/SKILL.md) **only** if the user asks or RULES requires them. Juicy feel: [godot-juicy](../godot-juicy/SKILL.md) + `/add-juicy`. FSM: [godot-fsm](../godot-fsm/SKILL.md) + `/add-state-machine`. 2D platformer: [godot-platformer-2d](../godot-platformer-2d/SKILL.md) + `/add-platformer-2d`. Procedural materials / textures: [godot-material-maker](../godot-material-maker/SKILL.md) + `/create-material`. A mechanic “like in X” (research it on the web, deduce it): [godot-feature-research](../godot-feature-research/SKILL.md) + `/research-feature`.
 
-Goal: a Godot 4 game with a **small, clear base**. Priorities: simple and predictable (changing a number opens 2 files at most), clean layers, composition, the value on the node that uses it (`@export`), reusable components, proven Godot patterns.
+Goal: a Godot 4 game with a **small, clear base**. Priorities: simple and predictable (changing a number opens 2 files at most, and `docs/tuning.md` says which), composition, nodes and the editor, reusable components, proven Godot patterns.
 
 Roles (subagent tool — `Agent` in Claude Code, `Task` in Cursor — with `subagent_type` = their `name`):
 
@@ -34,7 +34,7 @@ Every subagent prompt includes the [compact-rules.md](compact-rules.md) block. S
 
 If the `studio-playtester` subagent **does not exist** (the playtest module is not installed), do not invent it or simulate it with another role: offer a manual playtest (the user runs F5 and you walk the slice criteria as a checklist) or skip the step.
 
-When launching `studio-playtester`: pass the `res://debug/…` path and the InputMap action recorded on the `F<n>` or the RFC. The playtester **plays** that scene; they do not build it and they do not use `call()` to assemble it. If that scene is missing, they must return `NEED_SETUP`, not invent a world. Order them to read `harness.md` from `godot-agent-kit` **before** writing a `.gd`. On return, the playtest diff may only touch `agent/` (flows, out). If it touched `src/`, `scenes/`, or `debug/`, that is a **process FAIL** — ask for a revert.
+When launching `studio-playtester`: pass the `res://debug/…` path and the InputMap action recorded on the `F<n>` or the RFC. The playtester **plays** that scene; they do not build it and they do not use `call()` to assemble it. If that scene is missing, they must return `NEED_SETUP`, not invent a world. Order them to read `harness.md` from `godot-agent-kit` **before** writing a `.gd`. On return, the playtest diff may only touch `agent/` (flows, out). If it touched any other folder (the game or `debug/`), that is a **process FAIL** — ask for a revert.
 
 A typo, an `@export`, or a bug with repro and 1–3 files: **this chat**, no new RFC, but still with a short [tree](file-tree.md) (`[~] path  # what changes`) and OK before touching anything. New feature or moving scope: spec (PRD/RFC) or `/manage-changes`.
 
@@ -46,7 +46,7 @@ If the repo already has PRD/RULES, read them and `/workflow-status` if needed; d
 
 Order for a **new game**:
 
-1. Architecture Clean vs standard, and where the art goes (by entity, or by type in `assets/`) — **ask** in the same batch (layered skill). No answer: do not scaffold.
+1. Project size: **by entity** (recommended, the default) or **systems + content** (lots of content, or someone who tunes values without programming) — **ask** (skill `godot-layered-architecture`). No answer: do not create folders. Clean layered only when the user asks for it by name.
 2. Multiplayer — **ask** (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available) **before** copying `addons/mp_kit` or writing RPCs:
    - **No multiplayer** — do not install MpKit. No RPCs, no `MultiplayerSpawner`.
    - **Local / Wi-Fi** (same device or LAN) — `MpKit.host()` listen-server (the host is a player).
@@ -105,7 +105,7 @@ Do not reopen the tech lead unless the cut or the test scene was framed wrong.
 
 Closing the iteration **leaves a trace** every time (not optional): the `F<n>` in `FEATURES.md` with its criteria, and — if the `godot-studio-memory` skill is present — decision taken + next step. In a new chat, `/workflow-status` rebuilds from those files; with no trace, it rebuilds nothing.
 
-The subagent prompt includes: repo path, RFC id, architecture style, **MP type** (none / local-Wi-Fi / online), compact rules, and to read PRD / FEATURES / RULES / VISUAL / that RFC.
+The subagent prompt includes: repo path, RFC id, project size, **MP type** (none / local-Wi-Fi / online), compact rules, and to read PRD / FEATURES / RULES / VISUAL / that RFC.
 
 Do not launch developer and reviewer in parallel on the same RFC. Tech-lead on independent RFCs may run in parallel.
 
@@ -115,7 +115,8 @@ Without the [file tree](file-tree.md) there is no “OK, implement”. **Always*
 
 - Ship product features without PRD + RFC (except a pinpoint fix the user already scoped).
 - One `studio-developer` “build the game”.
-- Invent Clean layers if they chose standard, or the reverse.
+- Change the size already chosen, or invent `domain/`, `core/`, `scenes/`, `assets/`, or `glue/` folders.
+- Add a design `@export` without its row in `docs/tuning.md`.
 - Copy `addons/mp_kit` if they chose no multiplayer.
 - Treat a listen-server behind NAT as internet multiplayer.
 - Put score, copy, or title netcode in `addons/mp_kit`.
@@ -136,6 +137,8 @@ Do not close an iteration “by feel”. Verify:
 - [ ] The feature scene runs with F5/F6 and the slice action is exercised.
 - [ ] The `F<n>` names the scene (`res://debug/…` or the player scene), the InputMap action, and the observable. An RFC only if the cut is large.
 - [ ] Every criterion has review evidence and, if there was a playtest, the flow under `res://agent/`.
+- [ ] `docs/tuning.md` has a row for each new design knob.
+- [ ] The developer said what shows when each new scene is opened in the editor, without running it.
 - [ ] `FEATURES.md` updated; memory holds decision + next step if the skill is present.
 
 The north star stays the same: the slice plays, each feature is a small scene/component/`Resource`, and a human can open the inspector and continue.

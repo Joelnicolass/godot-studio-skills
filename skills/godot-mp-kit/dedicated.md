@@ -38,9 +38,9 @@ If **Override Main Run Args** is unchecked, Godot **may ignore** that row’s La
 
 Do **not** treat `--headless` alone as dedicated: GUT/CI also run headless, and a headless client does not open the port.
 
-Optional port in glue: `int(MpBoot.user_value("mp-port", "7777"))`.
+Optional port in game code: `int(MpBoot.user_value("mp-port", "7777"))`.
 
-## Glue on boot
+## Game code on boot
 
 ```gdscript
 func _ready() -> void:
@@ -64,7 +64,7 @@ HUD: if `MpKit.local_slot() == 0`, there is no local player (dedicated process).
 
 Spawn: `for slot in MpKit.occupied_slots()`. Dedicated does not include peer 1. Listen: the host slot is occupied.
 
-`rpc_load_world` is `call_remote`: the server **does not** receive it. Dedicated also enters the world via glue (`goto_world()`), same as the listen host.
+`rpc_load_world` is `call_remote`: the server **does not** receive it. Dedicated also enters the world via game code (`goto_world()`), same as the listen host.
 
 ## Export and VPS
 

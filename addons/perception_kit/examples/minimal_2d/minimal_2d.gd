@@ -12,10 +12,10 @@ const SPEED := 220.0
 const NOISE_RADIUS_PX := 260.0
 const TURN_DEG_S := 220.0
 
-@onready var sensor: PerceptionSensor2D = $Guard/Sensor
-@onready var guard: Node2D = $Guard
-@onready var player: CharacterBody2D = $Player
-@onready var label: Label = $Label
+@onready var sensor: PerceptionSensor2D = %Sensor
+@onready var guard: Node2D = %Guard
+@onready var player: CharacterBody2D = %Player
+@onready var label: Label = %Label
 
 var _last := "Arrows walk, Space makes a noise."
 

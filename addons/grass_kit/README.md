@@ -58,14 +58,14 @@ Minimal3D (minimal_3d.gd)
 ├── Floor (StaticBody3D)
 │   ├── Shape            # BoxShape3D: the grass reads the ground from here
 │   └── Mesh             # its material uses floor.gdshader
-└── GrassField3D         # ground (default area), look = meadow.tres, quality (medium), wind
+└── %GrassField3D        # ground (default area), look = meadow.tres, quality (medium), wind
 ```
 
 The script bakes the ground when the scene starts. A game does not need it: you press **Bake ground** in the editor, paint and save, and the ground comes baked in its file.
 
 ```gdscript
 # minimal_3d.gd (the essentials)
-@onready var field: GrassField3D = $GrassField3D
+@onready var field: GrassField3D = %GrassField3D
 
 
 func _ready() -> void:

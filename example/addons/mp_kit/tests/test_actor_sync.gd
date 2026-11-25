@@ -57,3 +57,24 @@ func test_snap_on_the_server_rides_with_the_next_pose() -> void:
 	actor._publish_pose()
 	check(actor.net_teleports == before + 1, "and it stays: a client compares two states")
 	parent.free()
+
+
+## With prediction, what mp_move reads travels in the pose's packet every send (ALWAYS): the reconciliation goes back to
+## that pose and replays from that state. Sent only when it changed, it came apart from its pose (a dash counter: 35 px of
+## correction on average at 40 ms with jitter, against 1 px in the same packet).
+func test_prediction_sends_its_state_with_the_pose() -> void:
+	var made := _actor(true)
+	var actor: MpActor = made[1]
+	actor.sync_rotation = false
+	actor.sync_extra = PackedStringArray(["dash_ticks", "facing", "Body:charge"])
+	actor.predict = true
+	var cfg := MpSyncBuilder.build(actor.sync_entries(), MpActorSync.spawn_only(actor), MpActorSync.always(actor))
+	for path: NodePath in [^".:dash_ticks", ^".:facing", ^"Body:charge", ^"MpActor:net_position", ^"MpInput:acked_seq"]:
+		check(cfg.property_get_replication_mode(path) == SceneReplicationConfig.REPLICATION_MODE_ALWAYS, "%s rides with the pose" % path)
+	check(cfg.property_get_replication_mode(^"MpActor:owner_slot") == SceneReplicationConfig.REPLICATION_MODE_NEVER, "the owner still only at spawn")
+	var old := MpSyncBuilder.build(actor.sync_entries(), MpActorSync.spawn_only(actor))
+	check(not MpSyncBuilder.matches(old, actor.sync_entries(), MpActorSync.spawn_only(actor), MpActorSync.always(actor)), "a scene saved by an older kit no longer matches (it warns: save it)")
+	actor.predict = false
+	cfg = MpSyncBuilder.build(actor.sync_entries(), MpActorSync.spawn_only(actor), MpActorSync.always(actor))
+	check(cfg.property_get_replication_mode(^".:dash_ticks") == SceneReplicationConfig.REPLICATION_MODE_ON_CHANGE, "without prediction a value is sent when it changes")
+	made[0].free()

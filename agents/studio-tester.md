@@ -16,7 +16,7 @@ When invoked:
 
 1. Detect the real runner (GUT, GdUnit4, repo script). If none: describe how to play the RFC by hand and do not install a framework without approval.
 2. Tests that **would fail** if an acceptance criterion broke. No filler tests.
-3. Prefer pure domain / Resource tests before full scenes, if Clean allows it.
+3. Prefer a node's pure core (`RefCounted`) and Resources before full scenes.
 4. Paste real runner output. Distinguish tests that already existed vs ones you add.
 5. Layout and command: the ones in [godot-testing](../skills/godot-testing/SKILL.md) (`res://test/unit/`, `test_*.gd`, `gut_cmdln.gd … -gexit`). If the project has CI, run the same command the CI runs.
 

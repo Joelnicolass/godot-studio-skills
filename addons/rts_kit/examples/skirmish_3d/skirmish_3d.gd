@@ -1,9 +1,10 @@
 extends Node3D
 
 ## RtsKit's 3D example: a field, your units (blue), a foe's (red) and your hero (gold, the retreat
-## anchor). The kit's whole command rig is in the scene, wired in the inspector; this script only
-## spawns the units and adds what is the example's own: F follows the hero / frees the camera, and a
-## line says what is selected. The units' logic is RtsExampleWalker (walk straight to the spot).
+## anchor). The kit's command rig is one node of the scene (rts_command_rig_3d.tscn); this script
+## only spawns the units and adds what is the example's own: F follows the hero / frees the camera,
+## and a line says what is selected. The units' logic is RtsExampleWalker (walk straight to the
+## spot).
 
 const WALKER := preload("res://addons/rts_kit/examples/shared/example_walker.gd")
 
@@ -11,8 +12,8 @@ const WALKER := preload("res://addons/rts_kit/examples/shared/example_walker.gd"
 @export var foe_units := 6
 
 @onready var camera: RtsCamera3D = $Camera
-@onready var selection: RtsSelection = $Command/Selection
-@onready var status: Label = $Hud/Status
+@onready var rig: RtsCommandRig = $Rig
+@onready var status: Label = %Status
 @onready var units_root: Node3D = $Units
 
 var hero: Node3D
@@ -29,8 +30,8 @@ func _ready() -> void:
 		spawn(Vector3(-10 + (i % 6) * 3.0, 0, -4 - floori(i / 6.0) * 3.0), 1, kind, tint)
 	for i in foe_units:
 		spawn(Vector3(-8 + i * 3.2, 0, 18), 2, &"raider", Color(1.0, 0.3, 0.25))
-	selection.changed.connect(_on_selection_changed)
-	_on_selection_changed(selection.units())
+	rig.selection.changed.connect(_on_selection_changed)
+	_on_selection_changed(rig.selection.units())
 
 
 ## A unit: a capsule on layer 2 with an RtsUnit, a selection ring and the example's walker.

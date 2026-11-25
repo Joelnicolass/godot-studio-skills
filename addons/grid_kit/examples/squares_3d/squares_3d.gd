@@ -5,10 +5,10 @@ extends Node3D
 
 var _last_clicked := CellGrid.NO_CELL
 
-@onready var board: GridBoard = $Board
-@onready var view: GridView3D = $Board/View
-@onready var reach: GridCursor = $Board/View/Reach
-@onready var route: GridCursor = $Board/View/Route
+@export var board: GridBoard
+@export var view: GridView3D
+@export var reach: GridCursor
+@export var route: GridCursor
 
 
 func _ready() -> void:

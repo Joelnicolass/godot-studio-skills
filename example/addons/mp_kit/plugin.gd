@@ -184,15 +184,15 @@ func _build_flow_dialog() -> void:
 	box.add_child(_flow_autoload)
 	box.add_child(_label("Scene (res://)"))
 	_flow_path = LineEdit.new()
-	_flow_path.text = "res://glue/session_flow.tscn"
+	_flow_path.text = "res://autoloads/session_flow.tscn"
 	box.add_child(_flow_path)
 	box.add_child(_label("Boot scene path"))
 	_flow_boot = LineEdit.new()
-	_flow_boot.placeholder_text = "res://scenes/ui/boot.tscn"
+	_flow_boot.placeholder_text = "res://main/boot.tscn"
 	box.add_child(_flow_boot)
 	box.add_child(_label("World scene path"))
 	_flow_world = LineEdit.new()
-	_flow_world.placeholder_text = "res://scenes/world/match.tscn"
+	_flow_world.placeholder_text = "res://levels/match/match.tscn"
 	box.add_child(_flow_world)
 	box.add_child(_label("Dedicated start"))
 	_flow_start = OptionButton.new()
@@ -211,7 +211,7 @@ func _on_flow_confirmed() -> void:
 		autoload_name = "MpFlow"
 	var tscn := _flow_path.text.strip_edges()
 	if tscn.is_empty():
-		tscn = "res://glue/session_flow.tscn"
+		tscn = "res://autoloads/session_flow.tscn"
 	if not tscn.begins_with("res://"):
 		tscn = "res://".path_join(tscn)
 	if not tscn.ends_with(".tscn"):

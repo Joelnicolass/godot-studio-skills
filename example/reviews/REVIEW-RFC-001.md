@@ -7,7 +7,7 @@
 
 ## 1. RFC adherence — PASS (unverified runtime)
 
-Addon copied, autoloads ordered, boot main scene, InputMap, 1P does not `host()`, looks as `.tres`. Host/Join UI exists because RFCs 001–004 shipped together; 1P does not need them.
+Addon copied, autoloads ordered, boot main scene, InputMap, 1P does not `host()`, types as `_type.tres`. Host/Join UI exists because RFCs 001–004 shipped together; 1P does not need them.
 
 ## 2. RULES — PASS
 

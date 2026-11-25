@@ -18,9 +18,9 @@ RPC: `any_peer` + `call_remote`; validate `get_remote_sender_id() == MpKit.peer_
 ## Acceptance
 
 1. Host LAN: host enters the world and drives slot 1.
-2. Second process Join `127.0.0.1`: same `world_kind`, two pawns, distinct looks, no duplicate actor per peer.
+2. Second process Join `127.0.0.1`: same `world_kind`, two pawns, distinct types, no duplicate actor per peer.
 3. Guest does not apply movement as authority; transform comes from server + `MpReplicate`.
-4. Invalid IP does not call `join`; shows `DemoCopy.STATUS_BAD_IP`.
+4. Invalid IP does not call `join`; shows `STATUS_BAD_IP`.
 5. `join_failed` and `server_lost` return to boot with a message.
 6. Leave in match: `leave` + boot.
 7. `peer_left`: pawn `queue_free`; kit keeps the slot reserved.

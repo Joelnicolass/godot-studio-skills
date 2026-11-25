@@ -22,7 +22,7 @@ If missing, ask in one batch:
 
 1. Is there already a player `CharacterBody2D`? Only tune / replace jump?
 2. Wall jump? Default **no**.
-3. Dash / one-way / stamina? Default **no** (glue; see catalog).
+3. Dash / one-way / stamina? Default **no** (game code; see catalog).
 4. Window intensity: tight / medium / generous (default medium: coyote 0.08, buffer 0.12).
 
 ## 2. Plan

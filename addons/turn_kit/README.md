@@ -23,10 +23,10 @@ Enable the **TurnKit** plugin (types `TurnClock` and `TurnSeat` in Create Node).
 
 1. Add a `TurnClock` and set `actions_per_turn`, `rounds_per_cycle` and `cycles` in the inspector (0 = no end). For phases, time or a rotating first player, see the Round, Phases and Time groups.
 2. Give it one `TurnSeat` child per player, in the order they play. The first one is seat 0.
-3. Connect the signals and spend actions:
+3. Connect the signals and spend actions. Each player moves by spending actions on their turn, and the game finds out when a turn starts and when a cycle ends:
 
 ```gdscript
-@onready var turns: TurnClock = $Turns
+@onready var turns: TurnClock = %Turns
 
 
 func _ready() -> void:
@@ -43,7 +43,7 @@ func _on_end_pressed() -> void:
 	turns.end_turn()
 ```
 
-With phases and time:
+With phases and time, the game finds out about each new phase and when a player runs out of time:
 
 ```gdscript
 turns.phase_started.connect(func(phase: StringName) -> void: print("Phase ", phase))
@@ -58,7 +58,7 @@ turns.next_phase()  # in the last phase it ends the turn
 ```
 Minimal              # minimal.gd: shows the state and connects the buttons
 ├── Box              # status with phase and time, Spend action, Next phase and End turn buttons, log
-└── Turns            # TurnClock: rounds_per_cycle = 2, cycles = 2, first_seat_rotates, phases = [draw, play], turn_seconds = 10
+└── %Turns           # TurnClock: rounds_per_cycle = 2, cycles = 2, first_seat_rotates, phases = [draw, play], turn_seconds = 10
     ├── Ana, Beto    # TurnSeat
     └── Bot          # TurnSeat: is_bot = true
 ```

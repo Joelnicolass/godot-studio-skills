@@ -39,16 +39,16 @@ Enable plugin **SpillKit** (the cost line in the inspector; the nodes, their but
 
 ## Network
 
-**With MpKit:** in the body's `MpActor`, `Spill:wound` in **Sync › sync_extra** (everything travels at spawn, so a late joiner starts from the current value), and the damage behind the authority:
+**With MpKit:** in the body's `MpActor`, `Spill:wound` in **Sync › sync_extra** (everything travels at spawn, so a late joiner starts from the current value), and the damage behind the authority (`%Spill` is the `Spill` node marked as a unique name):
 
 ```gdscript
 func take_damage(amount: float, from: Vector3) -> void:
 	if not MpKit.is_authority():
 		return
 	hp -= amount
-	$Spill.hit(amount, max_hp, from)
+	%Spill.hit(amount, max_hp, from)
 	if hp <= 0.0:
-		$Spill.die()
+		%Spill.die()
 ```
 
 On a dedicated server, an export with the `dedicated_server` feature (or run headless) builds nothing. One run with the editor headless does: `pool.shown = not MpKit.is_dedicated()` in the game's glue.

@@ -7,7 +7,7 @@ Nothing from a concrete title. Each case names the rule of [SKILL.md](SKILL.md) 
 Before: changing the bat's fury damage means opening 4 files.
 
 ```text
-bat.tres          on_hit_ability = bat_fury_ability.tres    # nothing says "fury"
+bat_type.tres          on_hit_ability = bat_fury_ability.tres    # nothing says "fury"
 bat_fury_ability.tres                                        # empty ability
 bat_fury.tres     ability = bat_fury_ability.tres, factor = 1.5
 enemy.tscn        PassiveRunner.types = [bat_fury.tres, …]   # looks for the one pointing at on_hit_ability
@@ -21,7 +21,7 @@ After: the number lives on the type that uses it, and the component reads it dir
 @export_range(1.0, 3.0, 0.05) var fury_damage_factor := 1.0
 ```
 
-Open: 1 file (`bat.tres`). If only one enemy has that passive, even better: a `Fury` component only in its scene, with its own `@export`.
+Open: 1 file (`bat_type.tres`). If only one enemy has that passive, even better: a `Fury` component only in its scene, with its own `@export`.
 
 ## 2. A string that picks a scene (rule 0, §1)
 

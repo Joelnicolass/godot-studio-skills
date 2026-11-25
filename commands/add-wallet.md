@@ -38,11 +38,11 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` del
 
 ```
 [~] project.godot                        # WalletKit plugin
-[+] scenes/economy/wallet.tscn           # Wallet: start_amounts, limits, substitutes [food → wood at 2, gold → anything at 1]
-[+] scenes/ui/resources_hud.gd           # listens to changed and rebuilt; shows the amounts
-[~] scenes/ui/resources_hud.tscn         # the labels
-[~] scenes/buildings/temple.gd           # can_pay(COST) disables the button; pay(COST) when building
-[~] scenes/levels/level.tscn             # instances the Wallet
+[+] economy/wallet.tscn           # Wallet: start_amounts, limits, substitutes [food → wood at 2, gold → anything at 1]
+[+] ui/resources_hud.gd           # listens to changed and rebuilt; shows the amounts
+[~] ui/resources_hud.tscn         # the labels
+[~] buildings/temple.gd           # can_pay(COST) disables the button; pay(COST) when building
+[~] levels/level/level.tscn             # instances the Wallet
 ```
 
 Start from `addons/wallet_kit/examples/minimal/minimal.tscn` (harvest, limits, building with substitutes).

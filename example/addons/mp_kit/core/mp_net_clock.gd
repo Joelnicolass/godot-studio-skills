@@ -71,3 +71,4 @@ static func reset() -> void:
 	_known = false
 	_offset = 0.0
 	view_delay = 0.0
+	MpProxyMotion.reset_shared()

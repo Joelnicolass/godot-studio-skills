@@ -51,13 +51,13 @@ The 12 principles apply either way. **Evaluate what fits this clip**; there is n
 
 | Use | When |
 |-----|------|
-| `create_tween()` / `Tween` + `@export` | Parametric one-shot: hit squash, knockback, camera punch, fade, overshoot. Feel is tuned on the actor inspector. |
-| `AnimationPlayer` | Several nodes at once, pose-to-pose curves, authored loops, blend/seek, cinematics, imported skeleton (`.glb`). A human edits the **timeline**. |
+| `create_tween()` / `Tween` + `@export` | Parametric one-shot: hit squash, knockback, camera punch, fade, overshoot. The durations, the transition, and the ease are tuned in the inspector. |
+| `AnimationPlayer` | Several nodes at once, pose-to-pose curves, authored loops, blend/seek, cinematics, imported skeleton (`.glb`). A human edits the **timeline**. Also when an artist tunes the shape of the curve. |
 | `SpriteFrames` / `AnimatedSprite2D` | **Drawn** cycles (idle/walk/attack). |
 
 Combining is fine: skeleton or walk clip in `AnimationPlayer` / `SpriteFrames`, impact squash as a Tween on top (skill [godot-juicy](../godot-juicy/SKILL.md) for shake / VFX / post).
 
-Knobs stay editable. Tween: `@export` duration, scale, ease. AnimationPlayer: named clips, `@export` `speed_scale` / which clip to play; do not hide feel in magic numbers in the `.gd`.
+Knobs stay editable. Tween: `@export` duration and scale, **and** its `Tween.TransitionType` and `Tween.EaseType`: the curve never stays in code. A shape of your own: `@export var curve: Curve`, drawn in the inspector. AnimationPlayer: named clips, `@export` `speed_scale` / which clip to play; do not hide feel in magic numbers in the `.gd`.
 
 If the tweens live in a static helper (`Motion.pop(node, …)`), the knobs do not: they are `@export`s on the node that owns the effect (`TileEntrance`), with `@export_group` and the unit in the hint (`"suffix:s"`), and the helper takes them as arguments.
 

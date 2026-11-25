@@ -8,7 +8,7 @@ If the game has no `addons/mp_kit`, stop and ask to install the addon. If the ga
 
 Load: `godot-mp-kit`.
 
-1. Ask: id (`snake_case`), folder (`res://features` by default, or `src/features` if Clean), root (`CharacterBody2D` / `CharacterBody3D` / `Node2D` / `Node3D`), whether a player drives it (`MpInput`, and `predict` if it is their character), what looks the same for everyone (*Sync*: position, rotation, visible, extras).
+1. Ask: id (`snake_case`), folder (the entity's folder per RULES.md: `res://<entity>/` by entity, `res://content/<family>/<entity>/` in systems + content, `src/features` if the repo declares Clean), root (`CharacterBody2D` / `CharacterBody3D` / `Node2D` / `Node3D`), whether a player drives it (`MpInput`, and `predict` if it is their character), what looks the same for everyone (*Sync*: position, rotation, visible, extras).
 2. Show the tree (`[+] res://…/<id>/<id>.gd`, `[+] <id>.tscn`, `[~]` the world if you add it to the `MpSpawner`'s *Extra Scenes*) and wait for OK.
 3. Create `<id>.tscn`: the root, its look, an `MpActor` child (Sync ticked, `predict` when it applies) and, if a player drives it, `MpInput` with its actions. The editor builds the `MpSync` when the scene is saved: with no editor open, tell the user to open and save the scene once (the `MpActor` inspector warns about it).
 4. Create `<id>.gd` from the **MpKit actor** template (`addons/mp_kit/script_templates/CharacterBody2D/mpkit_actor.gd`): rules behind `net.is_authority()`, movement in `mp_move(keys, delta)` if it predicts, `mp_sv_*` orders and `mp_all_*` effects. No hand-written `@rpc`.

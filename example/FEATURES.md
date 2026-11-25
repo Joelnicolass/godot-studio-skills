@@ -1,6 +1,6 @@
 # FEATURES — MpKit Example
 
-**Product (from PRD):** Godot 4.7 demo teaching MpKit + skills (standard, composition, Resources) with 1P, listen-server, and dedicated; 2D and 3D matches with placeholders. Not a real game.
+**Product (from PRD):** Godot 4.7 demo teaching MpKit + skills (by entity, composition, Resources) with 1P, listen-server, and dedicated; 2D and 3D matches with placeholders. Not a real game.
 
 IDs are **permanent**. Do not renumber.
 
@@ -26,11 +26,11 @@ IDs are **permanent**. Do not renumber.
 
 ## Must
 
-- **F1 Lobby** — Boot UI; dedicated process hides it. Copy via `DemoCopy`.
+- **F1 Lobby** — Boot UI; dedicated process hides it. Texts by key from `locale/texts.csv` (`tr()` in code).
 - **F2 Play solo** — No `host()`. Offline peer. Load current `world_kind`.
 - **F3 Match 2D** — Placeholders, `MpSpawner` → `Actors`, `MpWorldReady` after spawner, F6.
 - **F4 Pawn 2D** — `CharacterBody2D`, `PlaceholderTexture2D`, InputMap, `MpReplicate`.
-- **F5 ActorLook** — Resource + `look_a`…`look_d.tres`. No `if kind`.
+- **F5 PawnType** — Resource + `pawn_a_type.tres`…`pawn_d_type.tres` + `pawn_catalog.tres`. No `if kind`.
 - **F6 Match 3D** — Floor `BoxMesh`, camera, light, same spawn contract as F3.
 - **F7 Pawn 3D** — `CharacterBody3D` + `BoxMesh`. F6 adds preview camera/floor.
 - **F8 DemoMatch** — Shared spawn. Listen host pawn in `_ready`. Clients on `client_world_ready`. No pawn for slot 0.

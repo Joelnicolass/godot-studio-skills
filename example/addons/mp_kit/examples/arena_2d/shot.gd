@@ -15,7 +15,7 @@ const HIT_RADIUS := 20.0
 
 var _age: float = 0.0
 
-@onready var net: MpActor = $MpActor
+@onready var net: MpActor = %MpActor
 
 
 func _physics_process(delta: float) -> void:

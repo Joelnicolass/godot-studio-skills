@@ -51,9 +51,11 @@ Minimal3D (minimal_3d.gd)
 ├── Floor (StaticBody3D)               # on layer 1: the floor the marks look for
 ├── SpillPool3D                        # types: [blood.tres]
 ├── Dummy (StaticBody3D)               # on layer 2: the floor rays do not see it
-│   └── Spill (SpillSource3D)          # at the chest, 1.25 m up; type: blood.tres
+│   └── %Spill (SpillSource3D)         # at the chest, 1.25 m up; type: blood.tres
 └── Label
 ```
+
+A hit splashes drops that fly away from the camera, and on death a puddle grows under the dummy:
 
 ```gdscript
 # minimal_3d.gd (the essentials)
@@ -73,7 +75,7 @@ func strike(damage: float) -> void:
 
 The kit has no network. A network game calls `hit()` and `die()` only where damage is decided (the server) and syncs one property of the component, `wound` (a `Vector4`). Every machine draws what changed: the spray and its marks, or the puddle. A machine that meets the body late starts from the value it brings and draws nothing old.
 
-**With MpKit:** in the body's `MpActor`, add `Spill:wound` to **Sync › sync_extra**. Everything travels at spawn, so a late joiner starts from the current value.
+**With MpKit:** in the body's `MpActor`, add `Spill:wound` to **Sync › sync_extra**. Everything travels at spawn, so a late joiner starts from the current value. The server decides the damage and the clients draw the blood (`%Spill` is the `Spill` node marked as a unique name):
 
 ```gdscript
 # enemy.gd: the server decides the damage; clients only draw what arrives in wound
@@ -81,9 +83,9 @@ func take_damage(amount: float, from: Vector3) -> void:
 	if not MpKit.is_authority():
 		return
 	hp -= amount
-	$Spill.hit(amount, max_hp, from)
+	%Spill.hit(amount, max_hp, from)
 	if hp <= 0.0:
-		$Spill.die()
+		%Spill.die()
 ```
 
 **With Godot's `MultiplayerSynchronizer`:** in its Replication add the property `Spill:wound`, with **Spawn** on and **Replicate: On Change**. Call `hit()` and `die()` behind `multiplayer.is_server()`.
@@ -176,10 +178,10 @@ One per world (a level). It builds everything once per type and reuses it: a hit
 
 | You want to | Write |
 |---|---|
-| Make a hit bleed | `$Spill.hit(damage, max_hp, attacker.global_position)` |
-| The combo's third hit always heavy | `$Spill.hit(damage, max_hp, from, true)` |
-| A puddle on death | `$Spill.die()` |
-| A wound with no rules (a script, a trap) | `$Spill.spray(true)` |
+| Make a hit bleed | `%Spill.hit(damage, max_hp, attacker.global_position)` |
+| The combo's third hit always heavy | `%Spill.hit(damage, max_hp, from, true)` |
+| A puddle on death | `%Spill.die()` |
+| A wound with no rules (a script, a trap) | `%Spill.spray(true)` |
 | The player's "blood" option | `pool.shown = prefs.blood` (what is on the floor stays) |
 | A new round | `pool.clear()` |
 | Oil leaking from a barrel, with no body | `pool.spill(oil, barrel.global_position)` and `pool.puddle(oil, barrel.global_position)` |

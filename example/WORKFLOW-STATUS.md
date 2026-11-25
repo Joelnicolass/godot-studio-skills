@@ -12,7 +12,7 @@ Produced as `/workflow-status`. Type: Godot game (demo). Tests (stage 6): **omit
 | 4 | Generate rules | `RULES.md` | Done |
 | 5 | Generate RFCs | `RFCS.md` + `RFCs/` | Done |
 | 6 | Test strategy | `TEST-STRATEGY.md` | Missing (N/A — F23) |
-| 7 | Implement RFCs | `glue/`, `scenes/`, `resources/` | Done (001–004) |
+| 7 | Implement RFCs | `autoloads/`, `player/`, `levels/`, `match/`, `main/`, `ui/` | Done (001–004) |
 | 8 | Review | `reviews/REVIEW-RFC-00{1,2,3,4}.md` | Done (read; runtime unverified in the agent) |
 | 9 | Change requests | `changes/` | Missing (none open) |
 | 10 | This report | `WORKFLOW-STATUS.md` | Done |

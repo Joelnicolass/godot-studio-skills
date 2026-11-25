@@ -32,12 +32,12 @@ Binary from [releases](https://github.com/RodZill4/material-maker/releases) (Win
 ## Flow
 
 1. **Graph**: the user builds or tweaks it in the app, or you start from a [library](https://www.materialmaker.org) material / an example. The agent proposes nodes and parameters (noise → warp → colorize → normal map, scale, contrast); do not invent a `.ptex` blind. Respect the library material's license.
-2. **Versioned source**: the `.ptex` next to its exports, `res://assets/materials/<name>/<name>.ptex` (like the `.aseprite` next to the PNG). Godot ignores the extension.
+2. **Versioned source**: the `.ptex` next to its exports, `res://shared/materials/<name>/<name>.ptex` (`content/materials/` in systems + content; the entity's folder if a single one uses it) (like the `.aseprite` next to the PNG). Godot ignores the extension.
 3. **Export** from the CLI (or File → Export material in the app):
 
    ```bash
    "$MATERIAL_MAKER" --export -t "Godot/Godot 4 Standard" \
-     -o /ABS/GODOT_ROOT/assets/materials/rock --output-file %n rock.ptex
+     -o /ABS/GODOT_ROOT/shared/materials/rock --output-file %n rock.ptex
    ```
 
    | Target | Output |
@@ -47,7 +47,7 @@ Binary from [releases](https://github.com/RodZill4/material-maker/releases) (Win
    | `Godot/Godot 4` | Dynamic / raymarching materials: a shader instead of PNGs |
 
    The CLI renders the nodes: it needs a GPU and may open a window briefly. The current version exports at 2048 px even if you pass `--size`; for another size, export from the app or lower **Max Size** in Godot's import settings.
-4. **In Godot**: the surface type is a `.tres` (`rock.tres`, `moss.tres`), not an `if kind`. The component receives it through `@export var surface: Material`, or it goes in the `MeshInstance3D`'s `material_override`. Tiling through the material's `uv1_scale`, not in code. 2D: the albedo as a `Texture2D` on `Sprite2D` / `TileSet` / `TextureRect`; 2D normals with `CanvasTexture`.
+4. **In Godot**: the surface type is a `.tres` (`rock_material.tres`, `moss_material.tres`), not an `if kind`. The component receives it through `@export var surface: Material`, or it goes in the `MeshInstance3D`'s `material_override`. Tiling through the material's `uv1_scale`, not in code. 2D: the albedo as a `Texture2D` on `Sprite2D` / `TileSet` / `TextureRect`; 2D normals with `CanvasTexture`.
 5. **Changes**: edit the `.ptex` and re-export. Do not retouch the PNGs by hand.
 
 ## Anti-patterns
