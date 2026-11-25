@@ -67,10 +67,10 @@ Godot studio kit installer (skills + commands + subagents + addons).
   ./install.sh --all                Cursor and Claude Code
   ./install.sh --project            ./.cursor/ of cwd (./.claude/ with --claude; both with --all)
   ./install.sh --dest DIR           Skills in DIR (commands and agents alongside)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|all]
                                     Copy the addon into the Godot project (default: mp_kit)
                                     agent_kit is installed from godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|all]
                                     Addon only
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias of --addon GODOT_ROOT agent_kit
@@ -416,6 +416,18 @@ install_addon() {
       echo "Enable the GridKit plugin (no autoload). Your rules use HexGrid (plain data); in the scene, a GridBoard"
       echo "with a GridView3D child (one scene per cell value) and GridCursor to mark cells. Start from addons/grid_kit/examples/minimal_3d."
       ;;
+    turn_kit)
+      copy_one_addon "$project" "turn_kit"
+      echo
+      echo "Enable the TurnKit plugin (no autoload). Your rules use TurnCycle (plain data); in the scene, a TurnClock"
+      echo "with one TurnSeat child per player. Start from addons/turn_kit/examples/minimal."
+      ;;
+    wallet_kit)
+      copy_one_addon "$project" "wallet_kit"
+      echo
+      echo "Enable the WalletKit plugin (no autoload). Your rules use Purse (plain data: amounts, limits, a wildcard); in the scene,"
+      echo "a Wallet with its values in the inspector. Start from addons/wallet_kit/examples/minimal."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -438,9 +450,13 @@ install_addon() {
       install_addon "$project" "bot_kit"
       echo
       install_addon "$project" "grid_kit"
+      echo
+      install_addon "$project" "turn_kit"
+      echo
+      install_addon "$project" "wallet_kit"
       ;;
     *)
-      echo "Unknown addon: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | all)" >&2
+      echo "Unknown addon: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | turn_kit | wallet_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -495,6 +511,8 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/spill_kit  (./install.sh --addon /path/to/godot-project spill_kit)"
   echo "  - addons/bot_kit    (./install.sh --addon /path/to/godot-project bot_kit)"
   echo "  - addons/grid_kit   (./install.sh --addon /path/to/godot-project grid_kit)"
+  echo "  - addons/turn_kit   (./install.sh --addon /path/to/godot-project turn_kit)"
+  echo "  - addons/wallet_kit (./install.sh --addon /path/to/godot-project wallet_kit)"
   echo
   echo "AgentKit / playtester (separate repo, this installer fetches it):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"

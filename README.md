@@ -22,7 +22,7 @@ With the kit:
 - Standard Godot code: proven patterns (signals, `Events` bus, FSM, components…), real typing, `gdformat` / `gdlint`, and GUT + CI when there are tests (skill `godot-code-quality`).
 - One RFC at a time, with a **file tree** approved, review, playtest and visual pass if you ask
 - MpKit kept off gameplay; notes across sessions in Engram or `.studio/MEMORY.md` if needed.
-- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- The game lives in **another** repo; this one has skills, commands, agents, and addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Piece               | Where                                                                          | What it is                                                                                       |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
@@ -41,6 +41,8 @@ With the kit:
 | SpillKit            | `addons/spill_kit/`                                                            | What a body spills, in 3D (blood, ichor, oil, slime, ink): every hit sprays and marks the floor, a death grows a puddle that follows the slope; each substance is a type with the kit's wet look, PBR textures of its own or the game's shader; rules as values, one synced property for the network, Compatibility and WebGL 2, buttons to try it in the editor |
 | BotKit              | `addons/bot_kit/`                                                              | Bots that play your character like a person, in 3D: a node that presses a player's keys (an `Input` of its own your character reads), sees the nearest enemy with no wall in between, aims with a person's limits (reaction, error, cone, bursts, leading and lobbing), picks the weapon by distance, walks the navmesh to pickups, to where it saw the enemy or anywhere, and gets out of where it is stuck; your own behaviours as child nodes, difficulty presets, its sight and handles in the editor. No network inside. Start with `addons/bot_kit/README.md`; tests in `botkit_lab/`. |
 | GridKit             | `addons/grid_kit/`                                                             | Hex boards: `HexGrid` (plain data: values per cell, neighbors, distance, range, paths, flood, `to_dict`) and nodes to show them and pick cells in 3D (`GridBoard`, `GridView3D`, `GridCursor`). No game rules, no network. Start with `addons/grid_kit/README.md`; tests in `gridkit_lab/`. |
+| TurnKit             | `addons/turn_kit/`                                                             | Turns, rounds and cycles: `TurnCycle` (plain data: actions per turn, rounds, cycles and an end you set, inactive seats, `to_dict`) and a clock with one child per player (`TurnClock`, `TurnSeat`). No game rules, no network. Start with `addons/turn_kit/README.md`; tests in `turnkit_lab/`. |
+| WalletKit           | `addons/wallet_kit/`                                                           | Resources and coins: `Purse` (plain data: amounts by key, limits that report what is lost, all-or-nothing payments, a wildcard that covers what is missing, `to_dict`) and the `Wallet` node. No prices or UI, no network. Start with `addons/wallet_kit/README.md`; tests in `walletkit_lab/`. |
 
 What **does not** belong here: score, product copy, a title’s scenes, `GameSession`, `SceneDirector`. That is game glue.
 
@@ -129,6 +131,8 @@ Written contract, if you ask:
 ./install.sh --addon /path/to/godot-project spill_kit  # SpillKit
 ./install.sh --addon /path/to/godot-project bot_kit    # BotKit
 ./install.sh --addon /path/to/godot-project grid_kit   # GridKit
+./install.sh --addon /path/to/godot-project turn_kit   # TurnKit
+./install.sh --addon /path/to/godot-project wallet_kit # WalletKit
 ./install.sh --addon /path/to/godot-project agent_kit  # AgentKit (fetched from the playtest repo)
 ```
 
@@ -154,6 +158,8 @@ Every kit ships a **minimal example**: the smallest integration that works, to o
 | SpillKit | `addons/spill_kit/examples/minimal_3d/minimal_3d.tscn`: a dummy that bleeds, marks the floor and leaves a puddle | `substances_3d` (six substances: the kit's look, PBR of their own, a shader of their own) | [README](addons/spill_kit/README.md) | `spillkit_lab/` |
 | BotKit | `addons/bot_kit/examples/minimal_3d/minimal_3d.tscn`: a robot that hunts you round some walls | `arena_3d` (four bots, rifle and grenades, pickups, fleeing when hurt) | [README](addons/bot_kit/README.md) | `botkit_lab/` |
 | GridKit | `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn`: a hexagon board of radius 4; a click marks the cell and its neighbors | — | [README](addons/grid_kit/README.md) | `gridkit_lab/` |
+| TurnKit | `addons/turn_kit/examples/minimal/minimal.tscn`: three seats pass the turn, spend actions, and the match ends after two cycles | — | [README](addons/turn_kit/README.md) | `turnkit_lab/` |
+| WalletKit | `addons/wallet_kit/examples/minimal/minimal.tscn`: harvest under limits that lose the excess and build with gold as the wildcard | — | [README](addons/wallet_kit/README.md) | `walletkit_lab/` |
 
 Each lab is a small Godot project with the kit as a symlink; its README says how to run the tests.
 
@@ -172,12 +178,16 @@ addons/perception_kit/
 addons/spill_kit/
 addons/bot_kit/
 addons/grid_kit/
+addons/turn_kit/
+addons/wallet_kit/
 mpkit_lab/                     # MpKit's tests, network runs and examples, no game
 fsmkit_lab/                    # FsmKit's tests and example, no game
 platkit_lab/                   # PlatKit's tests and example, no game
 rtskit_lab/                    # RtsKit's tests and examples, no game
 propkit_lab/                   # PropKit's tests and examples, no game
 gridkit_lab/                   # GridKit tests and example, no game
+turnkit_lab/                   # TurnKit tests and example, no game
+walletkit_lab/                 # WalletKit tests and example, no game
 grasskit_lab/                  # GrassKit's tests and examples, no game
 perceptionkit_lab/             # PerceptionKit's tests and examples, no game
 spillkit_lab/                  # SpillKit's tests and examples, no game
