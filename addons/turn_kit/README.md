@@ -43,11 +43,11 @@ func _on_end_pressed() -> void:
 
 ## Ejemplo mínimo
 
-`examples/minimal/minimal.tscn` (F6): tres asientos (Ana, Beto y un bot). Gastar usa una acción y Terminar pasa el turno. El bot pasa solo. Dos rondas hacen un ciclo, y la partida termina a los dos ciclos.
+`examples/minimal/minimal.tscn` (F6): tres asientos (Ana, Beto y un bot). **Spend action** usa una acción y **End turn** pasa el turno. El bot pasa solo. Dos rondas hacen un ciclo, y la partida termina a los dos ciclos.
 
 ```
 Minimal              # minimal.gd: muestra el estado y conecta los botones
-├── Box              # estado, botones Gastar y Terminar, registro
+├── Box              # estado, botones Spend action y End turn, registro
 └── Turns            # TurnClock: rounds_per_cycle = 2, cycles = 2
     ├── Ana, Beto    # TurnSeat
     └── Bot          # TurnSeat: is_bot = true
@@ -59,7 +59,7 @@ Minimal              # minimal.gd: muestra el estado y conecta los botones
   - Gastar la última acción **no** cierra el turno. Lo cierra `end_turn()`, que también vale con acciones sin usar.
 - **Ronda:** un turno de cada asiento activo, empezando por `first_seat`. Si ese asiento está inactivo, empieza el siguiente activo.
 - **Ciclo:** `rounds_per_cycle` rondas (una era, un año). Con 0, las rondas se cuentan pero los ciclos no terminan.
-- **Fin:** después de `cycles` ciclos. Con 0, la partida no termina. Tampoco si no hay ningún asiento activo.
+- **Fin:** después de `cycles` ciclos. Con 0, la partida no termina. También termina si no queda ningún asiento activo.
 - **Orden de las señales en `end_turn()`:** `turn_ended(seat)`, después `round_ended(n)`, `cycle_ended(n)` y `finished` si corresponden, y al final `turn_started(next)` si la partida sigue.
 - **Asientos inactivos** (eliminados, desconectados): se saltean. Un asiento que vuelve a estar activo juega desde la ronda siguiente.
 - **Determinismo:** no hay azar ni tiempo real. `to_dict()` y `TurnCycle.from_dict()` guardan el estado entero, a mitad de un turno incluido.
@@ -83,21 +83,24 @@ Minimal              # minimal.gd: muestra el estado y conecta los botones
 
 ### `TurnClock` (Node)
 
-- **Inspector:** `actions_per_turn`, `rounds_per_cycle`, `cycles`, `first_seat` y `autostart` (empieza solo cuando la escena está lista; si lo apagás, llamá a `start()`).
-- **Ciclo:** `turn_cycle` es el `TurnCycle` que muestra. `use_cycle(cycle)` muestra el de tus reglas en vez del propio y `use_own_cycle()` vuelve al del inspector.
+- **Inspector:** `actions_per_turn`, `rounds_per_cycle`, `cycles`, `first_seat` y `autostart`.
+  - `autostart` empieza solo el ciclo **propio** del reloj, cuando la escena está lista. Si lo apagás, llamá a `start()`.
+- **Ciclo:** `turn_cycle` es el `TurnCycle` que muestra. `use_cycle(cycle)` muestra el de tus reglas en vez del propio y `use_own_cycle()` vuelve al del inspector. `owns_cycle()` dice cuál muestra.
+  - Un ciclo de `use_cycle` **nunca se reinicia**: ni `autostart` ni `start()` lo vuelven a la ronda 1, así que uno cargado de un guardado sigue en su turno. Si todavía no empezó, `start()` lo empieza.
+  - Con `use_cycle`, `TurnSeat.active` no toca los asientos de tus reglas: quién está activo lo deciden ellas.
 - **Métodos:** `start()`, `spend_action()`, `end_turn()`, `set_seat_active()`, `seat_nodes()`, `seat_node(seat)` y `current_seat_node()`.
 - **Estado:** `current_seat` y `actions_left`.
-- **Señales:** las mismas de `TurnCycle`.
+- **Señales:** las mismas de `TurnCycle`, más `rebuilt` cuando el reloj pasa a mostrar otro ciclo (`use_cycle`, `use_own_cycle` o `start()` del propio). Al recibirla, volvé a leer el estado.
 
 ### `TurnSeat` (Node, hijo de un `TurnClock`)
 
-- **Inspector:** `display_name`, `is_bot` (TurnKit solo lo guarda; lo usa tu juego) y `active`.
+- **Inspector:** `display_name`, `is_bot` (TurnKit solo lo guarda; lo usa tu juego) y `active` (solo para el ciclo propio del reloj).
 - **Métodos:** `index()` (su número de asiento) e `is_current()`.
 - **Señales:** `turn_started` y `turn_ended`, solo de ese asiento. Sirven para un bot o el HUD de un jugador.
 
 ## Tips
 
-- **Las reglas usan `TurnCycle`, no los nodos.** Guardalo en el estado de tu partida y mostralo con `clock.use_cycle(state.turns)`. Así las reglas corren headless y el HUD escucha las señales del reloj.
+- **Las reglas usan `TurnCycle`, no los nodos.** Guardalo en el estado de tu partida y mostralo con `clock.use_cycle(state.turns)`. Así las reglas corren headless y el HUD escucha las señales del reloj. Tus reglas lo empiezan (`state.turns.start()`), o llega ya empezado de un guardado.
 - **Una fase de mantenimiento al final del ciclo:** escuchá `cycle_ended`. Llega antes del `turn_started` del ciclo nuevo, en la misma llamada a `end_turn()`. Si la fase necesita que el jugador elija algo, tu juego la resuelve antes de aceptar órdenes del turno nuevo.
 - **Red:** el ciclo no sabe nada de red. Mandá `to_dict()` en el snapshot, o repetí las mismas órdenes en cada máquina.
 
@@ -110,7 +113,7 @@ godot --headless --path turnkit_lab --script res://addons/turn_kit/tests/turn_te
 Sale `TURNKIT TESTS PASS (n)`. Los tests cubren:
 
 - Acciones, el orden de turnos y de señales, rondas, ciclos, el fin y el sin fin.
-- `first_seat`, los asientos inactivos y `to_dict`.
-- Los nodos: los asientos como hijos, las señales por asiento, `autostart`, `use_cycle` y los avisos del editor.
+- `first_seat` (también negativo o fuera de rango), los asientos inactivos, quedarse sin asientos y `to_dict`.
+- Los nodos: los asientos como hijos, las señales por asiento, `autostart`, `use_cycle` sin reinicio (con un ciclo empezado y con uno de `from_dict`), `rebuilt` y los avisos del editor.
 - El ejemplo jugado con los botones.
 - Que el addon no nombre a ningún otro kit.

@@ -123,3 +123,25 @@ func _click(view: GridView3D, down: Vector2, up: Vector2) -> void:
 	release.pressed = false
 	release.position = up
 	view._unhandled_input(release)
+
+
+func test_cells_added_and_removed_in_play() -> void:
+	var board := _build(1)
+	var view := board.get_node(^"View") as GridView3D
+	var cursor := board.get_node(^"View/Cursor") as GridCursor
+	await tree.process_frame
+	cursor.highlight([Vector2i(0, 0), Vector2i(1, 0)] as Array[Vector2i])
+	board.grid.add_cell(Vector2i(3, 0))
+	await tree.process_frame
+	check(view.tile_at(Vector2i(3, 0)) != null, "a cell added in play gets its tile")
+	board.grid.remove_cell(Vector2i(1, 0))
+	await tree.process_frame
+	check(view.tile_at(Vector2i(1, 0)) == null, "a removed cell loses its tile")
+	check(cursor.highlighted() == ([Vector2i(0, 0)] as Array[Vector2i]), "and its mark: %s" % [cursor.highlighted()])
+	board.cell_size = 2.0
+	var marker := cursor.get_child(cursor.get_child_count() - 1) as Node3D
+	check(
+		marker.position.is_equal_approx(board.cell_to_position(Vector2i(0, 0)) + Vector3.UP * cursor.lift),
+		"marks follow a new cell_size"
+	)
+	board.free()

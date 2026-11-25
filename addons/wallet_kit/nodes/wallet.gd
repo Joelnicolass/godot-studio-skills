@@ -10,6 +10,8 @@ extends Node
 signal changed(key: StringName, value: int)
 ## `lost` of `key` did not fit under its limit.
 signal overflowed(key: StringName, lost: int)
+## The wallet shows another purse now (`use_purse`, `use_own_purse`, or new `start_amounts`): read every amount again.
+signal rebuilt
 
 ## What the purse holds when it is built. Changing it builds the purse again with these amounts.
 @export var start_amounts: Dictionary[StringName, int] = {}:
@@ -53,13 +55,13 @@ var _own := true
 
 
 ## Shows `other` instead of the wallet's own purse (your game's rules keep it). The inspector values no longer apply
-## until `use_own_purse()`.
+## until `use_own_purse()`. Emits `rebuilt`.
 func use_purse(other: Purse) -> void:
 	_own = false
 	_set_purse(other)
 
 
-## Goes back to a purse built from the inspector values, with the start amounts.
+## Goes back to a purse built from the inspector values, with the start amounts. Emits `rebuilt`.
 func use_own_purse() -> void:
 	_own = true
 	_rebuild_own()
@@ -113,6 +115,7 @@ func _set_purse(next: Purse) -> void:
 	_purse = next
 	_purse.changed.connect(_on_changed)
 	_purse.overflowed.connect(_on_overflowed)
+	rebuilt.emit()
 
 
 func _on_changed(key: StringName, value: int) -> void:

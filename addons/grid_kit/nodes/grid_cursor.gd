@@ -19,6 +19,20 @@ extends Node3D
 
 var _markers: Dictionary[Vector2i, Node3D] = {}
 var _material: StandardMaterial3D
+var _board: GridBoard
+
+
+func _enter_tree() -> void:
+	var view := get_parent() as GridView3D
+	_board = view.board() if view != null else null
+	if _board != null and not _board.rebuilt.is_connected(_on_board_rebuilt):
+		_board.rebuilt.connect(_on_board_rebuilt)
+
+
+func _exit_tree() -> void:
+	if _board != null and _board.rebuilt.is_connected(_on_board_rebuilt):
+		_board.rebuilt.disconnect(_on_board_rebuilt)
+	_board = null
 
 
 ## Marks exactly these cells (any cell marked before and not in the list is cleared).
@@ -41,6 +55,13 @@ func highlight(cells: Array[Vector2i]) -> void:
 		if not keep.has(cell):
 			_markers[cell].queue_free()
 			_markers.erase(cell)
+
+
+# The board changed its cells or its size: drop the marks on cells that are gone, move the rest.
+func _on_board_rebuilt() -> void:
+	var kept := highlighted()
+	clear()
+	highlight(kept)
 
 
 func clear() -> void:

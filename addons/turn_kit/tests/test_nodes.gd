@@ -100,3 +100,51 @@ func test_warnings() -> void:
 	check(loose.index() == -1 and not loose.is_current(), "and has no index")
 	loose.free()
 	clock.free()
+
+
+func test_use_cycle_keeps_a_started_cycle() -> void:
+	var rules := TurnCycle.new(2, 3)
+	rules.start()
+	rules.end_turn()
+	rules.end_turn()
+	rules.end_turn()
+	rules.spend_action()
+	var saved := TurnCycle.from_dict(rules.to_dict())
+	var clock := TurnClock.new()
+	for name: String in ["A", "B"]:
+		var seat := TurnSeat.new()
+		seat.name = name
+		clock.add_child(seat)
+	(clock.get_node(^"A") as TurnSeat).active = false
+	clock.use_cycle(saved)
+	tree.root.add_child(clock)
+	await tree.process_frame
+	await tree.process_frame
+	check(
+		saved.round_number == 2 and saved.current_seat == 1,
+		"autostart leaves a shown cycle alone: %s" % [saved.to_dict()]
+	)
+	check(saved.actions_left == 2, "with its actions: %d" % saved.actions_left)
+	check(saved.is_seat_active(0), "TurnSeat.active does not touch the rules' seats")
+	(clock.get_node(^"B") as TurnSeat).active = false
+	check(saved.is_seat_active(1), "not even when it changes")
+	clock.start()
+	check(saved.round_number == 2 and saved.current_seat == 1, "start() does not restart a started cycle")
+	var fresh := TurnCycle.new(2, 4)
+	clock.use_cycle(fresh)
+	clock.start()
+	check(fresh.is_started and fresh.actions_left == 4, "start() starts a shown cycle that has not started")
+	clock.free()
+
+
+func test_rebuilt() -> void:
+	var clock := _build(["A", "B"])
+	var count := [0]
+	clock.rebuilt.connect(func() -> void: count[0] += 1)
+	clock.use_cycle(TurnCycle.new(2))
+	check(count[0] == 1, "use_cycle emits rebuilt")
+	clock.use_own_cycle()
+	check(count[0] == 2, "use_own_cycle too")
+	clock.start()
+	check(count[0] == 3, "and start, which builds the own cycle again")
+	clock.free()

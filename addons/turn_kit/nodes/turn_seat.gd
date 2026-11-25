@@ -15,11 +15,12 @@ signal turn_ended
 ## For the game: a bot plays this seat. TurnKit only stores it.
 @export var is_bot := false
 ## Off: the clock skips this seat (eliminated, disconnected). It plays again from the next round once back on.
+## Only for the clock's own cycle: with `use_cycle`, your rules decide who is active.
 @export var active := true:
 	set(value):
 		active = value
 		var clock := get_parent() as TurnClock
-		if clock != null and is_inside_tree():
+		if clock != null and is_inside_tree() and clock.owns_cycle():
 			clock.set_seat_active(index(), value)
 
 

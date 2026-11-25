@@ -1,10 +1,5 @@
-; Engine configuration file.
-; It's best edited using the editor UI and not directly,
-; since the parameters that go here are not all obvious.
-;
-; Format:
-;   [section] ; section goes between []
-;   param=value ; assign values to parameters
+; GridKit lab: a tiny project that runs the kit's own example and tests, apart from any game.
+; addons/grid_kit is a symlink to the kit's own addons/grid_kit (one copy of the kit).
 
 config_version=5
 
