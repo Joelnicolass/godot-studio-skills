@@ -120,7 +120,7 @@ Materials / textures (floor, wall, terrain, 2D tile): **ask** if they want them 
 
 1. Small packed scene + `class_name`.
 2. `@export` knobs with a `##`, a range, and a unit. An editor warning if a reference is missing.
-3. The feature **instances** the component in the scene. Do not `load` shaders by hand from the world. A reusable component that owns its shader (as `Sprite3D` owns its own) may `preload` it and build its material, with the knobs as the component's `@export`s.
+3. The feature **instances** the component in the scene. Do not `load` shaders by hand from the world. A reusable component that owns its shader (as `Sprite3D` owns its own) may `preload` it and build its material, with the knobs as the component's `@export`s. The shader lives next to the component, in systems + content too (in `systems/<component>/`, not in `content/shaders/`).
 4. Signals on the node itself; the parent connects. The `Events` bus only for systems that do not know each other. The FX pass does not call the session.
 5. Per-player variant (a tint): a public method that takes the color; the color comes from an `@export` or a palette, not from code.
 

@@ -40,7 +40,7 @@ Do not ask again if: the user already chose in this chat; they named a size; or 
 
 If there is no answer, **do not** create folders.
 
-**Clean layered** (`features → core → domain`) is not offered to a new project. It applies in a repo that already declares it or when the user asks for it by name: [clean.md](clean.md). Do not change the style of a game already under way.
+**Clean layered** (`features → core → domain`) is not offered to a new project. It applies in a repo that already declares it or when the user asks for it by name: [clean.md](clean.md). Do not change the style of a game already under way unless the user asks for it; then migrate in batches, with the tree before each one.
 
 Folders, file names, and suffixes: [godot-code-quality](../godot-code-quality/SKILL.md) §1. The choice goes in RULES.md.
 
