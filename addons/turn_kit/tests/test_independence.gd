@@ -14,6 +14,7 @@ const OTHER_KITS: Array[String] = [
 	"perception_kit",
 	"spill_kit",
 	"agent_kit",
+	"command_kit",
 	"wallet_kit",
 	"grid_kit",
 	"Mp",
@@ -26,8 +27,13 @@ const OTHER_KITS: Array[String] = [
 	"Spill",
 	"Wallet",
 	"Purse",
-	"Grid",
-	"HexGrid"
+	"GridBoard",
+	"GridView3D",
+	"GridCursor",
+	"HexGrid",
+	"GameCommand",
+	"CommandLog",
+	"CommandBus"
 ]
 
 

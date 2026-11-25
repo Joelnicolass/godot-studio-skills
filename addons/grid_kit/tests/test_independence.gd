@@ -14,6 +14,7 @@ const OTHER_KITS: Array[String] = [
 	"perception_kit",
 	"spill_kit",
 	"agent_kit",
+	"command_kit",
 	"turn_kit",
 	"wallet_kit",
 	"Mp",
@@ -28,7 +29,10 @@ const OTHER_KITS: Array[String] = [
 	"TurnSeat",
 	"TurnCycle",
 	"Wallet",
-	"Purse"
+	"Purse",
+	"GameCommand",
+	"CommandLog",
+	"CommandBus"
 ]
 
 
