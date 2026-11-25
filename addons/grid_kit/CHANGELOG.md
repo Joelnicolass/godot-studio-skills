@@ -1,5 +1,11 @@
 # GridKit changes
 
+## 0.7.0
+
+- **`GridView3D.cell_right_clicked(cell)`:** a right click on a cell, with the same rule as `cell_clicked` (a drag is not a click), `input_enabled` and the tall cell of a board with heights. Use it to pick with the left button and order with the right, as in Civilization. The middle button stays with the camera, and a tap is still the left button.
+
+Nothing to update in your project: `cell_clicked` works as before.
+
 ## 0.6.1
 
 - **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem. The kit's emblem is in its bar of the 3D view.
