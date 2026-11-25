@@ -101,6 +101,12 @@ func erase_value(cell: Vector2i, key: StringName) -> void:
 		emit_changed()
 
 
+## The cells of the map whose `key` value is `value`, sorted by row and then column (the same rule as
+## `CellGrid.cells_with`).
+func cells_with(key: StringName, value: Variant) -> Array[Vector2i]:
+	return make_grid().cells_with(key, value)
+
+
 func get_value(cell: Vector2i, key: StringName, default: Variant = null) -> Variant:
 	if not cells.has(cell):
 		return default

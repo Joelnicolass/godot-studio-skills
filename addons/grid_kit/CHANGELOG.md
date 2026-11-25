@@ -1,5 +1,16 @@
 # GridKit changes
 
+## 0.5.0
+
+Four queries every game used to write on its own, in `CellGrid` (hexes and squares) and as shortcuts on `GridBoard`:
+
+- **Directions:** `direction_to(a, b)` says which side of `a` holds `b` (0 to 5 on hexes, in `CUBE_DIRECTIONS` order; 0 to 3, or 0 to 7 with diagonals), or -1 when it is not a neighbor. `neighbor(cell, direction)` goes the other way, and `direction_count()` says how many there are.
+- **Neighbors off the board:** `neighbors(cell, false)` also returns the ones outside, always in direction order. `outline(rings := 1)` gives the cells around the board: a frame, a fog, a coast.
+- **`cells_with(key, value)`:** the cells with that value (a player's start cells). Also on `GridLayout`.
+- **`center_cell()`:** the cell closest to the middle of the shape.
+
+Nothing to update in your project: `neighbors(cell)` works as before.
+
 ## 0.4.0
 
 - **`GridView3D.tile_created(cell, tile)`:** fires for every tile it makes, already on its cell's center and before it enters the tree, so what you set on it there (its cell, its data) is already there in its `_ready`. Before, the game had to work out the cell from the position.

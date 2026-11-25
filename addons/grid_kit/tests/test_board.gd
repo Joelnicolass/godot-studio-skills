@@ -219,3 +219,15 @@ func test_a_saved_scene_with_a_layout_and_old_shape_values_loads_the_layout() ->
 	check(loaded.get_value(Vector2i(2, 1), &"terrain") == &"water", "with its values")
 	loaded.free()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
+func test_board_queries() -> void:
+	var board := build_board(1)
+	check(board.direction_to(Vector2i.ZERO, board.neighbor(Vector2i.ZERO, 2)) == 2, "direction_to and neighbor")
+	check(board.neighbors(Vector2i.ZERO, false).size() == 6, "neighbors off the board")
+	check(board.outline().size() == 12, "outline")
+	board.set_value(Vector2i(1, 0), &"start", 0)
+	var start: Array[Vector2i] = [Vector2i(1, 0)]
+	check(board.cells_with(&"start", 0) == start, "cells_with")
+	check(board.center_cell() == Vector2i.ZERO, "center_cell")
+	board.free()

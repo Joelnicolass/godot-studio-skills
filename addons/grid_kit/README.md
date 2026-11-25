@@ -113,7 +113,12 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 | `add_cells(list)` / `remove_cells(list)` | The same for many cells, with **one** `cells_changed` |
 | `set_value(cell, key, value)`, `get_value(cell, key, default)`, `values(cell)` | Values per cell and key (`StringName`) |
 | `erase_value(cell, key)` | Takes a value out. Emits `value_changed` with `null` |
-| `neighbors(cell)` | The neighbors that are on the board, in a fixed order |
+| `neighbors(cell, on_board_only := true)` | The neighbors, in direction order. With `on_board_only` off also the ones off the board: always `direction_count()` cells, and the index is the direction |
+| `direction_count()`, `neighbor(cell, direction)` | How many neighbors a cell has (6 on hexes; 4, or 8 with diagonals) and the cell one step that way, on the board or not |
+| `direction_to(a, b)` | Which side of `a` holds `b` (the direction), or -1 when it is not a neighbor |
+| `outline(rings := 1)` | The cells around the board, `rings` deep (on squares touching a corner is enough). For a frame, a fog or a coast |
+| `cells_with(key, value)` | The cells with that value (the start cells: `cells_with(&"start", seat)`). A `String` and a `StringName` with the same text match, and so do an int and a float with the same number |
+| `center_cell()` | The cell closest to the middle of the shape (the average of the centers), or `NO_CELL` on an empty board |
 | `distance(a, b)` | Steps between two cells (a method of the grid: it depends on the shape) |
 | `cells_in_range(cell, radius)` | The cells at `radius` steps or fewer, `cell` included |
 | `find_path(from, to, cost)` | The cheapest path (A*). `cost` is `func(from, to) -> float`; `INF` or a negative value is impassable. Without `cost`, every step costs 1 |
@@ -160,7 +165,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 
 - **Inspector:** `layout`, `shape` (Hexagons or Squares), `diagonals` (squares only), `columns`, `rows`, `radius` (above 0: every cell within `radius` steps of (0, 0), in both shapes) and `cell_size`. With a `layout`, the grid comes from the layout and the inspector shape does not apply. `save_shape_as_layout()` makes a layout from the current shape (in the editor, the button of the GridKit bar does the same, with undo).
 - **Grid:** `grid` is the `CellGrid` it shows. `use_grid(grid)` shows your rules' grid instead of its own, and `use_own_grid()` goes back to the one from the layout or the inspector.
-- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path` and `flood`, plus `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` off the board) and `position_to_any_cell(point)` (the cell under the point even if it is not on the board). The rest (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) goes through `board.grid`.
+- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` and `center_cell`, plus `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` off the board) and `position_to_any_cell(point)` (the cell under the point even if it is not on the board). The rest (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) goes through `board.grid`.
 - **Editing many at once:** `paint(key, {cell: value})` (a `null` value deletes the key) and `set_cells(add, remove, values)` (`values` is `{cell: {key: value}}` for the new cells). In the editor, with a `layout`, they write the layout too; in play, only the grid.
 - **Signals:** `cell_changed(cell, key, value)` and `rebuilt` (another grid, another shape or `cell_size`, or cells added or removed). Views and cursors update themselves with it.
 
@@ -218,7 +223,7 @@ godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_te
 
 It prints `GRIDKIT TESTS PASS (n)`. The tests cover:
 
-- Hexagons and squares: shapes and coordinates, neighbors (4 and 8, in order), distance, range, paths with cost, with and without diagonals, flood, cell ↔ point round trips.
+- Hexagons and squares: shapes and coordinates, neighbors (4 and 8, in order), distance, range, paths with cost, with and without diagonals, flood, cell ↔ point round trips, directions (`direction_to`, `neighbor`), neighbors off the board, `outline` (corners included on squares), `cells_with` (text and numbers of different types) and `center_cell`.
 - `CellGrid`: `from_dict` picks the class and reads the 0.2 format, `add_cells` emits once, `erase_value`.
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` and saving and loading a `.tres`.
 - The nodes: shape from the inspector, `radius` on squares, the layout rules, grouped rebuild, `paint` and `set_cells` (with and without a layout), `position_to_any_cell`, tiles per cell, `tile_created` and `drawn`, redraw, `use_grid`, `cell_at_ray`, click, drag and editor warnings.

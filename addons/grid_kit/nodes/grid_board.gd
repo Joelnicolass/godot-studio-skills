@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 @tool
 class_name GridBoard
 extends Node
@@ -110,8 +111,34 @@ func get_value(cell: Vector2i, key: StringName, default: Variant = null) -> Vari
 	return grid.get_value(cell, key, default)
 
 
-func neighbors(cell: Vector2i) -> Array[Vector2i]:
-	return grid.neighbors(cell)
+## The cells next to `cell`, in direction order; with `on_board_only` off, also the ones off the board.
+func neighbors(cell: Vector2i, on_board_only := true) -> Array[Vector2i]:
+	return grid.neighbors(cell, on_board_only)
+
+
+## The cell one step from `cell` toward `direction`, on the board or not (see `CellGrid.neighbor`).
+func neighbor(cell: Vector2i, direction: int) -> Vector2i:
+	return grid.neighbor(cell, direction)
+
+
+## The direction from `a` to `b` when they are next to each other, or -1.
+func direction_to(a: Vector2i, b: Vector2i) -> int:
+	return grid.direction_to(a, b)
+
+
+## The cells around the board, `rings` deep (see `CellGrid.outline`).
+func outline(rings := 1) -> Array[Vector2i]:
+	return grid.outline(rings)
+
+
+## The board cells whose `key` value is `value`.
+func cells_with(key: StringName, value: Variant) -> Array[Vector2i]:
+	return grid.cells_with(key, value)
+
+
+## The board cell closest to the middle of the board, or `CellGrid.NO_CELL` on an empty board.
+func center_cell() -> Vector2i:
+	return grid.center_cell()
 
 
 func distance(a: Vector2i, b: Vector2i) -> int:
