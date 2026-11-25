@@ -7,16 +7,24 @@ func _build() -> Wallet:
 	var wallet := Wallet.new()
 	wallet.start_amounts = {&"food": 2, &"gold": 1}
 	wallet.limits = {&"food": 2}
-	wallet.wildcard = &"gold"
+	wallet.substitutes = [_rule(&"gold")]
 	tree.root.add_child(wallet)
 	return wallet
+
+
+func _rule(key: StringName, covers: Array[StringName] = [], rate := 1) -> WalletSubstitute:
+	var rule := WalletSubstitute.new()
+	rule.key = key
+	rule.covers = covers
+	rule.rate = rate
+	return rule
 
 
 func test_purse_from_inspector() -> void:
 	var wallet := _build()
 	check(wallet.amount(&"food") == 2 and wallet.amount(&"gold") == 1, "start amounts")
 	check(wallet.limit(&"food") == 2, "limits")
-	check(wallet.can_pay({&"wood": 1}) and wallet.pay({&"wood": 1}), "the wildcard pays")
+	check(wallet.can_pay({&"wood": 1}) and wallet.pay({&"wood": 1}), "the substitute pays")
 	check(wallet.amount(&"gold") == 0, "with gold")
 	check(wallet._get_configuration_warnings().is_empty(), "no warnings")
 	wallet.free()
@@ -40,8 +48,8 @@ func test_live_inspector() -> void:
 	check(wallet.amount(&"wood") == 3, "a new limit cuts what is there")
 	wallet.limits = {}
 	check(wallet.limit(&"food") == -1, "a key left out has no limit")
-	wallet.wildcard = &""
-	check(not wallet.can_pay({&"ore": 1}), "no wildcard any more")
+	wallet.substitutes = []
+	check(not wallet.can_pay({&"ore": 1}), "no substitute any more")
 	wallet.start_amounts = {&"ore": 4}
 	check(wallet.amount(&"ore") == 4 and wallet.amount(&"wood") == 0, "new start amounts build the purse again")
 	wallet.free()
@@ -63,16 +71,63 @@ func test_use_purse() -> void:
 	wallet.free()
 
 
+func test_substitutes_from_the_inspector() -> void:
+	var wallet := _build()
+	check(wallet.substitutes_for(&"wood").size() == 1, "substitutes_for")
+	var two: Array[WalletSubstitute] = [_rule(&"food", [&"wood"], 2), _rule(&"gold")]
+	wallet.substitutes = two
+	check(wallet.purse.substitutes().size() == 2, "both reached the purse")
+	var plan := wallet.payment_for({&"wood": 1, &"ore": 1})
+	check(plan == ({&"food": 2, &"gold": 1} as Dictionary[StringName, int]), "in list order: %s" % [plan])
+	check(wallet.amount(&"food") == 2, "applying does not rebuild the purse")
+	wallet.free()
+
+
+func test_a_resource_changed_live() -> void:
+	var wallet := _build()
+	var food := _rule(&"food", [&"wood"], 2)
+	wallet.substitutes = [food]
+	check(wallet.can_pay({&"wood": 1}) and not wallet.can_pay({&"wood": 2}), "2 food cover 1 wood")
+	food.rate = 1
+	check(wallet.can_pay({&"wood": 2}), "the new rate applies at once")
+	food.covers = [&"ore"]
+	check(not wallet.can_pay({&"wood": 1}) and wallet.can_pay({&"ore": 2}), "so does a new covers list")
+	check(food.changed.get_connections().size() == 1, "the wallet listens once")
+	wallet.substitutes = []
+	check(food.changed.get_connections().is_empty(), "a resource that left the list is no longer heard")
+	wallet.free()
+
+
+func test_use_purse_is_not_overwritten() -> void:
+	var wallet := _build()
+	var rules := Purse.new({&"wood": 1})
+	rules.add_substitute(&"wood", [&"ore"], 3)
+	wallet.use_purse(rules)
+	var gold := _rule(&"gold")
+	wallet.substitutes = [gold]
+	gold.rate = 4
+	check(
+		rules.substitutes().size() == 1 and rules.substitutes()[0]["key"] == &"wood", "the rules' purse keeps its own"
+	)
+	wallet.use_own_purse()
+	check(
+		wallet.purse.substitutes().size() == 1 and wallet.purse.substitutes()[0]["rate"] == 4, "back to the inspector"
+	)
+	wallet.free()
+
+
 func test_warnings() -> void:
 	var wallet := Wallet.new()
 	wallet.start_amounts = {&"food": 5, &"ore": -1}
 	wallet.limits = {&"food": 2, &"wood": -3}
-	wallet.wildcard_covers = [&"food"]
+	check(wallet._get_configuration_warnings().size() == 3, "above limit, negative start, negative limit")
+	wallet.substitutes = [null, _rule(&""), _rule(&"gold", [&"gold"]), _rule(&"wood"), _rule(&"wood")]
 	var warnings := wallet._get_configuration_warnings()
-	check(warnings.size() == 4, "above limit, negative start, negative limit, covers without wildcard: %s" % [warnings])
-	wallet.wildcard = &"gold"
-	wallet.wildcard_covers = [&"gold"]
-	check(wallet._get_configuration_warnings().size() == 4, "a wildcard covering itself warns")
+	check(warnings.size() == 3 + 4, "empty slot, no key, covers itself, a repeated rule: %s" % [warnings])
+	wallet.substitutes = [_rule(&"gold", [&"wood", &"food"]), _rule(&"gold", [&"food", &"wood"])]
+	check(wallet._get_configuration_warnings().size() == 3 + 1, "the same covers in another order is a repeat")
+	wallet.substitutes = [_rule(&"gold", [&"wood"]), _rule(&"gold", [&"food"]), _rule(&"wood", [&"gold"], 2)]
+	check(wallet._get_configuration_warnings().size() == 3, "different rules for the same key are fine")
 	wallet.free()
 
 

@@ -22,6 +22,10 @@ SKILL_NAMES=(
   godot-perception-kit
   godot-spill-kit
   godot-bot-kit
+  godot-grid-kit
+  godot-turn-kit
+  godot-wallet-kit
+  godot-command-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -46,6 +50,10 @@ COMMAND_FILES=(
   add-perception.md
   add-spill.md
   add-bots.md
+  add-grid.md
+  add-turns.md
+  add-wallet.md
+  add-commands.md
   create-material.md
   research-feature.md
   manage-changes.md

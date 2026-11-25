@@ -40,13 +40,13 @@ func test_neighbors() -> void:
 
 
 func test_distance_and_range() -> void:
-	check(HexGrid.distance(Vector2i(0, 0), Vector2i(0, 0)) == 0, "distance to itself")
-	check(HexGrid.distance(Vector2i(2, 2), Vector2i(2, 1)) == 1, "a neighbor is 1 away")
-	check(
-		HexGrid.distance(Vector2i(0, 0), Vector2i(3, 4)) == 5,
-		"far cell: %d" % HexGrid.distance(Vector2i(0, 0), Vector2i(3, 4))
-	)
 	var grid := HexGrid.hexagon(4)
+	check(grid.distance(Vector2i(0, 0), Vector2i(0, 0)) == 0, "distance to itself")
+	check(grid.distance(Vector2i(2, 2), Vector2i(2, 1)) == 1, "a neighbor is 1 away")
+	check(
+		grid.distance(Vector2i(0, 0), Vector2i(3, 4)) == 5,
+		"far cell: %d" % grid.distance(Vector2i(0, 0), Vector2i(3, 4))
+	)
 	check(grid.cells_in_range(Vector2i.ZERO, 1).size() == 7, "range 1 = the cell + 6")
 	check(grid.cells_in_range(Vector2i.ZERO, 2).size() == 19, "range 2 = 19 cells")
 	check(grid.cells_in_range(Vector2i.ZERO, 9).size() == 61, "range never leaves the board")
@@ -96,10 +96,11 @@ func test_flood() -> void:
 
 func test_local_round_trip() -> void:
 	var ok := true
-	for cell in HexGrid.hexagon(4).cells():
-		var center := HexGrid.cell_to_local(cell, 1.5)
-		ok = ok and HexGrid.local_to_cell(center, 1.5) == cell
-		ok = ok and HexGrid.local_to_cell(center + Vector2(0.3, -0.2), 1.5) == cell
+	var grid := HexGrid.hexagon(4)
+	for cell in grid.cells():
+		var center := grid.cell_to_local(cell, 1.5)
+		ok = ok and grid.local_to_cell(center, 1.5) == cell
+		ok = ok and grid.local_to_cell(center + Vector2(0.3, -0.2), 1.5) == cell
 	check(ok, "a point near a cell center maps back to that cell")
 
 
@@ -107,7 +108,9 @@ func test_to_dict() -> void:
 	var grid := HexGrid.hexagon(2)
 	grid.set_value(Vector2i(1, 0), &"terrain", &"mountain")
 	grid.set_value(Vector2i(-1, 1), &"owner", 2)
-	var copy := HexGrid.from_dict(grid.to_dict())
+	var copy := CellGrid.from_dict(grid.to_dict())
+	check(copy is HexGrid and copy.shape_name() == &"hex", "from_dict gives a HexGrid back")
+	check(grid.to_dict()["shape"] == "hex", "the shape is written as a name")
 	check(copy.size() == grid.size(), "same cells")
 	check(copy.get_value(Vector2i(1, 0), &"terrain") == &"mountain", "values survive")
 	check(copy.to_dict() == grid.to_dict(), "to_dict is stable")
@@ -125,3 +128,16 @@ func test_cells_changed() -> void:
 	check(count[0] == 1, "removing a cell that is not there emits nothing")
 	grid.remove_cell(Vector2i(5, 5))
 	check(count[0] == 2 and not grid.has_cell(Vector2i(5, 5)), "removing one emits it")
+
+
+func test_outline() -> void:
+	var corners := HexGrid.new().cell_outline(1.0)
+	check(corners.size() == 6, "a hex has 6 corners")
+	var radius := 1.0 / HexGrid.SQRT3
+	var ok := true
+	for corner in corners:
+		ok = ok and is_equal_approx(corner.length(), radius)
+	check(ok, "every corner is one radius from the center")
+	check(
+		is_equal_approx(corners[0].x, 0.5) and is_equal_approx(corners[0].y, radius * 0.5), "pointy-top: first corner"
+	)

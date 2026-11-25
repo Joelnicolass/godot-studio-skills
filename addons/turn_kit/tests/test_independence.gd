@@ -25,15 +25,18 @@ const OTHER_KITS: Array[String] = [
 	"Grass",
 	"Perception",
 	"Spill",
-	"Wallet",
-	"Purse",
+	"CellGrid",
+	"HexGrid",
+	"SquareGrid",
+	"GridLayout",
 	"GridBoard",
 	"GridView3D",
 	"GridCursor",
-	"HexGrid",
-	"GameCommand",
+	"Purse",
+	"Wallet",
+	"WalletSubstitute",
 	"CommandLog",
-	"CommandBus"
+	"GameCommands"
 ]
 
 

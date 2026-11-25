@@ -3,7 +3,7 @@ class_name Wallet
 extends Node
 
 ## Resources or coins in the scene tree. It owns a `Purse` built from its inspector values (start amounts, limits,
-## wildcard), or shows one your game's rules already keep (`use_purse`). Every call goes to the purse: `can_pay`,
+## substitutes), or shows one your game's rules already keep (`use_purse`). Every call goes to the purse: `can_pay`,
 ## `pay`, `add`, `amount`.
 
 ## The amount of `key` is now `value`.
@@ -28,20 +28,13 @@ signal rebuilt
 			for key in value:
 				_purse.set_limit(key, value[key])
 		update_configuration_warnings()
-## The key that covers, 1 to 1, what is missing when paying. Empty: no wildcard.
-@export var wildcard: StringName = &"":
+## What pays for what is missing, in the order they are tried: put the most specific first. Changing the list, or a
+## value inside one, applies at once.
+@export var substitutes: Array[WalletSubstitute] = []:
 	set(value):
-		wildcard = value
-		if _own and _purse != null:
-			_purse.wildcard = value
-		update_configuration_warnings()
-## The keys the wildcard can cover. Empty: every key but itself.
-@export var wildcard_covers: Array[StringName] = []:
-	set(value):
-		wildcard_covers = value
-		if _own and _purse != null:
-			_purse.wildcard_covers = value.duplicate()
-		update_configuration_warnings()
+		_watch(value)
+		substitutes = value
+		_apply_substitutes()
 
 ## The purse this wallet shows.
 var purse: Purse:
@@ -52,6 +45,7 @@ var purse: Purse:
 
 var _purse: Purse
 var _own := true
+var _watched: Array[WalletSubstitute] = []
 
 
 ## Shows `other` instead of the wallet's own purse (your game's rules keep it). The inspector values no longer apply
@@ -99,13 +93,43 @@ func set_amount(key: StringName, value: int) -> int:
 	return purse.set_amount(key, value)
 
 
+func substitutes_for(key: StringName) -> Array[Dictionary]:
+	return purse.substitutes_for(key)
+
+
 func _rebuild_own() -> void:
 	if not _own:
 		return
-	var next := Purse.new(start_amounts, limits, wildcard)
-	next.wildcard_covers = wildcard_covers.duplicate()
+	var next := Purse.new(start_amounts, limits)
+	_fill_substitutes(next)
 	_set_purse(next)
 	update_configuration_warnings()
+
+
+# The wallet's own purse gets the list again; a purse from `use_purse` is never touched.
+func _apply_substitutes() -> void:
+	if _own and _purse != null:
+		_fill_substitutes(_purse)
+	update_configuration_warnings()
+
+
+func _fill_substitutes(target: Purse) -> void:
+	target.clear_substitutes()
+	for rule in substitutes:
+		if rule != null and rule.key != &"" and rule.rate >= 1 and not rule.covers.has(rule.key):
+			target.add_substitute(rule.key, rule.covers, rule.rate)
+
+
+# Listens to `changed` of every resource in the list, and only to those.
+func _watch(list: Array[WalletSubstitute]) -> void:
+	for rule in _watched:
+		if rule.changed.is_connected(_apply_substitutes):
+			rule.changed.disconnect(_apply_substitutes)
+	_watched.clear()
+	for rule in list:
+		if rule != null and not _watched.has(rule):
+			rule.changed.connect(_apply_substitutes)
+			_watched.append(rule)
 
 
 func _set_purse(next: Purse) -> void:
@@ -136,8 +160,31 @@ func _get_configuration_warnings() -> PackedStringArray:
 	for key in limits:
 		if limits[key] < 0:
 			warnings.append("limits: %s is negative (leave the key out for no limit)." % key)
-	if wildcard != &"" and wildcard_covers.has(wildcard):
-		warnings.append("The wildcard cannot cover itself: take %s out of wildcard_covers." % wildcard)
-	if wildcard == &"" and not wildcard_covers.is_empty():
-		warnings.append("wildcard_covers does nothing without a wildcard key.")
+	var seen: Array[String] = []
+	for index in substitutes.size():
+		var rule := substitutes[index]
+		if rule == null:
+			warnings.append(
+				"substitutes: slot %d is empty. Create a WalletSubstitute there or remove the slot." % index
+			)
+			continue
+		if rule.key == &"":
+			warnings.append("substitutes: slot %d has no key. Type the key that pays (for example gold)." % index)
+			continue
+		if rule.covers.has(rule.key):
+			warnings.append(
+				"substitutes: %s cannot cover itself. Take it out of covers in slot %d." % [rule.key, index]
+			)
+		var signature := "%s|%s" % [rule.key, _sorted_covers(rule)]
+		if seen.has(signature):
+			warnings.append("substitutes: slot %d repeats an earlier rule (same key, same covers). Remove one." % index)
+		seen.append(signature)
 	return warnings
+
+
+func _sorted_covers(rule: WalletSubstitute) -> String:
+	var names: Array[String] = []
+	for key in rule.covers:
+		names.append(String(key))
+	names.sort()
+	return ",".join(names)
