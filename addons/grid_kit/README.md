@@ -66,7 +66,7 @@ Minimal3D                 # minimal_3d.gd: paints the terrain, connects the sign
 | Member | What it does |
 | --- | --- |
 | `HexGrid.rect(columns, rows)` / `HexGrid.hexagon(radius)` | A rectangular board, or a hexagonal one centered on (0, 0) |
-| `add_cell`, `remove_cell`, `has_cell`, `size()`, `cells()` | The board's cells |
+| `add_cell`, `remove_cell`, `has_cell`, `size()`, `cells()` | The board's cells. Adding or removing one emits `cells_changed` |
 | `set_value(cell, key, value)`, `get_value(cell, key, default)`, `values(cell)` | Values per cell and key (`StringName`) |
 | `neighbors(cell)` | The neighbors that are on the board |
 | `HexGrid.distance(a, b)` | Steps between two cells |
@@ -76,13 +76,14 @@ Minimal3D                 # minimal_3d.gd: paints the terrain, connects the sign
 | `HexGrid.cell_to_local(cell, cell_size)` / `local_to_cell(point, cell_size)` | From a cell center to the plane, and from the plane to a cell |
 | `to_dict()` / `HexGrid.from_dict(data)` | Plain data to save or send over the network |
 | signal `value_changed(cell, key, value)` | A value changed |
+| signal `cells_changed` | A cell was added or removed |
 
 ### `GridBoard` (Node)
 
 - **Inspector:** `columns`, `rows`, `radius` (above 0, the board is a hexagon) and `cell_size`.
 - **Grid:** `grid` is the `HexGrid` it shows. `use_grid(grid)` shows your rules' grid instead of its own; `use_own_grid()` goes back to the inspector one.
-- **Queries:** the same as `HexGrid`, plus `cell_to_position(cell) -> Vector3` and `position_to_cell(point) -> Vector2i`.
-- **Signals:** `cell_changed(cell, key, value)` and `rebuilt`.
+- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path` and `flood`, plus `cell_to_position(cell) -> Vector3` and `position_to_cell(point) -> Vector2i`. The rest (`values`, `size`, `add_cell`, `remove_cell`, `to_dict`) goes through `board.grid`.
+- **Signals:** `cell_changed(cell, key, value)` and `rebuilt` (another grid, another shape or `cell_size`, or a cell added or removed). Views and cursors follow it on their own.
 
 ### `GridView3D` (Node3D, child of a `GridBoard`)
 
@@ -102,6 +103,7 @@ Minimal3D                 # minimal_3d.gd: paints the terrain, connects the sign
   - `marker`: the marker scene. Empty draws a flat hexagon in `color`.
   - `color`, `lift` and `fill`.
 - **Methods:** `highlight(cells)` (replaces the previous marks), `clear()` and `highlighted()`.
+- When the board changes (`rebuilt`), marks on cells that are gone are cleared and the rest move to their place.
 - Use one cursor per meaning: valid moves, selection, hover.
 
 ## Tips
@@ -119,7 +121,7 @@ godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_te
 It prints `GRIDKIT TESTS PASS (n)`. The tests cover:
 
 - Shapes and coordinates, neighbors, distance, range, paths with costs and flood.
-- `to_dict`.
-- The nodes: a tile per cell, redraws, `use_grid`, click, drag and editor warnings.
+- `to_dict` and `cells_changed`.
+- The nodes: a tile per cell, redraws, `use_grid`, cells added and removed in play (tiles and marks), click, drag and editor warnings.
 - The example, played with mouse events.
 - That the addon names no other kit.

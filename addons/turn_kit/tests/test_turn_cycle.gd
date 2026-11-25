@@ -119,3 +119,20 @@ func test_to_dict_round_trip() -> void:
 	copy.end_turn()
 	check(copy.to_dict() == turns.to_dict(), "and both go on the same way")
 	check(copy.current_seat == turns.current_seat and copy.actions_left == 3, "same next turn")
+
+
+func test_bad_numbers() -> void:
+	var turns := TurnCycle.new(3, 1)
+	turns.first_seat = -1
+	turns.start()
+	check(turns.current_seat == 2, "a negative first_seat wraps: -1 is the last seat (%d)" % turns.current_seat)
+	turns.first_seat = 7
+	turns.end_turn()
+	turns.end_turn()
+	turns.end_turn()
+	check(turns.current_seat == 1, "past the last seat wraps too: 7 of 3 is 1 (%d)" % turns.current_seat)
+	turns.seats = 0
+	turns.end_turn()
+	turns.end_turn()
+	turns.end_turn()
+	check(turns.is_finished, "no seats left: the match ends, no division by zero")

@@ -8,6 +8,8 @@ extends RefCounted
 
 ## It changed a value of a cell.
 signal value_changed(cell: Vector2i, key: StringName, value: Variant)
+## A cell was added to the board or taken out of it.
+signal cells_changed
 
 enum Shape { HEX_POINTY }
 
@@ -105,13 +107,17 @@ static func _cube_round(q: float, r: float, s: float) -> Vector3i:
 	return Vector3i(rq, rr, rs)
 
 
+## Adds `cell` to the board (no values). Emits `cells_changed` when it was not there.
 func add_cell(cell: Vector2i) -> void:
 	if not _cells.has(cell):
 		_cells[cell] = {}
+		cells_changed.emit()
 
 
+## Takes `cell` and its values out of the board. Emits `cells_changed` when it was there.
 func remove_cell(cell: Vector2i) -> void:
-	_cells.erase(cell)
+	if _cells.erase(cell):
+		cells_changed.emit()
 
 
 func has_cell(cell: Vector2i) -> bool:

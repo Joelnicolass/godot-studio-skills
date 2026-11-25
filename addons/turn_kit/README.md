@@ -43,11 +43,11 @@ func _on_end_pressed() -> void:
 
 ## Minimal example
 
-`examples/minimal/minimal.tscn` (F6): three seats (Ana, Beto and a bot). Spend uses an action and End passes the turn. The bot passes by itself. Two rounds make a cycle, and the match ends after two cycles.
+`examples/minimal/minimal.tscn` (F6): three seats (Ana, Beto and a bot). **Spend action** uses an action and **End turn** passes the turn. The bot passes by itself. Two rounds make a cycle, and the match ends after two cycles.
 
 ```
 Minimal              # minimal.gd: shows the state and connects the buttons
-├── Box              # status, Spend and End buttons, log
+├── Box              # status, Spend action and End turn buttons, log
 └── Turns            # TurnClock: rounds_per_cycle = 2, cycles = 2
     ├── Ana, Beto    # TurnSeat
     └── Bot          # TurnSeat: is_bot = true
@@ -83,21 +83,24 @@ Minimal              # minimal.gd: shows the state and connects the buttons
 
 ### `TurnClock` (Node)
 
-- **Inspector:** `actions_per_turn`, `rounds_per_cycle`, `cycles`, `first_seat` and `autostart` (starts by itself once the scene is ready; turn it off and call `start()`).
-- **Cycle:** `turn_cycle` is the `TurnCycle` it shows. `use_cycle(cycle)` shows your rules' cycle instead of its own, and `use_own_cycle()` goes back to the inspector's.
+- **Inspector:** `actions_per_turn`, `rounds_per_cycle`, `cycles`, `first_seat` and `autostart`.
+  - `autostart` starts the clock's **own** cycle by itself once the scene is ready. Turn it off and call `start()`.
+- **Cycle:** `turn_cycle` is the `TurnCycle` it shows. `use_cycle(cycle)` shows your rules' cycle instead of its own, and `use_own_cycle()` goes back to the inspector's. `owns_cycle()` tells which one it shows.
+  - A cycle from `use_cycle` is **never restarted**: neither `autostart` nor `start()` takes it back to round 1, so one loaded from a save stays on its turn. If it has not started yet, `start()` starts it.
+  - With `use_cycle`, `TurnSeat.active` does not touch your rules' seats: your rules decide who is active.
 - **Methods:** `start()`, `spend_action()`, `end_turn()`, `set_seat_active()`, `seat_nodes()`, `seat_node(seat)` and `current_seat_node()`.
 - **State:** `current_seat` and `actions_left`.
-- **Signals:** the same as `TurnCycle`.
+- **Signals:** the same as `TurnCycle`, plus `rebuilt` when the clock starts showing another cycle (`use_cycle`, `use_own_cycle` or `start()` of its own). When it arrives, read the state again.
 
 ### `TurnSeat` (Node, child of a `TurnClock`)
 
-- **Inspector:** `display_name`, `is_bot` (TurnKit only stores it; your game uses it) and `active`.
+- **Inspector:** `display_name`, `is_bot` (TurnKit only stores it; your game uses it) and `active` (for the clock's own cycle only).
 - **Methods:** `index()` (its seat number) and `is_current()`.
 - **Signals:** `turn_started` and `turn_ended`, for that seat only. Good for a bot or one player's HUD.
 
 ## Tips
 
-- **Rules use `TurnCycle`, not the nodes.** Keep it in your match state and show it with `clock.use_cycle(state.turns)`. The rules run headless and the HUD listens to the clock's signals.
+- **Rules use `TurnCycle`, not the nodes.** Keep it in your match state and show it with `clock.use_cycle(state.turns)`. The rules run headless and the HUD listens to the clock's signals. Your rules start it (`state.turns.start()`), or it comes already started from a save.
 - **An upkeep phase at the end of a cycle:** listen to `cycle_ended`. It arrives before the new cycle's `turn_started`, in the same `end_turn()` call. If the phase needs the player to choose something, your game settles it before taking orders for the new turn.
 - **Network:** the cycle knows nothing about the network. Send `to_dict()` in the snapshot, or replay the same orders on every machine.
 
@@ -110,7 +113,7 @@ godot --headless --path turnkit_lab --script res://addons/turn_kit/tests/turn_te
 It prints `TURNKIT TESTS PASS (n)`. The tests cover:
 
 - Actions, the order of turns and signals, rounds, cycles, the end and no end.
-- `first_seat`, inactive seats and `to_dict`.
-- The nodes: seats as children, per-seat signals, `autostart`, `use_cycle` and the editor warnings.
+- `first_seat` (negative or out of range too), inactive seats, running out of seats and `to_dict`.
+- The nodes: seats as children, per-seat signals, `autostart`, `use_cycle` with no restart (with a started cycle and one from `from_dict`), `rebuilt` and the editor warnings.
 - The example played with its buttons.
 - That the addon names no other kit.
