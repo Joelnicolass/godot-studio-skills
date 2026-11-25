@@ -59,15 +59,16 @@ func distance(a: Vector2i, b: Vector2i) -> int:
 	return maxi(absi(d.x), maxi(absi(d.y), absi(d.z)))
 
 
-## The board cells next to `cell`, in CUBE_DIRECTIONS order.
-func neighbors(cell: Vector2i) -> Array[Vector2i]:
-	var list: Array[Vector2i] = []
-	var cube := to_cube(cell)
-	for direction in CUBE_DIRECTIONS:
-		var next := from_cube(cube + direction)
-		if _cells.has(next):
-			list.append(next)
-	return list
+## 6: the directions are CUBE_DIRECTIONS, in its order.
+func direction_count() -> int:
+	return CUBE_DIRECTIONS.size()
+
+
+## The cell one step from `cell` toward `CUBE_DIRECTIONS[direction]`, on the board or not.
+func neighbor(cell: Vector2i, direction: int) -> Vector2i:
+	if direction < 0 or direction >= CUBE_DIRECTIONS.size():
+		return NO_CELL
+	return from_cube(to_cube(cell) + CUBE_DIRECTIONS[direction])
 
 
 ## The board cells at `radius` steps or fewer from `cell`, `cell` included, sorted by row and then column.

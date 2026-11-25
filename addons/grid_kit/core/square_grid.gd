@@ -52,18 +52,19 @@ func distance(a: Vector2i, b: Vector2i) -> int:
 	return maxi(d.x, d.y) if diagonals else d.x + d.y
 
 
-## The board cells next to `cell`: east, north, west, south and, with diagonals, north-east, north-west, south-west,
-## south-east.
-func neighbors(cell: Vector2i) -> Array[Vector2i]:
-	var list: Array[Vector2i] = []
-	for step in STRAIGHT_STEPS:
-		if _cells.has(cell + step):
-			list.append(cell + step)
-	if diagonals:
-		for step in DIAGONAL_STEPS:
-			if _cells.has(cell + step):
-				list.append(cell + step)
-	return list
+## 4, or 8 with diagonals.
+func direction_count() -> int:
+	return 8 if diagonals else 4
+
+
+## The cell one step from `cell`, on the board or not: directions 0 to 3 are east, north, west and south; with
+## diagonals, 4 to 7 are north-east, north-west, south-west and south-east.
+func neighbor(cell: Vector2i, direction: int) -> Vector2i:
+	if direction < 0 or direction >= direction_count():
+		return NO_CELL
+	if direction < STRAIGHT_STEPS.size():
+		return cell + STRAIGHT_STEPS[direction]
+	return cell + DIAGONAL_STEPS[direction - STRAIGHT_STEPS.size()]
 
 
 ## The board cells at `radius` steps or fewer from `cell`, `cell` included, sorted by row and then column.
@@ -95,3 +96,13 @@ func cell_outline(cell_size: float) -> PackedVector2Array:
 
 func _shape_data() -> Dictionary:
 	return {"diagonals": diagonals}
+
+
+# A corner touches too, with diagonals or without.
+func _touching(cell: Vector2i) -> Array[Vector2i]:
+	var list: Array[Vector2i] = []
+	for step in STRAIGHT_STEPS:
+		list.append(cell + step)
+	for step in DIAGONAL_STEPS:
+		list.append(cell + step)
+	return list

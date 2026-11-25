@@ -113,7 +113,12 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 | `add_cells(list)` / `remove_cells(list)` | Lo mismo para muchas casillas, con **un solo** `cells_changed` |
 | `set_value(cell, key, value)`, `get_value(cell, key, default)`, `values(cell)` | Valores por casilla y clave (`StringName`) |
 | `erase_value(cell, key)` | Saca un valor. Emite `value_changed` con `null` |
-| `neighbors(cell)` | Las vecinas que están en el tablero, en orden fijo |
+| `neighbors(cell, on_board_only := true)` | Las vecinas, en el orden de las direcciones. Con `on_board_only` apagado también las que quedan fuera del tablero: siempre `direction_count()` casillas, y el índice es la dirección |
+| `direction_count()`, `neighbor(cell, direction)` | Cuántas vecinas tiene una casilla (6 en hexágonos; 4, u 8 con diagonales) y la casilla a un paso en esa dirección, esté o no en el tablero |
+| `direction_to(a, b)` | Hacia qué lado de `a` está `b` (la dirección), o -1 si no es vecina |
+| `outline(rings := 1)` | Las casillas que rodean el tablero, a `rings` de profundidad (en cuadrados alcanza con tocar una esquina). Para un marco, una niebla o una costa |
+| `cells_with(key, value)` | Las casillas con ese valor (las de inicio: `cells_with(&"start", seat)`). Un `String` y un `StringName` con el mismo texto coinciden, y también un int y un float con el mismo número |
+| `center_cell()` | La casilla más cercana al centro de la forma (el promedio de los centros), o `NO_CELL` si el tablero está vacío |
 | `distance(a, b)` | Pasos entre dos casillas (método de la grilla: depende de la forma) |
 | `cells_in_range(cell, radius)` | Las casillas a `radius` pasos o menos, incluida `cell` |
 | `find_path(from, to, cost)` | El camino más barato (A*). `cost` es `func(from, to) -> float`; `INF` o un valor negativo es intransitable. Sin `cost`, cada paso vale 1 |
@@ -160,7 +165,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 
 - **Inspector:** `layout`, `shape` (Hexagons o Squares), `diagonals` (solo cuadrados), `columns`, `rows`, `radius` (si es mayor a 0: todas las casillas a `radius` pasos de (0, 0), en las dos formas) y `cell_size`. Con `layout`, la grilla sale del layout y la forma del inspector no aplica. `save_shape_as_layout()` crea un layout desde la forma actual (en el editor, el botón de la barra GridKit hace lo mismo con deshacer).
 - **Grilla:** `grid` es la `CellGrid` que muestra. `use_grid(grid)` muestra la grilla de tus reglas en vez de la propia y `use_own_grid()` vuelve a la del layout o el inspector.
-- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `distance`, `cells_in_range`, `find_path` y `flood`, más `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
+- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` y `center_cell`, más `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
 - **Editar de a muchas:** `paint(key, {casilla: valor})` (un valor `null` borra la clave) y `set_cells(add, remove, values)` (`values` es `{casilla: {clave: valor}}` para las casillas nuevas). En el editor, con `layout`, escriben también en el layout; al jugar, solo en la grilla.
 - **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma o `cell_size`, o casillas agregadas o quitadas). Las vistas y los cursores se actualizan solos con ella.
 
@@ -218,7 +223,7 @@ godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_te
 
 Sale `GRIDKIT TESTS PASS (n)`. Los tests cubren:
 
-- Hexágonos y cuadrados: formas y coordenadas, vecinos (4 y 8, en orden), distancia, rango, caminos con costo, con y sin diagonales, flood, ida y vuelta casilla ↔ punto.
+- Hexágonos y cuadrados: formas y coordenadas, vecinos (4 y 8, en orden), distancia, rango, caminos con costo, con y sin diagonales, flood, ida y vuelta casilla ↔ punto, direcciones (`direction_to`, `neighbor`), vecinas fuera del tablero, `outline` (con las esquinas en cuadrados), `cells_with` (texto y números de distinto tipo) y `center_cell`.
 - `CellGrid`: `from_dict` elige la clase y lee el formato de 0.2, `add_cells` emite una vez, `erase_value`.
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` y guardar y cargar un `.tres`.
 - Los nodos: forma desde el inspector, `radius` en cuadrados, el layout manda, rearmado agrupado, `paint` y `set_cells` (con y sin layout), `position_to_any_cell`, losetas por casilla, `tile_created` y `drawn`, redibujo, `use_grid`, `cell_at_ray`, clic, arrastre y avisos del editor.
