@@ -147,7 +147,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals
 | --- | --- |
 | `shape` (`HEX` or `SQUARE`), `diagonals` | The shape (diagonals for squares only) |
 | `cells` | `Dictionary[Vector2i, Dictionary]`: every cell and its values. The shape of the map is its keys |
-| `make_grid()` | A **new** grid with these cells and values. It is a copy: the game changes it without touching the resource |
+| `make_grid()` | A **new** grid with these cells and values. It is a copy: the game changes it without touching the resource. It returns a `CellGrid`; if your state types the shape, `layout.make_grid() as HexGrid` (or `as SquareGrid`) |
 | `read_grid(grid)` / `GridLayout.from_grid(grid)` | Copies the shape and the values of a grid into the resource |
 | `has_cell`, `add_cell`, `remove_cell` | Edit the cells |
 | `set_value(cell, key, value)`, `erase_value(cell, key)`, `get_value(cell, key, default)` | Edit the values (`set_value` adds the cell if it is not there) |
