@@ -172,7 +172,7 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 
 ## Cámaras
 
-`RtsCamera3D` y `RtsCamera2D` comparten un contrato: `yaw`, `is_dragging()` (un clic que termina un arrastre no es una orden), `focus(point)`, `debug_pointer`. El modo FOLLOW mantiene un cuerpo a la vista (3D: tercera persona detrás de él, gira con las teclas, los bordes y la mirada libre, zoom con la rueda; el ojo nunca baja del suelo, incluido el suelo vivo de `height_at`). El modo FREE es la vista cenital: paneo con las flechas, los bordes de la pantalla y arrastrando con el botón del medio, giro con Q / E (3D), zoom con la rueda, siempre dentro de `bounds`. `edge_area` limita los bordes a la vista del mundo; `wheel_blockers` saca la rueda de encima de un minimapa. `RtsCameraEffect` suma un temblor encima.
+`RtsCamera3D` y `RtsCamera2D` comparten un contrato: `yaw`, `is_dragging()` (un clic que termina un arrastre no es una orden), `focus(point)`, `debug_pointer`. El modo FOLLOW mantiene un cuerpo a la vista (3D: tercera persona detrás de él, gira con las teclas, los bordes y la mirada libre, zoom con la rueda; el ojo nunca baja del suelo, incluido el suelo vivo de `height_at`). El modo FREE es la vista cenital: paneo con las flechas, los bordes de la pantalla y arrastrando con el botón del medio, giro con Q / E (3D), zoom con la rueda, siempre dentro de `bounds`. Los bordes se frenan con el puntero sobre la UI (un botón o un panel del HUD: cualquier control cuyo filtro de mouse no sea *Ignore*); `edges_over_gui` los deja andar encima. `edge_area` los limita a un control (la vista del mundo); `wheel_blockers` saca la rueda de encima de un minimapa. `RtsCameraEffect` suma un temblor encima.
 
 ## Señales y pings
 
