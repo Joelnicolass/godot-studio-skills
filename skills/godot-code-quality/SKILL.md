@@ -65,7 +65,7 @@ If none holds, it is an `@export`. The look (a material, an `Environment`, a the
 
 ### `docs/tuning.md`: the map of knobs
 
-Every game has `docs/tuning.md`: a table "I want to change → file → node → property", in the user's language. Whoever plans writes the new rows in the plan, the tree includes `[~] docs/tuning.md`, whoever implements adds them, and the review marks NEEDS WORK when a feature added a design `@export` without its row.
+Every game has `docs/tuning.md`: a table "I want to change → file → node → property", in the user's language. Whoever plans writes the new rows in the plan, the tree includes `[~] docs/tuning.md`, whoever implements adds them, and the review marks NEEDS WORK when a feature added a design `@export` without its row. The `uniform`s of a shader tuned in its material count too: one row per knob, with the `_material.tres` as the file and `shader_parameter/<name>` as the property.
 
 | I want to change | File | Node | Property |
 |---|---|---|---|

@@ -12,13 +12,13 @@ res://
 ├── systems/               rules and mechanics; they do not know the content
 │   ├── combat/            health.gd, hitbox.tscn, damage_rules.gd   # pure core
 │   ├── units/             unit.tscn (the base), unit.gd, unit_type.gd
-│   ├── match/             match.tscn, match.gd, match_rules.gd, match_config.gd
+│   ├── match/             match.gd, match_rules.gd (pure core), match_config.gd
 │   └── spawning/          spawner.gd
 ├── content/               everything design and art edit
 │   ├── units/
 │   │   ├── soldier/       soldier.tscn (inherited from unit.tscn), soldier_type.tres, model/, textures/
 │   │   └── archer/
-│   ├── levels/forest/     forest.tscn, forest_env.tres, forest_layout.tres
+│   ├── levels/forest/     forest.tscn (the match, with match.gd), forest_env.tres, forest_layout.tres
 │   ├── balance/           match_config.tres, waves/
 │   ├── materials/         stone_material.tres
 │   ├── vfx/               hit_flash.tscn, hit_flash.gdshader
@@ -53,7 +53,30 @@ rg -n "res://debug" --glob '!debug/**'        # must be empty
 | Components (`Health`, `Hitbox`) and pure cores | Levels, materials, `Environment`, effects, curves |
 | The config's class (`match_config.gd`) | `balance/match_config.tres`, the wave tables |
 
-Inside `content/` the folder rules of [godot-code-quality](../godot-code-quality/SKILL.md) §1 apply: a folder per entity, subfolders by type past about 8 files, and what several entities share in `content/materials/`, `content/vfx/`, `content/shaders/`. There is no `shared/`: shared code is in `systems/` and shared art in `content/`.
+### Cases that trip people up
+
+- **The pure core of the rules** (what Clean called `domain/`) goes in `systems/<name>/`, with no nodes: `RefCounted` and `static func`, like `systems/rules/` or `systems/combat/damage_rules.gd`. Tests use it directly.
+- **The scene that puts the content together** (the level, the match with its board, its tiles and its materials) lives in `content/` (`content/levels/<level>/<level>.tscn`), even when its script is in `systems/`. `systems/` only holds scenes that name nothing in `content`: the base of a family, a component.
+- **A config has no default loaded from `content`.** The system receives it from outside: the scene assigns it through an `@export`, and tests and tools load it themselves.
+
+  ```gdscript
+  # systems/match/match.gd: the level scene assigns the config; the system never loads it.
+  @tool
+  extends Node
+
+  @export var config: MatchConfig
+
+
+  func _get_configuration_warnings() -> PackedStringArray:
+  	if config == null:
+  		return PackedStringArray(["Assign a MatchConfig (a _config.tres in content/balance/)."])
+  	return PackedStringArray()
+  ```
+
+  A test does `load("res://content/balance/match_config.tres")` from `tests/`, not from `systems/`.
+- **A component that owns its shader** (a `PixelSprite` that builds its material) keeps it next to it, in `systems/<component>/`, as [godot-composition-first](../godot-composition-first/SKILL.md) §6 says. `content/shaders/` is for the content's shaders: an effect, a level's material.
+
+Inside `content/` the folder rules of [godot-code-quality](../godot-code-quality/SKILL.md) §1 apply: a folder per entity, subfolders by type past about 8 files, and what several entities share in `content/materials/`, `content/vfx/`, `content/shaders/` (except a component's own shader, which stays with it). There is no `shared/`: shared code is in `systems/` and shared art in `content/`.
 
 ## What it gains and what it loses
 
