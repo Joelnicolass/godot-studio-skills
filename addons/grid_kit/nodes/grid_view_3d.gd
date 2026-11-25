@@ -3,13 +3,14 @@ class_name GridView3D
 extends Node3D
 
 ## Draws its parent `GridBoard` in 3D: one scene per cell, picked from `tiles` by the cell's `value_key` value (for
-## example `&"terrain"` → `&"forest"`). It redraws a cell when that value changes and the whole board on `rebuilt`.
-## A click or a tap that does not drag reports the cell under it (`cell_clicked`); the pointer moving over a new cell
-## reports it too (`cell_hovered`). Picking needs no colliders: the ray from the camera meets the board plane.
+## example `&"terrain"` → `&"forest"`). It redraws a cell when that value changes and the cells that came or went when
+## the board is `rebuilt`. A click or a tap that does not drag reports the cell under it (`cell_clicked`); the pointer
+## moving over a new cell reports it too (`cell_hovered`). Picking needs no colliders: the ray from the camera meets
+## the board plane.
 
 ## The player clicked or tapped `cell` (a press and release that moved less than `click_max_drag_px`).
 signal cell_clicked(cell: Vector2i)
-## The pointer is now over `cell` (`HexGrid.NO_CELL` when it left the board).
+## The pointer is now over `cell` (`CellGrid.NO_CELL` when it left the board).
 signal cell_hovered(cell: Vector2i)
 
 ## One scene per value of `value_key`. A cell whose value has no scene uses `default_tile`.
@@ -34,20 +35,22 @@ signal cell_hovered(cell: Vector2i)
 ## The camera used for picking. Empty: the viewport's current camera.
 @export var camera: Camera3D
 
-## The cell the pointer is over (`HexGrid.NO_CELL` when none).
-var hovered_cell := HexGrid.NO_CELL
+## The cell the pointer is over (`CellGrid.NO_CELL` when none).
+var hovered_cell := CellGrid.NO_CELL
 
 var _tiles_by_cell: Dictionary[Vector2i, Node3D] = {}
+var _scenes_by_cell: Dictionary[Vector2i, PackedScene] = {}
 var _board: GridBoard
 var _press_at := Vector2.INF
-var _redraw_queued := false
+var _flush_queued := false
+var _full_redraw := false
 
 
 func _enter_tree() -> void:
 	_board = get_parent() as GridBoard
 	if _board != null:
-		if not _board.rebuilt.is_connected(_queue_redraw):
-			_board.rebuilt.connect(_queue_redraw)
+		if not _board.rebuilt.is_connected(_queue_sync):
+			_board.rebuilt.connect(_queue_sync)
 		if not _board.cell_changed.is_connected(_on_cell_changed):
 			_board.cell_changed.connect(_on_cell_changed)
 	_queue_redraw()
@@ -55,8 +58,8 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	if _board != null:
-		if _board.rebuilt.is_connected(_queue_redraw):
-			_board.rebuilt.disconnect(_queue_redraw)
+		if _board.rebuilt.is_connected(_queue_sync):
+			_board.rebuilt.disconnect(_queue_sync)
 		if _board.cell_changed.is_connected(_on_cell_changed):
 			_board.cell_changed.disconnect(_on_cell_changed)
 	_board = null
@@ -69,15 +72,13 @@ func board() -> GridBoard:
 
 ## Draws every cell again now.
 func redraw() -> void:
-	_redraw_queued = false
+	_full_redraw = false
 	for tile: Node3D in _tiles_by_cell.values():
 		if is_instance_valid(tile):
 			tile.queue_free()
 	_tiles_by_cell.clear()
-	if _board == null:
-		return
-	for cell in _board.cells():
-		_draw_cell(cell)
+	_scenes_by_cell.clear()
+	_sync()
 
 
 ## The tile node drawn at `cell`, or null.
@@ -85,18 +86,25 @@ func tile_at(cell: Vector2i) -> Node3D:
 	return _tiles_by_cell.get(cell)
 
 
-## The board cell under a screen point, or `HexGrid.NO_CELL`.
+## The board cell under a screen point, or `CellGrid.NO_CELL`.
 func cell_at_screen(screen_point: Vector2) -> Vector2i:
 	var eye := camera if camera != null else get_viewport().get_camera_3d()
-	if eye == null or _board == null:
-		return HexGrid.NO_CELL
-	var origin := eye.project_ray_origin(screen_point)
-	var direction := eye.project_ray_normal(screen_point)
+	if eye == null:
+		return CellGrid.NO_CELL
+	return cell_at_ray(eye.project_ray_origin(screen_point), eye.project_ray_normal(screen_point))
+
+
+## The cell where a ray (in world space) meets the board plane, or `CellGrid.NO_CELL` when it misses the plane. With
+## `on_board_only` off it also answers for a cell that is not on the board (to add cells next to it).
+func cell_at_ray(origin: Vector3, direction: Vector3, on_board_only := true) -> Vector2i:
+	if _board == null or not is_inside_tree():
+		return CellGrid.NO_CELL
 	var plane := Plane(global_basis.y.normalized(), global_position)
 	var hit: Variant = plane.intersects_ray(origin, direction)
 	if hit == null:
-		return HexGrid.NO_CELL
-	return _board.position_to_cell(to_local(hit as Vector3))
+		return CellGrid.NO_CELL
+	var point := to_local(hit as Vector3)
+	return _board.position_to_cell(point) if on_board_only else _board.position_to_any_cell(point)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -126,7 +134,7 @@ func _on_press(pressed: bool, at: Vector2) -> void:
 	if travelled > click_max_drag_px:
 		return
 	var cell := cell_at_screen(at)
-	if cell != HexGrid.NO_CELL:
+	if cell != CellGrid.NO_CELL:
 		cell_clicked.emit(cell)
 
 
@@ -137,27 +145,85 @@ func _hover(at: Vector2) -> void:
 		cell_hovered.emit(cell)
 
 
+# Every tile again (the tiles or the key changed).
 func _queue_redraw() -> void:
-	if _redraw_queued or not is_inside_tree():
+	_full_redraw = true
+	_queue_flush()
+
+
+# The board got or lost cells: only the cells that came or went are touched.
+func _queue_sync() -> void:
+	_queue_flush()
+
+
+func _queue_flush() -> void:
+	if _flush_queued or not is_inside_tree():
 		return
-	_redraw_queued = true
-	redraw.call_deferred()
+	_flush_queued = true
+	_flush.call_deferred()
 	update_configuration_warnings()
+
+
+func _flush() -> void:
+	_flush_queued = false
+	if _full_redraw:
+		redraw()
+	else:
+		_sync()
+
+
+# Brings the tiles in line with the board: frees the tiles of cells that are gone, draws the missing ones, replaces a
+# tile whose scene changed and moves the rest to where the board puts them now.
+func _sync() -> void:
+	if _board == null:
+		for tile: Node3D in _tiles_by_cell.values():
+			if is_instance_valid(tile):
+				tile.queue_free()
+		_tiles_by_cell.clear()
+		_scenes_by_cell.clear()
+		return
+	var wanted := _board.cells()
+	var present: Dictionary[Vector2i, bool] = {}
+	for cell in wanted:
+		present[cell] = true
+	for cell: Vector2i in _tiles_by_cell.keys():
+		if not present.has(cell):
+			_free_tile(cell)
+	for cell in wanted:
+		var scene := _scene_for(cell)
+		if _tiles_by_cell.has(cell):
+			if _scenes_by_cell.get(cell) == scene:
+				_tiles_by_cell[cell].position = _board.cell_to_position(cell)
+				continue
+			_free_tile(cell)
+		_draw_cell(cell, scene)
 
 
 func _on_cell_changed(cell: Vector2i, key: StringName, _value: Variant) -> void:
 	if key != value_key:
 		return
+	var scene := _scene_for(cell)
+	if _tiles_by_cell.has(cell):
+		if _scenes_by_cell.get(cell) == scene:
+			return
+		_free_tile(cell)
+	_draw_cell(cell, scene)
+
+
+func _scene_for(cell: Vector2i) -> PackedScene:
+	var kind: Variant = _board.get_value(cell, value_key)
+	return tiles.get(StringName(str(kind)), default_tile) if kind != null else default_tile
+
+
+func _free_tile(cell: Vector2i) -> void:
 	var old: Node3D = _tiles_by_cell.get(cell)
 	if old != null and is_instance_valid(old):
 		old.queue_free()
 	_tiles_by_cell.erase(cell)
-	_draw_cell(cell)
+	_scenes_by_cell.erase(cell)
 
 
-func _draw_cell(cell: Vector2i) -> void:
-	var kind: Variant = _board.get_value(cell, value_key)
-	var scene: PackedScene = tiles.get(StringName(str(kind)), default_tile) if kind != null else default_tile
+func _draw_cell(cell: Vector2i, scene: PackedScene) -> void:
 	if scene == null:
 		return
 	var tile := scene.instantiate() as Node3D
@@ -167,6 +233,7 @@ func _draw_cell(cell: Vector2i) -> void:
 	tile.position = _board.cell_to_position(cell)
 	add_child(tile)
 	_tiles_by_cell[cell] = tile
+	_scenes_by_cell[cell] = scene
 
 
 func _get_configuration_warnings() -> PackedStringArray:

@@ -1,7 +1,8 @@
 extends Control
 
 ## A wallet with food, wood, ore and gold. Harvest adds 1 food, 2 wood and 1 ore (food holds 2: the rest is lost).
-## Build costs 2 wood and 1 ore; gold covers what is missing, 1 to 1.
+## Build costs 2 wood and 1 ore. Two substitutes, set on the Wallet in the inspector, cover what is missing:
+## 2 food cover 1 wood, and gold covers anything, 1 to 1.
 
 const HARVEST := {&"food": 1, &"wood": 2, &"ore": 1}
 const BUILD := {&"wood": 2, &"ore": 1}
@@ -23,7 +24,10 @@ func _ready() -> void:
 func _on_build() -> void:
 	var payment := wallet.payment_for(BUILD)
 	if wallet.pay(BUILD):
-		_note("Built, paid %s" % [payment])
+		var parts: PackedStringArray = []
+		for key in payment:
+			parts.append("%d %s" % [payment[key], key])
+		_note("Built, paid " + ", ".join(parts))
 
 
 func _refresh() -> void:

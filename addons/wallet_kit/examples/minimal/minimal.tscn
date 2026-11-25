@@ -1,7 +1,18 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://addons/wallet_kit/examples/minimal/minimal.gd" id="1_main"]
 [ext_resource type="Script" path="res://addons/wallet_kit/nodes/wallet.gd" id="2_wallet"]
+[ext_resource type="Script" path="res://addons/wallet_kit/resources/wallet_substitute.gd" id="3_substitute"]
+
+[sub_resource type="Resource" id="Resource_food"]
+script = ExtResource("3_substitute")
+key = &"food"
+covers = Array[StringName]([&"wood"])
+rate = 2
+
+[sub_resource type="Resource" id="Resource_gold"]
+script = ExtResource("3_substitute")
+key = &"gold"
 
 [node name="Minimal" type="Control"]
 layout_mode = 3
@@ -63,4 +74,4 @@ limits = Dictionary[StringName, int]({
 &"ore": 7,
 &"wood": 7
 })
-wildcard = &"gold"
+substitutes = Array[ExtResource("3_substitute")]([SubResource("Resource_food"), SubResource("Resource_gold")])

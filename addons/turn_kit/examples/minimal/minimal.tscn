@@ -41,6 +41,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Spend action"
 
+[node name="NextPhase" type="Button" parent="Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Next phase"
+
 [node name="End" type="Button" parent="Box/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -56,6 +61,9 @@ unique_name_in_owner = true
 script = ExtResource("2_clock")
 rounds_per_cycle = 2
 cycles = 2
+first_seat_rotates = true
+phases = Array[StringName]([&"draw", &"play"])
+turn_seconds = 10.0
 
 [node name="Ana" type="Node" parent="Turns"]
 script = ExtResource("3_seat")

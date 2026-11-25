@@ -1,6 +1,7 @@
 extends "res://addons/turn_kit/tests/turn_test.gd"
 
-## TurnClock and TurnSeat in a tree: seats from the children, inspector values, seat signals, use_cycle, warnings.
+## TurnClock and TurnSeat in a tree: seats from the children, inspector values, seat signals, use_cycle, phases, turn
+## time, warnings.
 
 
 func _build(names: Array[String]) -> TurnClock:
@@ -147,4 +148,134 @@ func test_rebuilt() -> void:
 	check(count[0] == 2, "use_own_cycle too")
 	clock.start()
 	check(count[0] == 3, "and start, which builds the own cycle again")
+	clock.free()
+
+
+func test_inspector_values_reach_the_own_cycle() -> void:
+	var clock := TurnClock.new()
+	clock.actions_per_turn = 2
+	clock.first_seat_rotates = true
+	clock.phases = [&"draw", &"play"]
+	clock.turn_seconds = 7.5
+	clock.timeout_ends_turn = false
+	for name in ["A", "B"]:
+		clock.add_child(TurnSeat.new())
+	var cycle := clock.turn_cycle
+	check(cycle.actions_per_turn == 2 and cycle.first_seat_rotates, "actions and rotation")
+	check(cycle.phases == ([&"draw", &"play"] as Array[StringName]), "phases")
+	check(cycle.turn_seconds == 7.5 and not cycle.timeout_ends_turn, "time")
+	clock.turn_seconds = 3.0
+	clock.timeout_ends_turn = true
+	clock.first_seat_rotates = false
+	clock.phases = [&"x"]
+	check(cycle.turn_seconds == 3.0 and cycle.timeout_ends_turn and not cycle.first_seat_rotates, "live values")
+	check(cycle.phases == ([&"x"] as Array[StringName]), "live phases")
+	clock.phases.append(&"y")
+	check(cycle.phases.size() == 1, "the cycle keeps its own copy of the phases")
+	clock.free()
+	var plain := TurnClock.new()
+	check(plain.actions_per_turn == 1, "the default is 1 action")
+	plain.free()
+
+
+func test_use_cycle_is_not_touched_by_the_new_values() -> void:
+	var clock := _build(["A", "B"])
+	var rules := TurnCycle.new(2, 1)
+	rules.phases = [&"a"]
+	rules.turn_seconds = 9.0
+	clock.use_cycle(rules)
+	clock.phases = [&"x", &"y"]
+	clock.turn_seconds = 1.0
+	clock.first_seat_rotates = true
+	clock.timeout_ends_turn = false
+	check(rules.phases == ([&"a"] as Array[StringName]) and rules.turn_seconds == 9.0, "phases and time stay")
+	check(not rules.first_seat_rotates and rules.timeout_ends_turn, "rotation and timeout stay")
+	rules.start()
+	clock.start()
+	check(rules.round_number == 1 and rules.current_phase == &"a", "start() does not restart it")
+	clock.use_own_cycle()
+	check(
+		clock.turn_cycle.phases == ([&"x", &"y"] as Array[StringName]) and clock.turn_cycle.turn_seconds == 1.0, "own"
+	)
+	clock.free()
+
+
+func test_phase_and_time_signals_are_relayed() -> void:
+	var clock := _build(["A", "B"])
+	clock.phases = [&"draw", &"play"]
+	clock.turn_seconds = 4.0
+	clock.advance_time = false
+	var heard: Array[String] = []
+	clock.phase_started.connect(func(phase: StringName) -> void: heard.append("+%s" % phase))
+	clock.phase_ended.connect(func(phase: StringName) -> void: heard.append("-%s" % phase))
+	clock.turn_timed_out.connect(func(seat: int) -> void: heard.append("timeout %d" % seat))
+	clock.start()
+	check(clock.current_phase == &"draw" and clock.time_left == 4.0, "state on the clock")
+	check(clock.next_phase() and clock.current_phase == &"play", "next_phase goes to the cycle")
+	clock.tick(4.0)
+	var expected: Array[String] = ["+draw", "-draw", "+play", "timeout 0", "-play", "+draw"]
+	check(heard == expected, "relayed in order: %s" % [heard])
+	check(clock.current_seat == 1, "and the turn passed")
+	clock.free()
+
+
+func test_set_round_order_on_the_clock() -> void:
+	var clock := _build(["A", "B", "C"])
+	clock.start()
+	clock.set_round_order([2, 1])
+	clock.end_turn()
+	clock.end_turn()
+	clock.end_turn()
+	check(clock.current_seat == 2 and clock.turn_cycle.round_order() == ([2, 1] as Array[int]), "the order applies")
+	clock.free()
+
+
+func test_process_ticks_only_with_advance_time() -> void:
+	var clock := _build(["A", "B"])
+	clock.turn_seconds = 10.0
+	clock.start()
+	check(not Engine.is_editor_hint(), "this is not the editor")
+	clock._process(0.5)
+	check(is_equal_approx(clock.time_left, 9.5), "_process advances the time: %f" % clock.time_left)
+	clock.advance_time = false
+	check(not clock.is_processing(), "advance_time off: no processing")
+	clock._process(0.5)
+	check(is_equal_approx(clock.time_left, 9.5), "and a stray _process does nothing")
+	clock.advance_time = true
+	check(clock.is_processing(), "advance_time on: processing")
+	clock.tick(1.0)
+	check(is_equal_approx(clock.time_left, 8.5), "tick() works either way")
+	clock._process(8.5)
+	check(clock.current_seat == 1, "the time ran out: the turn passed")
+	clock.free()
+
+
+func test_process_time_passes_by_frames() -> void:
+	var clock := _build(["A", "B"])
+	clock.turn_seconds = 100.0
+	clock.start()
+	await tree.process_frame
+	await tree.process_frame
+	check(clock.time_left < 100.0, "frames advance the time: %f" % clock.time_left)
+	var shown := TurnCycle.new(2, 1)
+	shown.turn_seconds = 100.0
+	shown.start()
+	clock.use_cycle(shown)
+	await tree.process_frame
+	check(shown.time_left < 100.0, "a shown cycle is advanced too")
+	clock.advance_time = false
+	var left := shown.time_left
+	await tree.process_frame
+	check(shown.time_left == left, "advance_time off: the clock leaves the time to you")
+	clock.free()
+
+
+func test_phase_warnings() -> void:
+	var clock := _build(["A"])
+	clock.phases = [&"draw", &"play"]
+	check(clock._get_configuration_warnings().is_empty(), "good phases: no warning")
+	clock.phases = [&"draw", &"draw"]
+	check(clock._get_configuration_warnings().size() == 1, "a repeated phase warns")
+	clock.phases = [&"draw", &""]
+	check(clock._get_configuration_warnings().size() == 1, "an empty phase warns")
 	clock.free()

@@ -11,7 +11,7 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/grid_kit/plugin.cfg")
+enabled=PackedStringArray("res://addons/grid_kit/plugin.cfg", "res://editor_check/plugin.cfg")
 
 [rendering]
 

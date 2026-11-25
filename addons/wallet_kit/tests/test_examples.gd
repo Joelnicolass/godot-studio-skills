@@ -1,6 +1,6 @@
 extends "res://addons/wallet_kit/tests/wallet_test.gd"
 
-## The minimal example plays as a person would: harvest, see food lost at its limit, build with gold covering.
+## The minimal example plays as a person would: harvest, see food lost at its limit, build with substitutes.
 
 
 func test_minimal_runs() -> void:
@@ -12,15 +12,28 @@ func test_minimal_runs() -> void:
 	var build := scene.get_node(^"%Build") as Button
 	var amounts := scene.get_node(^"%Amounts") as Label
 	var log_label := scene.get_node(^"%Log") as Label
+	check(wallet.substitutes.size() == 2, "two substitutes are set in the inspector")
 	check(amounts.text.contains("food 2/2") and build.disabled, "starts with 2 food, cannot build: %s" % amounts.text)
 	harvest.pressed.emit()
 	check(log_label.text.contains("1 food lost"), "food at its limit is lost: %s" % log_label.text)
 	check(wallet.amount(&"wood") == 2 and wallet.amount(&"ore") == 1 and not build.disabled, "can build now")
 	build.pressed.emit()
 	check(wallet.amount(&"wood") == 0 and wallet.amount(&"ore") == 0 and wallet.amount(&"gold") == 1, "paid in kind")
-	wallet.add({&"wood": 2})
+	check(
+		log_label.text.contains("Built") and not log_label.text.contains("gold"),
+		"the log shows it: %s" % log_label.text
+	)
+	wallet.add({&"wood": 1})
+	check(not build.disabled, "1 wood is short, but 2 food and 1 gold cover it")
 	build.pressed.emit()
-	check(wallet.amount(&"gold") == 0 and log_label.text.contains("gold"), "gold covered the ore: %s" % log_label.text)
+	check(
+		wallet.amount(&"food") == 0 and wallet.amount(&"gold") == 0 and wallet.amount(&"wood") == 0,
+		"the substitutes paid"
+	)
+	check(
+		log_label.text.contains("2 food") and log_label.text.contains("1 gold"),
+		"the log shows what was taken: %s" % log_label.text
+	)
 	check(build.disabled, "nothing left to build with")
 	scene.queue_free()
 	await tree.process_frame

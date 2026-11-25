@@ -33,6 +33,10 @@ SKILL_NAMES=(
   godot-perception-kit
   godot-spill-kit
   godot-bot-kit
+  godot-grid-kit
+  godot-turn-kit
+  godot-wallet-kit
+  godot-command-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -413,26 +417,26 @@ install_addon() {
     grid_kit)
       copy_one_addon "$project" "grid_kit"
       echo
-      echo "Enable the GridKit plugin (no autoload). Your rules use HexGrid (plain data); in the scene, a GridBoard"
-      echo "with a GridView3D child (one scene per cell value) and GridCursor to mark cells. Start from addons/grid_kit/examples/minimal_3d."
+      echo "Enable the GridKit plugin (no autoload). Your rules use HexGrid or SquareGrid (plain data, the same API) and the map is saved in a GridLayout;"
+      echo "in the scene, a GridBoard with a GridView3D child, GridCursor to mark cells and the GridKit toolbar brush in the 3D view. Start from addons/grid_kit/examples/minimal_3d (hexagons) or squares_3d."
       ;;
     turn_kit)
       copy_one_addon "$project" "turn_kit"
       echo
-      echo "Enable the TurnKit plugin (no autoload). Your rules use TurnCycle (plain data); in the scene, a TurnClock"
-      echo "with one TurnSeat child per player. Start from addons/turn_kit/examples/minimal."
+      echo "Enable the TurnKit plugin (no autoload). Your rules use TurnCycle (plain data; phases, time per turn and a rotating first player are optional);"
+      echo "in the scene, a TurnClock with one TurnSeat child per player. Start from addons/turn_kit/examples/minimal."
       ;;
     wallet_kit)
       copy_one_addon "$project" "wallet_kit"
       echo
-      echo "Enable the WalletKit plugin (no autoload). Your rules use Purse (plain data: amounts, limits, a wildcard); in the scene,"
-      echo "a Wallet with its values in the inspector. Start from addons/wallet_kit/examples/minimal."
+      echo "Enable the WalletKit plugin (no autoload). Your rules use Purse (plain data: amounts, limits, substitutes with a rate via WalletSubstitute, payment_for);"
+      echo "in the scene, a Wallet with its values in the inspector. Start from addons/wallet_kit/examples/minimal."
       ;;
     command_kit)
       copy_one_addon "$project" "command_kit"
       echo
-      echo "Enable the CommandKit plugin (no autoload). Your commands extend GameCommand; your rules use CommandLog (plain data)"
-      echo "and the scene a CommandBus with the command scripts in the inspector. Start from addons/command_kit/examples/minimal."
+      echo "Enable the CommandKit plugin (no autoload). Each move is a function of your game, do_<name>(seat, args…), with optional can_<name> and undo_<name>;"
+      echo "a GameCommands node (or a CommandLog in your rules) runs them, records them and replays them. Start from addons/command_kit/examples/minimal."
       ;;
     all)
       install_addon "$project" "mp_kit"
@@ -566,6 +570,10 @@ install_harness() {
     echo "  perception:   godot-perception-kit"
     echo "  spill:        godot-spill-kit"
     echo "  bots:         godot-bot-kit"
+    echo "  boards:       godot-grid-kit"
+    echo "  turns:        godot-turn-kit"
+    echo "  resources:    godot-wallet-kit"
+    echo "  moves:        godot-command-kit"
     echo "  materials:    godot-material-maker"
     echo "  research:     godot-feature-research"
   fi
@@ -575,7 +583,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Done (commands). In ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /create-material, /research-feature, /create-prd, …"
+    echo "Done (commands). In ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /add-grid, /add-turns, /add-wallet, /add-commands, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then
