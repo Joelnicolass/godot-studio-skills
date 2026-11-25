@@ -40,7 +40,7 @@ Reference example: `addons/plat_kit/examples/minimal_2d/` (F6), no code: a `Char
 
 ## In the game (not the addon)
 
-Celeste also does **title-specific** tricks. Documented in [forgiveness.md](forgiveness.md): dash corner, one-way pop, super wall-jump, stamina refund. Implement them as children / glue if the product asks. Do not put them in `plat_kit`.
+Celeste also does **title-specific** tricks. Documented in [forgiveness.md](forgiveness.md): dash corner, one-way pop, super wall-jump, stamina refund. Implement them as children or game code if the product asks. Do not put them in `plat_kit`.
 
 ## Tree
 

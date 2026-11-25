@@ -552,7 +552,7 @@ install_harness() {
     done
     echo
     echo "Done (skills). New ${label} session to reload."
-    echo "  layers:       godot-layered-architecture"
+    echo "  architecture: godot-layered-architecture"
     echo "  composition:  godot-composition-first"
     echo "  quality:      godot-code-quality"
     echo "  multiplayer:  godot-mp-kit"

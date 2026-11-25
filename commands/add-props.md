@@ -35,10 +35,10 @@ If missing, ask in one batch:
 Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` removed), for example:
 
 ```
-[+] scenes/props/tree.tscn             # StaticBody3D, group prop_obstruction, its own collision layer
-[~] scenes/maps/forest/map.tscn        # PropScatter3D (+ PropBatch3D, PropNavZones3D)
-[+] scenes/maps/forest/map_nav.res     # «Bake» writes it
-[+] scenes/maps/terrain_ground.gd      # only if the ground is the game's own: extends PropGround, @tool
+[+] props/tree.tscn             # StaticBody3D, group prop_obstruction, its own collision layer
+[~] levels/forest/map.tscn        # PropScatter3D (+ PropBatch3D, PropNavZones3D)
+[+] levels/forest/map_nav.res     # «Bake» writes it
+[+] levels/forest/terrain_ground.gd      # only if the ground is the game's own: extends PropGround, @tool
 [~] project.godot                      # PropKit plugin; a collision layer for the props
 ```
 

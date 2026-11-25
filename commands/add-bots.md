@@ -44,10 +44,10 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` del
 [+] bots/flee.gd                         # the game's BotMode: hurt, to the nearest health
 [+] bots/weapons/rifle.tres              # BotWeapon: 0 to 40 m, HOLD
 [+] bots/weapons/grenade.tres            # BotWeapon: 6 to 16 m, the game's grenade speed and gravity, TAP
-[~] scenes/player/player.gd             # input = Input or bot.input; weapon_changed switches the weapon; weapon_score with no ammo
-[~] scenes/player/player.tscn           # in the group bot_target
-[~] scenes/pickups/health.tscn           # BotGoal3D: priority 2; wanted: hurt
-[~] scenes/levels/arena.tscn             # navmesh baked; the bots that fill the seats
+[~] player/player.gd             # input = Input or bot.input; weapon_changed switches the weapon; weapon_score with no ammo
+[~] player/player.tscn           # in the group bot_target
+[~] pickups/health.tscn           # BotGoal3D: priority 2; wanted: hurt
+[~] levels/arena/arena.tscn             # navmesh baked; the bots that fill the seats
 ```
 
 Start from `addons/bot_kit/examples/minimal_3d` (a robot that hunts you) or `arena_3d` (four bots, rifle and grenades, pickups, fleeing, difficulty).

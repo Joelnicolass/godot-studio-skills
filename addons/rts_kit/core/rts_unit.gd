@@ -49,8 +49,8 @@ const ENEMY := &"enemy"
 @export var orderable := true
 ## Others may aim at it (false for a corpse, a stealthed unit…).
 @export var targetable := true
-## Its width in world units (meters in 3D, pixels in 2D): formations space units by the widest of the
-## group.
+## Its width, in the body's world units (the inspector shows which: px under a Node2D, m under a
+## Node3D): formations space units by the widest of the group.
 @export var size := 1.0
 ## The point projected for a selection box (a Marker3D / Marker2D at the body's middle). Empty: the
 ## body's origin.
@@ -121,6 +121,11 @@ func _exit_tree() -> void:
 	var parent := get_parent()
 	if parent and parent.has_meta(META) and parent.get_meta(META) == self:
 		parent.remove_meta(META)
+
+
+func _validate_property(property: Dictionary) -> void:
+	if property.name == "size":
+		RtsSpace.show_distance_unit(property, self)
 
 
 func _get_configuration_warnings() -> PackedStringArray:

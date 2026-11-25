@@ -38,9 +38,9 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` del
 
 ```
 [~] project.godot                        # TurnKit plugin
-[+] scenes/turns/turns.tscn              # TurnClock: actions_per_turn, phases = [draw, play], turn_seconds = 30; one TurnSeat per player
+[+] turns/turns.tscn              # TurnClock: actions_per_turn, phases = [draw, play], turn_seconds = 30; one TurnSeat per player
 [~] game/state.gd                        # the rules' TurnCycle (if the rules keep it); use_cycle on the clock
-[~] scenes/hud/hud.gd                    # listens to turn_started, phase_started, turn_timed_out; shows time_left
+[~] hud/hud.gd                    # listens to turn_started, phase_started, turn_timed_out; shows time_left
 [~] game/rules.gd                        # in round_ended: set_round_order(initiative)
 ```
 

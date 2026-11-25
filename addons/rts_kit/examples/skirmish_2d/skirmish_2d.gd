@@ -1,9 +1,9 @@
 extends Node2D
 
-## RtsKit's 2D example: the same rig as skirmish_3d on a top-down 2D map. Your units (blue), a foe's
-## (red), your hero (gold, the retreat anchor). The kit's command rig is in the scene; this script
-## spawns the units and says what is selected. F follows the hero / frees the camera. World units are
-## pixels here, so the scene sets Orders' spacing and retarget range and the selection's radius in pixels.
+## RtsKit's 2D example: skirmish_3d on a top-down 2D map. Your units (blue), a foe's (red), your
+## hero (gold, the retreat anchor). The kit's command rig is one node of the scene
+## (rts_command_rig_2d.tscn, its distances in pixels); this script spawns the units and says what is
+## selected. F follows the hero / frees the camera.
 
 const WALKER := preload("res://addons/rts_kit/examples/shared/example_walker.gd")
 
@@ -11,8 +11,8 @@ const WALKER := preload("res://addons/rts_kit/examples/shared/example_walker.gd"
 @export var foe_units := 6
 
 @onready var camera: RtsCamera2D = $Camera
-@onready var selection: RtsSelection = $Command/Selection
-@onready var status: Label = $Hud/Status
+@onready var rig: RtsCommandRig = $Rig
+@onready var status: Label = %Status
 @onready var units_root: Node2D = $Units
 
 var hero: Node2D
@@ -29,8 +29,8 @@ func _ready() -> void:
 		spawn(Vector2(-250 + (i % 6) * 90.0, 60 + floori(i / 6.0) * 80.0), 1, kind, tint)
 	for i in foe_units:
 		spawn(Vector2(-240 + i * 96.0, -260), 2, &"raider", Color(1.0, 0.3, 0.25))
-	selection.changed.connect(_on_selection_changed)
-	_on_selection_changed(selection.units())
+	rig.selection.changed.connect(_on_selection_changed)
+	_on_selection_changed(rig.selection.units())
 
 
 ## A unit: a circle on layer 2 with an RtsUnit, a selection ring and the example's walker.

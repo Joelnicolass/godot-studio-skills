@@ -5,8 +5,8 @@ extends Node3D
 ## them in a few draw calls. In a game you press «Scatter» in the editor and save: the trees are
 ## then saved children, the batch builds on ready, and this script is not needed. Space: another seed.
 
-@onready var scatter: PropScatter3D = $Forest
-@onready var batch: PropBatch3D = $Batch
+@onready var scatter: PropScatter3D = %Forest
+@onready var batch: PropBatch3D = %Batch
 
 
 func _ready() -> void:

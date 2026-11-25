@@ -30,6 +30,13 @@ static func entries(actor: MpActor) -> PackedStringArray:
 	return out
 
 
+## With prediction, the state `mp_move` reads (`sync_extra`) travels in the pose's packet, every send: the reconciliation goes
+## back to that pose and replays from that state. Sent only when it changed, it would arrive apart from its pose and the
+## replay would start from another tick's state (large corrections on every dash, slide or stun).
+static func always(actor: MpActor) -> PackedStringArray:
+	return actor.sync_extra if actor.predict else PackedStringArray()
+
+
 ## Sent once, when the node spawns: the owning slot.
 static func spawn_only(actor: MpActor) -> PackedStringArray:
 	return PackedStringArray([String(actor.get_parent().get_path_to(actor)) + ":owner_slot"])
@@ -42,6 +49,6 @@ static func rebuild(actor: MpActor) -> void:
 	var scene := actor.get_tree().edited_scene_root
 	if scene == null or actor.owner != scene or actor.get_parent() == null:
 		return
-	var sync := MpSyncBuilder.ensure(actor, MpActor.SYNC_NAME, NodePath("../.."), entries(actor), spawn_only(actor), scene)
+	var sync := MpSyncBuilder.ensure(actor, MpActor.SYNC_NAME, NodePath("../.."), entries(actor), spawn_only(actor), scene, always(actor))
 	sync.replication_interval = 1.0 / actor.send_hz if actor.send_hz > 0 else 0.0
 	actor.update_configuration_warnings()

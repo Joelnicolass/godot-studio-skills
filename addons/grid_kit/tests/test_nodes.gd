@@ -1,6 +1,6 @@
 extends "res://addons/grid_kit/tests/grid_test.gd"
 
-## GridView3D in a tree: tiles per cell, redraw on change, picking and warnings.
+## GridView3D in a tree: tiles per cell, redraw on change, the tiles handed over, picking and warnings.
 
 const TILE := preload("res://addons/grid_kit/examples/minimal_3d/tiles/plain.tscn")
 const OTHER := preload("res://addons/grid_kit/examples/minimal_3d/tiles/water.tscn")
@@ -113,4 +113,33 @@ func test_view_keeps_tiles_when_cells_come_and_go() -> void:
 		view.tile_at(Vector2i(1, 0)) == kept and kept.position.is_equal_approx(board.cell_to_position(Vector2i(1, 0))),
 		"cell_size moves the tiles, it does not remake them"
 	)
+	board.free()
+
+
+func test_view_hands_over_each_tile() -> void:
+	var board := build_board(1)
+	var view := board.get_node(^"View") as GridView3D
+	var created: Dictionary[Vector2i, Node3D] = {}
+	var outside_tree: Array[bool] = []
+	var on_center: Array[bool] = []
+	var drawn: Array[int] = [0]
+	view.tile_created.connect(
+		func(cell: Vector2i, tile: Node3D) -> void:
+			created[cell] = tile
+			outside_tree.append(not tile.is_inside_tree())
+			on_center.append(tile.position.is_equal_approx(board.cell_to_position(cell)))
+	)
+	view.drawn.connect(func() -> void: drawn[0] += 1)
+	await tree.process_frame
+	check(created.size() == board.cells().size(), "one tile_created per cell: %d" % created.size())
+	check(not outside_tree.has(false), "a tile is handed over before it enters the tree")
+	check(not on_center.has(false), "already on its cell's center")
+	check(created.get(Vector2i(1, 0)) == view.tile_at(Vector2i(1, 0)), "the tile handed over is the one drawn there")
+	check(drawn[0] == 1, "drawn once every tile is there: %d" % drawn[0])
+	board.set_value(Vector2i(1, 0), &"terrain", &"water")
+	check(created.get(Vector2i(1, 0)) == view.tile_at(Vector2i(1, 0)), "a value change hands over the new tile")
+	check(drawn[0] == 1, "a value change alone is not drawn")
+	board.set_cells([Vector2i(4, 0)], [])
+	await tree.process_frame
+	check(created.has(Vector2i(4, 0)) and drawn[0] == 2, "a new cell: its tile, then drawn: %d" % drawn[0])
 	board.free()

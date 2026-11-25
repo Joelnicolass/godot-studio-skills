@@ -55,7 +55,7 @@ If you use a state machine, it goes as **another** child of the actor (below, [D
 
 A held jump is roughly `jump_speed² / (2 · gravity)` pixels high: 320 and 980 (the defaults) give about 52 px; the example raises `jump_speed` to 420, about 90 px.
 
-Dash, one-way pop, stamina refund: **game glue**, not this addon.
+Dash, one-way pop, stamina refund: **game code**, not this addon.
 
 ## Driving it from another script
 

@@ -4,7 +4,7 @@ extends CharacterBody2D
 ## (an FsmMachine) and each one does its own part, with its own numbers in its own inspector.
 ## Arrows: Move. Enter: a hit, which the actor turns into Hurt with the push as the payload.
 
-@onready var states: FsmMachine = $States
+@onready var states: FsmMachine = %States
 
 
 func _unhandled_input(event: InputEvent) -> void:

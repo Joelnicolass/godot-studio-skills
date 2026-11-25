@@ -11,9 +11,10 @@ const DIFFICULTIES: Array[BotDifficulty] = [
 	preload("res://addons/bot_kit/presets/hard.tres"),
 ]
 const TURN_DEG_S := 60.0
+const Fighter := preload("res://addons/bot_kit/examples/arena_3d/fighter.gd")
 
-@onready var label: Label = $Label
-@onready var pivot: Node3D = $CameraPivot
+@onready var label: Label = %Label
+@onready var pivot: Node3D = %CameraPivot
 
 var _difficulty := 1
 var _shown := false
@@ -30,13 +31,20 @@ func _ready() -> void:
 	material.vertex_color_use_as_albedo = true
 	drawn.material_override = material
 	add_child(drawn)
-	for fighter in fighters():
-		fighter.connect(&"died", _on_died)
+	for fighter in _fighters():
+		fighter.died.connect(_on_died)
 	_set_difficulty(_difficulty)
 
 
 func fighters() -> Array[Node]:
 	return get_tree().get_nodes_in_group(&"arena_fighter")
+
+
+func _fighters() -> Array[Fighter]:
+	var found: Array[Fighter] = []
+	for node in fighters():
+		found.append(node as Fighter)
+	return found
 
 
 ## A rifle shot (fighter.gd calls it).
@@ -72,11 +80,11 @@ func _process(delta: float) -> void:
 			_fx.surface_add_vertex(line[1])
 		_fx.surface_end()
 	var text := "1 2 3: easy, normal, hard (now %s)   F: what they think   Left, right: turn\n" % DIFFICULTIES[_difficulty].display_name
-	for fighter in fighters():
-		var bot := fighter.get_node(^"Bot3D") as Bot3D
+	for fighter in _fighters():
+		var bot := fighter.bot
 		text += "\n%-7s health %3d  grenades %d  kills %d  %s" % [
-			fighter.name, int(fighter.get(&"health")), int(fighter.get(&"grenades")), int(fighter.get(&"kills")),
-			"dead" if fighter.get(&"dead") else "%s, %s" % [bot.mode, fighter.get(&"weapon_name")],
+			fighter.name, int(fighter.health), fighter.grenades, fighter.kills,
+			"dead" if fighter.dead else "%s, %s" % [bot.mode, fighter.weapon_name],
 		]
 	label.text = text
 
@@ -90,16 +98,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_difficulty(key.keycode - KEY_1)
 		KEY_F:
 			_shown = not _shown
-			for fighter in fighters():
-				(fighter.get_node(^"Bot3D") as Bot3D).show_in_game = _shown
+			for fighter in _fighters():
+				fighter.bot.show_in_game = _shown
 
 
 func _set_difficulty(index: int) -> void:
 	_difficulty = index
-	for fighter in fighters():
-		(fighter.get_node(^"Bot3D") as Bot3D).difficulty = DIFFICULTIES[index]
+	for fighter in _fighters():
+		fighter.bot.difficulty = DIFFICULTIES[index]
 
 
 func _on_died(_fighter: Node, by: Node) -> void:
-	if by != null and by != _fighter and by.get(&"kills") != null:
-		by.set(&"kills", int(by.get(&"kills")) + 1)
+	var killer := by as Fighter
+	if killer != null and killer != _fighter:
+		killer.kills += 1

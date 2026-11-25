@@ -1,3 +1,4 @@
+@tool
 class_name RtsSelection
 extends Node
 
@@ -34,7 +35,9 @@ const GROUP := &"rts_selection"
 @export var group_count := 10
 ## The group `add_new` fills (-1 = none).
 @export var new_units_group := -1
-## World units (meters in 3D, pixels in 2D).
+## How far "the same kind" reaches, in world units (the inspector shows which: px under a Node2D, m
+## under a Node3D). The default is meters: a 2D game sets its own, in pixels
+## (rts_command_rig_2d.tscn has one).
 @export var same_type_radius := 50.0
 @export var double_click_s := 0.333
 ## How far apart the two clicks of a double click may be, in pixels.
@@ -56,7 +59,16 @@ var _last_ms := -100000
 var _last_at := Vector2(-1000.0, -1000.0)
 
 
+func _validate_property(property: Dictionary) -> void:
+	if property.name == "same_type_radius":
+		RtsSpace.show_distance_unit(property, self)
+
+
 func _ready() -> void:
+	# In the editor it only labels its distance (`_validate_property`).
+	if Engine.is_editor_hint():
+		set_process(false)
+		return
 	add_to_group(GROUP)
 	_groups.clear()
 	for i in group_count:

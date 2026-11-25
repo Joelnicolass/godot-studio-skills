@@ -42,13 +42,13 @@ Enable the **BotKit** plugin (the sight, cone and handles in the 3D view; the no
 
 ## Network
 
-The bot runs where the game is decided and presses a seat's keys. **With MpKit**, on the server, on the pawn of a free seat:
+The bot runs where the game is decided and presses a seat's keys. **With MpKit**, on the server, on the pawn of a free seat (`%MpInput` needs `MpInput` marked as a unique name: right click › "Access as Unique Name"):
 
 ```gdscript
 var bot := preload("res://bots/bot.tscn").instantiate() as Bot3D
 bot.turn_body = false
 pawn.add_child(bot)
-var keys := pawn.get_node(^"MpInput") as MpInput
+var keys := pawn.get_node("%MpInput") as MpInput
 bot.input.pressed.connect(keys.bot_press)
 bot.input.released.connect(keys.bot_release)
 bot.input.value_changed.connect(keys.bot_set_value)

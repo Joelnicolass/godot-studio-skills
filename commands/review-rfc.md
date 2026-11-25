@@ -69,7 +69,7 @@ Mark an inapplicable dimension N/A with one line of reasoning. Do not fill it wi
 - Appropriate test coverage
 - Proper separation of concerns
 - Dead code or unused imports
-- For a **Godot game**: the §8 questions of the `godot-code-quality` skill. First, **how many files you open to change a number** in the feature (count them; more than 2 = NEEDS WORK). Then: each `.tres` justified (shared or edited as a type), no pointers through tags or strings, communication through proven patterns (no new registries, locators, or managers), real typing, `##` only on the API, and logs in English. A home-made convention that contradicts the standard gets flagged, even if RULES.md asks for it
+- For a **Godot game**: the §8 questions of the `godot-code-quality` skill. First, **how many files you open to change a number** in the feature (count them; more than 2 = NEEDS WORK). Then: its row in `docs/tuning.md`, one owner per number, each `.tres` justified by rule 0, typed catalogs and no blind tables, folders and suffixes per RULES.md, each `@export` with a `##`, a range, and a unit, the look visible in the editor, communication through proven patterns (no new registries, locators, or managers), real typing, `##` only on the API, and logs in English. A home-made convention that contradicts the standard gets flagged, even if RULES.md asks for it
 
 ## Output Format
 

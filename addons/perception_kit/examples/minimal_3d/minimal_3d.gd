@@ -12,10 +12,10 @@ const SPEED := 5.0
 const NOISE_RADIUS_M := 12.0
 const TURN_DEG_S := 220.0
 
-@onready var sensor: PerceptionSensor3D = $Guard/Head/Sensor
-@onready var head: Node3D = $Guard/Head
-@onready var player: CharacterBody3D = $Player
-@onready var label: Label = $Label
+@onready var sensor: PerceptionSensor3D = %Sensor
+@onready var head: Node3D = %Head
+@onready var player: CharacterBody3D = %Player
+@onready var label: Label = %Label
 
 var _last := "Arrows walk, Space makes a noise."
 

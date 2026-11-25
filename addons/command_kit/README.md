@@ -39,10 +39,10 @@ func undo_place(seat: int, cell: Vector2i) -> void:   # optional: if it exists, 
 ```
 
 2. Add a `GameCommands` node as a child of your game (or put your game in `game`). The inspector shows `found_commands`: the moves it found, for example `place (can, undo)`.
-3. Run the moves and listen to the rejections:
+3. Run the moves and listen to the rejections. Clicking a cell places a stone, and if the move is rejected the HUD shows the reason:
 
 ```gdscript
-@onready var commands: GameCommands = $Commands
+@export var commands: GameCommands  # the GameCommands node, assigned in the inspector
 
 
 func _ready() -> void:
@@ -110,7 +110,7 @@ Minimal          # minimal.gd (Control): only the screen: board buttons, Undo, R
 ## Tips
 
 - **Checks common to every move.** A single function `can_run(seat: int, command: StringName, args: Array) -> String` in your game runs before the `can_<name>` of each move: put "is it your turn?" and "is the match over?" there. The order is always general → own. If an own check has to come before the general one (for example "does that unit exist?" before "is it your turn?"), do not define `can_run`: write a function with the common checks and call it first from each `can_<name>`, in the order you need.
-- **The rules use `CommandLog`, not the node.** Keep it with your match state (`var commands := CommandLog.new(self)`) and show it in the scene with `$Commands.use_log(rules.commands)`. That way the rules and the replay run headless. `CommandLog` does not keep its game alive, so it makes no reference cycle; if the game is freed, `run` reports an error (once) and returns `unknown_command`.
+- **The rules use `CommandLog`, not the node.** Keep it with your match state (`var commands := CommandLog.new(self)`) and show it in the scene with `%Commands.use_log(rules.commands)` (with the `Commands` node marked as a unique name: right click › "Access as Unique Name"). That way the rules and the replay run headless. `CommandLog` does not keep its game alive, so it makes no reference cycle; if the game is freed, `run` reports an error (once) and returns `unknown_command`.
 - **Repeatable match.** Seeded randomness lives in your state (a `RandomNumberGenerator` with its `seed`). To reproduce a match, build a new state with the same seed, empty the history with `clear()` and call `replay(history)`: it gives the same result. Compare the two states with a `to_dict()` of your own.
 - **Moves that trigger moves.** If a bot or an automatic effect answers `done` by sending another move, it does nothing while `is_replaying()` is true:
 

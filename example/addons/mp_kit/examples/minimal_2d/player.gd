@@ -6,8 +6,8 @@ extends CharacterBody2D
 
 const SPEED := 220.0
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
 
 
 func mp_move(keys: MpInput, _delta: float) -> void:
@@ -25,5 +25,5 @@ func _physics_process(_delta: float) -> void:
 
 
 func mp_all_flash() -> void:
-	$Visual.scale = Vector2(1.4, 1.4)
-	create_tween().tween_property($Visual, "scale", Vector2(1, 1), 0.2)
+	%Visual.scale = Vector2(1.4, 1.4)
+	create_tween().tween_property(%Visual, "scale", Vector2(1, 1), 0.2)

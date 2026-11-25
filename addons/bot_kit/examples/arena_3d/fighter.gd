@@ -15,8 +15,9 @@ const GRENADE_SPEED := 13.0
 const RESPAWN_S := 3.0
 const Grenade := preload("res://addons/bot_kit/examples/arena_3d/grenade.gd")
 
-@onready var bot: Bot3D = $Bot3D
-@onready var head: Node3D = $Head
+@export var bot: Bot3D
+@export var head: Node3D
+@export var shape: CollisionShape3D
 
 var health := MAX_HEALTH
 var grenades := 2
@@ -94,14 +95,14 @@ func _die(by: Node) -> void:
 	bot.enabled = false
 	remove_from_group(&"bot_target")
 	hide()
-	$Shape.set_deferred(&"disabled", true)
+	shape.set_deferred(&"disabled", true)
 	died.emit(self, by)
 	await get_tree().create_timer(RESPAWN_S, false).timeout
 	global_position = _spawn
 	velocity = Vector3.ZERO
 	health = MAX_HEALTH
 	grenades = 2
-	$Shape.set_deferred(&"disabled", false)
+	shape.set_deferred(&"disabled", false)
 	show()
 	add_to_group(&"bot_target")
 	dead = false

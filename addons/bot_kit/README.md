@@ -45,12 +45,14 @@ Minimal3D (minimal_3d.gd)                # draws the shots and counts those that
 ├── Level (NavigationRegion3D)          # the baked navmesh of the floor and the walls
 │   ├── Floor (StaticBody3D)            # on layer 1, like the walls
 │   └── Wall, Wall2, Wall3, Wall4
-├── You (CharacterBody3D, you.gd)       # in the group bot_target: reads Input (the arrows)
-├── Robot (CharacterBody3D, robot.gd)   # Godot's character template, reading bot.input
-│   ├── Head (Node3D)                   # at 1.6 m: turns up and down to look
-│   └── Bot3D                           # head: Head; everything else as it comes
-└── Label
+├── %You (CharacterBody3D, you.gd)       # in the group bot_target: reads Input (the arrows)
+├── %Robot (CharacterBody3D, robot.gd)   # Godot's character template, reading bot.input
+│   ├── %Head (Node3D)                   # at 1.6 m: turns up and down to look
+│   └── %Bot3D                          # head: Head; everything else as it comes
+└── %Label
 ```
+
+The robot moves, jumps and shoots with the same keys you use, except it reads them from `bot.input` instead of `Input`:
 
 ```gdscript
 # robot.gd (the gist): Godot's template, with bot.input where it said Input
@@ -78,13 +80,13 @@ func _physics_process(delta: float) -> void:
 
 The kit has no network. In a network game the bot runs where the game is decided (the server) and presses a seat's keys as if it were its player: its signals `pressed`, `released` and `value_changed` have just the shape to connect to the game's network input. Turn `turn_body` off, so the bot only writes where it looks and your character applies it, as with a player.
 
-**With MpKit:** on the server, on the pawn of a free seat.
+**With MpKit:** on the server, on the pawn of a free seat. The bot plays that seat like one more player and its keys travel like a person's. `%MpInput` needs `MpInput` marked as a unique name in the pawn's scene (right click › "Access as Unique Name").
 
 ```gdscript
 var bot := preload("res://bot.tscn").instantiate() as Bot3D  # a Bot3D saved as a scene
 bot.turn_body = false
 pawn.add_child(bot)
-var keys := pawn.get_node(^"MpInput") as MpInput
+var keys := pawn.get_node("%MpInput") as MpInput
 bot.input.pressed.connect(keys.bot_press)
 bot.input.released.connect(keys.bot_release)
 bot.input.value_changed.connect(keys.bot_set_value)  # yaw and pitch, in radians

@@ -13,9 +13,9 @@ Addon `fsm_kit`: parent `FsmMachine` with `@export var initial_state: FsmState`.
 
 ## Health / Hitbox / Hurtbox
 
-`Health` (`class_name` node): `max_hp` may come from the type Resource; current `hp` on the node. `signal damaged(amount: int)` / `signal died`. The parent orchestrates (animation, `queue_free`).
+`Health` (`class_name` node): if the entity has a type, `max_hp` comes from the type (`health.setup(type.max_hp)`) and the scene does not override it in the `Health` inspector; if it has no type, it is the `@export` on `Health`. Never both. Current `hp` on the node. `signal damaged(amount: int)` / `signal died`. The parent orchestrates (animation, `queue_free`).
 
-Hitbox / Hurtbox = `Area2D` packed scenes. Optional: `"hurtbox"` group if the exact type does not matter; `@export` sockets win.
+Hitbox / Hurtbox = `Area2D` packed scenes. Optional: `"hurtbox"` group if the exact type does not matter; `@export` references win.
 
 ## PostFx stack
 
@@ -39,17 +39,22 @@ PostFxStack (CanvasLayer, high layer)
 
 ## Editor preview
 
-`@export_tool_button` to regenerate geometry. Preview does not write `MatchRules` or start ENet.
+`@export_tool_button` to regenerate geometry. The preview does not touch the match rules or start the network. Full rules: [SKILL.md](SKILL.md) §7.
 
-## Resource template + scene
+## Type + scene
 
 ```
 projectile.tscn
-projectile_fast.tres    # ProjectileData { damage, speed, scene? }
-projectile_slow.tres
+projectile_type.gd                 # class_name ProjectileType
+fast/fast_projectile_type.tres     # { damage, speed, scene? }
+slow/slow_projectile_type.tres
 ```
 
-The weapon exports `ProjectileData`. It spawns `data.scene` (or the single scene) and assigns `data`.
+The weapon exports `ProjectileType`. It spawns `type.scene` (or the single scene) and assigns `type`.
+
+## A variant with another structure
+
+*New Inherited Scene* of the base (`tank.tscn` inherited from `enemy.tscn`): it swaps the mesh, adds a particle, and the rest follows the base. One level of inheritance.
 
 ## When it does belong in code
 
@@ -57,4 +62,4 @@ The weapon exports `ProjectileData`. It spawns `data.scene` (or the single scene
 - Multiplayer authority.
 - **Round** values identical on host and guest.
 
-Shared types: Resource. A value of a single scene: node `@export`. Runtime: node. Communication (signals, `Events` bus, command, pool, spawner): [godot-code-quality](../godot-code-quality/SKILL.md).
+Where each number lives: rule 0. What changes at runtime: a variable on the node. Communication (signals, `Events` bus, command, pool, spawner): [godot-code-quality](../godot-code-quality/SKILL.md).

@@ -37,7 +37,7 @@ Order of authority: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFCs > generat
 2. Present a comprehensive implementation plan covering:
    - File tree with `[+]` new / `[~]` modified / `[-]` deleted + responsibility map (one job per piece; why it is not merged)
    - Files to create or modify
-   - Where each number lives (rule 0: an `@export` on the node that uses it; a `.tres` only if it is shared or edited as a type) and how many files you open to change it
+   - Where each number lives (rule 0: one owner, the type's `.tres` or the scene root), its `docs/tuning.md` rows, and how many files you open to change it
    - Proposed implementation sequence
    - Technical decisions and trade-offs
    - Potential impacts on existing functionality

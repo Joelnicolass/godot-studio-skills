@@ -1,5 +1,17 @@
 # RtsKit changelog
 
+## 0.3.0
+
+- **The command rig is one node.** `rig/rts_command_rig_3d.tscn` and `rig/rts_command_rig_2d.tscn` (`RtsCommandRig`) hold `Command` with its ten pieces and the `View` with its `Box`, all wired. Instance it, assign `camera` and `ground` (in 2D `camera` is enough) and you select and order. `menu` is a third, optional socket for the right button's menu. If a socket is missing, or the camera is of the other dimension, the node shows a warning in the editor.
+- **The pieces stay at hand.** In the editor, right click the rig > Editable Children: every value stays on the piece that uses it. In code, `rig.selection`, `rig.orders`, `rig.command`, `rig.order_input`, `rig.select_input`, `rig.armed`, `rig.state`, `rig.pointer`, `rig.probe`, `rig.order_button`, `rig.group_keys`, `rig.view`, `rig.box`.
+- **The camera's edges, with nothing to wire.** An `RtsCamera3D` / `RtsCamera2D` with no `edge_area` gets the rig's `View`.
+- **The inspector shows the unit of every distance.** `RtsUnit.size`, `RtsOrders.spacing_base`, `max_spacing`, `retarget_range` and `RtsSelection.same_type_radius` show `px` when the node sits under a `Node2D` and `m` when it sits under a `Node3D`; before, they showed nothing and the docs said "meters" in 2D too. No value changes. The 2D rig has its own in pixels (8, 120, 1200, 600). `RtsSpace.distance_unit(node)` is the rule.
+- **`RtsOrderButton.menu` can change while the game runs** (before, it was only connected in `_ready`).
+- **Examples:** `minimal_2d`, `skirmish_3d` and `skirmish_2d` use the rig; the `skirmish` ones have Editable Children on to wire their HUD.
+- **Tests:** `test_rig` (the rig in 2D and 3D with mouse events, the warnings, the ground socket, the menu, the edges, a HUD on top with a real pointer), `test_space` (the unit the inspector shows) and `test_independence` (the kit names no other kit).
+
+To update: nothing breaks; a rig built by hand keeps working the same. To move to the scene: delete your `Command` and your `Hud/View`, instance the rig of your dimension, assign `camera` and `ground`, and leave your HUD after the rig in the tree. The values you had changed on a piece go back in with Editable Children; in your scripts, `$Command/Selection` becomes `rig.selection` (with `@export var rig: RtsCommandRig`), and your camera's `edge_area` may stay empty. A script of yours that extends `RtsOrders` or `RtsSelection` stays the same (they are `@tool` now only to show the unit).
+
 ## 0.2.0
 
 - **The edges stop over the UI.** `RtsCamera3D` and `RtsCamera2D` no longer pan or turn by the edges while the pointer is over a control of the UI: a HUD button or panel, any control whose mouse filter is not *Ignore* (labels and containers on *Ignore* do not count). Before, without `edge_area`, the camera moved while you aimed at a button in a corner. `edges_over_gui = true` brings the old behavior back. With `edge_area` nothing changes: the edges still work only over that control.

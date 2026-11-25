@@ -6,7 +6,7 @@
 
 | Artifact | What it is |
 |----------|------------|
-| `RULES.md` | Technical constitution (stack, layers, MP, code non-goals) |
+| `RULES.md` | Technical constitution (stack, folders, MP, code non-goals) |
 | `VISUAL.md` | Look constitution (style, refs, hierarchy, do not invent) |
 | `FEATURES.md` | The slice contract: `F<n>`, criteria, `res://debug/…` path if needed, InputMap action, observable. Grows with `/implement-feature`. |
 | `PRD.md` | Optional and short. Not the suite. |

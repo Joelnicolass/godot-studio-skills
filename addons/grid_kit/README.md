@@ -30,14 +30,17 @@ Enable the **GridKit** plugin (types `GridBoard`, `GridView3D` and `GridCursor` 
 
 **In code**
 
+Clicking a cell marks its neighbors, and cell (2, 3) becomes forest. The three `@export`s are assigned in the inspector:
+
 ```gdscript
-@onready var board: GridBoard = $Board
-@onready var moves: GridCursor = $Board/View/Moves
+@export var board: GridBoard
+@export var view: GridView3D
+@export var moves: GridCursor
 
 
 func _ready() -> void:
 	board.set_value(Vector2i(2, 3), &"terrain", &"forest")
-	$Board/View.cell_clicked.connect(_on_cell_clicked)
+	view.cell_clicked.connect(_on_cell_clicked)
 
 
 func _on_cell_clicked(cell: Vector2i) -> void:
@@ -69,7 +72,7 @@ Select a `GridBoard` (or its `GridView3D`) and the **GridKit** bar shows up on t
 - `examples/minimal_3d/minimal_3d.tscn` (F6): a hexagon of radius 4 with water on the rim, plain, forest and mountain, read from `map.tres` (a `GridLayout`). A click marks the cell and its 6 neighbors, and the pointer marks the cell under it.
 
 ```
-Minimal3D                 # minimal_3d.gd: only connects the signals
+Minimal3D                 # minimal_3d.gd: only connects the signals; its @export (board, view, selection, hover) point at the nodes below
 ├── Camera, Sun
 └── Board                 # GridBoard: layout = map.tres
     └── View              # GridView3D: tiles = {plain, forest, mountain, water}
@@ -170,7 +173,8 @@ Minimal3D                 # minimal_3d.gd: only connects the signals
   - `click_max_drag_px`: if the pointer moves more than this between press and release, it is a drag, not a click.
   - `camera`: if empty, it uses the current camera.
 - **Methods:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)`, `cell_at_ray(origin, direction, on_board_only := true)` and `board()`.
-- **Signals:** `cell_clicked(cell)` (mouse or touch) and `cell_hovered(cell)` (`NO_CELL` when it leaves the board).
+- **Signals:** `cell_clicked(cell)` (mouse or touch) and `cell_hovered(cell)` (`NO_CELL` when it leaves the board); `tile_created(cell, tile)` when it makes a tile, and `drawn` when every tile is in place.
+- **Each tile knows its cell.** The tile already sits on its cell's center when `tile_created` fires, and it is not in the tree yet: what you set on it there (its cell, its data) is already there in its `_ready`. `drawn` fires after a `rebuilt`, after `tiles`, `default_tile` or `value_key` change, or after `redraw()`; a cell whose value changes emits only `tile_created`.
 - **Clicks without colliders:** the camera ray meets the board plane.
 - When the board gains or loses cells, only those tiles are drawn or freed. Erasing a value (`erase_value`) sends the cell back to `default_tile`.
 
@@ -186,6 +190,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals
 ## Tips
 
 - **Rules use `CellGrid`, not the nodes.** Keep the grid in your match state and show it with `board.use_grid(state.grid)`. Rules then run headless, and the view updates itself from `value_changed`. With no node at all: `layout.make_grid()` or `HexGrid.rect(…)` / `SquareGrid.rect(…)`.
+- **See the board in the editor even when the grid arrives at runtime.** Leave a `layout` (or the columns and rows) on the `GridBoard`: that is what the editor shows, and `use_grid` replaces it at runtime.
 - **A camera drag is not a click.** Tune `click_max_drag_px`. If your camera has its own drag state, turn `input_enabled` off while it drags.
 - **Tiles from other packs.** If they come flat-top, rotate them 90° in their scene. For hexagons `cell_size` is the width, side to side; for squares, the side.
 - **Many cells at once.** `add_cells` and `remove_cells` emit one signal; `add_cell` in a loop emits one per cell (views and cursors still group what they draw into one frame).
@@ -216,7 +221,7 @@ It prints `GRIDKIT TESTS PASS (n)`. The tests cover:
 - Hexagons and squares: shapes and coordinates, neighbors (4 and 8, in order), distance, range, paths with cost, with and without diagonals, flood, cell ↔ point round trips.
 - `CellGrid`: `from_dict` picks the class and reads the 0.2 format, `add_cells` emits once, `erase_value`.
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` and saving and loading a `.tres`.
-- The nodes: shape from the inspector, `radius` on squares, the layout rules, grouped rebuild, `paint` and `set_cells` (with and without a layout), `position_to_any_cell`, tiles per cell, redraw, `use_grid`, `cell_at_ray`, click, drag and editor warnings.
+- The nodes: shape from the inspector, `radius` on squares, the layout rules, grouped rebuild, `paint` and `set_cells` (with and without a layout), `position_to_any_cell`, tiles per cell, `tile_created` and `drawn`, redraw, `use_grid`, `cell_at_ray`, click, drag and editor warnings.
 - `GridCursor`: the same nodes after 1000 `add_cell`, only the mark of a removed cell is freed, `cell_size` moves without recreating, square marker.
 - The brush stroke (no editor): paint, repeat, erase, add and remove cells with their values, making the layout, and that its result undoes everything.
 - Both examples played with mouse events.

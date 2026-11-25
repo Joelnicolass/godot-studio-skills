@@ -8,9 +8,9 @@ extends Node2D
 const Ball := preload("res://addons/mp_kit/examples/sports_2d/ball.gd")
 const Player := preload("res://addons/mp_kit/examples/sports_2d/player.gd")
 
-@onready var ball: Ball = $Ball
-@onready var spawn_points: Node2D = $MpWorld/SpawnPoints
-@onready var score: Label = $MpWorld/Hud/Score
+@onready var ball: Ball = %Ball
+@onready var spawn_points: Node2D = %SpawnPoints
+@onready var score: Label = %Score
 
 
 func _ready() -> void:

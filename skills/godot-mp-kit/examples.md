@@ -43,9 +43,9 @@ What follows is the **low level** (RPC, snapshots, tunnel): for what the node la
 extends MpFlow
 
 func _ready() -> void:
-	boot_path = "res://scenes/ui/boot.tscn"
-	add_world(&"2d", "res://scenes/world/match_2d.tscn")
-	add_world(&"3d", "res://scenes/world/match_3d.tscn")
+	boot_path = "res://main/boot.tscn"
+	add_world(&"2d", "res://levels/match_2d/match_2d.tscn")
+	add_world(&"3d", "res://levels/match_3d/match_3d.tscn")
 	start_when = StartWhen.DEDICATED_FIRST_CLIENT
 	super._ready()
 ```
@@ -67,7 +67,7 @@ func try_action(dir: Vector2, strength: float) -> void:
 		apply_action(dir, strength)
 ```
 
-## Glue: listen (2nd peer) vs dedicated (N clients)
+## Game code: listen (2nd peer) vs dedicated (N clients)
 
 ```gdscript
 func _on_peer_joined(peer_id: int, slot: int) -> void:
@@ -118,7 +118,7 @@ func _push_if_server() -> void:
 MpKit.send_custom(&"emote", {"id": "wave"})
 # Listen host / server origin (everyone must see it): broadcast_custom, not send_custom
 
-# Server (glue): reflect client packets only. from_peer == 1 is already a server emit
+# Server (game code): reflect client packets only. from_peer == 1 is already a server emit
 # (broadcast or local send). Without this check, broadcast_custom calls itself.
 func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
 	if channel != &"emote":
@@ -143,7 +143,7 @@ MpAuthority.ensure_sync(self, PackedStringArray([
 ]))
 ```
 
-`add_child` under `spawn_path`. `MpSpawner` reveals the actor to the peer once its spawner is ready (Godot sends spawn + sync). An `MpSlotSpawner` does the per-slot pawn; glue does not need `ensure_pawn`.
+`add_child` under `spawn_path`. `MpSpawner` reveals the actor to the peer once its spawner is ready (Godot sends spawn + sync). An `MpSlotSpawner` does the per-slot pawn; game code does not need `ensure_pawn`.
 
 ## A sports game: a predicted action and a contact with lag
 

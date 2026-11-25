@@ -29,7 +29,7 @@ var velocity := Vector2.ZERO
 var _kicked_by := 0
 var _kicked_s := 0.0
 
-@onready var net: MpActor = $MpActor
+@onready var net: MpActor = %MpActor
 
 
 func _ready() -> void:
@@ -136,6 +136,6 @@ func _process(_delta: float) -> void:
 	var mine := holder > 0 and holder == MpKit.local_slot() and not net.is_authority()
 	var feet := carrier() if mine else null
 	if feet != null:
-		$Body.global_position = feet.global_position + feet.facing * DRIBBLE
+		%Body.global_position = feet.global_position + feet.facing * DRIBBLE
 	else:
-		$Body.position = Vector2.ZERO
+		%Body.position = Vector2.ZERO

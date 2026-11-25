@@ -18,7 +18,7 @@ Load `godot-layered-architecture`, `godot-composition-first`, and `godot-code-qu
 If the request is vague, ask in one batch (`AskUserQuestion` in Claude Code / `AskQuestion` in Cursor, if available):
 
 1. What the player does / what you see. One or two sentences.
-2. Where it lives (scene, actor, HUD). Clean vs standard is **already chosen**; do not change it.
+2. Where it lives (scene, actor, HUD). The project size is **already chosen**; do not change it.
 3. Is there networking? If yes: local/Wi-Fi or online. If no: zero RPCs.
 4. 2D / 3D. Art: placeholder unless OK + references. If there are surfaces (floor, wall, terrain): offer Material Maker.
 5. Is it “like in X” (another game / app)? Offer to research it (web, and decompiling it if the game can be opened; `/research-feature`), and use the report for the criteria.
@@ -27,7 +27,7 @@ Do not interview a full GDD. Do not run `/create-prd` or `/generate-rfcs` “jus
 
 Out of scope for **this** feature: write it down and do not build it.
 
-If the cut crosses session + net + several worlds, propose a short RFC and `/implement-rfc`. If it is a component, HUD, a `.tres` type, a state: stay here. If you only want juicy feel on something that already hits: `/add-juicy`. If you only want an FSM or platformer forgiveness: `/add-state-machine` / `/add-platformer-2d`.
+If the cut crosses session + net + several worlds, propose a short RFC and `/implement-rfc`. If it is a component, HUD, a type (`_type.tres`), a state: stay here. If you only want juicy feel on something that already hits: `/add-juicy`. If you only want an FSM or platformer forgiveness: `/add-state-machine` / `/add-platformer-2d`.
 
 ## 2. Artifacts (they grow, they are not regenerated)
 
@@ -46,8 +46,8 @@ Authority on conflict: PRD.md > FEATURES.md > RULES.md > VISUAL.md > RFC > this 
 
 - File tree with `[+]` / `[~]` / `[-]` + responsibility map ([file-tree.md](../skills/godot-studio-workflow/file-tree.md))
 - Test scene under `res://debug/`: easy initial state, criterion outcome not yet true, InputMap action. Written on the `F<n>` (or the RFC if there is a contract).
-- Where each number lives (rule 0: an `@export` on the node that uses it; a `.tres` only if it is shared or edited as a type) and which pattern each communication uses
-- Motion: evaluate Tween vs `AnimationPlayer` (skill `godot-animation`); knobs in inspector or timeline
+- Where each number lives (rule 0: one owner, the type or the root), with its `docs/tuning.md` rows, and which pattern each communication uses
+- Motion: evaluate Tween vs `AnimationPlayer` (skill `godot-animation`); knobs and curve in the inspector or on the timeline
 - Checklist in [adding-features.md](../skills/godot-layered-architecture/adding-features.md)
 
 Show the tree. **Wait for OK** (more/fewer pieces?).
@@ -65,5 +65,6 @@ Show the tree. **Wait for OK** (more/fewer pieces?).
 - The project parses headless (`godot --headless --path . --quit` with no `SCRIPT ERROR`). If it has `gdformat` / `gdlint` / GUT, green.
 - The feature is exercised in the editor (F5/F6, one action).
 - Every `F<n>` criterion has evidence in the review.
-- Timing / squash / feel is tuned in the inspector if there is animation.
+- Timing, squash, and the curve are tuned in the inspector if there is animation.
+- `docs/tuning.md` has the feature's rows, and each new scene looks in the editor as it does in the game.
 - FEATURES.md has the `F<n>` and the rest of the product was not invented; decision + next step land in memory if the skill is present.

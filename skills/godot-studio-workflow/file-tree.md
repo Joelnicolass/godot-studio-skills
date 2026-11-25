@@ -19,22 +19,25 @@ It shows at a glance whether the feature is a god-node or a set of pieces.
 ## Template
 
 ```text
-<feature>/
-├── [+] foo.tscn              # container: physics/layout + orchestrates children
-├── [+] foo.gd                # thin: signals up, @export sockets
-├── [+] bar.tscn              # reusable packed (2nd caller or F6 alone)
-├── [+] bar.gd                # its numbers as @export, visible in the inspector
-└── [+] foo_fast.tres         # only for a type with shared variants; do not mutate at runtime
-scenes/world/
-└── [~] world.tscn            # instances foo.tscn under %Actors
-scenes/actors/
+foo/
+├── [+] foo.tscn              # container: physics and layout; orchestrates its children
+├── [+] foo.gd                # thin: signals up, @export references
+├── [+] foo_type.gd           # class_name FooType: the design numbers of a foo
+├── [+] fast/fast_foo_type.tres   # one variant; not mutated at runtime
 └── [-] old_foo.gd            # replaced by foo.gd
+shared/components/
+├── [+] bar.tscn              # reusable packed (two entities use it)
+└── [+] bar.gd
+levels/forest/
+└── [~] forest.tscn           # instances foo.tscn under %Actors
+docs/
+└── [~] tuning.md             # new rows: foo speed and damage
 ```
 
 Small cut (typo, `@export`, a 1–3 file bug): the list is enough, no table.
 
 ```text
-[~] scenes/player/player.gd   # coyote_time 0.10 → 0.12 (@export)
+[~] player/player.tscn   # coyote_time 0.10 → 0.12 (@export on the root)
 ```
 
 Plus a **responsibility map** (one row per file or node):
@@ -43,12 +46,15 @@ Plus a **responsibility map** (one row per file or node):
 |-------|----------------------|------|----------------------|
 | `foo.gd` | Orchestrates input → `apply_*` | Node | If it also painted HUD, split |
 | `bar.tscn` | FX / HUD / hitbox | Packed | Second caller or F6 |
-| `foo_fast.tres` | Stats of one variant | Resource | Several scenes share it; another variant = another `.tres` |
+| `fast_foo_type.tres` | Numbers of one variant | Type Resource | Another variant = another `_type.tres` |
 
-For each new tunable number, the plan says which node it lives on. If changing it means opening more than 2 files, the cut is redesigned before the OK.
+For each new design number, the plan brings its `docs/tuning.md` row (I want to change → file → node → property), and `[~] docs/tuning.md` goes in the tree. If changing it means opening more than 2 files, the cut is redesigned before the OK.
 
-Clean: `src/features/<n>/`, `src/core/`, `src/domain/` per [clean.md](../godot-layered-architecture/clean.md).  
-Standard: next to the scene; do not invent `src/domain/`.
+Each file in the tree goes in the folder it belongs to, and each `.tres` carries its suffix ([godot-code-quality](../godot-code-quality/SKILL.md) §1).
+
+By entity: the entity's folder, or `shared/` ([by-entity.md](../godot-layered-architecture/by-entity.md)).  
+Systems + content: `systems/`, `content/`, `ui/` ([systems-content.md](../godot-layered-architecture/systems-content.md)).  
+Clean (only a repo that already declares it): [clean.md](../godot-layered-architecture/clean.md).
 
 ## Test scene
 
@@ -59,12 +65,12 @@ debug/
 └── goal_ready.tscn     # actor + goal, with other @export values on the instance (same script, other numbers)
 ```
 
-The initial state makes the criterion **easy** (do not play the whole game to reach it). It does not leave the criterion **already true** (the goal is not already done, the notice does not start visible). The debug scene changes numbers (an `@export` on the instance, or a debug `.tres` if the feature already uses one); not a parallel script. `res://debug/` stays out of the release export.
+The initial state makes the criterion **easy** (do not play the whole game to reach it). It does not leave the criterion **already true** (the goal is not already done, the notice does not start visible). The debug scene changes numbers (an `@export` on the instance, or a debug `.tres` if the feature already uses one); not a parallel script. `res://debug/` stays out of the export (`debug/*` in the preset's exclude filter) and nothing in the game names it: `rg -n "res://debug" --glob '!debug/**' --glob '!agent/**'` comes back empty.
 
 ## Signals to compose more
 
 - One `.gd` paints, spawns, scores, and changes scene.
-- Hardcoded copy or numbers (copy goes through `tr()`; numbers, to an `@export` on the node that uses them).
+- Text or numbers written in code (text goes to the translation file; numbers, to their owner per rule 0).
 - The same block copied in two features → `shared/` or packed.
 - HUD mixed with match rules.
 
@@ -72,8 +78,8 @@ The initial state makes the criterion **easy** (do not play the whole game to re
 
 - A packed scene of a ColorRect nobody reuses.
 - An autoload for *this* round’s score.
-- `src/domain/` in a project that chose **standard**.
-- A `.tres` that a single scene uses, or one that points at another through a tag or a string.
+- A `domain/`, `core/`, or `scenes/` folder in a project that did not declare Clean.
+- A `.tres` that meets none of the three conditions of rule 0, or one that points at another through a tag or a string.
 - A new autoload, registry, locator, or manager for something a signal, an `@export`, or the `Events` bus solves.
 
 ## What to ask the user

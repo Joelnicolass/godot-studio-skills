@@ -44,12 +44,14 @@ Minimal3D (minimal_3d.gd)
 ├── WorldEnvironment, Sun, Camera3D, Floor
 ├── Wall (StaticBody3D)                 # on layer 1: it hides you
 ├── Guard (StaticBody3D)                # the sensor's own body: never hides its view
-│   └── Head (Node3D)                   # turns toward what it perceives
+│   └── %Head (Node3D)                   # turns toward what it perceives
 │       ├── Nose
-│       └── Sensor (PerceptionSensor3D) # sight 12, lose 16, angle 100°, near 2, show_in_game
-└── Player (CharacterBody3D)
+│       └── %Sensor (PerceptionSensor3D) # sight 12, lose 16, angle 100°, near 2, show_in_game
+└── %Player (CharacterBody3D)
     └── Target (PerceptionTarget3D)     # at the chest
 ```
+
+The guard turns its head toward the last thing it perceived, and Space makes a noise it hears:
 
 ```gdscript
 # minimal_3d.gd (the essentials)

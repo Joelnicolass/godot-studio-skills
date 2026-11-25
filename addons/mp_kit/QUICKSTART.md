@@ -52,13 +52,15 @@ The player scene (`CharacterBody2D`, `CharacterBody3D`...) with two children:
 - **MpActor**: tick what is synced (position, rotation, visible, and under *Extra* any property, e.g. `health` or `Health:current`) and turn on **Prediction › predict** for the player. Save the scene: the editor builds the synchronizer and saves it.
 - **MpInput**: the InputMap actions the player sends (the arrows and Enter by default).
 
+Mark both as a unique name (right click › "Access as Unique Name"): the script below uses them as `%MpActor` and `%MpInput`.
+
 ## 6. Player script
 
 ```gdscript
 extends CharacterBody2D
 
-@onready var net: MpActor = $MpActor
-@onready var input: MpInput = $MpInput
+@onready var net: MpActor = %MpActor
+@onready var input: MpInput = %MpInput
 
 # Movement: the server runs it and, with predict, the owner too, at once (no lag).
 func mp_move(keys: MpInput, _delta: float) -> void:

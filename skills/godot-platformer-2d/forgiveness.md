@@ -1,6 +1,6 @@
 # Platformer forgiveness (catalog)
 
-Source: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and_forgiveness/index.html). The addon covers generic 1–4 and 7. The rest is glue **if the game has** dash / one-way / stamina.
+Source: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and_forgiveness/index.html). The addon covers generic 1–4 and 7. The rest is game code **if the game has** dash / one-way / stamina.
 
 ## In PlatKit
 
@@ -12,7 +12,7 @@ Source: [Celeste & Forgiveness](https://maddymakesgames.com/articles/celeste_and
 
 Wall jump with `wall_extra_pixels` (the article: 2 px at 320×180 ≈ ¼ tile). Off by default.
 
-## Game glue
+## Game code
 
 ### Dash corner / one-way pop
 

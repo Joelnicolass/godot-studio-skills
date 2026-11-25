@@ -31,13 +31,13 @@ If missing, ask in one batch:
 Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` removed), for example:
 
 ```
-[~] scenes/maps/meadow/map.tscn          # GrassField3D (it sets itself up: ground, look, quality, wind)
-[+] scenes/maps/meadow/map_grass_ground.res   # «Bake ground» and the brushes write it (heights, painted maps)
-[+] scenes/look/grass_summer.tres        # GrassLook from addons/grass_kit/looks/ (one per biome or season)
-[+] scenes/look/flower.tres              # GrassMesh: a mesh, its textures, its weight, map_name "flower"
-[+] scenes/look/wind.tres                # GrassWind
-[~] scenes/maps/meadow/ground.gdshader   # includes grass_ground.gdshaderinc (grass colour under the blades, soil on painted paths)
-[~] scenes/units/unit.tscn               # group for trample_group
+[~] levels/meadow/map.tscn          # GrassField3D (it sets itself up: ground, look, quality, wind)
+[+] levels/meadow/map_grass_ground.res   # «Bake ground» and the brushes write it (heights, painted maps)
+[+] look/grass_summer.tres        # GrassLook from addons/grass_kit/looks/ (one per biome or season)
+[+] look/flower.tres              # GrassMesh: a mesh, its textures, its weight, map_name "flower"
+[+] look/wind.tres                # GrassWind
+[~] levels/meadow/ground.gdshader   # includes grass_ground.gdshaderinc (grass colour under the blades, soil on painted paths)
+[~] units/unit.tscn               # group for trample_group
 [~] project.godot                        # GrassKit plugin
 ```
 

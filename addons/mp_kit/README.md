@@ -56,7 +56,7 @@ The transport is selectable; the API, RPCs and replication are the same with bot
 - **Web**: a web export uses WebSocket (direct, or through the relay when the `.tres` says `relay`), never hosts nor browses LAN rooms (`MpNetConfig.can_host()`); the menu hides those rows. Check: `mpkit_lab/run/web.sh` (and `TRANSPORT=relay`), which opens the page in a headless Chrome.
 - **Relay**: `--transport=relay` (or `transport = relay` in the `.tres`) with `relay_url` / `relay_room`: everything goes through a WebSocket tunnel ([relay/README.md](relay/README.md)); the server needs no public IP. It serves desktop and web.
 - **Rooms your players host**: with the relay and the [issuer](issuer/README.md) (`issuer_url` in the `.tres`), `MpFlow.host_online()` / `join_online(code)` / `online_rooms()`: no server of yours runs the matches; a desktop hosts through a match process of its PC, a browser in its own tab (GUIDE 10.3).
-- **Flag**: `--transport=ws` (or `enet`). Read by `MpKit` (`MpKit.transport`, before `host()`/`host_dedicated()`/`join()`; glue may set it by hand) and `MpLobbyClient.transport`.
+- **Flag**: `--transport=ws` (or `enet`). Read by `MpKit` (`MpKit.transport`, before `host()`/`host_dedicated()`/`join()`; game code may set it by hand) and `MpLobbyClient.transport`.
 - **Room server**: `MpLobbyConfig.transport` (`.tres` or `--transport=ws`). It serves the lobby with that transport, picks free match ports for TCP or UDP accordingly and **forwards it to the child dedicated** (`transport` is in `agent_fields`, it arrives as `--transport=ws`).
 - Same transport in every process: client, room server and dedicated. An ENet client does not talk to a WS server.
 - With WebSocket the lobby and the match use TCP ports; open TCP (not UDP) in the VPS firewall.
@@ -93,7 +93,7 @@ MpKit.join(host, port, ticket)    # or MpFlow.join_endpoint(host, port, ticket)
 MpKit.admission_rejected.connect(func(reason: String): ...)
 ```
 
-The kit does not interpret the ticket. Rejection reasons: `rejected` (the Callable returned 0 or the ticket exceeds `TICKET_MAX_LEN`), `slot_taken` (slot held by another peer) and `timeout` (no ticket in time). With `admission`, `push_snapshot`, `broadcast_load_world`, `broadcast_session_ended` and `broadcast_custom` reach only peers with a slot. Careful: a game `MultiplayerSpawner`/synchronizer replicates to **all** connected peers, including those waiting for a ticket; restrict it with per-peer visibility (`set_visibility_for` / `add_visibility_filter`) so only peers with a slot see it. `MpFlow.StartWhen.MANUAL`: the flow does not load the world by itself (glue calls `start_match()`/`goto_world()`). `MpBoot.role()` returns `"room-server"` with `--room-server`.
+The kit does not interpret the ticket. Rejection reasons: `rejected` (the Callable returned 0 or the ticket exceeds `TICKET_MAX_LEN`), `slot_taken` (slot held by another peer) and `timeout` (no ticket in time). With `admission`, `push_snapshot`, `broadcast_load_world`, `broadcast_session_ended` and `broadcast_custom` reach only peers with a slot. Careful: a game `MultiplayerSpawner`/synchronizer replicates to **all** connected peers, including those waiting for a ticket; restrict it with per-peer visibility (`set_visibility_for` / `add_visibility_filter`) so only peers with a slot see it. `MpFlow.StartWhen.MANUAL`: the flow does not load the world by itself (game code calls `start_match()`/`goto_world()`). `MpBoot.role()` returns `"room-server"` with `--room-server`.
 
 Several matches at once on **one** dedicated process: [Hub rooms and queue](#hub-rooms-and-queue-optional). One match at a time: you can ignore that.
 
@@ -160,13 +160,13 @@ Do this in Godot, in order. One world is enough; several worlds use the catalog 
 2. Project → Settings → Plugins → **MpKit** (Enable).
 3. Project → Settings → Autoload: `MpKit` must exist pointing at `res://addons/mp_kit/mp_kit.gd`.
 4. Project → Tools → **MpKit: New session flow...**  
-   Or create an `MpFlow` node by hand, save it as `res://glue/session_flow.tscn`, and add it as an autoload **after** MpKit.
+   Or create an `MpFlow` node by hand, save it as `res://autoloads/session_flow.tscn`, and add it as an autoload **after** MpKit.
 
 On the flow inspector:
 
 | Property | What to set |
 |----------|-------------|
-| `boot_path` | `res://scenes/ui/boot.tscn` |
+| `boot_path` | `res://main/boot.tscn` |
 | `world_path` | your match, if there is **one** world |
 | `worlds` | list of `MpWorldRef` if you have **several** maps (`id` + scene or path) |
 | `max_players` | e.g. 4 |
@@ -184,7 +184,7 @@ Option A — drop-in: instance `res://addons/mp_kit/mp_boot_menu.tscn`. If `MpFl
 Option B — by hand:
 
 1. Full-screen `Control`. Buttons: Play solo, Host LAN, Join + IP `LineEdit`.
-2. In the script:
+2. In the script. Each button starts a game (solo, as host or joined by IP) and the list of games on the local network fills itself in:
 
 ```gdscript
 func _on_play_solo() -> void:
@@ -286,7 +286,7 @@ Rules:
 
 5. `MpReplicate` inspector: `interpolate` on for proxies (the host does not interpolate).
 6. Input **only** if `player_slot == MpKit.local_slot()` (or an input child that already does that).
-7. Commands to the server:
+7. Commands to the server. The player asks to move: the client asks the server, which validates and applies it, and in a one-player game it is applied directly:
 
 ```gdscript
 func try_move(dir: Vector2) -> void:
@@ -377,9 +377,11 @@ Convenient node: child `MpCustomPipe`, `@export channel = &"emote"`.
 
 ### Send (client → server)
 
+A player sends a loose message (a greeting) to the server (`%MpCustomPipe` needs the node marked as a unique name: right click › "Access as Unique Name"):
+
 ```gdscript
 # On the pawn / feature (client or 1P)
-$MpCustomPipe.send({"slot": player_slot, "msg": "hello"})
+%MpCustomPipe.send({"slot": player_slot, "msg": "hello"})
 ```
 
 ```mermaid
@@ -396,6 +398,8 @@ In 1P or if the listen host calls it: no RPC; it emits right there. That is why 
 
 ### Receive
 
+Any game node learns about the messages on the `emote` channel and tells whether the server pushed them or they came from a client:
+
 ```gdscript
 func _ready() -> void:
 	MpKit.custom_received.connect(_on_custom)
@@ -407,11 +411,11 @@ func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
 	# from_peer == 2+ → it arrived from that client, not yet “on everyone”
 ```
 
-Or on the actor: `$MpCustomPipe.packet.connect(_on_emote)`.
+Or on the actor: `%MpCustomPipe.packet.connect(_on_emote)`.
 
 ### Sync to everyone (the server forwards)
 
-Without this step, only the server saw the client’s packet.
+Without this step, only the server saw the client’s packet. This way the server forwards to everyone what a client sent:
 
 ```gdscript
 func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
@@ -441,13 +445,15 @@ One peer only: `push_custom_to(peer_id, channel, data)` (the server does not see
 
 ### Actor pattern (like the demo emote)
 
+When the player waves, everyone sees the flash once over their character:
+
 ```gdscript
 func try_emote() -> void:
 	var data := {"slot": player_slot, "msg": "hello"}
 	if not MpKit.is_networked() or not MpKit.is_server():
-		$MpCustomPipe.send(data)      # 1P or client → server
+		%MpCustomPipe.send(data)      # 1P or client → server
 		return
-	$MpCustomPipe.broadcast(data)     # listen host: everyone
+	%MpCustomPipe.broadcast(data)     # listen host: everyone
 
 func _on_emote_packet(data: Dictionary, from_peer: int) -> void:
 	if int(data.get("slot", 0)) != player_slot:
@@ -457,7 +463,7 @@ func _on_emote_packet(data: Dictionary, from_peer: int) -> void:
 	_flash()
 ```
 
-The glue (autoload) still does the reflect `from_peer != 1` → `broadcast_custom`. The actor does not forward.
+Your game code (autoload) still does the reflect `from_peer != 1` → `broadcast_custom`. The actor does not forward.
 
 ## What goes on each channel
 
@@ -479,7 +485,7 @@ With the plugin enabled, **Project → Tools**:
 - **Setup game...** — a whole multiplayer game from one dialog (`editor/mp_setup_wizard.gd`): `game.tres` (`MpGame`), a boot with an `MpFlow` that has only that `.tres`, a world with an `MpWorld`, a player with a predicted `MpActor` + `MpInput` and, optionally, online rooms. It shows the file tree (`[+]` / `[~]`) and never overwrites a file. Check: the lab e2e `run_mpkit_wizard.sh` (writes a game and plays it over the network; `WIZARD_3D=1` for 3D)
 - **Make selection a network actor** — child `MpActor` (with its `MpSync`, built and saved with the scene) and, for a `CharacterBody`, `MpInput`
 - **New replicated feature...** — `res://features/<id>/<id>.gd` + `.tscn`
-- **New session flow...** — `MpFlow` autoload (`res://glue/session_flow.tscn`)
+- **New session flow...** — `MpFlow` autoload (`res://autoloads/session_flow.tscn`)
 - **Install Cursor/VS Code snippets** — `.vscode/mpkit.code-snippets`
 
 Enable copies templates to `res://script_templates/` (CharacterBody / Node2D / Node3D / Node).
@@ -572,15 +578,15 @@ Low-level pieces:
 | `lobby/mp_lobby.gd` | `MpLobby` autoload (after `MpKit`): children `Server` and `Client` with their own `SceneMultiplayer`; never touches `MpKit`'s peer. `MpLobby.start_server(config, launcher)` / `MpLobby.connect_to(host, port, name)` |
 | `lobby/mp_match_files.gd` | paths `user://mp_matches/<id>/{ticket,state,result}.json`, atomic JSON (0600), sha256 |
 
-Spawn handshake: `hold_until_world_ready` (actors hidden until `client_world_ready`; Godot sends spawn + sync together). Dedicated: no pawn for peer 1. Do not reparent actors in glue.
+Spawn handshake: `hold_until_world_ready` (actors hidden until `client_world_ready`; Godot sends spawn + sync together). Dedicated: no pawn for peer 1. Do not reparent actors in game code.
 
 ## Room server
 
 **Node path (recommended)**: `MpRoomServer` (the server's scene) + `MpLobbyConfig` + `MpRoomRules` (optional), `MpLobbyScreen` on the client and `MpMatch` in the world. See [QUICKSTART.md](QUICKSTART.md) › Online. Check without a game: the lab e2e `run_mpkit_rooms.sh` (`TRANSPORT=ws` for WebSocket). What follows is the reference of the pieces below, which those nodes wrap without changing them.
 
-Dependency rule: `MpFlow` and world nodes (`MpMatch`) never name lobby classes (`MpMatchAgent`...): they find them by group or load them by path. A game that loads the lobby as an autoload and names its flow from the dedicated's glue would form a load cycle.
+Dependency rule: `MpFlow` and world nodes (`MpMatch`) never name lobby classes (`MpMatchAgent`...): they find them by group or load them by path. A game that loads the lobby as an autoload and names its flow from the dedicated's game code would form a load cycle.
 
-Internet path: a **room server** (lobby, one process) and **one dedicated per match** (another Godot process that the server launches). Clients never type the match IP: they talk to the lobby and receive `(host, port, token)` when the match starts. Everything lives in `lobby/` and knows nothing about the game: rules, text and results come in through `Callable`s and `Dictionary`s that the glue provides.
+Internet path: a **room server** (lobby, one process) and **one dedicated per match** (another Godot process that the server launches). Clients never type the match IP: they talk to the lobby and receive `(host, port, token)` when the match starts. Everything lives in `lobby/` and knows nothing about the game: rules, text and results come in through `Callable`s and `Dictionary`s that the game code provides.
 
 ```mermaid
 flowchart LR
@@ -662,7 +668,7 @@ If your game is one match per server, **leave this alone**. The `example/` does 
 
 This is not the LAN list on the boot menu. That is `MpLan.browse` → `rooms_changed` (name + IP of a listen host). Hub rooms live on `MpKit.rooms`.
 
-The kit **groups peers**. It does not change scene, instance N worlds, or keep score. That is glue.
+The kit **groups peers**. It does not change scene, instance N worlds, or keep score. That is game code.
 
 ### What shows up on its own
 
@@ -700,7 +706,7 @@ With the dedicated process running: Remote tree → `MpKit` → `Rooms` / `Match
 | `Rooms` | `code_length` | 4 | Code length |
 | `Matchmaker` | `party_size` | 2 | How many the queue pulls to open a room |
 
-From glue, before enqueueing:
+To build rooms of 2 players, with a cap of 16 rooms, from game code before enqueueing:
 
 ```gdscript
 MpKit.rooms.max_rooms = 16
@@ -724,7 +730,7 @@ func _on_peer_joined(peer_id: int, _slot: int) -> void:
 	MpKit.matchmaker.enqueue(peer_id)
 
 func _on_match(room_id: StringName, peer_ids: PackedInt32Array) -> void:
-	# glue: spawn / logic for THAT room. peer_ids are already seated 0..n-1
+	# game code: spawn / logic for THAT room. peer_ids are already seated 0..n-1
 	print(room_id, MpKit.rooms.code_for_room(room_id), peer_ids)
 ```
 
@@ -750,7 +756,7 @@ sequenceDiagram
 
 ### Path B — private code
 
-No queue. The server creates an empty room, you give a friend the code, glue seats whoever sends it.
+No queue. The server creates an empty room, you give a friend the code, game code seats whoever sends it.
 
 ```gdscript
 # server (room host, or an operator)
@@ -796,17 +802,19 @@ Several matches in one world scene: each room has its own subtree with its own s
 Hub (world scene)
 ├── Room_r_1
 │   ├── Actors
-│   └── MpSpawner   # room_id = r_1, spawn_path = ../Actors
+│   └── %MpSpawner  # room_id = r_1, spawn_path = ../Actors
 └── Room_r_2
     ├── Actors
-    └── MpSpawner   # room_id = r_2
+    └── %MpSpawner  # room_id = r_2
 ```
+
+Each time a match is assembled, its room is instanced and its spawner gets that match's `room_id`:
 
 ```gdscript
 func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
 	var room := ROOM_SCENE.instantiate()
 	room.name = "Room_%s" % room_id
-	room.get_node("MpSpawner").room_id = room_id
+	room.get_node("%MpSpawner").room_id = room_id
 	add_child(room)
 ```
 
@@ -816,7 +824,7 @@ The server reveals that spawner only to the peers seated in `room_id` (it checks
 
 `submit_*` for a single-match game still uses `accept_command(self, player_slot)` (**hub** slot).
 
-If the pawn is a room seat:
+If the pawn is a room seat, the command only counts if it comes from the player in that seat of that room:
 
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")

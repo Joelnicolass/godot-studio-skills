@@ -4,7 +4,7 @@ description: >-
   Test Godot 4 projects with GUT (GDScript) or GdUnit4 (C#) and run them in CI
   (GitHub Actions: gdformat, gdlint, headless import, and GUT). Use when
   writing unit tests, scene tests, Resource, signal, pure-rule, or RefCounted
-  domain tests, when setting up headless CI, or when choosing a Godot test
+  pure-core tests, when setting up headless CI, or when choosing a Godot test
   runner.
 ---
 
@@ -18,7 +18,7 @@ Architecture: [godot-layered-architecture](../godot-layered-architecture/SKILL.m
 
 | Layer | How |
 |------|------|
-| Pure rules (`class_name` + `static func`) and Clean domain (`RefCounted`) | `MyRule.new()` or the static call. No scene, no autoloads. This is the first batch |
+| Pure rules (`class_name` + `static func`) and a node's pure core (`RefCounted`, next to the node) | `MyRule.new()` or the static call. No scene, no autoloads. This is the first batch |
 | Type Resource | Construct the Resource or load the `.tres`; do not mutate the shared asset |
 | Node / component | Add it as a child of the test with `add_child_autofree`. Test signals |
 | Feel / camera / juicy | Annotated playtest. A green unit test does not prove it feels right |

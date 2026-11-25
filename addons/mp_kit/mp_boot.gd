@@ -1,7 +1,7 @@
 class_name MpBoot
 extends RefCounted
 
-## Detect a dedicated-server process. Does not start the peer — glue calls MpKit.host_dedicated().
+## Detect a dedicated-server process. Does not start the peer — the game calls MpKit.host_dedicated().
 ## Do not treat `--headless` alone as dedicated (CI / GUT also run headless).
 ## Editor Run Instances: `--dedicated` often lands in get_cmdline_args(), not user args
 ## (user args need `-- --dedicated`). Also honor feature tags `dedicated_server` / `dedicated`.

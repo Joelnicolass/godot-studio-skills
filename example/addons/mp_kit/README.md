@@ -6,7 +6,7 @@ Do **not** install for a 1P-only game.
 
 This guide is for **manual setup in the editor**. Code identifiers stay in English.
 
-**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Three examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match) and `examples/bots_2d/` (the host starts the match, bots in the free seats, late join). What follows is the reference of every piece.
+**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Four examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match), `examples/bots_2d/` (the host starts the match, bots in the free seats, late join) and `examples/sports_2d/` (two against two with a ball: a predicted slide, a lag-compensated tackle, the match waits for everyone; GUIDE §7.8). What follows is the reference of every piece.
 
 ## Contents
 
@@ -56,7 +56,7 @@ The transport is selectable; the API, RPCs and replication are the same with bot
 - **Web**: a web export uses WebSocket (direct, or through the relay when the `.tres` says `relay`), never hosts nor browses LAN rooms (`MpNetConfig.can_host()`); the menu hides those rows. Check: `mpkit_lab/run/web.sh` (and `TRANSPORT=relay`), which opens the page in a headless Chrome.
 - **Relay**: `--transport=relay` (or `transport = relay` in the `.tres`) with `relay_url` / `relay_room`: everything goes through a WebSocket tunnel ([relay/README.md](relay/README.md)); the server needs no public IP. It serves desktop and web.
 - **Rooms your players host**: with the relay and the [issuer](issuer/README.md) (`issuer_url` in the `.tres`), `MpFlow.host_online()` / `join_online(code)` / `online_rooms()`: no server of yours runs the matches; a desktop hosts through a match process of its PC, a browser in its own tab (GUIDE 10.3).
-- **Flag**: `--transport=ws` (or `enet`). Read by `MpKit` (`MpKit.transport`, before `host()`/`host_dedicated()`/`join()`; glue may set it by hand) and `MpLobbyClient.transport`.
+- **Flag**: `--transport=ws` (or `enet`). Read by `MpKit` (`MpKit.transport`, before `host()`/`host_dedicated()`/`join()`; game code may set it by hand) and `MpLobbyClient.transport`.
 - **Room server**: `MpLobbyConfig.transport` (`.tres` or `--transport=ws`). It serves the lobby with that transport, picks free match ports for TCP or UDP accordingly and **forwards it to the child dedicated** (`transport` is in `agent_fields`, it arrives as `--transport=ws`).
 - Same transport in every process: client, room server and dedicated. An ENet client does not talk to a WS server.
 - With WebSocket the lobby and the match use TCP ports; open TCP (not UDP) in the VPS firewall.
@@ -93,7 +93,7 @@ MpKit.join(host, port, ticket)    # or MpFlow.join_endpoint(host, port, ticket)
 MpKit.admission_rejected.connect(func(reason: String): ...)
 ```
 
-The kit does not interpret the ticket. Rejection reasons: `rejected` (the Callable returned 0 or the ticket exceeds `TICKET_MAX_LEN`), `slot_taken` (slot held by another peer) and `timeout` (no ticket in time). With `admission`, `push_snapshot`, `broadcast_load_world`, `broadcast_session_ended` and `broadcast_custom` reach only peers with a slot. Careful: a game `MultiplayerSpawner`/synchronizer replicates to **all** connected peers, including those waiting for a ticket; restrict it with per-peer visibility (`set_visibility_for` / `add_visibility_filter`) so only peers with a slot see it. `MpFlow.StartWhen.MANUAL`: the flow does not load the world by itself (glue calls `start_match()`/`goto_world()`). `MpBoot.role()` returns `"room-server"` with `--room-server`.
+The kit does not interpret the ticket. Rejection reasons: `rejected` (the Callable returned 0 or the ticket exceeds `TICKET_MAX_LEN`), `slot_taken` (slot held by another peer) and `timeout` (no ticket in time). With `admission`, `push_snapshot`, `broadcast_load_world`, `broadcast_session_ended` and `broadcast_custom` reach only peers with a slot. Careful: a game `MultiplayerSpawner`/synchronizer replicates to **all** connected peers, including those waiting for a ticket; restrict it with per-peer visibility (`set_visibility_for` / `add_visibility_filter`) so only peers with a slot see it. `MpFlow.StartWhen.MANUAL`: the flow does not load the world by itself (game code calls `start_match()`/`goto_world()`). `MpBoot.role()` returns `"room-server"` with `--room-server`.
 
 Several matches at once on **one** dedicated process: [Hub rooms and queue](#hub-rooms-and-queue-optional). One match at a time: you can ignore that.
 
@@ -160,13 +160,13 @@ Do this in Godot, in order. One world is enough; several worlds use the catalog 
 2. Project → Settings → Plugins → **MpKit** (Enable).
 3. Project → Settings → Autoload: `MpKit` must exist pointing at `res://addons/mp_kit/mp_kit.gd`.
 4. Project → Tools → **MpKit: New session flow...**  
-   Or create an `MpFlow` node by hand, save it as `res://glue/session_flow.tscn`, and add it as an autoload **after** MpKit.
+   Or create an `MpFlow` node by hand, save it as `res://autoloads/session_flow.tscn`, and add it as an autoload **after** MpKit.
 
 On the flow inspector:
 
 | Property | What to set |
 |----------|-------------|
-| `boot_path` | `res://scenes/ui/boot.tscn` |
+| `boot_path` | `res://main/boot.tscn` |
 | `world_path` | your match, if there is **one** world |
 | `worlds` | list of `MpWorldRef` if you have **several** maps (`id` + scene or path) |
 | `max_players` | e.g. 4 |
@@ -184,7 +184,7 @@ Option A — drop-in: instance `res://addons/mp_kit/mp_boot_menu.tscn`. If `MpFl
 Option B — by hand:
 
 1. Full-screen `Control`. Buttons: Play solo, Host LAN, Join + IP `LineEdit`.
-2. In the script:
+2. In the script. Each button starts a game (solo, as host or joined by IP) and the list of games on the local network fills itself in:
 
 ```gdscript
 func _on_play_solo() -> void:
@@ -286,7 +286,7 @@ Rules:
 
 5. `MpReplicate` inspector: `interpolate` on for proxies (the host does not interpolate).
 6. Input **only** if `player_slot == MpKit.local_slot()` (or an input child that already does that).
-7. Commands to the server:
+7. Commands to the server. The player asks to move: the client asks the server, which validates and applies it, and in a one-player game it is applied directly:
 
 ```gdscript
 func try_move(dir: Vector2) -> void:
@@ -377,9 +377,11 @@ Convenient node: child `MpCustomPipe`, `@export channel = &"emote"`.
 
 ### Send (client → server)
 
+A player sends a loose message (a greeting) to the server (`%MpCustomPipe` needs the node marked as a unique name: right click › "Access as Unique Name"):
+
 ```gdscript
 # On the pawn / feature (client or 1P)
-$MpCustomPipe.send({"slot": player_slot, "msg": "hello"})
+%MpCustomPipe.send({"slot": player_slot, "msg": "hello"})
 ```
 
 ```mermaid
@@ -396,6 +398,8 @@ In 1P or if the listen host calls it: no RPC; it emits right there. That is why 
 
 ### Receive
 
+Any game node learns about the messages on the `emote` channel and tells whether the server pushed them or they came from a client:
+
 ```gdscript
 func _ready() -> void:
 	MpKit.custom_received.connect(_on_custom)
@@ -407,11 +411,11 @@ func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
 	# from_peer == 2+ → it arrived from that client, not yet “on everyone”
 ```
 
-Or on the actor: `$MpCustomPipe.packet.connect(_on_emote)`.
+Or on the actor: `%MpCustomPipe.packet.connect(_on_emote)`.
 
 ### Sync to everyone (the server forwards)
 
-Without this step, only the server saw the client’s packet.
+Without this step, only the server saw the client’s packet. This way the server forwards to everyone what a client sent:
 
 ```gdscript
 func _on_custom(channel: StringName, data: Dictionary, from_peer: int) -> void:
@@ -441,13 +445,15 @@ One peer only: `push_custom_to(peer_id, channel, data)` (the server does not see
 
 ### Actor pattern (like the demo emote)
 
+When the player waves, everyone sees the flash once over their character:
+
 ```gdscript
 func try_emote() -> void:
 	var data := {"slot": player_slot, "msg": "hello"}
 	if not MpKit.is_networked() or not MpKit.is_server():
-		$MpCustomPipe.send(data)      # 1P or client → server
+		%MpCustomPipe.send(data)      # 1P or client → server
 		return
-	$MpCustomPipe.broadcast(data)     # listen host: everyone
+	%MpCustomPipe.broadcast(data)     # listen host: everyone
 
 func _on_emote_packet(data: Dictionary, from_peer: int) -> void:
 	if int(data.get("slot", 0)) != player_slot:
@@ -457,7 +463,7 @@ func _on_emote_packet(data: Dictionary, from_peer: int) -> void:
 	_flash()
 ```
 
-The glue (autoload) still does the reflect `from_peer != 1` → `broadcast_custom`. The actor does not forward.
+Your game code (autoload) still does the reflect `from_peer != 1` → `broadcast_custom`. The actor does not forward.
 
 ## What goes on each channel
 
@@ -479,7 +485,7 @@ With the plugin enabled, **Project → Tools**:
 - **Setup game...** — a whole multiplayer game from one dialog (`editor/mp_setup_wizard.gd`): `game.tres` (`MpGame`), a boot with an `MpFlow` that has only that `.tres`, a world with an `MpWorld`, a player with a predicted `MpActor` + `MpInput` and, optionally, online rooms. It shows the file tree (`[+]` / `[~]`) and never overwrites a file. Check: the lab e2e `run_mpkit_wizard.sh` (writes a game and plays it over the network; `WIZARD_3D=1` for 3D)
 - **Make selection a network actor** — child `MpActor` (with its `MpSync`, built and saved with the scene) and, for a `CharacterBody`, `MpInput`
 - **New replicated feature...** — `res://features/<id>/<id>.gd` + `.tscn`
-- **New session flow...** — `MpFlow` autoload (`res://glue/session_flow.tscn`)
+- **New session flow...** — `MpFlow` autoload (`res://autoloads/session_flow.tscn`)
 - **Install Cursor/VS Code snippets** — `.vscode/mpkit.code-snippets`
 
 Enable copies templates to `res://script_templates/` (CharacterBody / Node2D / Node3D / Node).
@@ -491,10 +497,10 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | File | Role |
 |------|------|
 | `nodes/mp_actor.gd` | `MpActor`: child of whatever the network shares. The server is its authority; the *Sync* list builds, in the editor, a `MultiplayerSynchronizer` (`MpSync`) saved in the scene; smooths proxies; `owner_slot` (set by the spawner, sent at spawn). `to_server(&"x", args)` runs `mp_sv_x(args)` on the server (only the owner may ask; `sender_slot()` says who); `to_all(&"x", args)` runs `mp_all_x(args)` on every peer that already has the node (server only). `is_authority()`, `is_local()`, `MpActor.of(node)` |
-| `nodes/mp_input.gd` | `MpInput`: next to an `MpActor`. The owner sends its InputMap actions (frames with a sequence, press counters a lost packet cannot drop); on the server they are read with the `Input` API (`get_vector`, `is_action_just_pressed`...). `set_value` / `get_value` for custom values (aim, cursor) |
+| `nodes/mp_input.gd` | `MpInput`: next to an `MpActor`. The owner sends its InputMap actions (frames with a sequence, press counters a lost packet cannot drop); on the server they are read with the `Input` API (`get_vector`, `is_action_just_pressed`...). `set_value` / `get_value` for custom values (aim, cursor). The frames travel through `MpKit` (`route_key`): one that arrives for a pawn that is gone is dropped with no error |
 | `nodes/mp_state.gd` | `MpState`: match values (`set_value`, `add`, `get_value`, `changed` signal, `watch(key, cb)`: the current value, then each change; `unwatch`). The server writes them; everyone gets them, the one coming back too. `MpState.of(node)` |
 | `nodes/mp_match.gd` | `MpMatch`: start and end of a match in the world; it re-emits what the gate says (start, absences, comebacks, abandons), and `finish(result)` writes the result for the room |
-| `mp_match_gate.gd` | `MpMatchGate` (`/root/MpKit/Gate`, `Mp.gate()`): the start gate. Phases `IDLE`/`FILLING`/`RUNNING`; admits or turns away with a reason (`match_started`, also for a valid ticket whose seat nobody took before the start, `full`, `grace_over`, `slot_taken`, `rejected` only for a ticket that names no seat); a credential per seat in open mode, identity by ticket in rooms; counts who loaded, pauses and unpauses (the clients too), `rejoin_grace_s`, `load_timeout_s`, `start_on_timeout` (off: it never starts by time), `starter_slot` (the seat that may start it from its client: `start_by(slot)`), `late_join` (with a ticket too: the seat it names comes in), `vacant_slots()` (the seats nobody holds, for your bots), `closed_slots()`, `give_up`, `displaced_by` (a credential back after a drop wins over the stale connection); with `wait_host` it also waits for the server's own world (`mark_host_loaded`, and solo `arm([], 0)`); with `loaded_on_world_ready` off a seat counts on `report_loaded`, not on `world_ready`. Signals `waiting_changed`, `seat_admitted`, `seat_loaded`, `started`, `seat_away`, `seat_abandoned`, `all_gone`, `turned_away`, `joined_late` |
+| `mp_match_gate.gd` | `MpMatchGate` (`/root/MpKit/Gate`, `Mp.gate()`): the start gate. Phases `IDLE`/`FILLING`/`RUNNING`; admits or turns away with a reason (`match_started`, also for a valid ticket whose seat nobody took before the start, `full`, `grace_over`, `slot_taken`, `seat_closed`, `rejected` only for a ticket that names no seat); a credential per seat in open mode, identity by ticket in rooms; counts who loaded, pauses and unpauses (the clients too), `rejoin_grace_s`, `load_timeout_s`, `start_on_timeout` (off: it never starts by time), `starter_slot` (the seat that may start it from its client: `start_by(slot)`), `late_join` (with a ticket too: the seat it names comes in), `vacant_slots()` (the seats nobody holds, for your bots), `closed_slots()`, `close_seat(slot)` (nobody sits there again this match: its pawn died or escaped), `give_up`, `displaced_by` (a credential back after a drop wins over the stale connection); with `wait_host` it also waits for the server's own world (`mark_host_loaded`, and solo `arm([], 0)`); with `loaded_on_world_ready` off a seat counts on `report_loaded`, not on `world_ready`. Signals `waiting_changed`, `seat_admitted`, `seat_loaded`, `started`, `seat_away`, `seat_abandoned`, `all_gone`, `turned_away`, `joined_late`, `seat_closed` |
 | `core/mp_sync_builder.gd` | inspector list → `SceneReplicationConfig` (transforms, stamp and ack ALWAYS, the rest ON_CHANGE, `owner_slot` only at spawn) |
 | `core/mp_actor_sync.gd` | what an `MpActor`'s synchronizer sends in each mode: with smoothing or prediction the pose travels in `MpActor.net_position` / `net_rotation` + `net_stamp`, never in the node's own, so on a client only `MpActor` moves the node |
 | `core/mp_input_frame.gd` | the input of one tick; press counters; strengths in the 1/255 steps they travel in |
@@ -520,12 +526,12 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `core/mp_smoother.gd` | `MpReplicate`'s exponential smoothing |
 | `rooms/mp_room_server.gd` | `MpRoomServer`: the room server scene (lobby + `MpMatchLauncher` + rules); `net_config` = the game's `MpNetConfig` (empty = the flow's, its `MpGame`); empty `match_scene` = the `MpGame`'s `boot_scene`; `MpLobbyConfig` flags, `--lobby-config=`, `--match-args=`, `--match-engine-args=` and `--keep-match-files` |
 | `rooms/mp_room_rules.gd` | `MpRoomRules`: room rules by overriding functions (`seats_for`, `accept_options`, `accept_pick`, `accept_bot`, `build_ticket`) |
-| `rooms/mp_local_server.gd` | `MpLocalServer`: a dedicated on the player's PC with a code per seat (`start_on(tree, seats, options, join_host, online, ticket)`, `server_ready(address, port, codes)`, `invites()`); friends join with `ip:port#CODE` (`MpFlow.join_address`). `merge_ticket()`: the game's ticket plus the kit's seat tokens and relay block. One per process (a second `start_on` gives the running one back), its own matches folder per process |
+| `rooms/mp_local_server.gd` | `MpLocalServer`: a dedicated on the player's PC with a code per seat (`start_on(tree, seats, options, join_host, online, ticket)`, `server_ready(address, port, codes)`, `invites()`); friends join with `ip:port#CODE` (`MpFlow.join_address`). `merge_ticket()`: the game's ticket plus the kit's seat tokens and relay block. One per process (a second `start_on` gives the running one back; one whose match finished and is still up, `is_finished()`, gives way to the new one), its own matches folder per process |
 | `core/mp_address.gd` | `MpAddress`: what a person types to reach a server (IP, name, `:port`, `#CODE`, URL), the same in the menu, the lobby and `MpFlow.join_address` |
 | `core/mp_relay_peer.gd` | `MpRelayPeer`: the `relay` transport (WebSocket to an MpKit relay; the host connects out, no public IP). Each port is the room `<relay_room>-<port>`; a room with a live host is taken (4009) and the launcher tries another port |
 | `relay/` | `server.mjs` + `lib/` (a Node relay on the `ws` library, for Railway, Render, Fly or a VPS; player rooms `p-<code>` need the issuer's tokens, checked with `jose`), `package.json`, its tests (`npm test`) and the guide |
 | `issuer/` | The MpKit issuer (Node + Express): room codes, seats, the public room list, limits, versions, and the Ed25519 tokens the relay asks for player rooms; `keys.mjs`, its tests (`npm test`), `Dockerfile` + `fly.toml` and the guide |
-| `online/mp_online.gd` | `MpOnline`: an online room this player hosts through the issuer (`start_on(tree, players, name, listed, ticket)`, `room_ready(code)`, `failed(reason)`, `ended`, `ticket`): a desktop through `MpLocalServer` (the game's ticket goes to its match), a browser in its own game; heartbeats, closes it at the end. `MpFlow.host_online()` makes one |
+| `online/mp_online.gd` | `MpOnline`: an online room this player hosts through the issuer (`start_on(tree, players, name, listed, ticket)`, `room_ready(code)`, `failed(reason)`, `ended`, `ticket`): a desktop through `MpLocalServer` (the game's ticket goes to its match), a browser in its own game; heartbeats, closes it at the end (`is_finished()`: its match ended, it hands out no more seats). `MpFlow.host_online()` makes one |
 | `online/mp_issuer.gd` | `MpIssuer`: the issuer's HTTP client (`create_room`, `join_room(code, ticket)`, `list_rooms`, `tokens`, `heartbeat` with `taken` and `held`, `close_room`, each `{ok, status, data, error}`); who asks (game, version, kit, platform, install, session); each room's own ticket (`seat_ticket(code)`, shown again on the next `join_room` of that room); `--issuer-url=`, `--issuer-game=` |
 | `online/mp_web_keepalive.gd` | `MpWebKeepAlive`: keeps a browser host simulating while its tab is hidden (a Worker-timed main loop, drawing off); `MpOnline` turns it on and off |
 | `nodes/mp_leave_button.gd` | `MpLeaveButton`: the HUD's Leave button (`MpFlow.leave_match()`: to the lobby or the menu); it works while the world is paused |
@@ -537,6 +543,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `examples/minimal_2d/` | minimal example: what *Setup game* writes in 2D without rooms (boot, world, predicted player); `tests/test_examples.gd` keeps it that way and `mpkit_lab/run/minimal.sh` plays it over the network |
 | `examples/arena_2d/` | full example (boot, arena, player, shots, bell, lobby, room server); the lab's e2e fixture |
 | `examples/bots_2d/` | a match with a lobby in the world: the boot's `MpFlow` with `start_on_timeout` off, `host_can_start` and `late_join`; `world.gd` puts a bot in every free seat at the start (`Mp.gate().vacant_slots()`, solo: seats 2..4) and `bot.gd` walks by pressing the player's keys (`MpInput.bot_press`, while `has_player()` is false); a late player takes that pawn. It uses `minimal_2d`'s player; `tests/test_examples.gd` plays it solo |
+| `examples/sports_2d/` | a real-time sports game, two against two: `player.gd` runs and slides in `mp_move` (predicted, with its state in `sync_extra`); `ball.gd` is the server's (`BUFFERED`), is drawn at its carrier's predicted feet and judges a tackle against where the slider saw the carrier (`seen_position_of`); `pitch.gd` scores the goal in `MpState` and kicks off again; the match waits for the four. `tests/test_examples.gd` plays it solo and `mpkit_lab/run/sports.sh` over a lagged network (GUIDE §7.8) |
 
 Role helpers on `MpKit`: `is_authority()` (solo or the server: where the rules run), `has_local_slot()` (this machine has a player with a known slot). `local_slot()` returns 0 on a client until the server assigns its slot (it used to guess). `MpSpawner.spawn_actor(scene, props, owner_slot)` instances on the server under `spawn_path` (the scene must be in the spawner's list). `MpFlow` can be a node in the boot scene: it moves itself under the root.
 
@@ -555,7 +562,7 @@ Low-level pieces:
 | `mp_world_ref.gd` | one world in the catalog |
 | `mp_replicate.gd` | authority + sync + freeze + proxy lerp |
 | `mp_spawner.gd` | MultiplayerSpawner + hold until `world_ready`; `spawn_actor(scene, props, owner_slot)`, `spawn_here(data)` (spawn on the server or solo, `null` on a client) |
-| `mp_slot_spawner.gd` | one packed pawn per occupied slot: on `client_world_ready`, and in `_ready` for peers already world-ready |
+| `mp_slot_spawner.gd` | one packed pawn per occupied slot: on `client_world_ready`, and in `_ready` for peers already world-ready. A pawn your game frees (`MpActor.despawn`) is forgotten: `pawn_for` gives `null` and `spawn_slot` makes another, `Pawn_<slot>` even in the frame the old one leaves |
 | `mp_boot_menu.gd` / `.tscn` | drop-in lobby |
 | `mp_custom_pipe.gd` | one tunnel channel |
 | `mp_lan.gd` / `mp_lan_beacon.gd` | IPv4 + UDP advertise/browse |
@@ -571,15 +578,15 @@ Low-level pieces:
 | `lobby/mp_lobby.gd` | `MpLobby` autoload (after `MpKit`): children `Server` and `Client` with their own `SceneMultiplayer`; never touches `MpKit`'s peer. `MpLobby.start_server(config, launcher)` / `MpLobby.connect_to(host, port, name)` |
 | `lobby/mp_match_files.gd` | paths `user://mp_matches/<id>/{ticket,state,result}.json`, atomic JSON (0600), sha256 |
 
-Spawn handshake: `hold_until_world_ready` (actors hidden until `client_world_ready`; Godot sends spawn + sync together). Dedicated: no pawn for peer 1. Do not reparent actors in glue.
+Spawn handshake: `hold_until_world_ready` (actors hidden until `client_world_ready`; Godot sends spawn + sync together). Dedicated: no pawn for peer 1. Do not reparent actors in game code.
 
 ## Room server
 
 **Node path (recommended)**: `MpRoomServer` (the server's scene) + `MpLobbyConfig` + `MpRoomRules` (optional), `MpLobbyScreen` on the client and `MpMatch` in the world. See [QUICKSTART.md](QUICKSTART.md) › Online. Check without a game: the lab e2e `run_mpkit_rooms.sh` (`TRANSPORT=ws` for WebSocket). What follows is the reference of the pieces below, which those nodes wrap without changing them.
 
-Dependency rule: `MpFlow` and world nodes (`MpMatch`) never name lobby classes (`MpMatchAgent`...): they find them by group or load them by path. A game that loads the lobby as an autoload and names its flow from the dedicated's glue would form a load cycle.
+Dependency rule: `MpFlow` and world nodes (`MpMatch`) never name lobby classes (`MpMatchAgent`...): they find them by group or load them by path. A game that loads the lobby as an autoload and names its flow from the dedicated's game code would form a load cycle.
 
-Internet path: a **room server** (lobby, one process) and **one dedicated per match** (another Godot process that the server launches). Clients never type the match IP: they talk to the lobby and receive `(host, port, token)` when the match starts. Everything lives in `lobby/` and knows nothing about the game: rules, text and results come in through `Callable`s and `Dictionary`s that the glue provides.
+Internet path: a **room server** (lobby, one process) and **one dedicated per match** (another Godot process that the server launches). Clients never type the match IP: they talk to the lobby and receive `(host, port, token)` when the match starts. Everything lives in `lobby/` and knows nothing about the game: rules, text and results come in through `Callable`s and `Dictionary`s that the game code provides.
 
 ```mermaid
 flowchart LR
@@ -619,7 +626,7 @@ The game injects, without touching the kit: `meta_validator` (each seat's pick),
 - Signals: `match_listening`, `match_ended(id, result)`, `match_failed(id, reason)`.
 - `executable`, `base_args` and `agent_args` are set by the game (`--headless --path <dir> <scene> -- --dedicated`...). The config's `agent_fields` are the values the server forwards to the dedicated as `--field=value` (including `transport`).
 - `keep_files` keeps the match folder (tests only); by default it is deleted when the match ends.
-- The dedicated quits by itself if the server dies (`--room-pid`), if nobody is left (`idle_no_players_s`) or `result_quit_delay_s` after the result.
+- The dedicated quits by itself if the server dies (`--room-pid`), if nobody is left (`idle_no_players_s`) or `result_quit_delay_s` after the result. With `stay_after_finish_s`, after the result it stays up while players are in and quits once the last one left (at most after `stay_after_finish_s`); the launcher waits that long before it kills it.
 
 ### Transports: ENet and WebSocket
 
@@ -630,7 +637,8 @@ One value: `MpLobbyConfig.transport` or `--transport=enet|ws`. The server uses i
 - **Lobby**: the session has a token. If the link drops, the server keeps the seat for `resume_grace_s`. `MpLobbyClient.resume()` comes back with the same token (same session and seat). With `auto_resume = true` the client retries by itself every `resume_retry_s` for `resume_window_s` (match it to `resume_grace_s`) and emits `lobby_resuming(attempt)`; `lobby_lost("resume_window")` only when the window runs out.
 - **Match**: a player who dropped comes back to the same dedicated with **the same ticket** within `rejoin_grace_s` and gets their slot back (the game decides what to keep, e.g. their pawn). Past the grace, the seat counts as an abandon and the game decides the result. If the server has not noticed the drop yet, the ticket wins: the stale connection is dropped and the seat comes back as a rejoin. The start gate decides it (below), the same as on LAN.
 - `load_timeout_s`: how long the dedicated waits for every seat to load the world; what a seat that did not load means is up to the game.
-- `start_on_timeout`, `starter_slot`, `late_join`: whether it starts by time, which seat may start it (0 = none) and whether players come in after the start. They travel to each match as flags (`--late-join=true`). A match on the host's PC (`MpLocalServer`) takes `start_on_timeout`, `late_join` and, with `host_can_start`, `starter_slot` = 1 from the game's `MpFlow`. All off by default: it starts as it always did.
+- `start_on_timeout`, `starter_slot`, `late_join`, `pause_while_waiting`: whether it starts by time, which seat may start it (0 = none), whether players come in after the start and whether the world pauses while it waits (off: a lobby you walk). They travel to each match as flags (`--late-join=true`, `--pause-while-waiting=false`). A match on the host's PC (`MpLocalServer`) takes `start_on_timeout`, `late_join`, `pause_while_waiting` and, with `host_can_start`, `starter_slot` = 1 from the game's `MpFlow`. All off by default: it starts as it always did.
+- `stay_after_finish_s` (0): how long a finished match stays up while its players read the end screen; it closes once the last one left. It travels as `--stay-after-finish-s=`; a match on the host's PC takes it from the game's `MpFlow` (**Match end** group). At 0 it closes `result_quit_delay_s` after the result. The server going away after the end is the normal end: the client gets `MpKit.server_closed`, not `server_lost`.
 
 ### Start gate (`MpMatchGate`)
 
@@ -639,8 +647,8 @@ One single owner decides who sits and when the match starts, on every path: Host
 | Phase | Who gets in | The world |
 |---|---|---|
 | `IDLE` | nobody armed it: solo, or a server without a flow (the usual mode, `admission` if there is one) | runs |
-| `FILLING` | the first free seat (LAN: a new credential) or the one the ticket names; a seat that drops keeps its credential during the grace | paused on every peer (`pause_clients`) until the seats it expects load (`start_seats`, 0 = every seat; `--start-seats=N`), `load_timeout_s` (15 s; never with `start_on_timeout` off) passes, or the host presses Start now (`MpStartButton`: the listen host, or slot 1 of a match on its PC) |
-| `RUNNING` | a seat that is away within its grace (its credential or ticket wins over a stale connection); with `late_join`, also a seat nobody holds (`joined_late`); the rest: `match_started` / `grace_over` / `slot_taken` / `full` | runs |
+| `FILLING` | the first free seat (LAN: a new credential) or the one the ticket names; a seat that drops keeps its credential during the grace | paused on every peer (`pause_clients`; with `pause_while_waiting` off it runs: whoever loaded walks, [GUIDE 7.5](GUIDE.md#75-start-and-end-mpmatch)) until the seats it expects load (`start_seats`, 0 = every seat; `--start-seats=N`), `load_timeout_s` (15 s; never with `start_on_timeout` off) passes, or the host presses Start now (`MpStartButton`: the listen host, or slot 1 of a match on its PC) |
+| `RUNNING` | a seat that is away within its grace (its credential or ticket wins over a stale connection); with `late_join`, also a seat nobody holds (`joined_late`); never a closed one (`close_seat`: `seat_closed`); the rest: `match_started` / `grace_over` / `slot_taken` / `full` | runs |
 
 The client **always** presents itself on connecting (`rpc_present_ticket`): its ticket, the credential that `host:port` gave it before (in memory, it survives `leave()`; `forget_seat_credentials()` clears it) or `""`. A server without a gate or an `admission` ignores it. A protocol change: an old build and a new one do not understand each other (bump the version on both).
 
@@ -660,7 +668,7 @@ If your game is one match per server, **leave this alone**. The `example/` does 
 
 This is not the LAN list on the boot menu. That is `MpLan.browse` → `rooms_changed` (name + IP of a listen host). Hub rooms live on `MpKit.rooms`.
 
-The kit **groups peers**. It does not change scene, instance N worlds, or keep score. That is glue.
+The kit **groups peers**. It does not change scene, instance N worlds, or keep score. That is game code.
 
 ### What shows up on its own
 
@@ -698,7 +706,7 @@ With the dedicated process running: Remote tree → `MpKit` → `Rooms` / `Match
 | `Rooms` | `code_length` | 4 | Code length |
 | `Matchmaker` | `party_size` | 2 | How many the queue pulls to open a room |
 
-From glue, before enqueueing:
+To build rooms of 2 players, with a cap of 16 rooms, from game code before enqueueing:
 
 ```gdscript
 MpKit.rooms.max_rooms = 16
@@ -722,7 +730,7 @@ func _on_peer_joined(peer_id: int, _slot: int) -> void:
 	MpKit.matchmaker.enqueue(peer_id)
 
 func _on_match(room_id: StringName, peer_ids: PackedInt32Array) -> void:
-	# glue: spawn / logic for THAT room. peer_ids are already seated 0..n-1
+	# game code: spawn / logic for THAT room. peer_ids are already seated 0..n-1
 	print(room_id, MpKit.rooms.code_for_room(room_id), peer_ids)
 ```
 
@@ -748,7 +756,7 @@ sequenceDiagram
 
 ### Path B — private code
 
-No queue. The server creates an empty room, you give a friend the code, glue seats whoever sends it.
+No queue. The server creates an empty room, you give a friend the code, game code seats whoever sends it.
 
 ```gdscript
 # server (room host, or an operator)
@@ -794,17 +802,19 @@ Several matches in one world scene: each room has its own subtree with its own s
 Hub (world scene)
 ├── Room_r_1
 │   ├── Actors
-│   └── MpSpawner   # room_id = r_1, spawn_path = ../Actors
+│   └── %MpSpawner  # room_id = r_1, spawn_path = ../Actors
 └── Room_r_2
     ├── Actors
-    └── MpSpawner   # room_id = r_2
+    └── %MpSpawner  # room_id = r_2
 ```
+
+Each time a match is assembled, its room is instanced and its spawner gets that match's `room_id`:
 
 ```gdscript
 func _on_match(room_id: StringName, _peer_ids: PackedInt32Array) -> void:
 	var room := ROOM_SCENE.instantiate()
 	room.name = "Room_%s" % room_id
-	room.get_node("MpSpawner").room_id = room_id
+	room.get_node("%MpSpawner").room_id = room_id
 	add_child(room)
 ```
 
@@ -814,7 +824,7 @@ The server reveals that spawner only to the peers seated in `room_id` (it checks
 
 `submit_*` for a single-match game still uses `accept_command(self, player_slot)` (**hub** slot).
 
-If the pawn is a room seat:
+If the pawn is a room seat, the command only counts if it comes from the player in that seat of that room:
 
 ```gdscript
 @rpc("any_peer", "call_remote", "reliable")
