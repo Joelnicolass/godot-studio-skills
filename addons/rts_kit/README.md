@@ -168,7 +168,7 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 
 ## Cameras
 
-`RtsCamera3D` and `RtsCamera2D` share one contract: `yaw`, `is_dragging()` (a click that ends a drag is no order), `focus(point)`, `debug_pointer`. Mode FOLLOW keeps a body in view (3D: third person behind it, turning with the keys, the edges and free look, zooming with the wheel; the eye never goes below the ground, including live ground from `height_at`). Mode FREE is the top-down view: pan with the arrows, the screen edges and a middle drag, turn with Q / E (3D), zoom with the wheel, stay inside `bounds`. `edge_area` limits the edges to the world view; `wheel_blockers` keeps the wheel off a minimap. `RtsCameraEffect` adds a shake on top.
+`RtsCamera3D` and `RtsCamera2D` share one contract: `yaw`, `is_dragging()` (a click that ends a drag is no order), `focus(point)`, `debug_pointer`. Mode FOLLOW keeps a body in view (3D: third person behind it, turning with the keys, the edges and free look, zooming with the wheel; the eye never goes below the ground, including live ground from `height_at`). Mode FREE is the top-down view: pan with the arrows, the screen edges and a middle drag, turn with Q / E (3D), zoom with the wheel, stay inside `bounds`. The edges stop while the pointer is over the UI (a HUD button or panel: any control whose mouse filter is not *Ignore*); `edges_over_gui` lets them work over it. `edge_area` keeps them to one control (the world view); `wheel_blockers` keeps the wheel off a minimap. `RtsCameraEffect` adds a shake on top.
 
 ## Cues and pings
 

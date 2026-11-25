@@ -1,5 +1,12 @@
 # RtsKit changelog
 
+## 0.2.0
+
+- **The edges stop over the UI.** `RtsCamera3D` and `RtsCamera2D` no longer pan or turn by the edges while the pointer is over a control of the UI: a HUD button or panel, any control whose mouse filter is not *Ignore* (labels and containers on *Ignore* do not count). Before, without `edge_area`, the camera moved while you aimed at a button in a corner. `edges_over_gui = true` brings the old behavior back. With `edge_area` nothing changes: the edges still work only over that control.
+- **Tests:** `test_camera` checks a button at the edge, a label that ignores the mouse, `edges_over_gui` and `edge_area`, in 3D and in 2D.
+
+To update: if your camera has no `edge_area` and a HUD panel covers an edge you want to pan by, set that panel's mouse filter to *Ignore* (its buttons still stop the edges) or turn `edges_over_gui` on.
+
 ## 0.1.1
 
 - **Minimal example** `examples/minimal_2d/`: six soldiers (`soldier.tscn`: a body, an `RtsUnit` and the GUIDE's unit script in 2D) and the command rig of GUIDE › 3. The tests play it with mouse events.

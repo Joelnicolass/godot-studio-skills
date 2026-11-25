@@ -5,8 +5,9 @@ extends Camera2D
 ## `debug_pointer`). FOLLOW: it keeps a body in the middle (Camera2D's own smoothing does the rest)
 ## and zooms with the wheel. FREE: it pans with the keys, the screen edges and a middle drag, zooms
 ## with the wheel between `min_zoom` and `max_zoom`, turns with the turn keys when `can_turn`, and
-## stays inside `bounds`. The edges only work over `edge_area`; the wheel does nothing over a
-## `wheel_blockers` control; nothing reads input while a modal UI is open (RtsWorldInput).
+## stays inside `bounds`. The edges stop over the UI (`edges_over_gui`) and, with `edge_area`,
+## only work over it; the wheel does nothing over a `wheel_blockers` control; nothing reads input
+## while a modal UI is open (RtsWorldInput).
 
 enum Mode { FOLLOW, FREE }
 
@@ -16,8 +17,12 @@ enum Mode { FOLLOW, FREE }
 		_dragged = false
 ## FOLLOW: the body kept in the middle.
 @export var follow: Node2D
-## Edges only work while the pointer hovers this control. Empty: anywhere.
+## Edges only work while the pointer hovers this control. Empty: anywhere but the UI
+## (`edges_over_gui`).
 @export var edge_area: Control
+## Without `edge_area`, the edges also work while the pointer is over the UI (a control whose mouse
+## filter is not Ignore). Off: a HUD button or panel at an edge does not move the camera.
+@export var edges_over_gui := false
 ## The wheel does not zoom while the pointer is over one of these (`covers(screen)` decides when the
 ## control has it).
 @export var wheel_blockers: Array[Control] = []
@@ -189,9 +194,15 @@ func _edge_pointer() -> Variant:
 		return null
 	if _pointer.x < 0.0:
 		return null
-	if edge_area and get_viewport().gui_get_hovered_control() != edge_area:
-		return null
-	return _pointer
+	return _pointer if _edges_work_here() else null
+
+
+## Over `edge_area` when it is set; otherwise anywhere but the UI, unless `edges_over_gui`.
+func _edges_work_here() -> bool:
+	var hovered := get_viewport().gui_get_hovered_control()
+	if edge_area:
+		return hovered == edge_area
+	return hovered == null or edges_over_gui
 
 
 func _wheel_blocked(screen: Vector2) -> bool:

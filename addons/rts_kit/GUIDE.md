@@ -139,7 +139,7 @@ The sockets, piece by piece:
 | `OrderButton` | `view` = `Hud/View`, `order_input`, `pointer` (and `menu`, section 4) |
 | `Camera` | `ground`, `edge_area` = `Hud/View` |
 
-`Hud/View` is what tells "a click on the world" from "a click on the HUD": everything of the HUD above it keeps its own clicks. Leave its mouse filter on *Stop*.
+`Hud/View` is what tells "a click on the world" from "a click on the HUD": everything of the HUD above it keeps its own clicks. Leave its mouse filter on *Stop*. If your world reads its clicks in `_unhandled_input` (no `Hud/View`), leave `edge_area` empty: the edges still stop over the HUD's buttons and panels.
 
 Physics layers: by default the ground is layer 1 and units are layer 2 (`RtsPointer.ground_mask`, `unit_mask`, `pick_mask`). Change them there if your project uses others.
 
