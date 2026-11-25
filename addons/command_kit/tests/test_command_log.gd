@@ -64,6 +64,7 @@ func test_unknown_commands() -> void:
 		check(commands.run(0, name, []) == CommandLog.UNKNOWN_COMMAND, "%s is not a command" % name)
 	check(is_instance_valid(game) and game.total == 0, "nothing ran")
 	check(heard.size() == 9 and heard.count(CommandLog.UNKNOWN_COMMAND) == 9, "rejected says unknown_command each time")
+	check(not commands._warned_gone, "a live game is never reported as gone")
 	var nobody := CommandLog.new()
 	check(nobody.run(0, &"add", [1]) == CommandLog.UNKNOWN_COMMAND, "no game: unknown_command, no error")
 	check(nobody.commands().is_empty() and not nobody.has_command(&"add"), "and no commands")

@@ -180,7 +180,7 @@ func _check(seat: int, command_name: StringName, args: Array, ready: Array) -> S
 	var scan := _index()
 	var command: Scan.Command = scan.commands.get(command_name)
 	if command == null or game == null:
-		if _game != null and not _warned_gone:
+		if game == null and _game != null and not _warned_gone:
 			_warned_gone = true
 			push_error("CommandLog: the game object is gone: keep a reference to it (the log does not keep it alive)")
 		return UNKNOWN_COMMAND
