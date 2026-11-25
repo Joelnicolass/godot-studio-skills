@@ -27,7 +27,8 @@ var actions_per_turn := 3
 var rounds_per_cycle := 0
 ## Cycles of the match. 0: the match never ends.
 var cycles := 0
-## The seat that opens every round (the next active one if it is out). A change counts from the next round.
+## The seat that opens every round (the next active one if it is out), wrapped into 0 … seats - 1. A change counts
+## from the next round.
 var first_seat := 0
 
 ## The seat whose turn it is (-1 before `start()`).
@@ -180,8 +181,8 @@ static func from_dict(data: Dictionary) -> TurnCycle:
 
 func _begin_round() -> void:
 	_order.clear()
-	for step in seats:
-		var seat := (first_seat + step) % seats
+	for step in maxi(seats, 0):
+		var seat := posmod(first_seat + step, seats)
 		if not _inactive.has(seat):
 			_order.append(seat)
 	_index = 0

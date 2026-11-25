@@ -18,6 +18,8 @@ signal round_ended(n: int)
 signal cycle_ended(n: int)
 ## The last cycle is over.
 signal finished
+## The clock shows another cycle now (`use_cycle`, `use_own_cycle`, or its own built again): read its state again.
+signal rebuilt
 
 ## Actions of each turn.
 @export_range(1, 99) var actions_per_turn := 3:
@@ -44,7 +46,8 @@ signal finished
 		first_seat = value
 		if _own and _cycle != null:
 			_cycle.first_seat = value
-## On: the first turn starts by itself once the scene is ready. Off: call `start()`.
+## On: the clock's own cycle starts by itself once the scene is ready. A cycle shown with `use_cycle` is never
+## started for you: your rules start it (or it comes already started from a save).
 @export var autostart := true
 
 ## The cycle this clock shows.
@@ -68,16 +71,26 @@ var _own := true
 
 func _ready() -> void:
 	if not Engine.is_editor_hint() and autostart:
-		start.call_deferred()
+		_autostart.call_deferred()
 
 
-## Starts the first turn. With its own cycle the seats are counted again first, so seats added before this count.
+## Starts the first turn of the clock's own cycle: the seats are counted again first, so seats added before this
+## count, and each `TurnSeat.active` applies. A cycle shown with `use_cycle` belongs to your rules: `start()` starts it
+## only if it has not started yet, and leaves its seats as they are.
 func start() -> void:
-	if _own:
-		_rebuild_own()
+	if not _own:
+		if not turn_cycle.is_started:
+			turn_cycle.start()
+		return
+	_rebuild_own()
 	for seat in seat_nodes():
 		turn_cycle.set_seat_active(seat.index(), seat.active)
 	turn_cycle.start()
+
+
+func _autostart() -> void:
+	if _own and not turn_cycle.is_started:
+		start()
 
 
 func spend_action(amount := 1) -> bool:
@@ -92,8 +105,14 @@ func set_seat_active(seat: int, active: bool) -> void:
 	turn_cycle.set_seat_active(seat, active)
 
 
-## Shows `other` instead of the clock's own cycle (your game's rules keep it). The inspector values no longer apply
-## until `use_own_cycle()`. Its seats should match the `TurnSeat` children.
+## True while the clock shows its own cycle (not one from `use_cycle`).
+func owns_cycle() -> bool:
+	return _own
+
+
+## Shows `other` instead of the clock's own cycle (your game's rules keep it). It is never restarted: a cycle from a
+## save keeps its turn. The inspector values and `TurnSeat.active` no longer apply until `use_own_cycle()`. Its seats
+## should match the `TurnSeat` children. Emits `rebuilt`.
 func use_cycle(other: TurnCycle) -> void:
 	_own = false
 	_set_cycle(other)
@@ -101,7 +120,7 @@ func use_cycle(other: TurnCycle) -> void:
 		push_warning("TurnClock: the cycle has %d seats and the clock %d TurnSeat" % [other.seats, seat_nodes().size()])
 
 
-## Goes back to a cycle built from the inspector values (not started).
+## Goes back to a cycle built from the inspector values (not started). Emits `rebuilt`.
 func use_own_cycle() -> void:
 	_own = true
 	_rebuild_own()
@@ -150,6 +169,7 @@ func _set_cycle(next: TurnCycle) -> void:
 	_cycle.round_ended.connect(_on_round_ended)
 	_cycle.cycle_ended.connect(_on_cycle_ended)
 	_cycle.finished.connect(_on_finished)
+	rebuilt.emit()
 
 
 func _on_turn_started(seat: int) -> void:

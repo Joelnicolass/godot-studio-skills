@@ -1,5 +1,10 @@
 # WalletKit changes
 
+## 0.2.0
+
+- New: `rebuilt` signal on `Wallet` when it starts showing another purse (`use_purse`, `use_own_purse` or new `start_amounts`), so a HUD that switches players redraws everything.
+- README: the example's buttons are named as they read on screen.
+
 ## 0.1.0
 
 First version:

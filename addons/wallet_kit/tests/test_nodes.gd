@@ -74,3 +74,20 @@ func test_warnings() -> void:
 	wallet.wildcard_covers = [&"gold"]
 	check(wallet._get_configuration_warnings().size() == 4, "a wildcard covering itself warns")
 	wallet.free()
+
+
+func test_rebuilt() -> void:
+	var wallet := _build()
+	var count := [0]
+	wallet.rebuilt.connect(func() -> void: count[0] += 1)
+	var ana := Purse.new({&"wood": 1})
+	var beto := Purse.new({&"wood": 5})
+	wallet.use_purse(ana)
+	check(count[0] == 1 and wallet.amount(&"wood") == 1, "use_purse emits rebuilt")
+	wallet.use_purse(beto)
+	check(count[0] == 2 and wallet.amount(&"wood") == 5, "switching players emits it again")
+	wallet.use_own_purse()
+	check(count[0] == 3, "use_own_purse too")
+	wallet.start_amounts = {&"ore": 1}
+	check(count[0] == 4, "and new start amounts")
+	wallet.free()

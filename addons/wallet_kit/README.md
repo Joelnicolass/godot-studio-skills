@@ -40,7 +40,7 @@ func harvest() -> void:
 
 ## Minimal example
 
-`examples/minimal/minimal.tscn` (F6): food, wood, ore and gold. Harvest adds 1 food, 2 wood and 1 ore; food holds 2, so the rest is lost and reported. Build costs 2 wood and 1 ore, and gold covers what is missing.
+`examples/minimal/minimal.tscn` (F6): food, wood, ore and gold. **Harvest** adds 1 food, 2 wood and 1 ore; food holds 2, so the rest is lost and reported. **Build (2 wood, 1 ore)** costs 2 wood and 1 ore, and gold covers what is missing.
 
 ```
 Minimal          # minimal.gd: shows the amounts and connects the buttons
@@ -81,11 +81,11 @@ Minimal          # minimal.gd: shows the amounts and connects the buttons
 - **Inspector:** `start_amounts`, `limits`, `wildcard` and `wildcard_covers`. Changing the limits or the wildcard in game applies at once; changing `start_amounts` builds the purse again.
 - **Purse:** `purse` is the `Purse` it shows. `use_purse(purse)` shows your rules' purse and `use_own_purse()` goes back to the inspector's.
 - **Methods:** the same as `Purse` (`amount`, `amounts`, `limit`, `can_pay`, `payment_for`, `pay`, `add`, `set_amount`).
-- **Signals:** the same as `Purse`.
+- **Signals:** the same as `Purse`, plus `rebuilt` when the node starts showing another purse (`use_purse`, `use_own_purse` or new `start_amounts`). When it arrives, read every amount again.
 
 ## Tips
 
-- **Rules use `Purse`, not the node.** Keep one purse per player in your match state and show it with `wallet.use_purse(player.purse)`. The HUD listens to `changed`.
+- **Rules use `Purse`, not the node.** Keep one purse per player in your match state and show it with `wallet.use_purse(player.purse)`. The HUD listens to `changed` for each change and to `rebuilt` to redraw everything, for example when the player shown changes.
 - **Tokens that are not resources** (culture, mood): use other keys and leave them out of `wildcard_covers`, so the wildcard does not cover them.
 - **A cost to show:** `payment_for(cost)` tells the player how much gold they will spend before they confirm.
 
@@ -98,6 +98,6 @@ godot --headless --path walletkit_lab --script res://addons/wallet_kit/tests/wal
 It prints `WALLETKIT TESTS PASS (n)`. The tests cover:
 
 - Amounts, limits and what is lost, all-or-nothing payments, the wildcard and its list, errors and `to_dict`.
-- The node: the purse from the inspector, signals, live changes, `use_purse` and the editor warnings.
+- The node: the purse from the inspector, signals, live changes, `use_purse`, `rebuilt` and the editor warnings.
 - The example played with its buttons.
 - That the addon names no other kit.
