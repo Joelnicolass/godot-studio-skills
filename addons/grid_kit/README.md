@@ -147,7 +147,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales
 | --- | --- |
 | `shape` (`HEX` o `SQUARE`), `diagonals` | La forma (las diagonales solo para cuadrados) |
 | `cells` | `Dictionary[Vector2i, Dictionary]`: cada casilla y sus valores. La forma del mapa son sus claves |
-| `make_grid()` | Una grilla **nueva** con estas casillas y valores. Es una copia: el juego la cambia sin tocar el recurso |
+| `make_grid()` | Una grilla **nueva** con estas casillas y valores. Es una copia: el juego la cambia sin tocar el recurso. Devuelve un `CellGrid`; si tu estado tipa la forma, `layout.make_grid() as HexGrid` (o `as SquareGrid`) |
 | `read_grid(grid)` / `GridLayout.from_grid(grid)` | Copia la forma y los valores de una grilla al recurso |
 | `has_cell`, `add_cell`, `remove_cell` | Editan las casillas |
 | `set_value(cell, key, value)`, `erase_value(cell, key)`, `get_value(cell, key, default)` | Editan los valores (`set_value` agrega la casilla si no está) |
