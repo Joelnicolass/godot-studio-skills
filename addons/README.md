@@ -13,6 +13,8 @@ Piezas reutilizables del framework. Se copian a `res://addons/<nombre>/` de **ca
 | `perception_kit` | Percepción, 2D y 3D: un cono de vista con un radio de pérdida más lejano, conciencia de lo cercano, muros que tapan, ruidos, cualquier sentido propio del juego, una memoria que olvida, bandos como capas de física, manijas para arrastrar la vista en el editor. Sin red, sin estados ni combate |
 | `spill_kit` | Lo que derrama un cuerpo, 3D: sangre, icor, aceite, baba, tinta. Cada golpe salpica gotas y deja manchas en el piso que quedan; al morir crece un charco que sigue la pendiente. Cada sustancia es un tipo con el aspecto húmedo del kit, texturas PBR propias (albedo, normal, ORM) o el shader del juego. Reglas como valores, una sola propiedad para la red, Compatibility y WebGL 2, nada en un servidor dedicado. Sin vida, daño ni red |
 | `grid_kit` | Tableros hexagonales: `HexGrid` como datos puros (valores por casilla, vecinos, distancia, rango, caminos, flood, `to_dict`) y nodos para verlos y elegir casillas en 3D (`GridBoard`, `GridView3D`, `GridCursor`). Sin reglas de juego, sin red |
+| `turn_kit` | Turnos, rondas y ciclos: `TurnCycle` como datos puros (acciones por turno, rondas, ciclos y fin configurables, asientos inactivos, `to_dict`) y un reloj con un hijo por jugador (`TurnClock`, `TurnSeat`). Sin reglas de juego, sin red |
+| `wallet_kit` | Recursos y monedas: `Purse` como datos puros (montos por clave, topes que devuelven lo perdido, pagar todo o nada, un comodín que cubre lo que falta, `to_dict`) y el nodo `Wallet`. Sin precios ni UI, sin red |
 | `bot_kit` | Bots que juegan a tu personaje como una persona, 3D: aprietan las teclas de un jugador (un `Input` propio), ven al enemigo más cercano sin muros en el medio, apuntan con límites humanos, eligen el arma por la distancia, recorren el navmesh hacia metas y salen de donde se traban; conductas propias como nodos hijos, presets de dificultad. Sin red, sin armas ni vida |
 
 Cada addon trae un **ejemplo mínimo** (`examples/minimal_2d/` o `examples/minimal_3d/`: la integración más chica que anda, F6) y, en su README, ese código explicado con **tips y recomendaciones**. La tabla con todos está en el [README del repo](../README.md#ejemplos-de-cada-kit).
@@ -35,4 +37,6 @@ Instalar en un proyecto:
 ./install.sh --addon /path/to/godot-project spill_kit
 ./install.sh --addon /path/to/godot-project bot_kit
 ./install.sh --addon /path/to/godot-project grid_kit
+./install.sh --addon /path/to/godot-project turn_kit
+./install.sh --addon /path/to/godot-project wallet_kit
 ```
