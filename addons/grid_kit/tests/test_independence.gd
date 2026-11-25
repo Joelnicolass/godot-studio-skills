@@ -25,14 +25,14 @@ const OTHER_KITS: Array[String] = [
 	"Grass",
 	"Perception",
 	"Spill",
+	"TurnCycle",
 	"TurnClock",
 	"TurnSeat",
-	"TurnCycle",
-	"Wallet",
 	"Purse",
-	"GameCommand",
+	"Wallet",
+	"WalletSubstitute",
 	"CommandLog",
-	"CommandBus"
+	"GameCommands",
 ]
 
 

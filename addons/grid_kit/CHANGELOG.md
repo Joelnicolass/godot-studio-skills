@@ -1,5 +1,19 @@
 # Cambios de GridKit
 
+## 0.3.0
+
+- **Cuadrados además de hexágonos, con la misma API.** Nueva base `CellGrid` (casillas, valores, `find_path`, `flood`, `to_dict`, señales) con `HexGrid` y `SquareGrid` encima. `SquareGrid` tiene `diagonals`: apagado, 4 vecinas y distancia Manhattan; encendido, 8 vecinas y distancia Chebyshev. Fábricas: `HexGrid.rect/hexagon`, `SquareGrid.rect/disc`.
+- **`CellGrid.add_cells` / `remove_cells`** emiten `cells_changed` una sola vez; `erase_value(cell, key)` emite `value_changed` con `null`.
+- **`GridLayout`** (`Resource`): el mapa (forma, diagonales y valores por casilla) se guarda en un `.tres` y se asigna en `GridBoard.layout`. `make_grid()` entrega una copia, `read_grid` / `from_grid` copian una grilla al recurso.
+- **`GridBoard`**: `shape` (Hexagons o Squares), `diagonals`, `radius` vale para las dos formas, `layout`, `save_shape_as_layout()` (y un botón **Save shape as layout** en la barra GridKit, con deshacer), `grid` es un `CellGrid`, `paint(key, values)`, `set_cells(add, remove, values)` y `position_to_any_cell`. Con layout, la forma del inspector queda de solo lectura; en el editor, un layout que cambia rearma la grilla una vez por cuadro.
+- **Pincel en la vista 3D del editor:** al seleccionar un `GridBoard` o un `GridView3D`, la barra **GridKit** trae un botón por loseta, **Erase**, **Add cells** y **Remove cells**. Un trazo es un paso de deshacer del editor y lo pintado queda en el `GridLayout` (se crea solo si falta).
+- El pincel guarda un layout que es un `.tres` aparte al guardar la escena, con Guardar todo o al correr el juego, y avisa al cerrar si quedó algo sin guardar; solo escribe el que cambió de verdad.
+- **`GridView3D`**: `cell_at_ray(origin, direction, on_board_only)`; borrar un valor redibuja la casilla con `default_tile`; cuando el tablero gana o pierde casillas solo se dibujan o se liberan esas losetas.
+- **`GridCursor`: arreglo de rendimiento.** Ya no recrea todos sus marcadores en cada `rebuilt`: lo atiende una vez por cuadro, libera solo las marcas de casillas que ya no están y mueve las demás. El marcador por defecto comparte una malla y un material, y es un hexágono o un cuadrado según la forma.
+- **Rompe (ver "Migrar desde 0.2" en el README):** `distance`, `cell_to_local` y `local_to_cell` ya no son estáticos (son de la grilla); `GridBoard.grid` es un `CellGrid`; `to_dict` escribe `"shape": "hex"` o `"square"` (`from_dict` lee también el formato viejo, `"shape": 0`); `HexGrid.Shape` desaparece (`shape_name()`).
+- Ejemplos: `minimal_3d` lee su mapa de `map.tres`; nuevo `squares_3d`.
+- Skill `godot-grid-kit` y command `/add-grid`.
+
 ## 0.2.0
 
 - `HexGrid.add_cell` y `remove_cell` emiten la señal nueva `cells_changed`, y `GridBoard` la pasa como `rebuilt`: `GridView3D` dibuja o borra la loseta de una casilla agregada o quitada en juego.

@@ -2,7 +2,7 @@ class_name Purse
 extends RefCounted
 
 ## Amounts of resources or coins by key, as plain data: no nodes, no scene. Each key may have a limit (what goes past
-## it is lost and reported); one key may be a wildcard that covers, 1 to 1, what is missing of the others when paying.
+## it is lost and reported); some keys may be substitutes that cover what is missing of others when paying, at a rate.
 ## Amounts are whole numbers from 0 up. A game keeps one per player in its rules; `Wallet` wraps one for the editor.
 
 ## The amount of `key` is now `value`.
@@ -10,18 +10,13 @@ signal changed(key: StringName, value: int)
 ## `lost` of `key` did not fit under its limit.
 signal overflowed(key: StringName, lost: int)
 
-## The key that covers what is missing when paying (`&""`: no wildcard).
-var wildcard: StringName = &""
-## The keys the wildcard can cover. Empty: every key but itself.
-var wildcard_covers: Array[StringName] = []
-
 var _amounts: Dictionary[StringName, int] = {}
 var _limits: Dictionary[StringName, int] = {}
+var _rules: Array[_Rule] = []
 
 
-## A purse with `start` amounts, `limits` per key and a `wildcard` key (all optional).
-func _init(start: Dictionary = {}, limits: Dictionary = {}, wildcard_key: StringName = &"") -> void:
-	wildcard = wildcard_key
+## A purse with `start` amounts and `limits` per key (both optional).
+func _init(start: Dictionary = {}, limits: Dictionary = {}) -> void:
 	for key: Variant in limits:
 		_limits[StringName(key)] = maxi(int(limits[key]), 0)
 	for key: Variant in start:
@@ -97,14 +92,58 @@ func add(gains: Dictionary) -> Dictionary[StringName, int]:
 	return lost
 
 
-## True when `cost` (`{key: amount}`) can be paid, the wildcard included.
+## Makes `rate` of `key` pay for 1 that is missing of any key in `covers` (empty: any key but `key`).
+## `add_substitute(&"gold")`: gold covers what is missing of anything, 1 to 1.
+## `add_substitute(&"wood", [&"gold"], 2)`: 2 wood cover 1 gold.
+## When several substitutes can cover a key, they are tried in the order they were added.
+## A `rate` under 1, an empty `key` or a `covers` that holds `key` is an error and adds nothing.
+func add_substitute(key: StringName, covers: Array = [], rate: int = 1) -> void:
+	if key == &"":
+		push_error("Purse.add_substitute: the key is empty")
+		return
+	if rate < 1:
+		push_error("Purse.add_substitute: the rate of %s must be 1 or more (%d)" % [key, rate])
+		return
+	var list: Array[StringName] = []
+	for item: Variant in covers:
+		list.append(StringName(item))
+	if list.has(key):
+		push_error("Purse.add_substitute: %s cannot cover itself" % key)
+		return
+	_rules.append(_Rule.new(key, list, rate))
+
+
+## A copy of the substitutes, in the order they were added: `[{key, covers, rate}]`.
+func substitutes() -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	for rule in _rules:
+		list.append(rule.to_dict())
+	return list
+
+
+## The substitutes that can cover what is missing of `key`, in the order they are tried.
+func substitutes_for(key: StringName) -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	for rule in _rules:
+		if rule.covers_key(key):
+			list.append(rule.to_dict())
+	return list
+
+
+## Takes every substitute away.
+func clear_substitutes() -> void:
+	_rules.clear()
+
+
+## True when `cost` (`{key: amount}`) can be paid, the substitutes included.
 func can_pay(cost: Dictionary) -> bool:
 	var read: Variant = _read(cost, "can_pay")
 	return read != null and _plan(read) != null
 
 
-## What paying `cost` would take, by key, the wildcard included: `{wood: 1, gold: 1}` for 2 wood with 1 in the purse
-## and gold as the wildcard. Empty when it cannot be paid (and when `cost` is free: ask `can_pay`).
+## What paying `cost` would take, by key, the substitutes included: `{gold: 1, wood: 1}` for 2 wood with 1 in the
+## purse and gold as a substitute. Nothing is paid. Empty when it cannot be paid (and when `cost` is free: ask
+## `can_pay`).
 func payment_for(cost: Dictionary) -> Dictionary[StringName, int]:
 	var none: Dictionary[StringName, int] = {}
 	var read: Variant = _read(cost, "payment_for")
@@ -114,7 +153,7 @@ func payment_for(cost: Dictionary) -> Dictionary[StringName, int]:
 	return plan if plan != null else none
 
 
-## Pays `cost`, covering with the wildcard what is missing. False, and nothing changes, when it cannot be paid.
+## Pays `cost`, covering with the substitutes what is missing. False, and nothing changes, when it cannot be paid.
 func pay(cost: Dictionary) -> bool:
 	var read: Variant = _read(cost, "pay")
 	if read == null:
@@ -136,53 +175,69 @@ func to_dict() -> Dictionary:
 	var limits_out: Dictionary = {}
 	for key in _sorted_keys(_limits):
 		limits_out[key] = _limits[key]
-	return {
-		"amounts": amounts_out,
-		"limits": limits_out,
-		"wildcard": wildcard,
-		"wildcard_covers": wildcard_covers.duplicate(),
-	}
+	return {"amounts": amounts_out, "limits": limits_out, "substitutes": substitutes()}
 
 
-## Rebuilds a purse from `to_dict()`. No signal is emitted.
+## Rebuilds a purse from `to_dict()`. No signal is emitted. It also reads the 0.2 format (`wildcard` and
+## `wildcard_covers`) as one substitute at rate 1.
 static func from_dict(data: Dictionary) -> Purse:
-	var purse := Purse.new(data.get("amounts", {}), data.get("limits", {}), StringName(data.get("wildcard", "")))
-	for key: Variant in data.get("wildcard_covers", []):
-		purse.wildcard_covers.append(StringName(key))
+	var purse := Purse.new(data.get("amounts", {}), data.get("limits", {}))
+	var saved: Variant = data.get("substitutes")
+	if saved is Array:
+		for entry: Variant in saved:
+			if entry is Dictionary:
+				var rule: Dictionary = entry
+				purse.add_substitute(StringName(rule.get("key", "")), rule.get("covers", []), int(rule.get("rate", 1)))
+		return purse
+	var wildcard := StringName(data.get("wildcard", ""))
+	if wildcard != &"":
+		var covers: Array[StringName] = []
+		var old_covers: Array = data.get("wildcard_covers", [])
+		for key: Variant in old_covers:
+			if StringName(key) != wildcard:
+				covers.append(StringName(key))
+		# A list that only held the wildcard itself covered nothing: it must not turn into "everything".
+		if covers.is_empty() == old_covers.is_empty():
+			purse.add_substitute(wildcard, covers)
 	return purse
 
 
-## Can the wildcard pay for what is missing of `key`?
-func covers(key: StringName) -> bool:
-	if wildcard == &"" or key == wildcard:
-		return false
-	return wildcard_covers.is_empty() or wildcard_covers.has(key)
-
-
-# What paying `cost` takes, by key, or null when it cannot be paid. Keys in sorted order, so it is the same every run.
+# What paying `cost` takes, by key (sorted), or null when it cannot be paid.
+# 1. Each key of the cost takes its own stock first, so a substitute never spends what the cost asks of it directly.
+# 2. What is still missing, key by key in sorted order, is covered by the substitutes in list order, each as many
+#    units as its remaining stock allows.
 func _plan(cost: Dictionary[StringName, int]) -> Variant:
 	var taken: Dictionary[StringName, int] = {}
-	var from_wildcard := 0
-	for name in _sorted_keys(cost):
-		var need := cost[name]
+	var missing: Dictionary[StringName, int] = {}
+	var wanted := _sorted_keys(cost)
+	for key in wanted:
+		var need := cost[key]
 		if need == 0:
 			continue
-		if name == wildcard:
-			from_wildcard += need
-			continue
-		var own := mini(amount(name), need)
+		var own := mini(amount(key), need)
 		if own > 0:
-			taken[name] = own
-		var missing := need - own
-		if missing > 0:
-			if not covers(name):
-				return null
-			from_wildcard += missing
-	if from_wildcard > 0:
-		if wildcard == &"" or amount(wildcard) < from_wildcard:
+			taken[key] = own
+		if need > own:
+			missing[key] = need - own
+	for key in wanted:
+		var still: int = missing.get(key, 0)
+		for rule in _rules:
+			if still == 0:
+				break
+			if not rule.covers_key(key):
+				continue
+			var left := amount(rule.key) - int(taken.get(rule.key, 0))
+			@warning_ignore("integer_division")
+			var units := mini(still, left / rule.rate)
+			if units > 0:
+				taken[rule.key] = int(taken.get(rule.key, 0)) + units * rule.rate
+				still -= units
+		if still > 0:
 			return null
-		taken[wildcard] = from_wildcard
-	return taken
+	var ordered: Dictionary[StringName, int] = {}
+	for key in _sorted_keys(taken):
+		ordered[key] = taken[key]
+	return ordered
 
 
 # Stores `value` for `key`, cut at the limit; emits `overflowed` and `changed`. Returns what was cut.
@@ -220,3 +275,21 @@ static func _sorted_keys(dict: Dictionary) -> Array[StringName]:
 
 static func _before(a: StringName, b: StringName) -> bool:
 	return String(a) < String(b)
+
+
+# One substitute: `rate` of `key` pay for 1 of what `covers` names (empty: anything but `key`).
+class _Rule:
+	var key: StringName
+	var covers: Array[StringName]
+	var rate: int
+
+	func _init(key_in: StringName, covers_in: Array[StringName], rate_in: int) -> void:
+		key = key_in
+		covers = covers_in
+		rate = rate_in
+
+	func covers_key(other: StringName) -> bool:
+		return other != key and (covers.is_empty() or covers.has(other))
+
+	func to_dict() -> Dictionary:
+		return {"key": key, "covers": covers.duplicate(), "rate": rate}
