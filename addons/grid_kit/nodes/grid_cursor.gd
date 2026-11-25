@@ -3,7 +3,8 @@ class_name GridCursor
 extends Node3D
 
 ## Marks cells of the board its parent `GridView3D` draws: `highlight(cells)` puts a marker on each, `clear()` takes
-## them away. Use one cursor per meaning (valid moves, the selection, the hover) with its own color or marker.
+## them away. Use one cursor per meaning (valid moves, the selection, the hover) with its own color or marker. On a
+## board with heights each marker sits on top of its cell and follows it when the height changes.
 
 ## The scene placed on each highlighted cell. Empty: a flat hexagon or square (the shape of the board) in `color`.
 @export var marker: PackedScene
@@ -13,7 +14,7 @@ extends Node3D
 		color = value
 		if _material != null:
 			_material.albedo_color = value
-## How high above the board the markers float, so they never fight with the tiles.
+## How high above its cell each marker floats, so it never fights with the tile.
 @export_range(0.0, 1.0, 0.001, "or_greater") var lift := 0.02:
 	set(value):
 		lift = value
@@ -38,11 +39,13 @@ func _enter_tree() -> void:
 	_board = view.board() if view != null else null
 	if _board != null and not _board.rebuilt.is_connected(_queue_refresh):
 		_board.rebuilt.connect(_queue_refresh)
+		_board.cell_changed.connect(_on_cell_changed)
 
 
 func _exit_tree() -> void:
 	if _board != null and _board.rebuilt.is_connected(_queue_refresh):
 		_board.rebuilt.disconnect(_queue_refresh)
+		_board.cell_changed.disconnect(_on_cell_changed)
 	_board = null
 
 
@@ -103,6 +106,12 @@ func _refresh() -> void:
 		return
 	_fit_mesh(_board)
 	for cell: Vector2i in _markers:
+		_markers[cell].position = _marker_position(_board, cell)
+
+
+# A cell got another height: its mark goes with it.
+func _on_cell_changed(cell: Vector2i, key: StringName, _value: Variant) -> void:
+	if key == _board.height_key and _markers.has(cell):
 		_markers[cell].position = _marker_position(_board, cell)
 
 

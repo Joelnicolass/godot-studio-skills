@@ -8,7 +8,7 @@ Tableros de hexágonos **o de cuadrados** para juegos de estrategia, tácticos, 
   - `GridBoard` arma o muestra una grilla, desde el inspector o desde un `GridLayout`.
   - `GridView3D` la dibuja con una escena por casilla y reporta clics y hover.
   - `GridCursor` marca casillas.
-  - Un **pincel en la vista 3D del editor** pinta los valores de las casillas y agrega o quita casillas.
+  - Un **pincel en la vista 3D del editor** pinta los valores de las casillas, sube y baja sus alturas y agrega o quita casillas.
 
 GridKit **no tiene** reglas de juego, unidades, niebla ni red, y no tiene autoload.
 
@@ -57,6 +57,8 @@ Seleccioná un `GridBoard` (o su `GridView3D`) y arriba de la vista 3D aparece l
 | **Erase** | Borra el valor: la casilla vuelve a `default_tile` |
 | **Add cells** | Agrega casillas, también pegadas al borde del tablero |
 | **Remove cells** | Quita casillas y todos sus valores |
+| **Raise** y **Lower**, con su paso (`±`) | Suben o bajan un paso cada casilla del trazo. Con Shift hacen lo contrario |
+| **Set height**, con su número | Escribe esa altura en cada casilla del trazo (para aplanar una meseta) |
 | **Save shape as layout** | (No es una herramienta: es un botón.) Crea un `GridLayout` desde la forma actual y lo asigna a `layout`, sin pintar. Solo está habilitado si el tablero no tiene `layout`. Es un paso de deshacer |
 
 - **Una herramienta a la vez.** Con ninguna activa, el editor se comporta como siempre: la selección y los gizmos no cambian. Escape suelta la herramienta.
@@ -65,7 +67,44 @@ Seleccioná un `GridBoard` (o su `GridView3D`) y arriba de la vista 3D aparece l
 - **Guardar el mapa.** Un layout que es un archivo `.tres` se guarda en su archivo cuando guardás la escena (Ctrl+S), con Guardar todo o al correr el juego (F5, F6). Un layout que está dentro de la escena se guarda con ella. Si cerrás con un mapa pintado sin guardar, el editor pregunta. Solo se escribe un `.tres` que el pincel cambió de verdad: pintar y deshacer hasta el estado original no lo toca.
 - **Con `layout`, manda el layout.** `shape`, `diagonals`, `columns`, `rows` y `radius` quedan de solo lectura. Para pasar la forma actual a un layout sin pintar, usá el botón **Save shape as layout** de la barra.
 - **La barra se rearma** cuando cambian las losetas de `tiles`.
+- **Las alturas** se escriben en la clave `height_key` del tablero y quedan en el layout como cualquier otro valor. Si el tablero no tiene `height_key`, el primer trazo de alturas le pone `height` (deshacer también la saca). La loseta sube mientras arrastrás, y el pincel elige la casilla por donde se la ve: por arriba o por el costado. Ver [Alturas](#alturas).
 - **Al jugar, el layout no se toca.** El `GridBoard` juega una copia: lo que el juego cambia con `set_value` no vuelve al `.tres`.
+
+## Alturas
+
+Cada casilla puede tener su altura: una meseta, un pozo, un marco de piedras más alto. La altura es un valor más de la casilla (un número, int o float) y el `GridBoard` dice cuál con dos propiedades:
+
+| Propiedad | Qué hace |
+| --- | --- |
+| `height_key` | La clave del valor que es la altura, por ejemplo `height`. Vacía (por defecto): el tablero es plano |
+| `height_scale` | Cuántas unidades de mundo vale una altura de 1 (por defecto 1): una casilla con altura 2 queda en Y = 2 × `height_scale` |
+
+- **Todo sube junto.** `cell_to_position(cell)` devuelve el centro de la casilla con su altura en Y. Las losetas de `GridView3D`, las marcas de `GridCursor` y lo que tu juego ubica con `cell_to_position` quedan a la misma altura sin saber nada de alturas.
+- **Se pinta en el editor** con **Raise**, **Lower** y **Set height** de la barra GridKit, y la vista 3D muestra el mapa con sus alturas.
+- **Cuando cambia una altura** (`set_value`, `paint`, deshacer), la loseta y la marca de esa casilla se mueven; no se crean de nuevo. Cambiar `height_key` o `height_scale` reubica todo, igual que `cell_size`.
+- **Los clics eligen lo que se ve.** Cada casilla es una columna que llega hasta su altura, y el rayo de la cámara elige la primera columna que toca, por arriba o por el costado: una casilla alta tapa a la baja que tiene detrás. Una casilla fuera del tablero cuenta con altura 0.
+- **`position_to_cell` ignora la altura.** Solo cuentan X y Z: un punto arriba, abajo o adentro de una columna es esa casilla.
+- **Un valor que no es un número** (un texto, un `bool`) cuenta como altura 0, con un aviso por tablero.
+- **Las losetas, macizas.** Como los clics tratan cada casilla como una columna, conviene que la escena de la loseta tenga cuerpo hacia abajo (un prisma, no una lámina), o se ve el hueco bajo las casillas altas.
+
+Una ficha se ubica sobre la casilla (2, 3) y sube con ella si la casilla cambia de altura. Los dos `@export` se asignan en el inspector:
+
+```gdscript
+@export var board: GridBoard
+@export var piece: Node3D
+
+var cell := Vector2i(2, 3)
+
+
+func _ready() -> void:
+	piece.position = board.cell_to_position(cell)
+	board.cell_changed.connect(_on_cell_changed)
+
+
+func _on_cell_changed(changed: Vector2i, key: StringName, _value: Variant) -> void:
+	if changed == cell and key == board.height_key:
+		piece.position = board.cell_to_position(cell)
+```
 
 ## Ejemplos
 
@@ -99,7 +138,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 
 **Las dos**
 
-- En 3D el tablero está en el plano XZ: la columna avanza en X y la fila en Z. El centro de la casilla (0, 0) está en el origen.
+- En 3D el tablero está en el plano XZ: la columna avanza en X y la fila en Z. El centro de la casilla (0, 0) está en el origen. Con `height_key`, la altura de cada casilla va en Y.
 - `CellGrid.NO_CELL` significa "ninguna casilla", por ejemplo un clic fuera del tablero.
 - Las listas siempre vuelven en el mismo orden: por fila y después por columna. Así los resultados no dependen del orden de un diccionario, y una partida con semilla se repite igual.
 
@@ -163,11 +202,11 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 
 ### `GridBoard` (Node)
 
-- **Inspector:** `layout`, `shape` (Hexagons o Squares), `diagonals` (solo cuadrados), `columns`, `rows`, `radius` (si es mayor a 0: todas las casillas a `radius` pasos de (0, 0), en las dos formas) y `cell_size`. Con `layout`, la grilla sale del layout y la forma del inspector no aplica. `save_shape_as_layout()` crea un layout desde la forma actual (en el editor, el botón de la barra GridKit hace lo mismo con deshacer).
+- **Inspector:** `layout`, `shape` (Hexagons o Squares), `diagonals` (solo cuadrados), `columns`, `rows`, `radius` (si es mayor a 0: todas las casillas a `radius` pasos de (0, 0), en las dos formas), `cell_size`, `height_key` (la clave de la altura; vacía: tablero plano) y `height_scale` (unidades de mundo por altura 1). Con `layout`, la grilla sale del layout y la forma del inspector no aplica. `save_shape_as_layout()` crea un layout desde la forma actual (en el editor, el botón de la barra GridKit hace lo mismo con deshacer).
 - **Grilla:** `grid` es la `CellGrid` que muestra. `use_grid(grid)` muestra la grilla de tus reglas en vez de la propia y `use_own_grid()` vuelve a la del layout o el inspector.
-- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` y `center_cell`, más `cell_to_position(cell) -> Vector3`, `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
+- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` y `center_cell`, más `cell_to_position(cell) -> Vector3` (el centro de la casilla, con su altura en Y), `cell_height(cell) -> float` (la altura en unidades de mundo; 0 sin `height_key`), `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Estas dos solo miran X y Z: la altura no cambia la respuesta. Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
 - **Editar de a muchas:** `paint(key, {casilla: valor})` (un valor `null` borra la clave) y `set_cells(add, remove, values)` (`values` es `{casilla: {clave: valor}}` para las casillas nuevas). En el editor, con `layout`, escriben también en el layout; al jugar, solo en la grilla.
-- **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma o `cell_size`, o casillas agregadas o quitadas). Las vistas y los cursores se actualizan solos con ella.
+- **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma, `cell_size`, `height_key` o `height_scale`, o casillas agregadas o quitadas). Las vistas y los cursores se actualizan solos con ella.
 
 ### `GridView3D` (Node3D, hijo de un `GridBoard`)
 
@@ -180,8 +219,8 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 - **Métodos:** `redraw()`, `tile_at(cell)`, `cell_at_screen(point)`, `cell_at_ray(origin, direction, on_board_only := true)` y `board()`.
 - **Señales:** `cell_clicked(cell)` (mouse o toque) y `cell_hovered(cell)` (`NO_CELL` al salir del tablero); `tile_created(cell, tile)` cuando arma una loseta, y `drawn` cuando todas las losetas están en su lugar.
 - **Cada loseta sabe su casilla.** La loseta ya está en el centro de su casilla cuando sale `tile_created`, y todavía no entró al árbol: lo que le pongas ahí (su casilla, sus datos) ya está en su `_ready`. `drawn` sale después de un `rebuilt`, de cambiar `tiles`, `default_tile` o `value_key`, o de `redraw()`; una casilla que cambia de valor solo emite `tile_created`.
-- **Clics sin colliders:** el rayo de la cámara se cruza con el plano del tablero.
-- Cuando el tablero gana o pierde casillas, solo se dibujan o se liberan esas losetas. Al borrar un valor (`erase_value`), la casilla vuelve a `default_tile`.
+- **Clics sin colliders:** el rayo de la cámara se cruza con el plano del tablero. En un tablero con alturas (`height_key`), elige la primera casilla que el rayo toca, por arriba o por el costado; `cell_at_ray`, `cell_at_screen`, `cell_clicked` y `cell_hovered` responden así. Sin `height_key`, todo sigue como antes y cuesta lo mismo.
+- Cuando el tablero gana o pierde casillas, solo se dibujan o se liberan esas losetas. Al borrar un valor (`erase_value`), la casilla vuelve a `default_tile`. Cuando cambia la altura de una casilla, su loseta se mueve (no se crea de nuevo).
 
 ### `GridCursor` (Node3D, hijo de un `GridView3D`)
 
@@ -190,6 +229,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
   - `color`, `lift` y `fill`.
 - **Métodos:** `highlight(cells)` (reemplaza la marca anterior), `clear()` y `highlighted()`.
 - Si el tablero cambia (`rebuilt`), el cursor lo atiende **una vez por cuadro**: las marcas sobre casillas que ya no están se liberan y las demás se mueven a su lugar (no se recrean). El marcador por defecto comparte una malla y un material entre todas las marcas.
+- En un tablero con alturas, cada marca queda `lift` por encima de su casilla y la sigue cuando cambia de altura.
 - Usá un cursor por significado: movimientos válidos, selección, hover.
 
 ## Tips
@@ -199,6 +239,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 - **El arrastre de la cámara no es un clic.** Ajustá `click_max_drag_px`. Si tu cámara tiene su propio estado de arrastre, apagá `input_enabled` mientras arrastra.
 - **Losetas de otros packs.** Si vienen flat-top, rotalas 90° en su escena. En hexágonos `cell_size` es el ancho de lado a lado; en cuadrados, el lado.
 - **Muchas casillas de golpe.** `add_cells` y `remove_cells` emiten una sola señal; `add_cell` en un bucle emite una por casilla (igual la vista y los cursores agrupan lo que dibujan en un cuadro).
+- **El costo de subir.** La altura es un valor más: en el `cost` de `find_path`, compará `get_value(to, &"height", 0)` con el de `from` y devolvé `INF` si el escalón es muy alto.
 - **Un mapa tuyo.** Cargá el layout con `ResourceLoader.load` o asignalo en el inspector; para armar uno por código: `layout.set_value(cell, &"terrain", &"forest")`, o `GridLayout.from_grid(grid)` y `ResourceSaver.save(layout, "res://map.tres")`.
 
 ## Migrar desde 0.2
@@ -228,8 +269,12 @@ Sale `GRIDKIT TESTS PASS (n)`. Los tests cubren:
 - `GridLayout`: `make_grid`, `read_grid`, `from_grid`, `changed` y guardar y cargar un `.tres`.
 - Los nodos: forma desde el inspector, `radius` en cuadrados, el layout manda, rearmado agrupado, `paint` y `set_cells` (con y sin layout), `position_to_any_cell`, losetas por casilla, `tile_created` y `drawn`, redibujo, `use_grid`, `cell_at_ray`, clic, arrastre y avisos del editor.
 - `GridCursor`: los mismos nodos tras 1000 `add_cell`, que solo se libera la marca de la casilla quitada, `cell_size` mueve sin recrear, marcador cuadrado.
-- El trazo del pincel (sin editor): pintar, repetir, borrar, agregar y quitar casillas con sus valores, crear el layout, y que el resultado deshace todo.
+- Las alturas: `cell_to_position` con y sin `height_key`, con int y float, un valor que no es número; que la loseta y la marca se mueven sin recrearse; que `height_scale` y `height_key` reubican todo; la vista previa de un layout; los clics sobre una casilla alta que tapa a una baja y sobre una baja descubierta, en hexágonos y en cuadrados, con la vista movida, girada y escalada, fuera del tablero y después de cada cambio; y que sin `height_key` nada cambia.
+- El trazo del pincel (sin editor): pintar, repetir, borrar, agregar y quitar casillas con sus valores, subir, bajar y fijar alturas, crear el layout y la clave de altura, y que el resultado deshace todo.
+- La herramienta del pincel con un historial de deshacer de prueba: los botones de la barra, un trazo de alturas como un solo paso que se deshace y se rehace, Shift, los números de la barra y que el pincel encuentra una casilla alta por arriba.
 - Los dos ejemplos jugados con eventos de mouse.
 - Que el addon no nombre a ningún otro kit.
 
-Lo que **no** cubren los tests (necesita un editor abierto con mouse): la barra GridKit, el arrastre real y el deshacer real del editor.
+El chequeo del editor (`godot --headless --editor --path gridkit_lab -- --gridkit-editor-check`) pasa por el editor real: la barra, los trazos de losetas y de alturas con el deshacer del editor, elegir una casilla alta desde la cámara de la vista 3D y lo que queda guardado en disco.
+
+Lo que **no** cubre ninguno de los dos (necesita una ventana y un mouse de verdad): cómo se ve la barra, el arrastre real y el marcador del pincel sobre una casilla alta.

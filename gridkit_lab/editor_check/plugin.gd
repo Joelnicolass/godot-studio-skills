@@ -13,7 +13,9 @@ const TMP := "res://editor_check/tmp"
 const TIMEOUT_SECONDS := 150.0
 const WATER := preload("res://addons/grid_kit/examples/minimal_3d/tiles/water.tscn")
 const PLAIN := preload("res://addons/grid_kit/examples/minimal_3d/tiles/plain.tscn")
-const BUTTONS: Array[String] = ["water", "plain", "Erase", "Add cells", "Remove cells", "Save shape as layout"]
+const BUTTONS: Array[String] = [
+	"water", "plain", "Erase", "Add cells", "Remove cells", "Raise", "Lower", "Set height", "Save shape as layout"
+]
 
 var _passes := 0
 var _fails := 0
@@ -33,6 +35,7 @@ func _run() -> void:
 	await _scan()
 	await _check_scene_with_external_layout()
 	await _check_scene_without_layout()
+	await _check_heights()
 	_finish()
 
 
@@ -72,6 +75,7 @@ func _prepare() -> void:
 	second.layout = other
 	_save_scene(root, TMP + "/with_layout.tscn")
 	_save_scene(_make_level(null), TMP + "/no_layout.tscn")
+	_save_scene(_make_level(null), TMP + "/heights.tscn")
 
 
 func _save_layout(path: String, terrain: StringName) -> void:
@@ -239,6 +243,83 @@ func _check_scene_without_layout() -> void:
 	_check("h: undo put it back", board.has_cell(cell))
 
 
+# The height brushes on a board with no layout and no height key: the stroke, its undo, picking a raised cell by its
+# top through the 3D view's own input, and what the saved scene holds.
+func _check_heights() -> void:
+	var path := TMP + "/heights.tscn"
+	var root := await _open(path)
+	var board := root.get_node(^"Board") as GridBoard
+	var view := root.get_node(^"Board/View") as GridView3D
+	_select(board)
+	await _frames(10)
+	var bar := _bar()
+	var boxes := bar.find_children("*", "SpinBox", true, false)
+	_check("i: the bar has a box for the step and one for the height", boxes.size() == 2)
+	var hit := _middle(board, view)
+	if hit.is_empty() or boxes.size() != 2:
+		_check("i: a cell in the middle of the viewport", false)
+		return
+	var cell: Vector2i = hit["cell"]
+	var undo_redo := _history(board)
+	var tile := view.tile_at(cell)
+	await _paint_stroke(bar, "Raise", hit["at"])
+	_check("i: Raise gave the board a height key", board.height_key == &"height")
+	_check("i: and the cell one step of height", board.get_value(cell, &"height") == 1)
+	_check("i: saved in a layout", board.layout != null and board.layout.get_value(cell, &"height") == 1)
+	_check("i: as one step: 'Paint grid cells'", undo_redo.get_current_action_name() == "Paint grid cells")
+	await _frames(2)
+	_check("i: the tile went up", view.tile_at(cell) != null and view.tile_at(cell).position.y == 1.0)
+	undo_redo.undo()
+	await _frames(3)
+	_check("j: undo takes the height key and the layout out", board.height_key == &"" and board.layout == null)
+	_check("j: and the cell is on the ground", board.get_value(cell, &"height") == null)
+	_check("j: with its tile", view.tile_at(cell) != null and view.tile_at(cell).position.y == 0.0)
+	undo_redo.redo()
+	await _frames(3)
+	_check("j: redo raises it again", board.height_key == &"height" and board.get_value(cell, &"height") == 1)
+	_check("j: and the layout is back with it", board.layout != null and board.layout.get_value(cell, &"height") == 1)
+	_check("j: the same tile all along, not a new one", tile != null and view.tile_at(cell) == tile)
+	(boxes[1] as SpinBox).value = 1.5
+	await _paint_stroke(bar, "Set height", _screen(view, board.cell_to_position(cell)))
+	_check("k: Set height wrote the number of its box", board.get_value(cell, &"height") == 1.5)
+	# The top of the raised cell is somewhere else on the screen: on the plane, that point is another cell.
+	var top := _screen(view, board.cell_to_position(cell))
+	var sub := EditorInterface.get_editor_viewport_3d(0)
+	var rect := (sub.get_parent() as Control).get_global_rect()
+	_check("k: the top of the raised cell is in the viewport", rect.has_point(top))
+	var camera := sub.get_camera_3d()
+	var origin := camera.project_ray_origin(top - rect.position)
+	var normal := camera.project_ray_normal(top - rect.position)
+	var ground: Variant = Plane(view.global_basis.y.normalized(), view.global_position).intersects_ray(origin, normal)
+	var under := board.position_to_any_cell(view.to_local(ground as Vector3)) if ground != null else CellGrid.NO_CELL
+	_check("k: on the plane that point is another cell", under != cell)
+	_check("k: the view picks the raised cell there", view.cell_at_ray(origin, normal) == cell)
+	(boxes[0] as SpinBox).value = 0.5
+	await _paint_stroke(bar, "Raise", top)
+	_check("k: and so does the brush: Raise by 0.5 lifts it to 2", board.get_value(cell, &"height") == 2)
+	undo_redo.undo()
+	await _frames(2)
+	_check("k: undo lowers it to 1.5", board.get_value(cell, &"height") == 1.5)
+	undo_redo.redo()
+	await _frames(2)
+	EditorInterface.save_scene()
+	await _frames(10)
+	var packed := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene
+	var saved := packed.instantiate() if packed != null else null
+	var saved_board := saved.get_node(^"Board") as GridBoard if saved != null else null
+	_check("l: the scene on disk has the height key", saved_board != null and saved_board.height_key == &"height")
+	_check(
+		"l: and the height, in its layout",
+		saved_board != null and saved_board.layout != null and saved_board.layout.get_value(cell, &"height") == 2
+	)
+	_check(
+		"l: a board loaded from it stands the cell there",
+		saved_board != null and saved_board.cell_to_position(cell).y == 2.0
+	)
+	if saved != null:
+		saved.free()
+
+
 func _check_bar(node: Node, label: String) -> void:
 	_select(node)
 	await _frames(10)
@@ -251,7 +332,7 @@ func _check_bar(node: Node, label: String) -> void:
 	var same := texts.size() == BUTTONS.size()
 	for text in BUTTONS:
 		same = same and texts.has(text)
-	_check("%s: a button per tile, Erase, Add cells, Remove cells, Save shape as layout" % label, same)
+	_check("%s: a button per tile, Erase, Add and Remove cells, the heights, Save shape as layout" % label, same)
 
 
 # --- driving the editor -----------------------------------------------------------------------
@@ -305,6 +386,25 @@ func _point(board: GridBoard, view: GridView3D, on_board: bool) -> Dictionary:
 			if cell != CellGrid.NO_CELL and board.has_cell(cell) == on_board:
 				return {"at": rect.position + local, "cell": cell}
 	return {}
+
+
+# The cell under the middle of the 3D view, if it is on the board (or else any cell of it): {"at": point, "cell": cell}.
+func _middle(board: GridBoard, view: GridView3D) -> Dictionary:
+	var sub := EditorInterface.get_editor_viewport_3d(0)
+	var camera := sub.get_camera_3d()
+	var rect := (sub.get_parent() as Control).get_global_rect()
+	var local := rect.size * 0.5
+	var cell := view.cell_at_ray(camera.project_ray_origin(local), camera.project_ray_normal(local))
+	if cell == CellGrid.NO_CELL:
+		return _point(board, view, true)
+	return {"at": rect.position + local, "cell": cell}
+
+
+# Where a point of the view's local space is on the screen.
+func _screen(view: GridView3D, local: Vector3) -> Vector2:
+	var sub := EditorInterface.get_editor_viewport_3d(0)
+	var rect := (sub.get_parent() as Control).get_global_rect()
+	return rect.position + sub.get_camera_3d().unproject_position(view.to_global(local))
 
 
 # Presses the bar's button `text` and sends press, move and release over `at`; then lets the button go.

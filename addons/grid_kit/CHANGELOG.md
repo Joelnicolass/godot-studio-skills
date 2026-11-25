@@ -1,5 +1,18 @@
 # Cambios de GridKit
 
+## 0.6.0
+
+Alturas por casilla: mesetas, pozos, un marco de piedras más alto.
+
+- **`GridBoard.height_key` y `height_scale`:** `height_key` dice qué valor de la casilla es su altura (por ejemplo `height`; un número, int o float) y `height_scale` cuántas unidades de mundo vale una altura de 1. `cell_to_position(cell)` devuelve la altura en Y, así que las losetas, las marcas de `GridCursor` y lo que el juego ubica con `cell_to_position` suben juntos. `cell_height(cell)` da la altura en unidades de mundo. Un valor que no es un número cuenta como 0, con un aviso.
+- **Los clics eligen lo que se ve.** Con alturas, `GridView3D.cell_at_ray` y `cell_at_screen` (y con ellos `cell_clicked`, `cell_hovered` y el pincel del editor) tratan cada casilla como una columna que llega hasta su altura y eligen la primera que el rayo toca, por arriba o por el costado. Una casilla fuera del tablero cuenta con altura 0.
+- **`position_to_cell` y `position_to_any_cell`** solo miran X y Z: la altura no cambia la respuesta.
+- **Lo que cambia se mueve, no se recrea.** Cuando cambia la altura de una casilla (`set_value`, `paint`, deshacer), su loseta y su marca se mueven. Cambiar `height_key` o `height_scale` emite `rebuilt` y reubica todo, como `cell_size`.
+- **Pincel de alturas** en la barra GridKit: **Raise** y **Lower** suben o bajan un paso cada casilla del trazo (Shift hace lo contrario) y **Set height** escribe un número. Un trazo es un paso de deshacer y queda en el `GridLayout`; si el tablero no tenía `height_key`, el primer trazo le pone `height`. La vista 3D del editor muestra el mapa con sus alturas.
+- **Arreglo:** `set_value` (en `CellGrid` y en `GridLayout`) fallaba al reemplazar un valor por otro de otro tipo (un texto por un número). Ahora lo reemplaza.
+
+Nada que actualizar en tu proyecto: sin `height_key`, el tablero es plano, y los clics y su costo son los de antes.
+
 ## 0.5.0
 
 Cuatro consultas que antes cada juego escribía por su cuenta, en `CellGrid` (hexágonos y cuadrados) y como atajos en `GridBoard`:

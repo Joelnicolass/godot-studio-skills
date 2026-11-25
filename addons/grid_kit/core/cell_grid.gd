@@ -222,7 +222,7 @@ func set_value(cell: Vector2i, key: StringName, value: Variant) -> void:
 		push_error("CellGrid: %s is not on the board" % cell)
 		return
 	var values: Dictionary = _cells[cell]
-	if values.has(key) and values[key] == value:
+	if values.has(key) and _same_value(values[key], value):
 		return
 	values[key] = value
 	value_changed.emit(cell, key, value)
@@ -347,7 +347,8 @@ static func _before(a: Vector2i, b: Vector2i) -> bool:
 	return a.y < b.y or (a.y == b.y and a.x < b.x)
 
 
-# Equal values for `cells_with`: text with text and numbers with numbers, whatever their exact type.
+# Equal values for `set_value` and `cells_with`: text with text and numbers with numbers, whatever their exact type.
+# Values of two kinds (a text and a number) are just different: `==` between them is an error.
 static func _same_value(a: Variant, b: Variant) -> bool:
 	var type_a := typeof(a)
 	var type_b := typeof(b)

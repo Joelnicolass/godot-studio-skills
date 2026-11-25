@@ -2,8 +2,8 @@
 extends EditorPlugin
 
 ## GridKit in the editor. Select a GridBoard (or its GridView3D) and the 3D view gets the «GridKit» bar on top: one
-## brush per tile, Erase, Add cells and Remove cells (editor/grid_paint_tool.gd). A stroke is one step of the editor's
-## undo history.
+## brush per tile, Erase, Add cells, Remove cells and the heights (Raise, Lower, Set height), all in
+## editor/grid_paint_tool.gd. A stroke is one step of the editor's undo history.
 
 const BOARD := preload("res://addons/grid_kit/nodes/grid_board.gd")
 const VIEW_3D := preload("res://addons/grid_kit/nodes/grid_view_3d.gd")
