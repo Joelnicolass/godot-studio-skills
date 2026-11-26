@@ -1,0 +1,83 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://addons/grid_kit/examples/fog_3d/fog_3d.gd" id="1_main"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_board.gd" id="2_board"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_view_3d.gd" id="3_view"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_cursor.gd" id="4_cursor"]
+[ext_resource type="Script" path="res://addons/grid_kit/nodes/grid_fog.gd" id="5_fog"]
+[ext_resource type="Resource" path="res://addons/grid_kit/examples/minimal_3d/map.tres" id="6_map"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/plain.tscn" id="7_plain"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/forest.tscn" id="8_forest"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/mountain.tscn" id="9_mountain"]
+[ext_resource type="PackedScene" path="res://addons/grid_kit/examples/minimal_3d/tiles/water.tscn" id="10_water"]
+
+[node name="Fog3D" type="Node3D" node_paths=PackedStringArray("board", "view", "fog", "scout_markers")]
+script = ExtResource("1_main")
+board = NodePath("Board")
+view = NodePath("Board/View")
+fog = NodePath("Board/View/Fog")
+scout_markers = [NodePath("Board/View/Scout1"), NodePath("Board/View/Scout2")]
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 7.5, 9.5)
+current = true
+fov = 50.0
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 6, 0)
+
+[node name="Board" type="Node" parent="."]
+script = ExtResource("2_board")
+layout = ExtResource("6_map")
+
+[node name="View" type="Node3D" parent="Board"]
+script = ExtResource("3_view")
+tiles = Dictionary[StringName, PackedScene]({
+&"forest": ExtResource("8_forest"),
+&"mountain": ExtResource("9_mountain"),
+&"plain": ExtResource("7_plain"),
+&"water": ExtResource("10_water")
+})
+default_tile = ExtResource("7_plain")
+
+[node name="Fog" type="Node3D" parent="Board/View"]
+unique_name_in_owner = true
+script = ExtResource("5_fog")
+
+[node name="Scout1" type="Node3D" parent="Board/View"]
+script = ExtResource("4_cursor")
+color = Color(0.95, 0.35, 0.3, 0.9)
+lift = 0.05
+fill = 0.5
+
+[node name="Scout2" type="Node3D" parent="Board/View"]
+script = ExtResource("4_cursor")
+color = Color(0.3, 0.6, 1, 0.9)
+lift = 0.05
+fill = 0.5
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Box" type="VBoxContainer" parent="UI"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 160.0
+
+[node name="Counts" type="Label" parent="UI/Box"]
+unique_name_in_owner = true
+text = "Player 1 sees 0 cells"
+
+[node name="Buttons" type="HBoxContainer" parent="UI/Box"]
+
+[node name="Switch" type="Button" parent="UI/Box/Buttons"]
+unique_name_in_owner = true
+text = "Switch player"
+
+[node name="Reset" type="Button" parent="UI/Box/Buttons"]
+unique_name_in_owner = true
+text = "Reset"
+
+[node name="Log" type="Label" parent="UI/Box"]
+unique_name_in_owner = true
+text = ""

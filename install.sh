@@ -37,6 +37,10 @@ SKILL_NAMES=(
   godot-turn-kit
   godot-wallet-kit
   godot-command-kit
+  godot-unlock-kit
+  godot-stat-kit
+  godot-deck-kit
+  godot-dice-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -71,10 +75,10 @@ Instalador del kit Godot studio (skills + commands + subagentes + addons).
   ./install.sh --all                Cursor y Claude Code
   ./install.sh --project            ./.cursor/ del cwd (./.claude/ con --claude; los dos con --all)
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|unlock_kit|stat_kit|deck_kit|dice_kit|all]
                                     Copia el addon al proyecto Godot (default: mp_kit)
                                     agent_kit se instala desde godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|unlock_kit|stat_kit|deck_kit|dice_kit|all]
                                     Solo el addon
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias de --addon GODOT_ROOT agent_kit
@@ -438,6 +442,30 @@ install_addon() {
       echo "Habilitá el plugin CommandKit (sin autoload). Cada jugada es una función de tu juego, do_<nombre>(seat, args…), con can_<nombre> y undo_<nombre> opcionales;"
       echo "un nodo GameCommands (o un CommandLog en tus reglas) las corre, las anota y las repite. Arrancá desde addons/command_kit/examples/minimal."
       ;;
+    unlock_kit)
+      copy_one_addon "$project" "unlock_kit"
+      echo
+      echo "Habilitá el plugin UnlockKit (sin autoload). Las reglas usan UnlockGraph (datos puros: can_unlock, why_not, buy(id, pay), unlock, lock; un grafo por jugador con tree.new_graph());"
+      echo "en la escena, un UnlockTree con UnlockEntry hijos (una adentro de otra la requiere) y un UnlockTreeView opcional. Arrancá desde addons/unlock_kit/examples/minimal."
+      ;;
+    stat_kit)
+      copy_one_addon "$project" "stat_kit"
+      echo
+      echo "Habilitá el plugin StatKit (sin autoload). Las reglas usan StatSheet (datos puros: base + StatModifier en orden ADD → PERCENT → MUL → SET, límites, remove_source);"
+      echo "en la escena, un StatBlock con base_values y start_modifiers en el inspector, que muestra los valores finales. Arrancá desde addons/stat_kit/examples/minimal."
+      ;;
+    deck_kit)
+      copy_one_addon "$project" "deck_kit"
+      echo
+      echo "Habilitá el plugin DeckKit (sin autoload). Las reglas usan CardStack (datos puros: draw_to, move, move_at, shuffle(rng), refill_from) con cartas CardData;"
+      echo "en la escena, un Deck (con rng_seed), CardPile para la mano y el descarte y un HandView opcional. Arrancá desde addons/deck_kit/examples/minimal."
+      ;;
+    dice_kit)
+      copy_one_addon "$project" "dice_kit"
+      echo
+      echo "Habilitá el plugin DiceKit (sin autoload). Las reglas usan DieData.roll(n, rng) o DiceRoll.of(dice, rng): sum(), count(tag); d4 a d20 listos en addons/dice_kit/dice;"
+      echo "en la escena, un DiceRoller (con rng_seed y el botón Roll del inspector) y una DiceTray3D opcional. Arrancá desde addons/dice_kit/examples/minimal."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -466,9 +494,17 @@ install_addon() {
       install_addon "$project" "wallet_kit"
       echo
       install_addon "$project" "command_kit"
+      echo
+      install_addon "$project" "unlock_kit"
+      echo
+      install_addon "$project" "stat_kit"
+      echo
+      install_addon "$project" "deck_kit"
+      echo
+      install_addon "$project" "dice_kit"
       ;;
     *)
-      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | turn_kit | wallet_kit | command_kit | all)" >&2
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | turn_kit | wallet_kit | command_kit | unlock_kit | stat_kit | deck_kit | dice_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -526,6 +562,10 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/turn_kit   (./install.sh --addon /path/to/godot-project turn_kit)"
   echo "  - addons/wallet_kit (./install.sh --addon /path/to/godot-project wallet_kit)"
   echo "  - addons/command_kit (./install.sh --addon /path/to/godot-project command_kit)"
+  echo "  - addons/unlock_kit (./install.sh --addon /path/to/godot-project unlock_kit)"
+  echo "  - addons/stat_kit   (./install.sh --addon /path/to/godot-project stat_kit)"
+  echo "  - addons/deck_kit   (./install.sh --addon /path/to/godot-project deck_kit)"
+  echo "  - addons/dice_kit   (./install.sh --addon /path/to/godot-project dice_kit)"
   echo
   echo "AgentKit / playtester (repo aparte, este instalador lo trae):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"
@@ -574,6 +614,10 @@ install_harness() {
     echo "  turnos:       godot-turn-kit"
     echo "  recursos:     godot-wallet-kit"
     echo "  jugadas:      godot-command-kit"
+    echo "  desbloqueos:  godot-unlock-kit"
+    echo "  estadísticas: godot-stat-kit"
+    echo "  cartas:       godot-deck-kit"
+    echo "  dados:        godot-dice-kit"
     echo "  materiales:   godot-material-maker"
     echo "  investigar:   godot-feature-research"
   fi
@@ -583,7 +627,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /add-grid, /add-turns, /add-wallet, /add-commands, /create-material, /research-feature, /create-prd, …"
+    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /add-grid, /add-turns, /add-wallet, /add-commands, /add-unlocks, /add-stats, /add-deck, /add-dice, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then

@@ -1,0 +1,10 @@
+# Cambios de UnlockKit
+
+## 0.1.0
+
+Primera versión:
+
+- `UnlockGraph`: árboles de tecnologías, talentos o habilidades como datos puros. Cada entrada tiene requisitos que se piden todos (`requires`), requisitos de los que alcanza uno (`requires_any`) y un costo. `add(id, needs, cost, needs_any)`, `can_unlock`, `why_not` (un `String`: `""`, `"unknown"`, `"already_unlocked"`, `"locked"`), `missing`, `buy(id, pay)` (cobra con tu función y desbloquea, en una llamada), `unlock` sin costo y `lock` para deshacer, `available_ids`, `depth` para las columnas, `problems` (requisitos desconocidos, una entrada que se necesita a sí misma, círculos), `restore` y `to_dict(with_entries)` / `from_dict`. Señales `unlocked`, `locked` y `availability_changed`.
+- `UnlockTree` y `UnlockEntry`: el árbol armado en el editor. Una entrada adentro de otra la necesita; un `Node` común agrupa una rama; `requires` agrega enlaces cruzados, `requires_any` los de «uno de», `start_unlocked` marca las del principio y `view_position` ubica la caja a mano. Cada entrada emite sus propias `unlocked` y `locked`, y se extiende con un script propio para los datos del juego. Cambiar el árbol lo rearma una vez por cuadro conservando lo desbloqueado (no cuando se va el árbol entero). `new_graph()` arma un grafo por jugador y `use_graph` lo muestra. Avisos del editor para un id repetido, un requisito de otro árbol o que no es una entrada, un círculo, un monto negativo, `start_unlocked` debajo de una entrada que no empieza desbloqueada, un árbol vacío y, en `use_graph`, ids sin entrada.
+- `UnlockTreeView`: dibuja el árbol (también en el editor) en columnas por profundidad, o en filas de arriba hacia abajo (`direction`), con el color de cada estado, `corner_radius`, la fuente del tema del juego, curvas (punteadas para `requires_any`), tooltips y las señales `entry_pressed` y `entry_hovered`. Con `entry_scene`, instancia tu escena por entrada (tema, foco y arte propios).
+- Ejemplo `examples/minimal`, tests propios y `unlockkit_lab/` con un chequeo dentro del editor real.

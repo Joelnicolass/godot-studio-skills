@@ -177,10 +177,14 @@ Cada kit es un addon que se copia al juego con `./install.sh --addon <proyecto> 
 | Enemigos o guardias que ven y oyen | PerceptionKit | `/add-perception` | `addons/perception_kit/examples/minimal_3d/` |
 | Sangre, manchas y charcos (o aceite, baba, tinta) | SpillKit | `/add-spill` | `addons/spill_kit/examples/minimal_3d/` |
 | Bots que juegan como una persona (shooter, arena) | BotKit | `/add-bots` | `addons/bot_kit/examples/minimal_3d/` |
-| Tableros de hexágonos o de cuadrados | GridKit | `/add-grid` | `addons/grid_kit/examples/minimal_3d/` |
+| Tableros de hexágonos o de cuadrados, niebla de guerra | GridKit | `/add-grid` | `addons/grid_kit/examples/minimal_3d/` |
 | Turnos, fases, rondas y tiempo por turno | TurnKit | `/add-turns` | `addons/turn_kit/examples/minimal/` |
 | Recursos y monedas (topes, costos, sustitutos) | WalletKit | `/add-wallet` | `addons/wallet_kit/examples/minimal/` |
 | Jugadas validadas con deshacer y repetición | CommandKit | `/add-commands` | `addons/command_kit/examples/minimal/` |
+| Árboles de tecnología, talentos o habilidades | UnlockKit | `/add-unlocks` | `addons/unlock_kit/examples/minimal/` |
+| Estadísticas con bonus (equipo, buffs, tecnologías) | StatKit | `/add-stats` | `addons/stat_kit/examples/minimal/` |
+| Mazo, mano y descarte (robar, mezclar con semilla, rellenar) | DeckKit | `/add-deck` | `addons/deck_kit/examples/minimal/` |
+| Dados (tirar, sumar, contar símbolos, semilla) | DiceKit | `/add-dice` | `addons/dice_kit/examples/minimal/` |
 
 El ejemplo mínimo es la integración más chica que anda; el README de cada kit explica su código y suma tips y recomendaciones. Lo que el kit no hace (las reglas, el puntaje, el movimiento de una unidad de RTS) queda en el juego.
 

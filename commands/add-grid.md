@@ -6,11 +6,12 @@ Agregá un **tablero de hexágonos o de cuadrados** en el **proyecto Godot del j
 - un `GridBoard` con la forma del tablero (hexágonos o cuadrados, tamaño o radio) o con un `GridLayout` guardado;
 - un `GridView3D` hijo con una escena por casilla (`tiles`);
 - un `GridCursor` por cada cosa que se marca (movimientos válidos, selección, hover);
+- si el juego tiene niebla de guerra, un `GridFog` hijo del `GridView3D` (y un `CellFog` en las reglas);
 - la grilla del juego (`CellGrid`) para las reglas, si el juego tiene reglas sobre las casillas.
 
 Después la persona pinta el mapa con la barra **GridKit** de la vista 3D; el agente arma el tablero y conecta lo que hace el clic.
 
-Esto **no** son las reglas del juego, las unidades, la niebla ni los turnos: el kit sabe de casillas, vecinos, distancia, rango y caminos, y el juego decide qué significan. **No** es la red.
+Esto **no** son las reglas del juego, las unidades ni los turnos: el kit sabe de casillas, vecinos, distancia, rango, caminos y qué conoce cada jugador, y el juego decide qué significan y qué ve cada unidad. **No** es la red.
 
 Cargar: `godot-grid-kit`, `godot-composition-first`.
 
@@ -31,7 +32,8 @@ Si falta, preguntá en una sola tanda:
 3. Si el mapa se pinta a mano en el editor (un `GridLayout`) o lo arma el juego (generado, cargado de un archivo, por red).
 4. Qué hace un clic y qué marca el hover; qué cursores hacen falta (movimientos, selección, camino).
 5. Si hay reglas sobre las casillas (alcance, costo de moverse, caminos): quién las tiene y en qué parte del juego viven.
-6. Si el juego es en red o tiene turnos (el kit no los trae: el juego conecta).
+6. Si hay niebla de guerra: cuántos jugadores, cuánto ve cada unidad o ciudad, si hay regiones que se revelan para todos.
+7. Si el juego es en red o tiene turnos (el kit no los trae: el juego conecta).
 
 ## 2. Plan
 
@@ -57,6 +59,7 @@ Seguí [godot-grid-kit](../skills/godot-grid-kit/SKILL.md) y `addons/grid_kit/RE
 - Las losetas son escenas con un `Node3D` de raíz; `cell_size` es el ancho de lado a lado (hexágonos) o el lado (cuadrados).
 - Las reglas usan un `CellGrid` (`board.grid`, o el del estado de la partida con `board.use_grid`), no los nodos: `neighbors`, `distance`, `cells_in_range`, `find_path(from, to, cost)`, `flood`.
 - Un `GridCursor` por significado, con `highlight(cells)` y `clear()`.
+- Si hay niebla: el estado guarda un `CellFog` y lo recalcula después de cada orden con `see(seat, grid.cells_near(own_cells, radius))` (o `cells_visible_from` si el terreno tapa la vista); la escena pone un `GridFog` hijo del `GridView3D` con `use_fog(state.fog)` y `shown_observer` en el asiento de esta máquina. Las piezas del juego y los clics sobre casillas ocultas se filtran con `fog.sees(seat, cell)`. En red, cada cliente recibe solo `fog.observer_to_dict(seat)`.
 - Si las casillas tienen alturas: `height_key` (por ejemplo `height`) y `height_scale` en el `GridBoard`; todo lo que va sobre el tablero se ubica con `board.cell_to_position(cell)`, que ya trae la altura. Las losetas, macizas hacia abajo.
 - Decile a la persona cómo pintar: seleccionar el `GridBoard` muestra la barra **GridKit** (una loseta, **Erase**, **Add cells**, **Remove cells**, y **Raise**, **Lower** y **Set height** para las alturas); un trazo se deshace con Ctrl+Z; lo pintado queda en el `layout`.
 - Corré `godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_test_runner.gd` si tocás el kit.

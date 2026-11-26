@@ -8,6 +8,7 @@ extends EditorPlugin
 const BOARD := preload("res://addons/grid_kit/nodes/grid_board.gd")
 const VIEW_3D := preload("res://addons/grid_kit/nodes/grid_view_3d.gd")
 const CURSOR := preload("res://addons/grid_kit/nodes/grid_cursor.gd")
+const FOG := preload("res://addons/grid_kit/nodes/grid_fog.gd")
 const PaintTool := preload("res://addons/grid_kit/editor/grid_paint_tool.gd")
 
 var _tool: PaintTool
@@ -17,6 +18,7 @@ func _enter_tree() -> void:
 	add_custom_type("GridBoard", "Node", BOARD, preload("res://addons/grid_kit/icons/grid_board.svg"))
 	add_custom_type("GridView3D", "Node3D", VIEW_3D, preload("res://addons/grid_kit/icons/grid_view_3d.svg"))
 	add_custom_type("GridCursor", "Node3D", CURSOR, preload("res://addons/grid_kit/icons/grid_cursor.svg"))
+	add_custom_type("GridFog", "Node3D", FOG, preload("res://addons/grid_kit/icons/grid_fog.svg"))
 	_tool = PaintTool.new()
 	add_child(_tool)
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, _tool.bar())
@@ -26,6 +28,7 @@ func _exit_tree() -> void:
 	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, _tool.bar())
 	_tool.bar().queue_free()
 	_tool.queue_free()
+	remove_custom_type("GridFog")
 	remove_custom_type("GridCursor")
 	remove_custom_type("GridView3D")
 	remove_custom_type("GridBoard")

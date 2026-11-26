@@ -6,14 +6,15 @@ description: >-
   valores por casilla, vecinos, distancia, rango, caminos con costo y flood), el
   mapa como un recurso que se guarda (GridLayout), un GridBoard que lo muestra,
   un GridView3D que dibuja una escena por casilla y reporta clics y hover sin
-  colliders, GridCursor para marcar casillas y un pincel en la vista 3D del
-  editor para pintar el terreno, subir y bajar la altura de cada casilla y
+  colliders, GridCursor para marcar casillas, niebla de guerra por jugador
+  (CellFog y GridFog: oculta, explorada, visible) y un pincel en la vista 3D
+  del editor para pintar el terreno, subir y bajar la altura de cada casilla y
   agregar o quitar casillas con deshacer. Usar
   cuando el usuario quiere un tablero, una grilla de hexágonos o de cuadrados,
   un juego de estrategia por turnos, táctico, de mesa o un puzzle sobre una
   grilla, pintar un mapa en el editor, caminos o rangos de movimiento sobre una
-  grilla o /add-grid. No son las reglas del juego, las unidades, la niebla, los
-  turnos ni la red.
+  grilla, niebla de guerra o casillas exploradas, o /add-grid. No son las reglas
+  del juego, las unidades, los turnos ni la red.
 ---
 
 # Godot — tableros de hexágonos o de cuadrados (GridKit)
@@ -39,6 +40,7 @@ Habilitá el plugin **GridKit** (la barra del pincel en la vista 3D; los nodos a
 - **Caminos y rangos.** `find_path(from, to, cost)` con `cost` como `func(from, to) -> float` (`INF` es intransitable); `cells_in_range`, `flood`. Todo en orden fijo (fila, después columna): el mismo resultado en cada corrida.
 - **Clics sin colliders.** `GridView3D.cell_clicked` / `cell_right_clicked` / `cell_hovered` (elegir con el izquierdo, ordenar con el derecho); un arrastre de cámara no es un clic (`click_max_drag_px`).
 - **Un cursor por significado.** Un `GridCursor` para los movimientos válidos, otro para la selección, otro para el hover.
+- **La niebla es de las reglas.** El estado guarda un `CellFog` (oculta, explorada, visible por asiento) y lo recalcula después de cada orden con `fog.see(seat, grid.cells_near(own_cells, radius))`, o con `grid.cells_visible_from(center, radius, blocks)` si el terreno tapa la vista; la escena lo dibuja con un `GridFog` hijo del `GridView3D` (`use_fog(state.fog)`, `shown_observer` = el asiento de esta máquina, `fade_time` para que cambie de a poco). Las unidades del juego se muestran con `fog.sees(seat, cell)`, y los clics sobre casillas ocultas se filtran igual. En red, a cada cliente solo lo suyo: `fog.observer_to_dict(seat)`.
 - **Ningún kit depende de otro.** GridKit no tiene reglas, unidades, turnos ni red: el juego conecta.
 
 ## Árbol
@@ -49,10 +51,11 @@ Level
 └── Board (GridBoard)              # layout = res://maps/level_1.tres, o shape + columns × rows
     └── View (GridView3D)          # tiles = {plain, forest, water}; value_key = terrain
         ├── Moves (GridCursor)     # los movimientos válidos
-        └── Hover (GridCursor)     # la casilla bajo el puntero
+        ├── Hover (GridCursor)     # la casilla bajo el puntero
+        └── Fog (GridFog)          # opcional: la niebla del jugador de esta máquina
 ```
 
-Arrancá desde `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexágonos, mapa en un `GridLayout`) o `squares_3d` (cuadrados 8 × 8, rango y camino).
+Arrancá desde `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexágonos, mapa en un `GridLayout`), `squares_3d` (cuadrados 8 × 8, rango y camino) o `fog_3d` (niebla de dos jugadores).
 
 ## Qué va dónde
 
@@ -62,6 +65,7 @@ Arrancá desde `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexágonos
 | `GridLayout`: el mapa guardado, y el pincel que lo pinta | Qué mapas hay y cuál se carga; el estado de la partida |
 | Una escena por casilla y la señal de clic y de hover | Las escenas de las losetas, las unidades sobre el tablero, qué hace un clic |
 | Marcar casillas (`GridCursor`) | Cuáles marcar y cuándo |
+| Qué sabe cada jugador de cada casilla (`CellFog`) y la niebla dibujada (`GridFog`) | Qué ve cada unidad (alcance, lo que tapa), cuándo se recalcula, qué piezas del juego se esconden |
 
 ## API esencial
 
@@ -82,11 +86,13 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 
 | Pieza | Qué usás |
 |---|---|
-| `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors(cell, on_board_only)`, `neighbor`, `direction_to`, `distance(a, b)`, `cells_in_range`, `find_path`, `flood`, `outline(rings)`, `cells_with(key, value)`, `center_cell`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
+| `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors(cell, on_board_only)`, `neighbor`, `direction_to`, `distance(a, b)`, `cells_in_range`, `cells_near(centers, radius)`, `line(a, b)`, `cells_visible_from(center, radius, blocks)`, `find_path`, `flood`, `outline(rings)`, `cells_with(key, value)`, `center_cell`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
 | `GridLayout` | `make_grid()` (una copia), `GridLayout.from_grid(grid)`, `set_value`, `erase_value`, `add_cell`, `remove_cell` |
 | `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`, `height_key`, `height_scale`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position` (con la altura en Y), `cell_height`, `position_to_cell` (solo X y Z); `cell_changed`, `rebuilt` |
 | `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_right_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
 | `GridCursor` | `highlight(cells)`, `clear()`, `highlighted()`; `marker`, `color`, `lift`, `fill` |
+| `CellFog` | `state(observer, cell)` (`HIDDEN`, `EXPLORED`, `VISIBLE`), `sees`, `knows`, `see(observer, cells)`, `reveal`, `explore`, `clear_visible`, `clear()`, `clear_observer`, `visible_cells`, `explored_cells`, `to_dict` / `CellFog.from_dict`, `observer_to_dict` / `set_observer_from_dict`; `revealed`, `faded`, `explored`, `cleared` |
+| `GridFog` | `shown_observer`, `hidden_color`, `explored_color`, `fade_time`; `use_fog(fog)`, `see_around(observer, cells, radius, blocks)` y lo de `CellFog`; `tile_shown`; **Preview** en el inspector |
 
 ## Listo cuando
 
@@ -104,3 +110,5 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 - Reglas del juego (movimiento, alcance de un arma, quién es dueño) dentro de los nodos del kit: van en el juego.
 - Un cursor por casilla en vez de un cursor por significado.
 - Sumar la altura a mano (`position.y = height * …`) o mover las losetas desde el juego: poné `height_key` en el `GridBoard` y usá `cell_to_position`.
+- Una niebla propia (un diccionario de casillas vistas por jugador, losetas escondidas a mano): usá `CellFog` en las reglas y `GridFog` en la escena.
+- Llamar a `reveal` cada turno sin limpiar: lo que se dejó de ver sigue visible. `see` deja visibles solo las casillas que se ven ahora.

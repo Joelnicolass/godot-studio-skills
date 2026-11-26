@@ -1,5 +1,11 @@
 # Changelog de PropKit
 
+## 0.2.5
+
+- **Hornear sin pantalla no tira errores:** **Bake** guarda la escena antes de hornear. En un editor sin pantalla (`--headless`) ahora la guarda sin miniatura, porque no hay vista de la que sacarla y Godot reportaba `Parameter "t" is null`. Con pantalla, todo sigue igual.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.2.4
 
 - **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.

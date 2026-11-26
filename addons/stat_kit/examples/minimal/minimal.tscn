@@ -1,0 +1,118 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://addons/stat_kit/examples/minimal/minimal.gd" id="1_main"]
+[ext_resource type="Script" path="res://addons/stat_kit/nodes/stat_block.gd" id="2_block"]
+[ext_resource type="Script" path="res://addons/stat_kit/resources/stat_modifier.gd" id="3_modifier"]
+[ext_resource type="Resource" path="res://addons/stat_kit/examples/minimal/modifiers/sword.tres" id="4_sword"]
+[ext_resource type="Resource" path="res://addons/stat_kit/examples/minimal/modifiers/shield.tres" id="5_shield"]
+[ext_resource type="Resource" path="res://addons/stat_kit/examples/minimal/modifiers/swamp.tres" id="6_swamp"]
+[ext_resource type="Resource" path="res://addons/stat_kit/examples/minimal/modifiers/ring.tres" id="7_ring"]
+
+[node name="Minimal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+sword = ExtResource("4_sword")
+shield = ExtResource("5_shield")
+swamp = ExtResource("6_swamp")
+ring = ExtResource("7_ring")
+
+[node name="Card" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="Card"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Card/Box"]
+layout_mode = 2
+text = "Hero"
+horizontal_alignment = 1
+
+[node name="Values" type="Label" parent="Card/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Gear" type="HBoxContainer" parent="Card/Box"]
+layout_mode = 2
+alignment = 1
+
+[node name="Sword" type="Button" parent="Card/Box/Gear"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Sword"
+
+[node name="Shield" type="Button" parent="Card/Box/Gear"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Shield"
+
+[node name="Swamp" type="Button" parent="Card/Box/Gear"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Swamp"
+
+[node name="Rings" type="HBoxContainer" parent="Card/Box"]
+layout_mode = 2
+alignment = 1
+
+[node name="LeftRing" type="Button" parent="Card/Box/Rings"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Left ring"
+
+[node name="RightRing" type="Button" parent="Card/Box/Rings"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Right ring"
+
+[node name="Blessing" type="HBoxContainer" parent="Card/Box"]
+layout_mode = 2
+alignment = 1
+
+[node name="Bless" type="Button" parent="Card/Box/Blessing"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bless"
+
+[node name="RemoveBlessing" type="Button" parent="Card/Box/Blessing"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Remove blessing"
+
+[node name="Log" type="Label" parent="Card/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Hero" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_block")
+base_values = Dictionary[StringName, float]({
+&"attack": 5.0,
+&"defense": 4.0,
+&"moves": 3.0
+})
+start_modifiers = Array[ExtResource("3_modifier")]([ExtResource("4_sword")])
+max_values = Dictionary[StringName, float]({
+&"defense": 10.0
+})

@@ -14,6 +14,8 @@ signal cells_changed
 
 ## Returned when there is no cell (a pick outside the board).
 const NO_CELL := Vector2i(-2147483648, -2147483648)
+# How far `line` moves its ends off a cell border (in cells), so a tie always breaks the same way.
+const LINE_NUDGE := Vector2(0.000001, 0.000002)
 
 var _cells: Dictionary[Vector2i, Dictionary] = {}
 
@@ -142,6 +144,49 @@ func center_cell() -> Vector2i:
 func cells_in_range(_cell: Vector2i, _radius: int) -> Array[Vector2i]:
 	push_error("CellGrid: use a HexGrid or a SquareGrid")
 	return []
+
+
+## The board cells at `radius` steps or fewer from any of `centers`, the centers on the board included, sorted by row
+## and then column. What a group of units sees, or the land around every town.
+func cells_near(centers: Array[Vector2i], radius: int) -> Array[Vector2i]:
+	var seen: Dictionary[Vector2i, bool] = {}
+	for center in centers:
+		for cell in cells_in_range(center, radius):
+			seen[cell] = true
+	var list: Array[Vector2i] = []
+	list.assign(seen.keys())
+	list.sort_custom(_before)
+	return list
+
+
+## The cells a straight line from the center of `a` to the center of `b` crosses, both included, from `a` to `b`: one
+## cell per step of `distance(a, b)`. Cells off the board count too. For line of sight and for aiming.
+func line(a: Vector2i, b: Vector2i) -> Array[Vector2i]:
+	var list: Array[Vector2i] = [a]
+	var steps := distance(a, b)
+	if steps == 0:
+		return list
+	# A nudge off the exact border between two cells, so a line along a border picks the same side every time.
+	var from := cell_to_local(a, 1.0) + LINE_NUDGE
+	var to := cell_to_local(b, 1.0) + LINE_NUDGE
+	for step in range(1, steps + 1):
+		var cell := local_to_cell(from.lerp(to, float(step) / steps), 1.0)
+		if cell != list.back():
+			list.append(cell)
+	if list.back() != b:
+		list.append(b)
+	return list
+
+
+## The board cells within `radius` steps of `center` that `center` sees: a cell is seen when no cell between them on
+## the `line` blocks the view. `blocks` is `func(cell: Vector2i) -> bool` (a mountain, a wall); a blocking cell is
+## seen itself, but hides what is behind it. Without `blocks` it is `cells_in_range`. Sorted by row and then column.
+func cells_visible_from(center: Vector2i, radius: int, blocks: Callable = Callable()) -> Array[Vector2i]:
+	var list: Array[Vector2i] = []
+	for cell in cells_in_range(center, radius):
+		if not blocks.is_valid() or _clear_line(center, cell, blocks):
+			list.append(cell)
+	return list
 
 
 ## The center of `cell` on the board plane. `cell_size` is the width of a hex (side to side) or the side of a square.
@@ -324,6 +369,15 @@ func to_dict() -> Dictionary:
 ## What a shape adds to `to_dict()` besides its name.
 func _shape_data() -> Dictionary:
 	return {}
+
+
+# True when no cell strictly between `from` and `to` on their line blocks the view.
+func _clear_line(from: Vector2i, to: Vector2i, blocks: Callable) -> bool:
+	var path := line(from, to)
+	for i in range(1, path.size() - 1):
+		if bool(blocks.call(path[i])):
+			return false
+	return true
 
 
 # Every cell that shares a side or a corner with `cell`, on the board or not (for `outline`).

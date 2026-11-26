@@ -1,16 +1,18 @@
 # <img src="icons/grid_kit.svg" width="32" height="32" alt=""> GridKit
 
-Tableros de hexágonos **o de cuadrados** para juegos de estrategia, tácticos, de mesa o puzzles, con la misma API para las dos formas. Hay tres niveles:
+Tableros de hexágonos **o de cuadrados** para juegos de estrategia, tácticos, de mesa o puzzles, con la misma API para las dos formas. Hay cuatro niveles:
 
 - **`CellGrid`** (`HexGrid` y `SquareGrid`): el tablero como datos puros (`RefCounted`, sin nodos ni escena). Guarda valores por casilla y responde vecinos, distancia, rango, caminos y flood. Las reglas de tu juego lo usan directo y se testea headless.
 - **`GridLayout`**: el mapa (la forma y los valores de cada casilla) como un `Resource` que se guarda en un `.tres`.
+- **`CellFog`**: la niebla de guerra como datos puros. Para cada jugador, cada casilla está oculta (nunca la vio), explorada (la vio antes) o visible (la ve ahora).
 - **Nodos para verlo y pintarlo**:
   - `GridBoard` arma o muestra una grilla, desde el inspector o desde un `GridLayout`.
   - `GridView3D` la dibuja con una escena por casilla y reporta clics y hover.
   - `GridCursor` marca casillas.
+  - `GridFog` dibuja la niebla de un jugador: oculta las losetas que no conoce y oscurece las que vio antes.
   - Un **pincel en la vista 3D del editor** pinta los valores de las casillas, sube y baja sus alturas y agrega o quita casillas.
 
-GridKit **no tiene** reglas de juego, unidades, niebla ni red, y no tiene autoload.
+GridKit **no tiene** reglas de juego, unidades ni red, y no tiene autoload. La niebla sabe qué conoce cada jugador; qué ve cada unidad (el alcance, lo que tapa la vista) lo decide tu juego.
 
 ## Instalar
 
@@ -18,7 +20,7 @@ GridKit **no tiene** reglas de juego, unidades, niebla ni red, y no tiene autolo
 ./install.sh --addon /path/to/godot-project grid_kit
 ```
 
-Habilitá el plugin **GridKit** (tipos `GridBoard`, `GridView3D` y `GridCursor` en Create Node, y la barra del pincel en la vista 3D).
+Habilitá el plugin **GridKit** (tipos `GridBoard`, `GridView3D`, `GridCursor` y `GridFog` en Create Node, y la barra del pincel en la vista 3D).
 
 ## En 3 pasos
 
@@ -106,6 +108,41 @@ func _on_cell_changed(changed: Vector2i, key: StringName, _value: Variant) -> vo
 		piece.position = board.cell_to_position(cell)
 ```
 
+## Niebla de guerra
+
+Un `GridFog` hijo del `GridView3D` guarda lo que sabe cada jugador y dibuja la niebla de uno. El jugador es un número desde 0, el mismo que tu juego usa para el asiento o el equipo.
+
+| Estado | Qué sabe el jugador | Cómo se dibuja |
+| --- | --- | --- |
+| `HIDDEN` | Nada: nunca la vio | La loseta no se dibuja; queda una tapa de `hidden_color` |
+| `EXPLORED` | El terreno: la vio antes, no ahora | La loseta, oscurecida con `explored_color` |
+| `VISIBLE` | Todo: la ve ahora | La loseta como es |
+
+Después de cada movimiento, el jugador 0 ve 2 casillas alrededor de sus unidades, y lo que deja de ver queda explorado. Una unidad enemiga se muestra solo si el jugador la ve:
+
+```gdscript
+@export var fog: GridFog
+
+
+func _after_move(my_units: Array[Vector2i], enemy: Node3D, enemy_cell: Vector2i) -> void:
+	fog.see_around(0, my_units, 2)
+	enemy.visible = fog.sees(0, enemy_cell)
+```
+
+- **`see(observer, cells)`** deja visibles exactamente esas casillas: las que se veían y ya no pasan a exploradas. Es la llamada de siempre, una vez por turno o después de cada orden. `see_around(observer, cells, radius)` hace lo mismo con las casillas a `radius` pasos (`board.cells_near(cells, radius)`).
+- **Lo que tapa la vista.** `see_around(observer, cells, radius, blocks)` recibe `func(cell) -> bool`: una casilla que tapa (una montaña, un bosque) se ve, pero esconde lo que hay detrás. Por dentro usa `board.cells_visible_from(center, radius, blocks)`, que traza una línea (`board.line(a, b)`) a cada casilla del rango.
+- **`reveal(observer, cells)`** suma casillas visibles sin quitar las otras (una bengala, un explorador que se adelanta). `clear_visible(observer)` deja todo lo visible en explorado.
+- **`explore(observer, cells)`** hace conocer el terreno sin verlo ahora: una región que se da vuelta en la mesa, un mapa comprado. Para todos los jugadores, llamala una vez por jugador.
+- **Volver a empezar.** `clear()` deja todo oculto para todos; `clear_observer(observer)`, para uno solo.
+- **`shown_observer`** elige qué niebla se dibuja (en una partida en red, la del jugador de esa máquina). Con -1 no se dibuja ninguna: un espectador o un replay ven todo el tablero.
+- **Que cambie de a poco.** `fade_time` (segundos) hace que el velo aparezca y se vaya de a poco, y que una casilla revelada salga de la oscuridad. Ocultar y cambiar de `shown_observer` es siempre al instante. `tile_shown(cell, tile)` avisa cuando una loseta que la niebla escondía se ve otra vez, para animarla.
+- **Los clics siguen llegando.** `GridView3D` reporta clics y hover también sobre casillas ocultas (no usa colliders). Si una casilla oculta no se puede elegir, filtrá con `fog.sees(...)` o `fog.knows(...)`, como el ejemplo.
+- Lo que el juego pone sobre el tablero (unidades, ciudades, marcas) lo muestra u oculta el juego con `sees(observer, cell)` y `knows(observer, cell)`: el kit no sabe qué es de quién.
+- **Las reglas usan `CellFog`, no el nodo.** El estado de la partida guarda un `CellFog` (con `to_dict` para el guardado y el replay), y la escena lo muestra con `fog.use_fog(state.fog)`. Las reglas calculan lo visible con la grilla: `state.fog.see(seat, state.grid.cells_near(own_cells, 1))`.
+- **En red, a cada uno lo suyo.** `to_dict` trae lo que sabe cada jugador: mandárselo a un rival es regalarle el mapa. A cada cliente mandale `fog.observer_to_dict(seat)`, y del otro lado `fog.set_observer_from_dict(seat, data)`.
+- **El oscurecido usa `material_overlay`.** Mientras una loseta está explorada, sus mallas llevan el velo de la niebla en `material_overlay`, y cuando se vuelve a ver se les devuelve el que tenían. Si tu juego resalta losetas, hacelo con `material_override` o con un nodo hijo, no con `material_overlay`.
+- **En el editor la niebla no se dibuja**, así que el mapa se ve y se pinta. El botón **Preview** del inspector la muestra 4 segundos (el centro visible, un anillo explorado, el resto oculto) para ajustar los colores.
+
 ## Ejemplos
 
 - `examples/minimal_3d/minimal_3d.tscn` (F6): un hexágono de radio 4 con agua en el borde, llanura, bosque y montaña, que sale de `map.tres` (un `GridLayout`). Un clic marca la casilla y sus 6 vecinas, y el puntero marca la casilla de abajo.
@@ -120,6 +157,18 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 ```
 
 - `examples/squares_3d/squares_3d.tscn` (F6): un tablero de cuadrados de 8 × 8 con dos losetas. Un clic marca las casillas a 2 pasos (`cells_in_range`) y el camino desde el clic anterior (`find_path`).
+- `examples/fog_3d/fog_3d.tscn` (F6): el mapa de `minimal_3d` con dos jugadores, cada uno con una exploradora. Cada jugador ve `sight` casillas alrededor de la suya; lo que vio antes queda oscurecido y el resto, tapado. Un clic en una casilla que ves mueve tu exploradora. **Switch player** dibuja la niebla del otro jugador, y la exploradora rival se ve solo donde la ves.
+
+```
+Fog3D                     # fog_3d.gd: sight = 2 y las casillas de inicio, en el inspector; mueve las exploradoras
+├── Camera, Sun
+├── Board                 # GridBoard: layout = minimal_3d/map.tres
+│   └── View              # GridView3D: las losetas de minimal_3d
+│       ├── %Fog          # GridFog: shown_observer = 0
+│       ├── Scout1        # GridCursor rojo: la exploradora del jugador 1
+│       └── Scout2        # GridCursor azul: la del jugador 2
+└── UI                    # cuántas casillas ve, exploró y no conoce; Switch player, Reset
+```
 
 ## Coordenadas
 
@@ -160,6 +209,9 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 | `center_cell()` | La casilla más cercana al centro de la forma (el promedio de los centros), o `NO_CELL` si el tablero está vacío |
 | `distance(a, b)` | Pasos entre dos casillas (método de la grilla: depende de la forma) |
 | `cells_in_range(cell, radius)` | Las casillas a `radius` pasos o menos, incluida `cell` |
+| `cells_near(centers, radius)` | Las casillas a `radius` pasos o menos de cualquiera de `centers`, cada una una vez: lo que ve un grupo de unidades, la tierra alrededor de cada ciudad |
+| `line(a, b)` | Las casillas que cruza una línea recta del centro de `a` al de `b`, las dos incluidas: una por paso. Para la línea de visión y para apuntar |
+| `cells_visible_from(center, radius, blocks)` | Las casillas del rango que `center` ve: `blocks` es `func(cell) -> bool`; una casilla que tapa se ve, pero esconde lo de atrás. Sin `blocks`, es `cells_in_range` |
 | `find_path(from, to, cost)` | El camino más barato (A*). `cost` es `func(from, to) -> float`; `INF` o un valor negativo es intransitable. Sin `cost`, cada paso vale 1 |
 | `flood(cell, accepts)` | Las casillas conectadas a `cell` que cumplen `accepts(cell) -> bool` |
 | `cell_to_local(cell, cell_size)` / `local_to_cell(point, cell_size)` | Del centro de una casilla al plano y del plano a una casilla |
@@ -204,7 +256,7 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 
 - **Inspector:** `layout`, `shape` (Hexagons o Squares), `diagonals` (solo cuadrados), `columns`, `rows`, `radius` (si es mayor a 0: todas las casillas a `radius` pasos de (0, 0), en las dos formas), `cell_size`, `height_key` (la clave de la altura; vacía: tablero plano) y `height_scale` (unidades de mundo por altura 1). Con `layout`, la grilla sale del layout y la forma del inspector no aplica. `save_shape_as_layout()` crea un layout desde la forma actual (en el editor, el botón de la barra GridKit hace lo mismo con deshacer).
 - **Grilla:** `grid` es la `CellGrid` que muestra. `use_grid(grid)` muestra la grilla de tus reglas en vez de la propia y `use_own_grid()` vuelve a la del layout o el inspector.
-- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` y `center_cell`, más `cell_to_position(cell) -> Vector3` (el centro de la casilla, con su altura en Y), `cell_height(cell) -> float` (la altura en unidades de mundo; 0 sin `height_key`), `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Estas dos solo miran X y Z: la altura no cambia la respuesta. Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
+- **Consultas:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `cells_near`, `line`, `cells_visible_from`, `find_path`, `flood`, `outline`, `cells_with` y `center_cell`, más `cell_to_position(cell) -> Vector3` (el centro de la casilla, con su altura en Y), `cell_height(cell) -> float` (la altura en unidades de mundo; 0 sin `height_key`), `position_to_cell(point) -> Vector2i` (`NO_CELL` fuera del tablero) y `position_to_any_cell(point)` (la casilla bajo el punto aunque no esté en el tablero). Estas dos solo miran X y Z: la altura no cambia la respuesta. Lo demás (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) va por `board.grid`.
 - **Editar de a muchas:** `paint(key, {casilla: valor})` (un valor `null` borra la clave) y `set_cells(add, remove, values)` (`values` es `{casilla: {clave: valor}}` para las casillas nuevas). En el editor, con `layout`, escriben también en el layout; al jugar, solo en la grilla.
 - **Señales:** `cell_changed(cell, key, value)` y `rebuilt` (otra grilla, otra forma, `cell_size`, `height_key` o `height_scale`, o casillas agregadas o quitadas). Las vistas y los cursores se actualizan solos con ella.
 
@@ -231,6 +283,33 @@ Minimal3D                 # minimal_3d.gd: solo conecta las señales; sus @expor
 - Si el tablero cambia (`rebuilt`), el cursor lo atiende **una vez por cuadro**: las marcas sobre casillas que ya no están se liberan y las demás se mueven a su lugar (no se recrean). El marcador por defecto comparte una malla y un material entre todas las marcas.
 - En un tablero con alturas, cada marca queda `lift` por encima de su casilla y la sigue cuando cambia de altura.
 - Usá un cursor por significado: movimientos válidos, selección, hover.
+
+### `CellFog` (RefCounted): lo que sabe cada jugador
+
+| Miembro | Qué hace |
+| --- | --- |
+| `state(observer, cell)` | `CellFog.State.HIDDEN`, `EXPLORED` o `VISIBLE` |
+| `sees(observer, cell)` / `knows(observer, cell)` | La ve ahora / la vio alguna vez o la ve ahora |
+| `see(observer, cells)` | Exactamente esas casillas quedan visibles; las que se veían y ya no, exploradas |
+| `reveal(observer, cells)` | Suma casillas visibles |
+| `explore(observer, cells)` | Las ocultas pasan a exploradas sin verlas (las visibles siguen visibles) |
+| `clear_visible(observer)` | Todo lo visible pasa a explorado |
+| `clear()` / `clear_observer(observer)` | Todo vuelve a oculto, para todos o para un jugador |
+| `visible_cells(observer)` / `explored_cells(observer)` | Las listas, ordenadas por fila y columna. Las ocultas no se listan: la niebla no conoce el tablero |
+| `observers()` | Los jugadores que conocen alguna casilla |
+| `to_dict()` / `CellFog.from_dict(data)` | Lo de todos los jugadores, para guardar o comparar un replay; vuelve igual después de pasar por JSON |
+| `observer_to_dict(observer)` / `set_observer_from_dict(observer, data)` | Lo de un solo jugador, para mandárselo a su máquina sin mostrarle lo de los otros |
+| señales `revealed(observer, cells)`, `faded(observer, cells)`, `explored(observer, cells)`, `cleared(observer)` | Solo las casillas que cambiaron de estado, ordenadas por fila y columna. `explored` sale con toda casilla que pasa a explorada: por `explore` o porque se dejó de ver (entonces también sale `faded`). `see` emite `faded`, `explored` y después `revealed` |
+
+Un observador es un entero desde 0: un asiento, un equipo. No hace falta declararlos.
+
+### `GridFog` (Node3D, hijo de un `GridView3D`)
+
+- **Inspector:** `shown_observer` (la niebla que se dibuja; -1: ninguna), `hidden_color` (la tapa de las casillas ocultas; transparente: sin tapa, pero la loseta sigue oculta), `explored_color` (lo que oscurece las losetas exploradas), `fade_time`, `lift` y el botón **Preview**.
+- **Niebla:** `fog` es el `CellFog` que muestra. `use_fog(fog)` muestra el de tus reglas y `use_own_fog()` vuelve a uno propio, todo oculto. Las dos emiten `rebuilt`.
+- **Métodos:** los de `CellFog` (`state`, `sees`, `knows`, `see`, `reveal`, `explore`, `clear_visible`, `clear`, `clear_observer`, `visible_cells`, `explored_cells`, `to_dict`) más `see_around(observer, cells, radius := 1, blocks := Callable())`. Lo demás va por `fog.fog`.
+- **Señales:** las de `CellFog`, también cuando cambian en el `CellFog` de tus reglas, `tile_shown(cell, tile)` y `rebuilt`.
+- Redibuja una vez por cuadro y solo las casillas que cambiaron; todo el tablero cuando la vista se redibuja, cambia el tablero o cambia `shown_observer`. Oscurece una loseta con `material_overlay` sobre sus mallas y la devuelve como estaba cuando se ve, cuando cambia `shown_observer` o cuando el nodo sale del árbol.
 
 ## Tips
 
@@ -291,9 +370,10 @@ Sale `GRIDKIT TESTS PASS (n)`. Los tests cubren:
 - Las alturas: `cell_to_position` con y sin `height_key`, con int y float, un valor que no es número; que la loseta y la marca se mueven sin recrearse; que `height_scale` y `height_key` reubican todo; la vista previa de un layout; los clics sobre una casilla alta que tapa a una baja y sobre una baja descubierta, en hexágonos y en cuadrados, con la vista movida, girada y escalada, fuera del tablero y después de cada cambio; y que sin `height_key` nada cambia.
 - El trazo del pincel (sin editor): pintar, repetir, borrar, agregar y quitar casillas con sus valores, subir, bajar y fijar alturas, crear el layout y la clave de altura, y que el resultado deshace todo.
 - La herramienta del pincel con un historial de deshacer de prueba: los botones de la barra, un trazo de alturas como un solo paso que se deshace y se rehace, Shift, los números de la barra y que el pincel encuentra una casilla alta por arriba.
-- Los dos ejemplos jugados con eventos de mouse.
+- La niebla: revelar, limpiar lo visible, `see` (solo los cambios, en orden), explorar, olvidar por jugador o a todos, las señales ordenadas, un observador negativo, la niebla de un solo jugador ida y vuelta por JSON, guardar y cargar, `cells_near`, `line` y `cells_visible_from` en hexágonos y cuadrados, `see_around` con lo que tapa; el nodo que tapa, oscurece y devuelve las losetas, una loseta con su propio `material_overlay`, la tapa a la altura de la casilla y con `lift`, sin tapa con `hidden_color` transparente, `fade_time` y `tile_shown`, una loseta redibujada que vuelve a quedar tapada, `use_fog` con las señales de las reglas y el aviso fuera de una vista.
+- Los tres ejemplos jugados con eventos de mouse.
 - Que el addon no nombre a ningún otro kit.
 
-El chequeo del editor (`godot --headless --editor --path gridkit_lab -- --gridkit-editor-check`) pasa por el editor real: la barra, los trazos de losetas y de alturas con el deshacer del editor, elegir una casilla alta desde la cámara de la vista 3D y lo que queda guardado en disco.
+El chequeo del editor (`godot --headless --editor --path gridkit_lab -- --gridkit-editor-check`) pasa por el editor real: la barra, los trazos de losetas y de alturas con el deshacer del editor, elegir una casilla alta desde la cámara de la vista 3D, lo que queda guardado en disco y la niebla (no tapa el mapa en el editor, **Preview** la muestra y devuelve las losetas, y nada de eso se guarda).
 
 Lo que **no** cubre ninguno de los dos (necesita una ventana y un mouse de verdad): cómo se ve la barra, el arrastre real y el marcador del pincel sobre una casilla alta.

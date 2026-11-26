@@ -17,6 +17,10 @@ const OTHER_KITS: Array[String] = [
 	"command_kit",
 	"wallet_kit",
 	"grid_kit",
+	"unlock_kit",
+	"stat_kit",
+	"deck_kit",
+	"dice_kit",
 	"Mp",
 	"Fsm",
 	"Rts",
@@ -36,7 +40,26 @@ const OTHER_KITS: Array[String] = [
 	"Wallet",
 	"WalletSubstitute",
 	"CommandLog",
-	"GameCommands"
+	"GameCommands",
+	"UnlockGraph",
+	"UnlockTree",
+	"UnlockEntry",
+	"UnlockTreeView",
+	"StatSheet",
+	"StatModifier",
+	"StatBlock",
+	"CardData",
+	"CardStack",
+	"CardPile",
+	"Deck",
+	"HandView",
+	"DieFace",
+	"DieData",
+	"DiceRoll",
+	"DiceRoller",
+	"DiceTray3D",
+	"CellFog",
+	"GridFog"
 ]
 
 
