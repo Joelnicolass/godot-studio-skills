@@ -5,9 +5,10 @@ description: >-
   addon (ENet, slots, handshake, snapshots) plus game code. Ask the MP type
   first: none (do not copy the addon), local/Wi-Fi (listen-server), or online
   (dedicated server, same project, VPS). Use when copying addons/mp_kit,
-  host/host_dedicated/join, submit_* RPCs, Dictionary tunnel, MultiplayerSpawner,
-  1P offline, rejoin, dedicated export, feature scaffold, or extracting netcode
-  to another project.
+  host/host_dedicated/join, submit_* RPCs, Dictionary tunnel,
+  MultiplayerSpawner, 1P offline, rejoin, a turn-based or card game with no
+  pawns (MpOrders), dedicated export, feature scaffold, or extracting netcode to
+  another project.
 ---
 
 # Godot — MpKit and multiplayer
@@ -88,6 +89,9 @@ A person must be able to use the kit **without AI**. So in new code always prefe
 | A one-off order from the owner | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
 | An effect on everyone | `net.to_all(&"x", args)` → `func mp_all_x(args)` (server only) | your own `@rpc("authority")` |
 | Score, clock, round | **`MpState`** (`set_value`, `add`, `changed` signal) | `push_snapshot` + `snapshot_for_joiner` by hand |
+| A game by turns, of cards or on a board (no pawns), or an RTS's orders | an `MpWorld` **with no Player Scene** + an **`MpOrders`**: `submit(name, args)`, `judge` on the server (`""` or the reason), `applied(seq, slot, name, args)` on everyone, `rejected` only to the sender, `begin(start)` with the seed; a peer that loads late or comes back gets every move (`is_replaying()`); `state_hash` → `desynced`. `examples/turns_2d`, GUIDE §7.9 | an invisible `MpActor` per seat with its spawner, a history and a reconnection of your own over the tunnel |
+| Sending something of yours to a peer that loads late or comes back | `MpKit.client_world_ready(peer_id)` + `MpKit.push_custom_to(peer_id, channel, data)` (GUIDE §7.10) | `to_all` / `broadcast_custom` for something that must last: it does not reach a peer that is loading |
+| Who sent a tunnel message | `MpKit.slot_of_sender(from_peer)` (the same solo, host and client) | `slot_for_peer(from_peer)` (0 solo) or a seat inside the data |
 | Match start and end | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | your own ticket and abandon code |
 | Online rooms | **`MpRoomServer`** + `MpLobbyConfig` + `MpRoomRules`; client **`MpLobbyScreen`** | lobby `Callable`s wired by hand |
 | A private match on the PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; the HUD shows `ip:port#CODE` (`MpInviteLabel`) | your own launcher |
@@ -242,4 +246,4 @@ Same collision and `submit_*` code (the local host does not send an RPC). Always
 - [ ] Guest does not simulate rules; server validates sender.
 - [ ] 1P offline verified.
 - [ ] Pawns are composable packed scenes, not netcode embedded in the kit.
-- [ ] New features: an actor with `MpActor` (+ `MpInput`), through Tools › *Make selection a network actor* or `/new-mp-feature`; tunnel only for what `to_server` / `to_all` / `Mp.state()` do not cover.
+- [ ] New features: an actor with `MpActor` (+ `MpInput`), through Tools › *Make selection a network actor* or `/new-mp-feature`; the moves of a game with no pawns through `MpOrders`; tunnel only for what `to_server` / `to_all` / `Mp.state()` / `MpOrders` do not cover.

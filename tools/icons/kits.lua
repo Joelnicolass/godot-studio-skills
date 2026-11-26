@@ -103,6 +103,7 @@ local icons = {
 	MpMatchmaker = { "pair" },
 	MpNetConfig = { "sliders" },
 	MpNetQuality = { "pulse" },
+	MpOrders = { "move_list" },
 	MpOnline = { "cloud" },
 	MpProcessRunner = { "terminal" },
 	MpProcessRunnerStub = { "terminal_hollow" },

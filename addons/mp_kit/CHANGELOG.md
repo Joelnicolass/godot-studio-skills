@@ -2,6 +2,37 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.26.0
+
+- **`MpOrders`: the moves of a game with no pawns** (by turns, of cards, on a board, an RTS's orders). One node in the world:
+  - a seat sends `submit(name, args)`;
+  - the server asks your `judge` and numbers the moves it takes;
+  - every peer gets `applied(seq, slot, name, args)` in the same order, the server too, and a refusal reaches only the seat that sent it (`rejected`).
+  - `begin(start)` starts the match with your seed.
+  - A peer that loads late, comes back or asks for `resync()` gets `began` and every move again (`is_replaying()`), in parts that fit through the relay.
+  - With `state_hash`, each move carries the server's hash and a peer that differs gets `desynced(seq)`.
+  - Solo and on the host it all runs at once; a bot moves from the server with `submit_as`.
+- **The `turns_2d` example:** three in a row by turns with no pawns, with `MpOrders`. `mpkit_lab/run/turns.sh` plays it over the network: a host and a client that leaves mid-match, comes back and plays on.
+- **An `MpWorld` with no Player Scene is a game with no pawns.** It no longer warns, no seat gets a pawn and the server still knows when each client has loaded (`client_world_ready`).
+- **`MpKit.slot_of_sender(from_peer)`:** the seat that sent a tunnel message, the same solo, on the host and on a client. `slot_for_peer(1)` gives 0 when playing solo.
+- **`broadcast_custom` from a `custom_received` handler** is no longer lost in silence: it goes out right after the message being handled, in the order asked. The same channel with the same data (an echo) is dropped with a warning, and a chain that never ends stops at 256 (`CUSTOM_CHAIN_MAX`).
+- **A channel not in `custom_channels`** warns once instead of being lost without a word.
+- **`Mp.player(slot)` and `pawn_for(slot)` on a client** find the pawn the server made; they used to give null.
+- **Lag compensation** also moves the bodies and areas under the actor (a hurtbox `Area3D`), not only the actor.
+- **A refused join shows in the log** of the server and of the client, with its reason.
+- **`MpWorld` warns in the editor** when it is the scene's root: there it builds 2D pieces and cannot place players.
+- **Example export presets:** they leave out the kit's examples, tests, deploy files and editor tools.
+- **Guide:**
+  - what cost other games the most, up front;
+  - turn-based games (§7.9);
+  - what reaches a peer that loads late or comes back (§7.10);
+  - the tunnel and its caps (§7.11);
+  - two windows with no clicks and the gate's flags (§8);
+  - the Godot 4.7.2 bug that empties `Packed*Array`s on export, and an iframe's origin (§11);
+  - what surprises about the issuer (§10).
+
+What to update: nothing in your project. If your game did a `broadcast_custom` from `custom_received` and counted on it being ignored, it now goes out. `MpKit.VERSION` moves to 0.26.0, so server and clients must run the same build.
+
 ## 0.25.2
 
 - **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.

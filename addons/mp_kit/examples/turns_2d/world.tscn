@@ -1,0 +1,148 @@
+[gd_scene format=3 uid="uid://btm42tivaljns"]
+
+[ext_resource type="Script" path="res://addons/mp_kit/examples/turns_2d/world.gd" id="1_world"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_world.gd" id="2_mpworld"]
+[ext_resource type="Script" path="res://addons/mp_kit/mp_slot_spawner.gd" id="3_spawner"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_state.gd" id="4_state"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_match.gd" id="5_match"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_leave_button.gd" id="6_leave"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_invite_label.gd" id="7_invite"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_start_button.gd" id="8_start"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_waiting_label.gd" id="9_waiting"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_orders.gd" id="10_orders"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_state"]
+properties/0/path = NodePath(".:values")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+
+[node name="World" type="Node2D"]
+script = ExtResource("1_world")
+
+[node name="MpWorld" type="Node" parent="."]
+script = ExtResource("2_mpworld")
+seats = 2
+
+[node name="SpawnPoints" type="Node2D" parent="MpWorld"]
+
+[node name="Actors" type="Node2D" parent="MpWorld"]
+
+[node name="Players" type="MultiplayerSpawner" parent="MpWorld"]
+spawn_path = NodePath("../Actors")
+script = ExtResource("3_spawner")
+spawn_points = NodePath("../SpawnPoints")
+
+[node name="State" type="Node" parent="MpWorld"]
+script = ExtResource("4_state")
+
+[node name="MpSync" type="MultiplayerSynchronizer" parent="MpWorld/State"]
+replication_config = SubResource("SceneReplicationConfig_state")
+
+[node name="Match" type="Node" parent="MpWorld"]
+script = ExtResource("5_match")
+
+[node name="Hud" type="CanvasLayer" parent="MpWorld"]
+
+[node name="Leave" type="Button" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 16.0
+offset_bottom = 16.0
+script = ExtResource("6_leave")
+
+[node name="Invite" type="Label" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 16.0
+offset_bottom = 56.0
+script = ExtResource("7_invite")
+
+[node name="Start" type="Button" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 96.0
+offset_right = 16.0
+offset_bottom = 96.0
+script = ExtResource("8_start")
+
+[node name="Waiting" type="Label" parent="MpWorld/Hud"]
+offset_left = 16.0
+offset_top = 136.0
+offset_right = 16.0
+offset_bottom = 136.0
+script = ExtResource("9_waiting")
+
+[node name="Orders" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("10_orders")
+
+[node name="Board" type="CanvasLayer" parent="."]
+
+[node name="Status" type="Label" parent="Board"]
+unique_name_in_owner = true
+offset_left = 360.0
+offset_top = 40.0
+offset_right = 760.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 22
+
+[node name="Grid" type="GridContainer" parent="Board"]
+unique_name_in_owner = true
+offset_left = 400.0
+offset_top = 120.0
+offset_right = 712.0
+offset_bottom = 432.0
+columns = 3
+
+[node name="Cell0" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell1" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell2" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell3" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell4" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell5" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell6" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell7" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Cell8" type="Button" parent="Board/Grid"]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="Again" type="Button" parent="Board"]
+unique_name_in_owner = true
+visible = false
+offset_left = 400.0
+offset_top = 450.0
+offset_right = 520.0
+offset_bottom = 490.0
+text = "Again"

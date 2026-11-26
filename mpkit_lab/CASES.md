@@ -8,7 +8,8 @@ Transports: what is marked **T** runs over ENet, WebSocket and the relay (`TRANS
 | Case | Test |
 |---|---|
 | Play solo, no network | `--probe=solo` (all.sh) |
-| The minimal example (`examples/minimal_2d`, what the wizard writes) over the network: dedicated + a client that moves and scores | `minimal.sh`; that it stays the wizard's: `tests/test_examples.gd` |
+| The minimal example (`examples/minimal_2d`, what the wizard writes) over the network: dedicated + a client that moves and scores, and `Mp.player(Mp.me())` on the client is its pawn | `minimal.sh`; that it stays the wizard's: `tests/test_examples.gd` |
+| The turn-based example (`examples/turns_2d`, `MpOrders`, no pawns) over the network: a host and a client play to the end; each gets only its own refusal; the client leaves after its second move, comes back, gets every move and plays on; both end with the same board, hash and number of moves | `turns.sh`; solo: `tests/test_examples.gd`; `MpOrders` and the tunnel: `tests/test_orders.gd`, `tests/test_custom_tunnel.gd` |
 | LAN: host + client + late joiner | `arena.sh` listen **T** |
 | Dedicated + client + late joiner | `arena.sh` dedicated **T** |
 | Joining a dead address: fails cleanly and the menu carries on | `session.sh` deadjoin |

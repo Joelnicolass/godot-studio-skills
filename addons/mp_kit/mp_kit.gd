@@ -9,7 +9,7 @@ extends Node
 
 ## The kit's version (plugin.cfg says the same; a test checks it). An exported game has no plugin.cfg: this is what the
 ## MpKit issuer is told.
-const VERSION := "0.25.2"
+const VERSION := "0.26.0"
 
 signal peer_joined(peer_id: int, slot: int)
 signal peer_left(peer_id: int, slot: int)
@@ -54,6 +54,9 @@ const REJECT_FLUSH_S := 0.2
 var max_pending_admission: int = 64
 ## ENet's hard limit of peers per host.
 const ENET_MAX_PEERS := 4095
+## Broadcasts that custom_received handlers may chain from one broadcast_custom (each asked for while the last was
+## emitting); past it the rest are dropped with an error: a handler that always broadcasts again would never end.
+const CUSTOM_CHAIN_MAX := 256
 ## Largest Dictionary a client may send through the custom tunnel (var_to_bytes), and how often.
 var custom_max_bytes: int = 8192
 var custom_limit := MpRateLimit.new(30.0, 60.0)
@@ -80,6 +83,13 @@ var _routes: Dictionary = {}
 var _peer: MultiplayerPeer
 var _world_ready: Dictionary = {}
 var _broadcasting_custom: bool = false
+## Broadcasts asked for while one is emitting here, sent in order right after it: [channel, payload, only_world_ready].
+var _custom_queue: Array = []
+## The broadcast emitting here now, to tell an echo (the same channel and data again) from a new broadcast.
+var _custom_now_channel := StringName()
+var _custom_now_payload: Dictionary = {}
+## Channels already warned about (not allowed, an echo), so a warning shows once.
+var _custom_warned: Dictionary = {}
 var _pending_ticket: String = ""
 var _awaiting_ticket: Dictionary = {}
 ## Client: "host:port" of the server it joins, and the seat credential each server gave (memory only; kept across leave()).
@@ -97,6 +107,8 @@ var _silent_since_ms: int = 0
 func _ready() -> void:
 	## Infrastructure: the session (admission timers, rejections) keeps going while the game is paused.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	## A join the server turns away says why in the log too, not only on a status label a script may not show.
+	admission_rejected.connect(func(reason: String) -> void: print("MpKit: the server turned this peer away (%s)" % reason))
 	net_quality = MpNetQuality.new()
 	net_quality.name = "NetQuality"
 	add_child(net_quality)
@@ -240,6 +252,15 @@ func peer_id_for(slot: int) -> int:
 
 func slot_for_peer(peer_id: int) -> int:
 	return ids.slot_for_peer(peer_id)
+
+
+## The seat that sent a custom message: `from_peer` of `custom_received`. The same with and without network (in solo,
+## and from the listen host's own `send_custom`, it is this machine's seat); 0 for the server's own broadcast on a
+## dedicated, or a peer with no seat.
+func slot_of_sender(from_peer: int) -> int:
+	if not is_networked():
+		return ids.host_slot if from_peer == 1 else 0
+	return ids.slot_for_peer(from_peer)
 
 
 func exceeds_max_players(player_count: int) -> bool:
@@ -401,7 +422,7 @@ func is_custom_channel_allowed(channel: StringName) -> bool:
 
 ## Client → server (or local if offline / already server). Does not auto-broadcast.
 func send_custom(channel: StringName, data: Dictionary) -> void:
-	if not is_custom_channel_allowed(channel):
+	if not _custom_channel_ok(channel):
 		return
 	var payload: Dictionary = data.duplicate(true)
 	if not is_networked() or is_server():
@@ -413,9 +434,6 @@ func send_custom(channel: StringName, data: Dictionary) -> void:
 	rpc_custom_to_server.rpc_id(1, String(channel), payload)
 
 
-## Server → every client (and emit on the server). call_remote: clients only get the RPC.
-## Re-entrant: the game must not `broadcast_custom` again from this emit without checking `from_peer`.
-## A nested call is ignored so a naive `if is_server(): broadcast_custom` cannot recurse.
 ## Server: the peers whose world is loaded (a slot and world_ready), the ones that can play a one-off effect of yours now. A peer
 ## still loading would play it with no world and lose it. With your own @rpc: `for peer_id in MpKit.ready_peers(): node.fx.rpc_id(
 ## peer_id, ...)`, and call the function here too if the server shows it (an rpc_id to another peer does not run it here, even
@@ -432,25 +450,71 @@ func ready_peers() -> PackedInt32Array:
 
 ## Server only: emits here (`from_peer` = 1) and sends to every client with a slot; `only_world_ready` sends to ready_peers()
 ## only (a one-off effect a peer still loading would lose).
+## Called from a `custom_received` handler (a turn's result, a bot's move after it), it goes out right after the
+## broadcast being handled, in the order asked, here and on every client. The same channel and data again from its own
+## emit is an echo (a handler that relays whatever it gets): dropped, with a warning. Relay what a client sent:
+## `from_peer != 1`.
 func broadcast_custom(channel: StringName, data: Dictionary, only_world_ready: bool = false) -> void:
 	if not is_server():
 		return
-	if not is_custom_channel_allowed(channel):
+	if not _custom_channel_ok(channel):
 		return
+	var payload: Dictionary = data.duplicate(true)
 	if _broadcasting_custom:
+		if channel == _custom_now_channel and payload == _custom_now_payload:
+			var echo := "MpKit.broadcast_custom: '%s' with the same data, from its own custom_received, was dropped" % channel
+			_custom_warn("echo:" + String(channel), echo + " (an echo). Relay only what a client sent: from_peer != 1.")
+			return
+		_custom_queue.append([channel, payload, only_world_ready])
 		return
 	_broadcasting_custom = true
-	var payload: Dictionary = data.duplicate(true)
-	custom_received.emit(channel, payload, 1)
-	for peer_id in (ready_peers() if only_world_ready else _broadcast_peers()):
-		rpc_custom_from_server.rpc_id(peer_id, String(channel), payload)
+	_broadcast_now(channel, payload, only_world_ready)
+	var sent := 1
+	while not _custom_queue.is_empty():
+		if sent >= CUSTOM_CHAIN_MAX:
+			var chain := "MpKit.broadcast_custom: %d broadcasts from custom_received handlers in a row" % sent
+			push_error(chain + "; the rest were dropped. A handler that always broadcasts again never ends.")
+			_custom_queue.clear()
+			break
+		var next: Array = _custom_queue.pop_front()
+		_broadcast_now(next[0], next[1], next[2])
+		sent += 1
 	_broadcasting_custom = false
+	_custom_now_channel = StringName()
+	_custom_now_payload = {}
+
+
+func _broadcast_now(channel: StringName, payload: Dictionary, only_world_ready: bool) -> void:
+	_custom_now_channel = channel
+	_custom_now_payload = payload.duplicate(true)
+	custom_received.emit(channel, payload, 1)
+	var peers := ready_peers() if only_world_ready else _broadcast_peers()
+	for peer_id in peers:
+		rpc_custom_from_server.rpc_id(peer_id, String(channel), payload)
+
+
+## A channel this machine may send on. One not in `custom_channels` is dropped, with a warning the first time.
+func _custom_channel_ok(channel: StringName) -> bool:
+	if is_custom_channel_allowed(channel):
+		return true
+	_custom_warn(
+		"channel:" + String(channel),
+		"MpKit: the channel '%s' is not in custom_channels (your game.tres): nothing was sent." % channel
+	)
+	return false
+
+
+func _custom_warn(key: String, text: String) -> void:
+	if _custom_warned.has(key):
+		return
+	_custom_warned[key] = true
+	push_warning(text)
 
 
 func push_custom_to(peer_id: int, channel: StringName, data: Dictionary) -> void:
 	if not is_server():
 		return
-	if not is_custom_channel_allowed(channel):
+	if not _custom_channel_ok(channel):
 		return
 	rpc_custom_from_server.rpc_id(peer_id, String(channel), data.duplicate(true))
 
@@ -552,6 +616,7 @@ func _reject_peer(id: int, reason: String) -> void:
 	_awaiting_ticket.erase(id)
 	if not is_server():
 		return
+	print("MpKit: peer %d turned away (%s)" % [id, reason])
 	rpc_admission_rejected.rpc_id(id, reason)
 	## Let the reliable RPC leave before the disconnect command.
 	var closing := multiplayer.multiplayer_peer

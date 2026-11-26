@@ -15,7 +15,7 @@ Files (`res://addons/mp_kit/`):
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — one tunnel channel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / optional lerp |
 | `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner that holds its scope per peer until that peer's spawner is ready; `spawn_here(data)`: spawn on the server or solo, `null` on a client |
-| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — one packed pawn per occupied slot; `spawn_slot(slot)`, `pawn_for(slot)` (`null` once freed: `MpActor.despawn`; `spawn_slot` makes another with the same name, even in the same frame) |
+| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — one packed pawn per occupied slot; `spawn_slot(slot)`, `pawn_for(slot)` on every peer (a client finds it by name or `owner_slot`; `null` once freed: `MpActor.despawn`; `spawn_slot` makes another with the same name, even in the same frame); with no `pawn_scene`, a game with no pawns |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — drop-in lobby (`mp_boot_menu.tscn`) |
 | `mp_flow.gd` | `class_name MpFlow` — optional flow (scenes, host/join/1P, world catalog) |
 | `mp_world_ref.gd` | `class_name MpWorldRef` — one catalog world (`id` + scene) |
@@ -34,6 +34,7 @@ These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, owner, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, prediction (`mp_move`; with prediction all of `sync_extra` rides with the pose, since 0.24) with corrections fading on screen (`correction_smoothing_s`), adaptive smoothing (`shared_timeline`: one delay for all that turn it on; `max_extrapolate_s`; `draw_delay()`), `snap()` on the server after a teleport (rides with the pose), lag compensation (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | The owner's keys with the `Input` API; every unconfirmed frame sent each tick, delta-coded (`MpInputPacket`); the server never stops a player (a late frame is guessed); an adaptive buffer the owner keeps full by its pace; a rejoin starts the input over, a seat with no connection holds no keys |
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Match values (`watch(key, cb)`: current value, then each change); start, waiting for seats, absences, end |
+| `nodes/mp_orders.gd` (`MpOrders`) | The moves of a game with no pawns: `submit(name, args)`, `submit_as(slot, name, args)` and `begin(start)` (server), `judge(slot, name, args) -> String`, `state_hash() -> int`; signals `began(start)`, `applied(seq, slot, name, args)`, `rejected(name, args, reason)` (only on the seat that sent it), `desynced(seq)`; `is_replaying()`, `resync()`, `last_seq()`, `start()`, `moves()`; the tunnel's `mp_orders` channel; history in parts of 200 to a peer that loads late or comes back |
 | `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Who looks at this screen: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`, `slot_of(node)` (the local slot when the scene has no seat); handed to HUD / audio / orders by `@export` |
 | `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Leaving (it works while the world is paused); a private match's invite |
 | `core/mp_net_quality.gd` | RTT, jitter (97th percentile), loss and a grade per connection |
@@ -94,6 +95,7 @@ Pawn input and custom-dict meaning **outside** the kit.
 - `report_loaded()` — the local world finished loading (MpFlow calls it with `world_reports_loaded`): a client tells the server (its seat counts at the gate), the server or solo tells the gate its own world is in
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — server: peers with a slot and world_ready (send your own one-off `@rpc` effects to these with `rpc_id`; play it on the server too)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
+- `slot_of_sender(from_peer)`: the seat that sent a tunnel message, the same solo, host and client. A `broadcast_custom` from a `custom_received` handler goes out right after (an echo of the same channel and data is dropped with a warning; a chain stops at `CUSTOM_CHAIN_MAX`, 256); a channel not in `custom_channels` warns once
 
 Editor: [editor.md](editor.md).
 

@@ -92,8 +92,17 @@ static func rewind(stamp: float, body: Callable, skip: Node = null) -> Variant:
 	return result
 
 
-## A moved physics body tells the physics server at once, so a raycast in the same frame sees it.
+## A moved physics body tells the physics server at once, so a raycast in the same frame sees it: the node and every
+## body and area under it (a hurtbox Area3D, a head's own collider) that moves with it.
 static func _sync_body(node: Node) -> void:
+	_sync_one(node)
+	for child in node.find_children("*", "CollisionObject3D", true, false):
+		_sync_one(child)
+	for child in node.find_children("*", "CollisionObject2D", true, false):
+		_sync_one(child)
+
+
+static func _sync_one(node: Node) -> void:
 	if node is Node2D:
 		(node as Node2D).force_update_transform()
 		if node is Area2D:

@@ -53,6 +53,15 @@ What it solves:
 
 What it does **not** do: it brings no gameplay. No score, no characters, no game text. That is yours. It is also not worth installing in a single-player game.
 
+**Before you start, what cost other games the most time:**
+
+- **The game's version** (Project Settings › Application › Config › Version) brings players together: an online room only shows up for the same version, and a join from another version is turned away with `version_mismatch`. The server and the clients must also run the same MpKit version.
+- **What arrives late does not get the moments:** a peer that loads later or comes back gets the state (`MpState`, Sync, `MpOrders`), never a `to_all` that already happened ([7.10](#710-what-reaches-a-peer-that-loads-late-or-comes-back)).
+- **What decides gives the same on every machine:** randomness from a seed, stable ids (a node's name, a seat), never an `instance_id` or an `@Node@123`, which change from one machine to another.
+- **In an online or private room on desktop, the match runs in a separate process with no window** (the host's too: it joins like any player): what runs on the server touches no window, camera or GPU.
+- **`MpWorld` goes under the root** of the world scene (a `Node2D` or a `Node3D`), never as the root.
+- **`MpInput` reads the keys at physics priority -100:** a script that writes values (`set_value`) for that frame runs before it (for example, `process_physics_priority = -101`).
+
 ## 2. Concepts in plain words
 
 | Word | What it means |
@@ -783,7 +792,7 @@ Who simulates is another question: `is_multiplayer_authority()` / `is_authority(
 An `MpMatch` in the world says when the match starts, who left and who came back, and ends it for everyone. What counts is decided by the **start gate** (`MpMatchGate`, at `/root/MpKit/Gate`, `Mp.gate()`), which the `MpFlow` arms on every path that hosts (Host LAN, a dedicated by hand, a match on the host's PC, private or online, and a room server's dedicated):
 
 - **Before the start** the free seats are open. The world stays **paused on every peer** (unless `pause_while_waiting` is off: see "A lobby you walk", below) until the seats it expects have loaded: every seat by default (`start_seats` = 0, in Host LAN and in a dedicated by hand alike; in a match with a ticket, every seat of the ticket). `--start-seats=N` changes that number without touching the scene. Once `load_timeout_s` (15 s) has passed since the first one came in, it starts with those who loaded; meanwhile the HUD says it waits (`MpWaitingLabel`, `Hud/Waiting`: "Waiting for players (1/4)"). With **`start_on_timeout`** off (`MpFlow` inspector or `--start-on-timeout=false`) it never starts by time: it waits for everyone, or for the host to start it. The host does not have to wait: the HUD's **Start now** button (`MpStartButton`, in the `MpWorld`'s `Hud/Start`) starts with those already loaded. A listen host sees it (Host LAN, a browser that hosts) and, with **`host_can_start`** on (off by default, `--host-can-start=true`), so does the player who opened a match on its PC (private or online: it is slot 1, and the server checks it). It shows once another seat loaded, or at once with `late_join` on (the others may come later). With `start_on_timeout` off in a match on the host's PC, turn `host_can_start` on: otherwise nobody starts a match a seat never comes to.
-- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a seat nobody holds (a free one, or one abandoned past the grace, which is free again) and the gate emits `joined_late(slot)`. In a match with a ticket (private or online on the host's PC) the newcomer takes the seat its ticket names; an online room with late join stays in the issuer's list while it has free seats. A room server's match takes `late_join` from its `MpLobbyConfig` (off). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`); in a room, with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started` (also a valid ticket whose seat nobody took before the start), `full`, `grace_over`, `slot_taken`, `seat_closed` (a seat your game closed: "A seat that closes", below), and `rejected` only for a ticket that names no seat. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
+- **After the start** only a seat that left comes back, within `rejoin_grace_s`, to the same slot (*rejoin*), unless **`late_join`** is on (`MpFlow` inspector or `--late-join`; off by default): then a newcomer still takes a seat nobody holds (a free one, or one abandoned past the grace, which is free again) and the gate emits `joined_late(slot)`. In a match with a ticket (private or online on the host's PC) the newcomer takes the seat its ticket names; an online room with late join stays in the issuer's list while it has free seats. A room server's match takes `late_join` from its `MpLobbyConfig` (off). On LAN the client comes back by itself with the credential the server gave it when seating it (in memory, per `host:port`): a game that was closed and opened again no longer has it, so it is turned away while its seat's grace lasts and, with `late_join`, gets in past the grace to a free seat. In a room it comes back with its ticket. If the server has not noticed yet that the client dropped, the credential (or the ticket) wins: the stale connection is dropped and the seat comes back as a rejoin. Any other peer is turned away with a reason: `match_started` (also a valid ticket whose seat nobody took before the start), `full`, `grace_over`, `slot_taken`, `seat_closed` (a seat your game closed: "A seat that closes", below), and `rejected` only for a ticket that names no seat. The client gets `admission_rejected(reason)` and the flow shows it with `rejection_text(reason)` (override it to translate).
 - A seat that does not come back in time, or never loaded, **abandons** (`player_abandoned`). If everyone left a dedicated, nobody abandons: the gate waits and, once everyone's grace has passed, emits `all_gone`. On a listen host the host keeps playing: each seat past its grace abandons and there is no `all_gone`.
 - **While a seat is away** its pawn stays if the spawner keeps it (`MpSlotSpawner.despawn_on_leave` off; on by default it is removed and spawned again on the rejoin): it holds no keys and, with prediction, the server goes on simulating it with none (gravity, a knockback still run). Back, the new connection's keys move it at once.
 - **A seat nobody holds can be played by a bot of yours** (below, "Bots in the free seats"): that slot's pawn on the server, with the keys of `MpInput.bot_press`. When a player takes the seat (late join, or the one coming back), the pawn stays as it is and its keys move it.
@@ -1139,6 +1148,81 @@ What is left above the round trip with no buffer (about 40 ms) is waiting for th
 
 **What the example does not do:** predict the kick. After a pass or a shot, the ball leaves when the server's word arrives: one ping plus the ball's buffer (around 100 ms with a 60 ms ping, estimated). To predict it, the owner simulates it on the kick until the server's arrives, and replaces it. It does not compensate lag when taking a loose ball either: the server decides it with the present positions.
 
+### 7.9 A game by turns, of cards or on a board: `MpOrders`
+
+With no pawns that move, each seat sends moves. It needs no `MpActor` per seat: an **`MpOrders`** in the world takes them to the server, the server judges them and every peer applies the ones it took, in order. The `examples/turns_2d` example (three in a row) is the least of it.
+
+1. **The world:** an `MpWorld` **with no Player Scene** (no seat gets a pawn; the server still knows when each client loaded) and an `MpOrders` node.
+2. **The rules, on the server:** `orders.judge = func(slot, name, args) -> String`, which returns `""` to take the move or the reason it refuses it. `orders.begin({"seed": s})` starts the match with what everyone needs to start the same way.
+3. **Apply on every peer:** `applied(seq, slot, name, args)` reaches each peer, the server too, in the same order. `began(start)` starts from scratch.
+
+```gdscript
+# world.gd (from the turns_2d example, the essentials)
+func _ready() -> void:
+	orders.judge = _judge                      # only runs on the server
+	orders.state_hash = rules.hash_value       # optional: spots copies that drift apart
+	orders.began.connect(_on_began)
+	orders.applied.connect(_on_applied)
+	orders.rejected.connect(_on_rejected)      # only on the machine of the seat that sent it
+	if MpKit.is_authority():
+		orders.begin({"first": randi_range(1, 2)})
+
+
+func play(cell: int) -> void:                  # a click on this screen
+	orders.submit(&"place", [cell])
+
+
+func _judge(slot: int, move: StringName, args: Array) -> String:
+	return rules.reason_against(slot, args[0])  # "" or "It is not your turn."
+
+
+func _on_began(start: Dictionary) -> void:
+	rules.reset(start["first"])
+
+
+func _on_applied(_seq: int, slot: int, _move: StringName, args: Array) -> void:
+	rules.place(slot, args[0])
+```
+
+- **A peer that loads late, comes back or drifted apart** gets `began(start)` and every move again. Meanwhile `is_replaying()` is true: skip sounds and animations.
+- **Solo and on the host** `submit` runs at once, with the same signals. A bot or a timer that ends a turn moves from the server with `submit_as(slot, name, args)`.
+- **`state_hash`**: the server sends its hash with each move and every peer compares its own. If it differs, it emits `desynced(seq)`, and `resync()` asks for every move again.
+- **`moves()`** are every move since `begin`, to save the match or replay it.
+- **It uses the tunnel** on the `mp_orders` channel: if your game lists `custom_channels`, add it. The arguments are plain types (numbers, text, arrays, dictionaries, vectors), never an `Object` or a `Resource`.
+- **The rules must give the same result on every machine:** no floats that depend on the platform and no `Dictionary` order. Randomness comes from the `start`'s seed, or the server resolves it and sends the result in the arguments.
+- **For an RTS** it works the same: the players' orders go through `MpOrders` (the server checks and hands them out) and the units' state through their `MpActor`.
+
+### 7.10 What reaches a peer that loads late or comes back
+
+A peer counts as **ready** when its world has loaded: the server emits `MpKit.client_world_ready(peer_id)` and from then on includes it in `MpKit.ready_peers()`. The world's spawner fires it (the `Players` of an `MpWorld`, with or without a Player Scene).
+
+| What you send | Does a peer that loads later get it? |
+|---|---|
+| `MpState` (`set_value`, `watch`) | Yes, on load |
+| An `MpActor`'s Sync, a node a spawner made | Yes, on load |
+| `MpOrders` | Yes: every move, as `began` + `applied` |
+| `to_all`, `broadcast_custom`, an `@rpc` of yours | **No**: it is a moment. For a peer still loading use `broadcast_custom(channel, data, true)` or `MpKit.ready_peers()` |
+| Something of yours that must last (a whole state, a list) | Send it yourself in `client_world_ready` with `MpKit.push_custom_to(peer_id, channel, data)` |
+
+Do not assume an order between what arrives through `MpState` and what you send in `client_world_ready`: if one depends on the other, send them together.
+
+### 7.11 The tunnel: the match's messages with no node
+
+For what belongs to no actor (a move, a chat line, an emote):
+
+| Call | What it does |
+|---|---|
+| `MpKit.send_custom(channel, data)` | From the client to the server. Solo and on the server, it emits here |
+| `MpKit.custom_received(channel, data, from_peer)` | Arrives on the server (what was sent) and on everyone (what the server handed out) |
+| `MpKit.slot_of_sender(from_peer)` | The seat that sent it, the same with and without network. Never trust a seat inside `data` |
+| `MpKit.broadcast_custom(channel, data, only_ready)` | From the server to everyone (and here). With `true`, only to those that loaded |
+| `MpKit.push_custom_to(peer_id, channel, data)` | From the server to one peer |
+
+- **From a `custom_received` handler**, a `broadcast_custom` goes out right after the message being handled, in order. The same channel with the same data from its own emit is an echo: it is dropped with a warning (relay only what a client sent: `from_peer != 1`).
+- **`custom_channels`** (in `game.tres`): empty allows all. A channel not on the list is not sent, and warns once.
+- **Caps:** a client sends up to 8 KB per message and 30 per second (a burst of 60); past that the server drops it. The relay cuts messages over 256 KB: split what is big (`MpOrders` already sends the history in parts).
+- **On the server, `to_server` and the tunnel run at once**, inside the same call: an answer the server sends itself arrives before the function that asked for it ends.
+
 ## 8. Testing
 
 ### 8.1 Solo
@@ -1154,6 +1238,8 @@ Solo, your PC is the server and the owner at once: `is_authority()` and `is_loca
 2. F5. Two windows open.
 3. In one: **Host LAN**.
 4. In the other: pick the room under *LAN rooms*, or type `127.0.0.1` in the address field, and **Join**.
+
+With no clicks, from a terminal: `godot --path . -- --listen-host` in one and `godot --path . -- --client1` in the other (`--join-ip=IP` for another PC). With `--late-join` on the host, a third player who arrives after the start takes a free seat.
 
 Up to 4 windows on the same PC can browse rooms at once: each listens on one of the UDP ports 7778 to 7781, and the host announces to all four. On two PCs of the same network the room shows up just the same. If it does not, type the IP the host's menu shows under the list.
 
@@ -1253,6 +1339,9 @@ The whole matrix of automatic cases: `mpkit_lab/run/all.sh` (an hour with a shar
 | `--dedicated` | Starts as a dedicated server and loads the world |
 | `--listen-host` | Starts hosting LAN, without touching the menu |
 | `--client1` / `--client2` + `--join-ip=IP` | Starts joining that IP (`127.0.0.1` by default) |
+| `--start-seats=N` | How many seats the match waits for before it starts (0: all) |
+| `--late-join` | A newcomer takes a free seat after the match started |
+| `--load-timeout-s=N` | How long the gate waits for those loading (15 s; on the web, with long loading screens, raise it) |
 | `--room-server` | Opens the rooms scene (the game's `rooms_scene`, or `MpFlow.room_server_path`) |
 | `--mp-port=N` | Port (wins over `game.tres`) |
 | `--max-players=N` | Players (wins over `game.tres`) |
@@ -1266,6 +1355,8 @@ The whole matrix of automatic cases: `mpkit_lab/run/all.sh` (an hour with a shar
 | `--no-flow` | The `MpFlow` does nothing (tools and tests) |
 
 They go after `--` on the command line.
+
+**Several processes on one PC:** a headless one against a relay or a real server runs with `--max-fps 60`, never with `--fixed-fps`: with `--fixed-fps` the game clock runs thousands of times faster than the real one. If your game saves anything in `user://` (options, saves), each process needs its own folder or they overwrite each other.
 
 ### 8.9 The kit's tests
 
@@ -1528,6 +1619,13 @@ When it fits: friends, co-op, casual and private rooms. When it does not: compet
 
 Try it all on your machine first: `bash mpkit_lab/run/online.sh` in the kit repo runs an issuer and a relay locally and plays through them with a desktop host, a host in its own game (frozen for 3 s mid-match) and a browser host.
 
+What tends to surprise:
+
+- **The issuer groups by game and by version.** Your game must be in `ISSUER_GAMES` (and the web origin in `ISSUER_ORIGINS`), and a room only shows for the same game version. Changing those values means deploying the issuer again, which drops the open rooms.
+- **Limits per player:** one live room per install and 3 per IP (`too_many_rooms` if you open another right away, about 30 s after an abrupt close); the host reports every 10 s and a room with no report dies. The values and the word for each refusal are in [issuer/README.md](issuer/README.md); `MpFlow.online_texts` turns them into a sentence for the player.
+- **A host that closes the tab, or minimizes it on a phone,** stops reporting: clients see `host_silent` and the room dies a few seconds later. For long matches, a dedicated server or a match that can be resumed.
+- **To try your game on your PC** with an issuer and a relay of your own: both are Node (`issuer/README.md` and `relay/README.md`). Never point tests at the production issuer or relay.
+
 ### 10.5 In your game
 
 Host an online room for 4, join with a friend's code and list the public rooms with space:
@@ -1626,6 +1724,13 @@ A WebSocket server only serves WebSocket clients, and an ENet one only ENet. If 
 2. It has no threads (`variant/thread_support=false`): any static hosting works, with no special headers.
 3. Export to `build/web/index.html` and upload it to your hosting.
 4. The server: a dedicated (or a room server) with `transport = ws`, or any server through the relay.
+
+Before you upload it:
+
+- **Godot 4.7.2 empties the resources' `Packed*Array`s** when it exports with `editor/export/convert_text_resources_to_binary` on: data that was there in the editor (colors, lists, an `MpActor`'s `sync_extra`) disappears from the build. Turn it off in Project Settings while the engine has that bug. To check a build without a browser: `godot --headless --main-pack build/web/index.pck --script <your_check.gd>`.
+- **What the game does not need:** in the preset's `exclude_filter`, `addons/mp_kit/examples/*`, `addons/mp_kit/tests/*`, `addons/mp_kit/deploy/*` and `addons/mp_kit/editor/*`. Then the kit adds about 150 KB compressed.
+- **The issuer looks at the origin of the page that runs the game:** if the game sits in an `<iframe>`, it is the iframe's origin, not the one of the page around it. That origin goes in `ISSUER_ORIGINS`.
+- **The loading time** of a big build may pass the 15 s the gate waits (`load_timeout_s`): raise it on the `MpFlow` and on the `MpLobbyConfig` (each path reads its own).
 
 ### 11.4 `wss://` and TLS
 
@@ -2047,8 +2152,8 @@ Add `func mp_move(keys: MpInput, delta: float) -> void:` to the parent's script,
 **"Put an MpActor next to this MpInput (same parent)."**
 The `MpInput` must be a sibling of an `MpActor`, or have `actor` set.
 
-**"Set Player Scene: the scene every seat gets (it needs an MpActor)."** (on `MpWorld`)
-Set `player_scene` on the `MpWorld`.
+**"MpWorld is the scene's root: it builds 2D pieces and cannot place players."**
+Make a `Node2D` or a `Node3D` the root and put the `MpWorld` under it.
 
 ### Errors while playing (Debugger panel)
 
@@ -2085,8 +2190,14 @@ Point `spawn_path` at the empty node where things appear (`../Actors`, `../Proje
 **"MpSpawner 'X': spawn_function was set after the scene was set up; set it in a _ready"**
 Set `spawn_function` in a `_ready` of the scene (the spawner's, a sibling's or the parent's), not later.
 
-**"MpSlotSpawner 'X': assign pawn_scene"**
-Set the player's scene.
+**"MpKit: the channel 'X' is not in custom_channels (your game.tres): nothing was sent."**
+Add the channel to the `game.tres`'s `custom_channels` (or leave it empty: it allows all). `MpOrders` uses `mp_orders`.
+
+**"MpKit.broadcast_custom: 'X' with the same data, from its own custom_received, was dropped (an echo)."**
+A handler relays everything it gets, also what the server hands out. Relay only what a client sent: `from_peer != 1`.
+
+**"MpKit: the server turned this peer away (reason)"** / **"MpKit: peer N turned away (reason)"**
+The server refused the join: `full`, `match_started`, `grace_over`, `slot_taken`, `seat_closed`, `rejected` (see [7.5](#75-start-and-end-mpmatch)).
 
 **"MpSpawner 'X': … was added after its node was set up. Put synchronizers in the scene (or add them before add_child): the spawn packet and late joiners miss it."**
 A `MultiplayerSynchronizer` was added late by code (with a timer, deferred). Put it in the scene, or in the actor's own `_ready`.
@@ -2282,6 +2393,10 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | a game that works in minutes | **Project › Tools › MpKit: Setup game...** |
 | the whole network and the scenes in one place | an **MpGame** (`game.tres`) in **Flow › Game** |
 | a networked world without wiring nodes | an **MpWorld** with **Player Scene** |
+| a game by turns, of cards or on a board (no pawns) | an **MpWorld** with no Player Scene and an **MpOrders**: `submit`, `judge`, `applied` ([7.9](#79-a-game-by-turns-of-cards-or-on-a-board-mporders)) |
+| to send something of mine to a peer that loads late or comes back | `MpKit.client_world_ready` + `MpKit.push_custom_to` ([7.10](#710-what-reaches-a-peer-that-loads-late-or-comes-back)) |
+| to know which seat sent a tunnel message | `MpKit.slot_of_sender(from_peer)` |
+| to try two windows with no clicks | `-- --listen-host` in one and `-- --client1` in the other ([8.2](#82-lan-two-windows-on-your-pc)) |
 | to play solo, host, join or leave from my own menu | `Mp.play_solo()`, `Mp.host()`, `Mp.join(text)`, `Mp.leave()` |
 | a loading screen that waits for the world (shaders) | **MpFlow › world_reports_loaded** + `report_world_loaded()` in the world; listen to `world_load_progressed` ([7.7](#77-loading-screen)) |
 | something to look the same everywhere | **MpActor › Sync** (position, rotation, visible, Extra) |

@@ -6,7 +6,7 @@ Do **not** install for a 1P-only game.
 
 This guide is for **manual setup in the editor**. Code identifiers stay in English.
 
-**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Four examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match), `examples/bots_2d/` (the host starts the match, bots in the free seats, late join) and `examples/sports_2d/` (two against two with a ball: a predicted slide, a lag-compensated tackle, the match waits for everyone; GUIDE §7.8). What follows is the reference of every piece.
+**First time?** Start with [QUICKSTART.md](QUICKSTART.md): six steps with the `MpActor`, `MpInput` and `MpState` nodes, no RPCs to write. Five examples run solo, on a LAN and on a dedicated server: `examples/minimal_2d/` (the minimum, what the *Setup game* wizard writes), `examples/arena_2d/` (shots, a bell, rooms, private match), `examples/bots_2d/` (the host starts the match, bots in the free seats, late join) `examples/sports_2d/` (two against two with a ball: a predicted slide, a lag-compensated tackle, the match waits for everyone; GUIDE §7.8) and `examples/turns_2d/` (three in a row by turns, with no pawns: moves through `MpOrders`; GUIDE §7.9). What follows is the reference of every piece.
 
 ## Contents
 
@@ -358,11 +358,14 @@ The kit **does not read** the dict. It **does not auto-forward**. If the server 
 | Who | Method | What happens |
 |-----|--------|----------------|
 | Client, 1P, or the server itself | `MpKit.send_custom(channel, data)` | Client → RPC to the server. 1P / server: emits `custom_received` **locally** (`from_peer` 1 or your unique id). |
-| Server only | `MpKit.broadcast_custom(channel, data)` | Emits on the server (`from_peer` = 1) **and** sends to every client. `broadcast_custom(channel, data, true)`: only to the peers whose world is loaded (`MpKit.ready_peers()`), for a one-off effect a peer still loading would lose. |
+| Server only | `MpKit.broadcast_custom(channel, data)` | Emits on the server (`from_peer` = 1) **and** sends to every client. `broadcast_custom(channel, data, true)`: only to the peers whose world is loaded (`MpKit.ready_peers()`), for a one-off effect a peer still loading would lose. From a `custom_received` handler it goes out right after the message being handled; the same channel with the same data (an echo) is dropped with a warning. |
 | Server only | `MpKit.push_custom_to(peer_id, channel, data)` | One client. The server does **not** emit locally. |
 | Everyone | signal `MpKit.custom_received(channel, data, from_peer)` | That is where you receive. |
+| Everyone | `MpKit.slot_of_sender(from_peer)` | The seat that sent it, the same solo, on the host and on a client (`slot_for_peer(1)` gives 0 solo). |
 
-Allowlist: `configure(..., PackedStringArray(["emote"]))`. Empty = any name. Unknown name = dropped.
+Allowlist: `configure(..., PackedStringArray(["emote"]))`. Empty = any name. A name not on it is dropped: what this machine sends warns once.
+
+For a turn-based game's moves (numbered, judged, replayed to a peer that comes back), use the `MpOrders` node instead of building it on the tunnel (GUIDE §7.9).
 
 Server limits (so a client cannot flood it): a tunnel message over `MpKit.custom_max_bytes` (8192) is dropped, and each client sends at most `MpKit.custom_limit` (30 per second, bursts of 60). `MpActor`'s `mp_sv_*` calls have their own limit (`MpActor.server_calls`: 60 per second, bursts of 120) and at most 4 KB of arguments. With ticket admission, at most `MpKit.max_pending_admission` (64) connections wait for a ticket at once.
 
@@ -517,7 +520,8 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `nodes/mp_waiting_label.gd` | `MpWaitingLabel`: in the HUD; while the match waits for its seats it shows `loaded/expected` on every peer (the gate's counts, valid on clients); hidden otherwise |
 | `nodes/mp_local_seat.gd` | `MpLocalSeat`: who looks at this screen; `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo: show the match as another seat), `MpLocalSeat.of(node)` by group. HUD, audio, orders and the result take it by `@export` |
 | `nodes/mp_invite_label.gd` | `MpInviteLabel`: in the HUD; in a private match of this PC (`MpLocalServer`) it shows what friends type (`ip:port#CODE`), in an online room it hosts (`MpOnline`) the room's code; hidden otherwise. It finds them by group, without loading the rooms scripts |
-| `nodes/mp_world.gd` | `MpWorld`: one node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players` (`MpSlotSpawner`), `State` (`MpState`), `Match` (`MpMatch`) and `Hud/Leave` + `Hud/Invite` + `Hud/Start` + `Hud/Waiting`; `player_scene` is each seat's scene |
+| `nodes/mp_world.gd` | `MpWorld`: one node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players` (`MpSlotSpawner`), `State` (`MpState`), `Match` (`MpMatch`) and `Hud/Leave` + `Hud/Invite` + `Hud/Start` + `Hud/Waiting`; `player_scene` is each seat's scene (empty: a game with no pawns) |
+| `nodes/mp_orders.gd` | `MpOrders`: the moves of a game with no pawns (by turns, cards, a board, an RTS's orders). `submit(name, args)`, `submit_as(slot, …)` and `begin(start)` on the server; `judge` (the server takes the move or gives the reason), `state_hash`; signals `began`, `applied(seq, slot, name, args)`, `rejected`, `desynced`; `is_replaying()`, `resync()`, `moves()`. It replays every move to a peer that loads late or comes back (GUIDE §7.9) |
 | `core/mp_net_quality.gd` | `MpNetQuality` (a child of the autoload, `MpKit.net_quality`): 4 pings per second; RTT (median), jitter (97th percentile), loss and a grade `GOOD` / `FAIR` / `BAD`; the server keeps every player's. `Mp.net_quality()` |
 | `core/mp_lag_comp.gd` | `MpLagComp`: server-side lag compensation; a second of poses per actor (`MpActor.lag_compensate`), `position_at`, `rewind(stamp, callable)`; the time each player was seeing travels in `MpInputFrame.view` and with `to_server`; `--lag-comp=off` turns it off |
 | `core/mp_net_config.gd` | `MpNetConfig` (`.tres`): the game's network in one place; `apply()` configures `MpKit`; on the web it uses WebSocket (or the relay) and `can_host()` is false |
@@ -544,6 +548,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `examples/arena_2d/` | full example (boot, arena, player, shots, bell, lobby, room server); the lab's e2e fixture |
 | `examples/bots_2d/` | a match with a lobby in the world: the boot's `MpFlow` with `start_on_timeout` off, `host_can_start` and `late_join`; `world.gd` puts a bot in every free seat at the start (`Mp.gate().vacant_slots()`, solo: seats 2..4) and `bot.gd` walks by pressing the player's keys (`MpInput.bot_press`, while `has_player()` is false); a late player takes that pawn. It uses `minimal_2d`'s player; `tests/test_examples.gd` plays it solo |
 | `examples/sports_2d/` | a real-time sports game, two against two: `player.gd` runs and slides in `mp_move` (predicted, with its state in `sync_extra`); `ball.gd` is the server's (`BUFFERED`), is drawn at its carrier's predicted feet and judges a tackle against where the slider saw the carrier (`seen_position_of`); `pitch.gd` scores the goal in `MpState` and kicks off again; the match waits for the four. `tests/test_examples.gd` plays it solo and `mpkit_lab/run/sports.sh` over a lagged network (GUIDE §7.8) |
+| `examples/turns_2d/` | three in a row by turns, with no pawns: an `MpWorld` with no Player Scene, `MpOrders` carries each move, `rules.gd` judges (your turn, a free cell) and gives the hash; solo, one screen plays both seats (`submit_as`). `tests/test_examples.gd` plays it solo and `mpkit_lab/run/turns.sh` over the network: a host and a client that leaves and comes back (GUIDE §7.9) |
 
 Role helpers on `MpKit`: `is_authority()` (solo or the server: where the rules run), `has_local_slot()` (this machine has a player with a known slot). `local_slot()` returns 0 on a client until the server assigns its slot (it used to guess). `MpSpawner.spawn_actor(scene, props, owner_slot)` instances on the server under `spawn_path` (the scene must be in the spawner's list). `MpFlow` can be a node in the boot scene: it moves itself under the root.
 
