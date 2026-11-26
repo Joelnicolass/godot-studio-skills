@@ -9,7 +9,7 @@ extends Node
 
 ## The kit's version (plugin.cfg says the same; a test checks it). An exported game has no plugin.cfg: this is what the
 ## MpKit issuer is told.
-const VERSION := "0.27.0"
+const VERSION := "0.28.0"
 
 signal peer_joined(peer_id: int, slot: int)
 signal peer_left(peer_id: int, slot: int)
@@ -54,6 +54,10 @@ const REJECT_FLUSH_S := 0.2
 var max_pending_admission: int = 64
 ## ENet's hard limit of peers per host.
 const ENET_MAX_PEERS := 4095
+## Where a client keeps its seats' credentials with remember_seats.
+const SEATS_FILE := "user://mpkit_seats.cfg"
+## A credential kept longer than this is not shown again: the match it came from is long over.
+const SEAT_MEMORY_S := 3600
 ## Broadcasts that custom_received handlers may chain from one broadcast_custom (each asked for while the last was
 ## emitting); past it the rest are dropped with an error: a handler that always broadcasts again would never end.
 const CUSTOM_CHAIN_MAX := 256
@@ -97,6 +101,9 @@ var _endpoint: String = ""
 ## [due msec, Callable] for after_real.
 var _real_due: Array = []
 var _seat_credentials: Dictionary = {}
+## Client: keep each LAN seat's credential on disk too (SEATS_FILE, or `--seat-file=`), so a game closed and opened
+## again gets its seat back within the grace. Off by default; MpFlow.remember_seats or `--remember-seats` turn it on.
+var remember_seats := false
 ## The server's beat: when it sends the next one; on a client, when the last one came (0 = none yet) and since when
 ## it is silent (0 = it is not).
 var _next_beat_ms: int = 0
@@ -311,12 +318,43 @@ func join(address: String, p_port: int = -1, ticket: String = "") -> Error:
 	_world_ready.clear()
 	_endpoint = "%s:%d" % [address, target_port]
 	_pending_ticket = ticket if not ticket.is_empty() else str(_seat_credentials.get(_endpoint, ""))
+	if _pending_ticket.is_empty() and _remembers_seats():
+		_pending_ticket = _remembered_credential(_endpoint)
 	return OK
 
 
-## Client: forget every seat credential (the next join to any server is a new player).
+## Client: forget every seat credential (the next join to any server is a new player), on disk too.
 func forget_seat_credentials() -> void:
 	_seat_credentials.clear()
+	if _remembers_seats() and FileAccess.file_exists(_seats_file()):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(_seats_file()))
+
+
+func _remembers_seats() -> bool:
+	return remember_seats or MpBoot.user_flag("remember-seats")
+
+
+func _seats_file() -> String:
+	return MpBoot.user_value("seat-file", SEATS_FILE)
+
+
+## A credential this machine kept for `endpoint` (host:port), or "" (none, or older than SEAT_MEMORY_S).
+func _remembered_credential(endpoint: String) -> String:
+	var file := ConfigFile.new()
+	if file.load(_seats_file()) != OK:
+		return ""
+	var kept: Variant = file.get_value("seats", endpoint, {})
+	if not kept is Dictionary or Time.get_unix_time_from_system() - float(kept.get("at", 0.0)) > SEAT_MEMORY_S:
+		return ""
+	var credential := str(kept.get("credential", ""))
+	return credential if credential.length() <= TICKET_MAX_LEN else ""
+
+
+func _remember_credential(endpoint: String, credential: String) -> void:
+	var file := ConfigFile.new()
+	file.load(_seats_file())
+	file.set_value("seats", endpoint, {"credential": credential, "at": Time.get_unix_time_from_system()})
+	file.save(_seats_file())
 
 
 ## The slots an open match offers: every client slot (a listen host's own slot is not one).
@@ -731,6 +769,8 @@ func rpc_seat_credential(credential: String) -> void:
 	if credential.is_empty() or credential.length() > TICKET_MAX_LEN or _endpoint.is_empty():
 		return
 	_seat_credentials[_endpoint] = credential
+	if _remembers_seats():
+		_remember_credential(_endpoint, credential)
 
 
 @rpc("authority", "call_remote", "reliable")
