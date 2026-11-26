@@ -832,59 +832,37 @@ A match on the host's PC (private or online) takes `pause_while_waiting` from th
 
 #### Bots in the free seats
 
-The kit has no AI: it says which seats nobody holds and lets a bot of yours play them with the same movement code as a player. All of it together, to open and press F6: `examples/bots_2d/` (the host starts the match, a bot in each free seat, and a late player takes its place). On the server:
+The kit brings no AI: an **`MpSeatBots`** in the world puts a bot of yours in every seat nobody holds and takes it off when a player arrives. Your bot plays with the same code as a player: it presses the seat's keys (`MpInput.bot_press`) or sends its moves (`MpOrders.submit_as`). All of it together, to open and press F6: `examples/bots_2d/` (bots with pawns) and `examples/cards_2d/` (bots with no pawns).
 
-| Name | What it does |
-|---|---|
-| `Mp.gate().vacant_slots()` | The seats nobody holds: never taken, or abandoned. Not one away within its grace (its player may come back) |
-| `Mp.gate().started(why)` | The match started: the moment to put the bots in |
-| `Mp.gate().joined_late(slot)` | With `late_join`, a player took a seat nobody held: the bot there lets go |
-| `MpSlotSpawner.spawn_slot(slot)` | That slot's pawn, with no player. When someone takes the slot, the spawner gives them that same pawn (it makes no other). If the one it had was freed (it died: `MpActor.despawn`), it makes a new one |
-| `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | The bot's keys: read like a player's (`get_vector`, `is_action_just_pressed`, `mp_move`). They count while nobody plays the seat; when a player comes in they are let go and theirs count |
-| `MpInput.has_player()` | True while a player plays that seat. Also false while its player is away within the grace |
-
-When the match starts, each free seat is filled with a bot:
+1. **An `MpSeatBots`** in the world, with **Bot Scene** = your bot's scene (a `Node` with its script).
+2. **Your bot** declares what it needs and the kit hands it over before adding it: `var slot: int` (its seat), `var pawn: Node` (the seat's pawn) and `var input: MpInput` (its keys). With a pawn, the bot goes under the pawn; in a game with no pawns, under the `MpSeatBots`.
+3. **Done:** on the server, when the match starts, each free seat gets a bot. A seat that is abandoned gets one. A player who joins late (`late_join`) or comes back takes the seat as the bot left it (the pawn, its hand in `MpSeatState`), and the bot goes, letting go of all its keys. A closed seat (`close_seat`) never gets a bot again. Solo, a bot goes in every seat but the player's (`fill_solo`).
 
 ```gdscript
-## arena.gd (the world): once it starts, a bot in each free seat.
-@onready var players: MpSlotSpawner = %Players
-
-
-func _ready() -> void:
-	if not MpKit.is_authority():
-		return
-	## The pawn stays in the world when its player leaves: the bot plays it again.
-	players.despawn_on_leave = false
-	Mp.gate().started.connect(func(_why: String) -> void:
-		for slot in Mp.gate().vacant_slots():
-			players.spawn_slot(slot).add_child(Bot.new()))
-```
-
-The bot presses the seat's keys while no player is sitting there:
-
-```gdscript
-## bot.gd: a child of the pawn, only on the server. It picks keys; the movement is the player's (mp_move).
-class_name Bot
+## bot.gd (from the bots_2d example): walks by pressing the player's keys. It only exists on the server.
 extends Node
 
+var pawn: Node2D        # MpSeatBots fills them in before adding it
 var input: MpInput
 
 
-func _ready() -> void:
-	input = get_parent().get_node("%MpInput")
-
-
 func _physics_process(_delta: float) -> void:
-	if input.has_player():
-		return
-	var target := Vector2(800, 300)
-	var to_target: Vector2 = target - (get_parent() as Node2D).global_position
-	input.bot_press(&"ui_right" if to_target.x > 0 else &"ui_left", clampf(absf(to_target.x) / 100.0, 0.0, 1.0))
+	var to := Vector2(800, 300) - pawn.global_position
+	input.bot_press(&"ui_right" if to.x > 0 else &"ui_left", clampf(absf(to.x) / 100.0, 0.0, 1.0))
 ```
 
-- In a match with a ticket, the late player takes the seat the issuer gave it (the first free one): if a bot plays there, it takes that pawn as it is (position, health, what is synced) and the `MpInput` follows its keys from the next tick on.
-- Solo has no seats at the gate (`vacant_slots()` empty): there you put the bots in, with `spawn_slot(2..N)`. `bot_press` works the same.
-- If your bot must not move the pawn of a player away within the grace, check `Mp.gate().vacant_slots().has(slot)` besides `has_player()`.
+| `MpSeatBots` | What it is |
+|---|---|
+| `bot_scene` | Your bot's scene |
+| `players` | The pawns' spawner (empty: the `MpWorld`'s `Players`; with no Player Scene, a game with no pawns) |
+| `fill_solo` | Solo: bots in the other seats (the `MpWorld`'s `seats`) |
+| `bot_of(slot)`, `remove(slot)`, `fill()` | A seat's bot; take it off; fill the free ones (it does so by itself at the start) |
+| signals `bot_added(slot, bot)`, `bot_removed(slot)` | A bot started or stopped playing a seat |
+
+What the kit uses underneath, in case you build your own filler: `Mp.gate().vacant_slots()` (the seats nobody holds: never taken or abandoned, never one away within its grace nor a closed one), `Mp.gate().started`, `joined_late(slot)`, `seat_abandoned(slot, why)`, `MpSlotSpawner.spawn_slot(slot)` (the seat's pawn; whoever comes in later gets that same one) and `MpInput.has_player()`.
+
+- If the pawn of a player who leaves must stay for the bot to play it, turn off `despawn_on_leave` on the `MpSlotSpawner`.
+- In a match with a ticket, the late player takes the seat the issuer gave it: if a bot plays there, it takes that pawn as it is and the `MpInput` follows its keys from the next tick on.
 
 #### A seat that closes
 
@@ -1201,6 +1179,7 @@ A peer counts as **ready** when its world has loaded: the server emits `MpKit.cl
 | `MpState` (`set_value`, `watch`) | Yes, on load |
 | An `MpActor`'s Sync, a node a spawner made | Yes, on load |
 | `MpOrders` | Yes: every move, as `began` + `applied` |
+| `MpSeatState` | Yes, only that seat's machine |
 | `to_all`, `broadcast_custom`, an `@rpc` of yours | **No**: it is a moment. For a peer still loading use `broadcast_custom(channel, data, true)` or `MpKit.ready_peers()` |
 | Something of yours that must last (a whole state, a list) | Send it yourself in `client_world_ready` with `MpKit.push_custom_to(peer_id, channel, data)` |
 
@@ -1222,6 +1201,22 @@ For what belongs to no actor (a move, a chat line, an emote):
 - **`custom_channels`** (in `game.tres`): empty allows all. A channel not on the list is not sent, and warns once.
 - **Caps:** a client sends up to 8 KB per message and 30 per second (a burst of 60); past that the server drops it. The relay cuts messages over 256 KB: split what is big (`MpOrders` already sends the history in parts).
 - **On the server, `to_server` and the tunnel run at once**, inside the same call: an answer the server sends itself arrives before the function that asked for it ends.
+
+### 7.12 What only one seat sees: `MpSeatState`
+
+`MpState` is public: everyone sees it. What only one seat sees (its hand of cards, its ammo, its secret goal) goes in an **`MpSeatState`** in the world. The `examples/cards_2d` example keeps each hand there.
+
+```gdscript
+# on the server: deals
+seat_state.set_value(slot, &"hand", [2, 5, 9])
+# on that seat's machine: its hand, now and on every change
+seat_state.watch(&"hand", func(hand: Variant) -> void: show_hand(hand), [])
+```
+
+- **It reaches only that seat's machine**, again when it loads late or comes back. The server sees them all (`value_of(slot, key)`); a client only its own (`get_value(key)`, `values()`).
+- **They belong to the seat, not to the player:** whoever takes the seat later (a late player, an `MpSeatBots` bot) finds them there.
+- `set_value(slot, key, null)` removes one, `add(slot, key, n)` adds, `clear_seat(slot)` removes them all. `changed(key, value)` and `watch` tell only about this machine's seat.
+- It uses the tunnel's `mp_seat_state` channel (if your game lists `custom_channels`, add it). `MpSeatState.of(node)` finds it from anywhere.
 
 ## 8. Testing
 
@@ -1339,7 +1334,7 @@ The whole matrix of automatic cases: `mpkit_lab/run/all.sh` (an hour with a shar
 | `--dedicated` | Starts as a dedicated server and loads the world |
 | `--listen-host` | Starts hosting LAN, without touching the menu |
 | `--client1` / `--client2` + `--join-ip=IP` | Starts joining that IP (`127.0.0.1` by default) |
-| `--start-seats=N` | How many seats the match waits for before it starts (0: all) |
+| `--start-seats=N` | How many seats the match waits for before it starts (0: all). On a listen host its own does not count: with the host and one client, 1 |
 | `--late-join` | A newcomer takes a free seat after the match started |
 | `--load-timeout-s=N` | How long the gate waits for those loading (15 s; on the web, with long loading screens, raise it) |
 | `--room-server` | Opens the rooms scene (the game's `rooms_scene`, or `MpFlow.room_server_path`) |
@@ -2394,6 +2389,8 @@ They switched tabs: the browser paused it. See [11.5](#115-a-hidden-tab).
 | the whole network and the scenes in one place | an **MpGame** (`game.tres`) in **Flow › Game** |
 | a networked world without wiring nodes | an **MpWorld** with **Player Scene** |
 | a game by turns, of cards or on a board (no pawns) | an **MpWorld** with no Player Scene and an **MpOrders**: `submit`, `judge`, `applied` ([7.9](#79-a-game-by-turns-of-cards-or-on-a-board-mporders)) |
+| something only one player sees (its hand, its ammo) | an **MpSeatState**: `set_value(slot, key, value)` on the server, `watch(key, cb)` on its machine |
+| bots in the free seats | an **MpSeatBots** with your bot's scene (`slot`, `pawn`, `input`) |
 | to send something of mine to a peer that loads late or comes back | `MpKit.client_world_ready` + `MpKit.push_custom_to` ([7.10](#710-what-reaches-a-peer-that-loads-late-or-comes-back)) |
 | to know which seat sent a tunnel message | `MpKit.slot_of_sender(from_peer)` |
 | to try two windows with no clicks | `-- --listen-host` in one and `-- --client1` in the other ([8.2](#82-lan-two-windows-on-your-pc)) |

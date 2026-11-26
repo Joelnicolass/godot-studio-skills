@@ -2,6 +2,17 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.27.0
+
+- **`MpSeatState`: what only one seat sees** (its hand of cards, its ammo, its secret goal), next to `MpState`'s public values. The server writes `set_value(slot, key, value)` and only that seat's machine gets it (`changed`, `watch`), again when it loads late or comes back. It belongs to the seat, not to the player: whoever takes it later (a late player, a bot) finds it there. El Eternauta asked for it (its `PrivateChannel`).
+- **`MpSeatBots`: bots in the free seats.** It puts your `bot_scene` in every seat nobody holds when the match starts or one is abandoned, takes it off (letting go of its keys) when a player takes the seat, and never comes back to a closed seat. It hands the bot its `slot`, the seat's `pawn` and `input`. Solo, it fills the other seats. El Eternauta (`SquadBots`) and Intervendoom (`bot_filler`) asked for it.
+- **`MpOrders.of(node)`** finds it from anywhere.
+- **The `cards_2d` example:** high card for three, with no pawns, with `MpOrders`, `MpSeatState` and `MpSeatBots`. `mpkit_lab/run/cards.sh` plays it over the network: the host starts alone with bots, a client joins late, takes a bot's seat with the hand it had, leaves and comes back.
+- **`bots_2d`** puts its bots with `MpSeatBots` (`bot.tscn`) instead of its own code.
+- **Guide:** §7.12 (`MpSeatState`), "Bots in the free seats" with `MpSeatBots` (§7.5), and `--start-seats` on a listen host does not count the host's seat.
+
+What to update: nothing in your project. If your game fills seats with bots by hand, you can swap that for an `MpSeatBots`. `MpKit.VERSION` moves to 0.27.0, so server and clients must run the same build.
+
 ## 0.26.0
 
 - **`MpOrders`: the moves of a game with no pawns** (by turns, of cards, on a board, an RTS's orders). One node in the world:

@@ -198,6 +198,8 @@ func _run() -> void:
 			await _tackle_the_carrier()
 		"turns_player":
 			await _play_turns()
+		"cards_player":
+			await _play_cards()
 		_:
 			_check(false, "known role %s" % _role)
 	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -1242,6 +1244,108 @@ func _refused_online() -> void:
 
 
 ## Walks down and up at a steady speed, in legs of LEG_S: the lag shooter's moving target.
+## Card example (examples/cards_2d): plays its seat's cards until `--probe-moves` moves (18: two rounds) with a bot in
+## the third seat. Its hand is its own: the other seats' hands are never here. Once, a card that is not in its hand: the
+## server refuses it. `--probe-rejoin`: after its second card it leaves and joins again, and gets the same hand and every
+## move back. Prints `CARDS TRICKS <tricks at the last move> <moves>` to compare the processes.
+func _play_cards() -> void:
+	await _until(func() -> bool: return MpKit.is_networked() and MpKit.has_local_slot(), "this peer has a seat")
+	var slot := MpKit.local_slot()
+	var target := int(MpBoot.user_value("probe-moves", "18"))
+	if not await _until(_cards_world_ready, "the card world is up, with this seat's hand"):
+		return
+	var world := get_tree().current_scene
+	var seats := world.get_node(^"%SeatState") as MpSeatState
+	var hand_size := (seats.get_value(&"hand", []) as Array).size()
+	_check(hand_size == 3 or MpBoot.user_flag("probe-late"), "a hand of three (%s)" % [seats.get_value(&"hand")])
+	if MpKit.is_server():
+		var bots := world.get_node(^"SeatBots") as MpSeatBots
+		if MpBoot.user_flag("probe-start-alone"):
+			## The host starts alone: bots in seats 2 and 3. It plays on once a late player took one of them.
+			_check(Mp.gate().start_now(), "the host started the match alone")
+			await _until(func() -> bool: return bots.bot_of(2) != null and bots.bot_of(3) != null, "bots in seats 2 and 3")
+			var late: Array[int] = []
+			Mp.gate().joined_late.connect(func(taken: int) -> void:
+				late.append(taken)
+				_echo("CARDS LATE HAND %d %s" % [taken, seats.value_of(taken, &"hand", [])]))
+			if not await _until(func() -> bool: return not late.is_empty(), "a late player took a bot's seat"):
+				return
+			await get_tree().process_frame
+			_check(bots.bot_of(late[0]) == null, "its bot left the seat (%d)" % late[0])
+		else:
+			await _until(func() -> bool: return bots.bot_of(3) != null, "the server put a bot in the free seat 3")
+	else:
+		if MpBoot.user_flag("probe-late"):
+			_echo("CARDS LATE HAND %d %s" % [slot, seats.get_value(&"hand", [])])
+		var others_hidden := true
+		for other in [1, 2, 3]:
+			if other != slot:
+				others_hidden = others_hidden and (seats.value_of(other, &"hand", []) as Array).is_empty()
+		_check(others_hidden, "the other seats' hands never reach this machine")
+	var snapshot: Array = []
+	var refused: Array[String] = []
+	_watch_cards(world, target, snapshot, refused)
+	var orders := world.get_node(^"%Orders") as MpOrders
+	world.call(&"play", 100)
+	await _until(func() -> bool: return not refused.is_empty(), "a card that is not in the hand was refused")
+	var played := 0
+	var end := Time.get_ticks_msec() + int(step_timeout_s * 4000.0)
+	while Time.get_ticks_msec() < end and snapshot.is_empty():
+		var rules: Object = world.get(&"rules")
+		var hand: Array = seats.get_value(&"hand", [])
+		if int(rules.get(&"turn")) == slot and not hand.is_empty() and orders.last_seq() < target:
+			var before := orders.last_seq()
+			world.call(&"play", hand[0])
+			await _until(func() -> bool: return orders.last_seq() > before, "card %d taken" % (played + 1))
+			played += 1
+			if played == 2 and MpBoot.user_flag("probe-rejoin"):
+				var hand_before: Array = seats.get_value(&"hand", [])
+				var seq_before := orders.last_seq()
+				if not await _leave_and_join_cards(slot):
+					return
+				world = get_tree().current_scene
+				seats = world.get_node(^"%SeatState") as MpSeatState
+				orders = world.get_node(^"%Orders") as MpOrders
+				_watch_cards(world, target, snapshot, refused)
+				await _until(func() -> bool: return orders.last_seq() >= seq_before, "back: every move came again")
+				var hand_now: Array = seats.get_value(&"hand", [])
+				_check(hand_now == hand_before or orders.last_seq() > seq_before, "back: the same hand (%s, was %s)" % [hand_now, hand_before])
+		await get_tree().process_frame
+	_check(not snapshot.is_empty(), "%d moves were played, the bot playing seat 3" % target)
+	if not snapshot.is_empty():
+		_echo("CARDS TRICKS %s %d" % [snapshot[0], target])
+
+
+## Keeps the tricks as they are right after move `target` (the processes compare that), and this seat's refusals.
+func _watch_cards(world: Node, target: int, snapshot: Array, refused: Array[String]) -> void:
+	var orders := world.get_node(^"%Orders") as MpOrders
+	orders.applied.connect(func(seq: int, _p: int, _m: StringName, _a: Array) -> void:
+		if seq == target and snapshot.is_empty():
+			snapshot.append(str(world.get(&"rules").get(&"tricks"))))
+	orders.rejected.connect(func(_m: StringName, _a: Array, reason: String) -> void: refused.append(reason))
+
+
+func _cards_world_ready() -> bool:
+	var world := get_tree().current_scene
+	if world == null or world.name != "World" or world.get_node_or_null(^"%SeatState") == null:
+		return false
+	return not ((world.get_node(^"%SeatState") as MpSeatState).get_value(&"hand", []) as Array).is_empty()
+
+
+func _leave_and_join_cards(slot: int) -> bool:
+	var flow := MpFlow.find_in_tree(self)
+	var address := "127.0.0.1:%d" % MpKit.port
+	flow.return_to_boot()
+	await _until(func() -> bool: return get_tree().current_scene.name == "Boot" and not MpKit.is_networked(), "left to the menu")
+	await get_tree().create_timer(0.5).timeout
+	_ever_slot = 0
+	_check(flow.join_address(address) == OK, "join_address(%s) again" % address)
+	if not await _until(func() -> bool: return _networked_slot() and _ever_slot != 0, "the server let the seat back in"):
+		return false
+	_check(MpKit.local_slot() == slot, "the same seat (%d)" % MpKit.local_slot())
+	return await _until(_cards_world_ready, "back in the card world, with this seat's hand")
+
+
 ## Turn-based example (examples/turns_2d): plays its seat until the game is over, on its turn the first free cell. Once,
 ## a move that is never legal (no such cell): the server refuses it to this seat only. `--probe-rejoin`: after its
 ## second move it leaves and joins again, and gets every move back (the same board, then the game goes on). Prints

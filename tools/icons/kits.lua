@@ -111,6 +111,8 @@ local icons = {
 	MpRoomDirectory = { "rooms" },
 	MpRoomRules = { "checklist" },
 	MpRoomServer = { "house_rack" },
+	MpSeatBots = { "robot", badge = "slots" },
+	MpSeatState = { "braces", badge = "dim" },
 	MpSlotSpawner = { "pawn", badge = "slots", dx = -2, dy = -1 },
 	MpSpawner = { "pawn", badge = "plus", dx = -2, dy = -1 },
 	MpStartButton = { "play_button" },

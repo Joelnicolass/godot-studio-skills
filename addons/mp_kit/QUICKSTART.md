@@ -9,6 +9,7 @@ The examples, each with its `boot.tscn` (open it and press F6):
 - `examples/bots_2d/`: a match that waits in the world until the host starts it, with a bot in every free seat and players who come in late and take a bot's place.
 - `examples/sports_2d/`: two against two with a ball, in real time.
 - `examples/turns_2d/`: three in a row by turns, **with no pawns**. If your game is by turns, of cards or on a board, start here: the world has no Player Scene and each move goes through an `MpOrders` (GUIDE §7.9). Steps 5 and 6 below are not needed.
+- `examples/cards_2d/`: cards for three, with no pawns: each hand is seen only by its seat (`MpSeatState`) and a bot plays the free seats (`MpSeatBots`).
 
 **The shortest path**: with the plugin on, **Project › Tools › MpKit: Setup game...**. Pick a folder, 2D or 3D, players, transport and whether you want online rooms; the dialog lists the files it will create (`[+]`, and `[~]` if they exist: then it writes nothing) and builds `game.tres`, the boot, the world, a predicted player and the rooms. F5 and it plays solo, on LAN, dedicated or online. The steps below are the same by hand: one resource, two scene nodes and your player.
 

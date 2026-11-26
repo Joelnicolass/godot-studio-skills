@@ -24,6 +24,7 @@ signal rejected(name: StringName, args: Array, reason: String)
 ## This peer's `state_hash` differs from the server's after move `seq`. `resync()` gets every move again.
 signal desynced(seq: int)
 
+const GROUP := &"mp_orders"
 ## Moves per history message to a peer that loads late (each message stays well under the relay's 256 KB).
 const HISTORY_CHUNK := 200
 
@@ -42,6 +43,20 @@ var _start: Dictionary = {}
 var _moves: Array = []
 var _replaying := false
 var _desynced_at := 0
+
+
+## The MpOrders of the current scene (the one on `on_channel`, if there are several), or null.
+static func of(from: Node, on_channel: StringName = &"") -> MpOrders:
+	if from == null or not from.is_inside_tree():
+		return null
+	for node in from.get_tree().get_nodes_in_group(GROUP):
+		if on_channel == &"" or (node as MpOrders).channel == on_channel:
+			return node as MpOrders
+	return null
+
+
+func _enter_tree() -> void:
+	add_to_group(GROUP)
 
 
 func _ready() -> void:
