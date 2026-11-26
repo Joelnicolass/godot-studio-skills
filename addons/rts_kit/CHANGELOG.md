@@ -1,5 +1,17 @@
 # Cambios de RtsKit
 
+## 0.4.0
+
+- **Táctil en las dos cámaras.** `RtsCamera3D` y `RtsCamera2D` leen los dedos (`touch_enabled`, prendido por defecto). Un dedo arrastra el mapa (FREE) o mira alrededor (FOLLOW en 3D). Dos dedos pellizcan para el zoom (`pinch_zoom`: en 1 el suelo queda debajo de ellos, la distancia sigue la separación) y giran para rotar (`twist_turn`, pasado `twist_start_deg`, así un pellizco no gira el mapa; en 2D con `can_turn`). En FREE el mapa se acerca y gira alrededor de los dedos. Un toque sigue siendo un clic: un dedo es arrastre recién pasado `touch_drag_px` (12 px; un dedo tiembla más que un mouse), y un toque con dos dedos nunca es un clic. Un gesto cuyo primer dedo cae sobre la UI es de la UI, con la regla de los bordes (`edge_area`, `edges_over_gui`). Un dedo que se levanta con un modal abierto, o con la ventana en segundo plano, no queda apretado.
+- **El mouse que Godot emula desde un dedo** no mueve la vista una segunda vez, y ya no es el puntero de los bordes (un dedo levantado en un borde paneaba para siempre).
+- **`takes_drag()`** en las dos cámaras, y `RtsPointer.camera_takes_drag()`: verdadero mientras un botón o un dedo apretado mueve la vista (un dedo, el botón de órbita, el gesto de mirar, arrastrar con elegir con `select_drag_pans`). `RtsSelectInput` no dibuja el rectángulo en ese caso, y suelta el que la cámara toma: un dedo que mueve el mapa ya no selecciona lo que barrió.
+- **`select_drag_pans`** (FREE, apagado por defecto) en las dos cámaras: arrastrar con el botón de elegir mueve el mapa pasado `drag_px`, como en un mapa de estrategia. Dejalo apagado en un RTS, donde ese arrastre dibuja el rectángulo.
+- **`focus(point, seconds)`** en las dos cámaras desliza la vista libre hasta ahí, con aceleración y frenado suaves; un paneo del jugador corta el deslizamiento. `focus(point)` sigue siendo instantáneo.
+- **`RtsKeymap`** asigna sus teclas por defecto a todos los dispositivos (`RtsKeymap.ALL_DEVICES`, como guarda una acción Project Settings), así un toque (el mouse emulado, dispositivo -1) es un clic izquierdo.
+- **Tests:** los dedos por la entrada de Godot (`Input.parse_input_event`, con el mouse emulado llegando antes), con la cámara, el puntero y la entrada de elegir juntos: un toque selecciona, un dedo que mueve el mapa no dibuja el rectángulo ni cambia la selección, un toque con dos dedos no es un clic, un dedo sobre un botón del HUD es del botón, y un arrastre lento con elegir que mueve el mapa no dibuja el rectángulo. Y cada cámara: toque, arrastre, pellizco y giro alrededor de los dedos, dedos levantados con un modal o al perder el foco la ventana, los gestos de la UI, el mouse emulado, `takes_drag`, el arrastre con elegir y el deslizamiento.
+
+**Para actualizar:** en una pantalla táctil las cámaras ahora se mueven con los dedos. Antes un dedo llegaba al juego solo como el mouse emulado, y en un RTS un arrastre dibujaba el rectángulo. Apagá `touch_enabled` para mantener eso, o si tu juego lee los dedos por su cuenta. Las acciones que tu proyecto define en Project Settings conservan sus teclas; las que agrega `RtsKeymap` ahora también toman un toque.
+
 ## 0.3.1
 
 - **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.

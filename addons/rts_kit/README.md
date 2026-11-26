@@ -209,7 +209,21 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 
 ## Cámaras
 
-`RtsCamera3D` y `RtsCamera2D` comparten un contrato: `yaw`, `is_dragging()` (un clic que termina un arrastre no es una orden), `focus(point)`, `debug_pointer`. El modo FOLLOW mantiene un cuerpo a la vista (3D: tercera persona detrás de él, gira con las teclas, los bordes y la mirada libre, zoom con la rueda; el ojo nunca baja del suelo, incluido el suelo vivo de `height_at`). El modo FREE es la vista cenital: paneo con las flechas, los bordes de la pantalla y arrastrando con el botón del medio, giro con Q / E (3D), zoom con la rueda, siempre dentro de `bounds`. Los bordes se frenan con el puntero sobre la UI (un botón o un panel del HUD: cualquier control cuyo filtro de mouse no sea *Ignore*); `edges_over_gui` los deja andar encima. `edge_area` los limita a un control (la vista del mundo); `wheel_blockers` saca la rueda de encima de un minimapa. `RtsCameraEffect` suma un temblor encima.
+`RtsCamera3D` y `RtsCamera2D` comparten un contrato: `yaw`, `is_dragging()` (un clic que termina un arrastre no es una orden), `takes_drag()` (un botón o un dedo apretado está moviendo la vista: `RtsSelectInput` no dibuja el rectángulo), `focus(point, seconds)` (al instante, o deslizándose hasta ahí), `debug_pointer`. El modo FOLLOW mantiene un cuerpo a la vista (3D: tercera persona detrás de él, gira con las teclas, los bordes y la mirada libre, zoom con la rueda; el ojo nunca baja del suelo, incluido el suelo vivo de `height_at`). El modo FREE es la vista cenital: paneo con las flechas, los bordes de la pantalla y arrastrando con el botón del medio (y con el botón de elegir con `select_drag_pans`, un mapa de estrategia), giro con Q / E (3D), zoom con la rueda, siempre dentro de `bounds`. Los bordes se frenan con el puntero sobre la UI (un botón o un panel del HUD: cualquier control cuyo filtro de mouse no sea *Ignore*); `edges_over_gui` los deja andar encima. `edge_area` los limita a un control (la vista del mundo); `wheel_blockers` saca la rueda de encima de un minimapa. `RtsCameraEffect` suma un temblor encima.
+
+En una pantalla táctil las dos cámaras leen los dedos (`touch_enabled`, prendido por defecto). Un dedo arrastra el mapa (FREE) o mira alrededor (FOLLOW en 3D). Dos dedos pellizcan para el zoom y giran para rotar (en 2D con `can_turn`), y en FREE el mapa se acerca y gira alrededor de ellos. Un toque sigue siendo un clic: un dedo es arrastre recién pasado `touch_drag_px`, y un toque con dos dedos nunca es un clic. Un gesto cuyo primer dedo cae sobre el HUD es del HUD, con la misma regla que los bordes. El keymap del kit toma un toque como clic izquierdo (el mouse que Godot emula desde el dedo), así que un toque selecciona.
+
+| Querés | Escribí |
+|---|---|
+| Que en un teléfono los toques sigan siendo clics | `touch_drag_px` (12): subilo si los toques se vuelven arrastres |
+| Un pellizco más suave o más fuerte | `pinch_zoom` (1: el suelo queda debajo de los dedos; 0: sin pellizco) |
+| Sin giro | `twist_turn = 0` |
+| Que pellizcar nunca gire el mapa sin querer | `twist_start_deg` (10) |
+| Que los dedos sobre el HUD también muevan el mapa | `edges_over_gui = true` |
+| Dibujar el rectángulo con un dedo | un interruptor en el HUD que pone `touch_enabled = false`: el próximo dedo llega a `RtsSelectInput` como el mouse emulado y lo dibuja |
+| Tus propios gestos | `touch_enabled = false`: la cámara ignora los dedos |
+| Un mapa de estrategia (arrastrar con el izquierdo lo mueve) | `select_drag_pans = true` |
+| Deslizarse hasta un evento | `camera.focus(point, 0.6)` |
 
 ## Señales y pings
 
@@ -222,7 +236,7 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 godot --headless --path rtskit_lab --script res://addons/rts_kit/tests/rts_test_runner.gd
 ```
 
-`RTSKIT TESTS PASS (n)`. Cubren los lugares de las formaciones, quién obedece, el reparto de lugares (greedy y por filas), el re-blanco y la retirada, los datos simples de una orden, la cola, la selección (clic, tipo, rectángulo en 2D y 3D con oclusión, límite, grupos), la entrada sobre colisiones reales (puntero, contexto, ciclo de armado, rectángulo con eventos de mouse, el menú radial, el panel de comandos, las teclas, los modales), las dos cámaras, el equipo como un solo nodo en 2D y 3D (sockets, avisos, menú, bordes, un HUD encima), la unidad que muestra el inspector, que el kit no nombra a ningún otro, y los tres ejemplos jugados de punta a punta. Un test que corta con un error de script, o que no llega a chequear nada, falla. `rtskit_lab/` es un proyecto aparte para ellos; ahí `addons/rts_kit` es un symlink.
+`RTSKIT TESTS PASS (n)`. Cubren los lugares de las formaciones, quién obedece, el reparto de lugares (greedy y por filas), el re-blanco y la retirada, los datos simples de una orden, la cola, la selección (clic, tipo, rectángulo en 2D y 3D con oclusión, límite, grupos), la entrada sobre colisiones reales (puntero, contexto, ciclo de armado, rectángulo con eventos de mouse, el menú radial, el panel de comandos, las teclas, los modales), las dos cámaras (con sus dedos), los dedos por la entrada de Godot (un toque selecciona, un dedo que mueve el mapa no dibuja el rectángulo, dos dedos no son un clic, un dedo sobre el HUD es del HUD), el equipo como un solo nodo en 2D y 3D (sockets, avisos, menú, bordes, un HUD encima), la unidad que muestra el inspector, que el kit no nombra a ningún otro, y los tres ejemplos jugados de punta a punta. Un test que corta con un error de script, o que no llega a chequear nada, falla. `rtskit_lab/` es un proyecto aparte para ellos; ahí `addons/rts_kit` es un symlink.
 
 ## Tips y recomendaciones
 
