@@ -2,11 +2,13 @@
 
 Un juego multijugador sin escribir código de red: nodos en el editor y un script como el de un juego de un jugador. Funciona igual solo, en LAN (un jugador hostea) y con servidor dedicado, por ENet (UDP) o WebSocket (TCP).
 
-Dos ejemplos, cada uno con su `boot.tscn` (abrilo y apretá F6):
+Los ejemplos, cada uno con su `boot.tscn` (abrilo y apretá F6):
 
 - `examples/minimal_2d/`: lo mínimo, exactamente lo que escribe el asistente de abajo (2D, dos jugadores, ENet, sin salas). Un menú, un mundo vacío y un jugador predicho que se mueve con las flechas y suma con Enter. Son los pasos 2 a 6 de esta página, ya hechos.
 - `examples/arena_2d/`: el completo, con disparos, una campana que toca cualquiera, salas online y partida privada.
 - `examples/bots_2d/`: una partida que espera en el mundo hasta que el host la arranca, con un bot en cada asiento libre y jugadores que entran tarde y toman el lugar de un bot.
+- `examples/sports_2d/`: dos contra dos con pelota, en tiempo real.
+- `examples/turns_2d/`: un tres en línea por turnos, **sin peones**. Si tu juego es por turnos, de cartas o de tablero, empezá por acá: el mundo no tiene Player Scene y cada jugada va por un `MpOrders` (GUIDE §7.9). Los pasos 5 y 6 de abajo no hacen falta.
 
 **El camino más corto**: con el plugin activo, **Proyecto › Herramientas › MpKit: Setup game...**. Elegís carpeta, 2D o 3D, jugadores, transporte y si querés salas online; el diálogo muestra los archivos que va a crear (`[+]`, y `[~]` si ya existen: entonces no escribe nada) y arma `game.tres`, boot, mundo, jugador predicho y salas. F5 y ya se juega solo, en LAN, dedicado u online. Los pasos de abajo son lo mismo a mano: un recurso, dos nodos de escena y tu jugador.
 
@@ -131,6 +133,7 @@ Para probar con red mala, agregá a cada proceso `--net-lag-ms=100 --net-jitter-
 |---|---|
 | Solo | F5 → Jugar solo |
 | LAN | Depurar → Ejecutar varias instancias (2). Una: Host LAN. Otra: Unirse a `127.0.0.1` |
+| LAN sin clics | `godot --path . -- --listen-host` en una terminal y `godot --path . -- --client1` en otra (GUIDE §8.8: todos los flags) |
 | Dedicado | `godot --headless --path . -- --dedicated` y los clientes se unen a `127.0.0.1` |
 | WebSocket | agregá `--transport=ws` a todos los procesos (un servidor WS solo atiende clientes WS) |
 | Web | exportá con el preset Web (sin threads). El export usa WebSocket (directo, o por el relay si el juego dice `relay`) y oculta Host y la lista LAN: un navegador solo se une. El servidor es un dedicado con `transport = ws`, o cualquiera por el relay |
@@ -141,7 +144,8 @@ Para probar con red mala, agregá a cada proceso `--net-lag-ms=100 --net-jitter-
 - **Las reglas, en el servidor.** `if not net.is_authority(): return` antes de puntuar, dañar o hacer aparecer algo. Jugando solo, tu PC es el servidor: el mismo código anda en los dos casos.
 - **`mp_move` es solo movimiento.** Puede correr varias veces en un tick al reconciliar: sonidos y efectos detrás de `if not keys.is_replaying():`. Con inercia o gravedad, `velocity` en *Sync › Extra*.
 - **Guardá la escena del jugador** después de tocar el `MpActor`: el editor arma su `MpSync` y lo guarda. El `MpActor` va en la escena del actor (`player.tscn`), no sobre una instancia dentro del mundo.
-- **Nada de `@rpc` a mano.** Una orden puntual del dueño: `net.to_server(&"x")` → `mp_sv_x()`. Un efecto en todos: `net.to_all(&"x")` → `mp_all_x()`. Un número de la partida: `Mp.state()`.
+- **Nada de `@rpc` a mano.** Una orden puntual del dueño: `net.to_server(&"x")` → `mp_sv_x()`. Un efecto en todos: `net.to_all(&"x")` → `mp_all_x()`. Un número de la partida: `Mp.state()`. Las jugadas de un juego sin peones: `MpOrders`.
+- **Lo que tiene que quedar, en estado.** El que carga tarde o vuelve recibe `Mp.state()`, el Sync y las jugadas de `MpOrders`, nunca un `to_all` que ya pasó (GUIDE §7.10).
 - **Animá con la velocidad del kit:** `net.motion_velocity()` / `net.motion_speed()` (Vector2 en 2D, Vector3 en 3D) dicen cómo se mueve lo que se ve en cada máquina; la pose dibujada frame a frame no.
 - **Probá con red mala desde el principio:** `--net-lag-ms=100 --net-jitter-ms=30 --net-loss=0.05` en cada proceso, y `Mp.net_quality()` para mostrarle al jugador cómo está su conexión.
 - **Un lobby dentro del mundo:** apagá `start_on_timeout` y prendé `host_can_start` en el `MpFlow`: la partida espera hasta que estén todos o el host toque **Start now**. Con `late_join`, el host puede arrancar solo, un bot tuyo juega los asientos libres (`Mp.gate().vacant_slots()`, `MpInput.bot_press`) y el que llega tarde toma ese peón. Así lo hace `examples/bots_2d/` (GUIDE 7.5). Sin tocar nada, todo esto queda apagado.

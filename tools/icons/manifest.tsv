@@ -75,6 +75,7 @@ mp_kit	MpMatchmaker	node	Node	addons/mp_kit/mp_matchmaker.gd	addons/mp_kit/icons
 mp_kit	MpNetConfig	resource	Resource	addons/mp_kit/core/mp_net_config.gd	addons/mp_kit/icons/mp_net_config.svg	sliders	
 mp_kit	MpNetQuality	node	Node	addons/mp_kit/core/mp_net_quality.gd	addons/mp_kit/icons/mp_net_quality.svg	pulse	
 mp_kit	MpOnline	node	Node	addons/mp_kit/online/mp_online.gd	addons/mp_kit/icons/mp_online.svg	cloud	
+mp_kit	MpOrders	node	Node	addons/mp_kit/nodes/mp_orders.gd	addons/mp_kit/icons/mp_orders.svg	move_list	
 mp_kit	MpProcessRunner	resource	Resource	addons/mp_kit/lobby/mp_process_runner.gd	addons/mp_kit/icons/mp_process_runner.svg	terminal	
 mp_kit	MpProcessRunnerStub	resource	MpProcessRunner	addons/mp_kit/lobby/mp_process_runner_stub.gd	addons/mp_kit/icons/mp_process_runner_stub.svg	terminal_hollow	
 mp_kit	MpReplicate	node	Node	addons/mp_kit/mp_replicate.gd	addons/mp_kit/icons/mp_replicate.svg	copy	

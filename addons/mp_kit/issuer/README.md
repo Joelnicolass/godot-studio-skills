@@ -87,7 +87,7 @@ El emisor no arranca sin la clave, la URL del relay o un juego: nunca corre abie
 
 ## 4. API (v1)
 
-Todo pedido de un jugador dice quién pregunta: `game`, `version` (la del juego), `kit` (la de MpKit), `platform`, `install` (al azar, la guarda el juego) y `session` (nueva en cada proceso, así dos copias del juego en una PC tienen dos asientos). La IP sale de la conexión, nunca del cuerpo. Las respuestas son JSON; un rechazo es `{"error": "<palabra>", …}`.
+Todo pedido de un jugador dice quién pregunta: `game`, `version` (la del juego), `kit` (la de MpKit), `platform`, `install` (al azar, de 16 a 64 letras, números, `_` o `-`; la guarda el juego) y `session` (nueva en cada proceso, así dos copias del juego en una PC tienen dos asientos). La IP sale de la conexión, nunca del cuerpo. Las respuestas son JSON; un rechazo es `{"error": "<palabra>", …}`.
 
 | Ruta | Quién | Qué |
 |---|---|---|

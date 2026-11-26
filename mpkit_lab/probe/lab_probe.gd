@@ -196,6 +196,8 @@ func _run() -> void:
 			await _carry_the_ball()
 		"sports_tackler":
 			await _tackle_the_carrier()
+		"turns_player":
+			await _play_turns()
 		_:
 			_check(false, "known role %s" % _role)
 	_echo("PROBE %s %s" % [_role, "PASS" if _fails == 0 else "FAIL"])
@@ -237,6 +239,7 @@ func _play_basic(slot: int) -> void:
 	var pawn := await _pawn(slot)
 	if pawn == null:
 		return
+	_check(Mp.player(Mp.me()) == pawn, "Mp.player(Mp.me()) is this client's pawn")
 	var start_x: float = pawn.position.x
 	Input.action_press(&"ui_right")
 	await _until(func() -> bool: return pawn.position.x > start_x + 1.0, "P%d moved right" % slot)
@@ -1239,6 +1242,81 @@ func _refused_online() -> void:
 
 
 ## Walks down and up at a steady speed, in legs of LEG_S: the lag shooter's moving target.
+## Turn-based example (examples/turns_2d): plays its seat until the game is over, on its turn the first free cell. Once,
+## a move that is never legal (no such cell): the server refuses it to this seat only. `--probe-rejoin`: after its
+## second move it leaves and joins again, and gets every move back (the same board, then the game goes on). Prints
+## `TURNS BOARD <cells> <hash> <moves>` at the end, to compare the processes.
+func _play_turns() -> void:
+	await _until(func() -> bool: return MpKit.is_networked() and MpKit.has_local_slot(), "this peer has a seat")
+	var slot := MpKit.local_slot()
+	if not await _until(_turns_world_ready, "the turn-based world is up and its game began"):
+		return
+	var world := get_tree().current_scene
+	var orders := world.get_node(^"%Orders") as MpOrders
+	var refused: Array[String] = []
+	orders.rejected.connect(func(_m: StringName, _a: Array, reason: String) -> void: refused.append(reason))
+	var moved := 0
+	var tried_wrong := false
+	var rejoined := false
+	var end := Time.get_ticks_msec() + int(step_timeout_s * 3000.0)
+	while Time.get_ticks_msec() < end:
+		var rules: Object = world.get(&"rules")
+		if int(rules.get(&"winner")) != 0:
+			break
+		if not tried_wrong:
+			tried_wrong = true
+			world.call(&"play", 99)
+			await _until(func() -> bool: return not refused.is_empty(), "a move that is never legal was refused")
+			_check(refused[0] in ["There is no such cell.", "It is not your turn."], "the judge's reason came back (%s)" % refused[0])
+		elif int(rules.get(&"turn")) == slot:
+			var before := orders.last_seq()
+			world.call(&"play", (rules.get(&"cells") as PackedInt32Array).find(0))
+			await _until(func() -> bool: return orders.last_seq() > before, "move %d taken" % (moved + 1))
+			moved += 1
+			if moved == 2 and MpBoot.user_flag("probe-rejoin") and not rejoined:
+				rejoined = true
+				var cells_before: PackedInt32Array = (rules.get(&"cells") as PackedInt32Array).duplicate()
+				var seq_before := orders.last_seq()
+				if not await _leave_and_join_turns(slot):
+					return
+				world = get_tree().current_scene
+				orders = world.get_node(^"%Orders") as MpOrders
+				orders.rejected.connect(func(_m: StringName, _a: Array, reason: String) -> void: refused.append(reason))
+				await _until(func() -> bool: return orders.last_seq() >= seq_before, "back: every move came again")
+				var cells_now := world.get(&"rules").get(&"cells") as PackedInt32Array
+				var same := true
+				for i in cells_before.size():
+					same = same and (cells_before[i] == 0 or cells_now[i] == cells_before[i])
+				_check(same, "back: the same board (%s, was %s)" % [cells_now, cells_before])
+		await get_tree().process_frame
+	var rules_end: Object = world.get(&"rules")
+	_check(int(rules_end.get(&"winner")) != 0, "the game ended")
+	_check(refused.size() == 1, "only this seat's own refusal reached it (%d)" % refused.size())
+	_check(orders.moves().size() == orders.last_seq(), "every move kept here (%d)" % orders.last_seq())
+	_echo("TURNS BOARD %s %d %d" % [rules_end.get(&"cells"), rules_end.call(&"hash_value"), orders.last_seq()])
+
+
+func _turns_world_ready() -> bool:
+	var world := get_tree().current_scene
+	if world == null or world.name != "World" or world.get_node_or_null(^"%Orders") == null:
+		return false
+	return (world.get_node(^"%Orders") as MpOrders).start().has("first")
+
+
+func _leave_and_join_turns(slot: int) -> bool:
+	var flow := MpFlow.find_in_tree(self)
+	var address := "127.0.0.1:%d" % MpKit.port
+	flow.return_to_boot()
+	await _until(func() -> bool: return get_tree().current_scene.name == "Boot" and not MpKit.is_networked(), "left to the menu")
+	await get_tree().create_timer(0.5).timeout
+	_ever_slot = 0
+	_check(flow.join_address(address) == OK, "join_address(%s) again" % address)
+	if not await _until(func() -> bool: return _networked_slot() and _ever_slot != 0, "the server let the seat back in"):
+		return false
+	_check(MpKit.local_slot() == slot, "the same seat (%d)" % MpKit.local_slot())
+	return await _until(_turns_world_ready, "back in the turn-based world")
+
+
 ## Sports example (examples/sports_2d), the carrier: takes the ball and runs up and down with it. Its own running is
 ## predicted, so while nothing knocks it its own corrections stay small; a tackle knocks it (the server's word, replayed).
 func _carry_the_ball() -> void:

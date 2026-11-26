@@ -2,12 +2,12 @@
 name: godot-mp-kit
 description: >-
   Implementa multiplayer host-authoritative en Godot 4 con el addon informal
-  MpKit (ENet, slots, handshake, snapshots) más el código del juego. Preguntá antes
-  el tipo: sin MP (no copies el addon), local/WiFi (listen-server), u online
-  (dedicated server, mismo proyecto, VPS). Usar al copiar addons/mp_kit,
+  MpKit (ENet, slots, handshake, snapshots) más el código del juego. Preguntá
+  antes el tipo: sin MP (no copies el addon), local/WiFi (listen-server), u
+  online (dedicated server, mismo proyecto, VPS). Usar al copiar addons/mp_kit,
   host/host_dedicated/join, RPCs submit_*, túnel Dictionary, MultiplayerSpawner,
-  1P offline, rejoin, export dedicated, scaffold de feature, o al extraer
-  netcode a otro proyecto.
+  1P offline, rejoin, un juego por turnos o de cartas sin peones (MpOrders),
+  export dedicated, scaffold de feature, o al extraer netcode a otro proyecto.
 ---
 
 # Godot — MpKit y multiplayer
@@ -88,6 +88,9 @@ El kit tiene que poder usarlo una persona **sin IA**. Por eso, en código nuevo,
 | Orden puntual del dueño | `net.to_server(&"x", args)` → `func mp_sv_x(args)` | `@rpc("any_peer")` + `accept_command` |
 | Efecto en todos | `net.to_all(&"x", args)` → `func mp_all_x(args)` (solo el servidor) | `@rpc("authority")` propio |
 | Score, reloj, ronda | **`MpState`** (`set_value`, `add`, señal `changed`) | `push_snapshot` + `snapshot_for_joiner` a mano |
+| Un juego por turnos, de cartas o de tablero (sin peones), o las órdenes de un RTS | un `MpWorld` **sin Player Scene** + un **`MpOrders`**: `submit(name, args)`, `judge` en el servidor (`""` o el motivo), `applied(seq, slot, name, args)` en todos, `rejected` solo al que la mandó, `begin(start)` con la semilla; el que carga tarde o vuelve recibe todas las jugadas (`is_replaying()`); `state_hash` → `desynced`. `examples/turns_2d`, GUIDE §7.9 | un `MpActor` invisible por asiento con su spawner, un historial y una reconexión propios sobre el túnel |
+| Mandarle algo propio al que carga tarde o vuelve | `MpKit.client_world_ready(peer_id)` + `MpKit.push_custom_to(peer_id, canal, datos)` (GUIDE §7.10) | `to_all` / `broadcast_custom` para algo que tiene que quedar: no le llega al que carga |
+| Quién mandó un mensaje del túnel | `MpKit.slot_of_sender(from_peer)` (igual en solo, host y cliente) | `slot_for_peer(from_peer)` (da 0 en solo) o un asiento dentro de los datos |
 | Inicio y fin de partida | **`MpMatch`** (`all_loaded`, `player_abandoned`, `finish(result)`) | código propio de tickets y abandonos |
 | Salas online | **`MpRoomServer`** + `MpLobbyConfig` + `MpRoomRules`; cliente **`MpLobbyScreen`** | `Callable`s del lobby cableados a mano |
 | Partida privada en la PC | `MpLocalServer` / `MpBootMenu.offer_private_server`; el HUD muestra `ip:puerto#CÓDIGO` (`MpInviteLabel`) | un launcher propio |
@@ -242,4 +245,4 @@ Mismo código de colisión y `submit_*` (el host local no manda RPC). Probar sie
 - [ ] Guest no simula reglas; servidor valida sender.
 - [ ] 1P offline verificado.
 - [ ] Pawns son packed scenes componibles, no lógica de red incrustada en el kit.
-- [ ] Features nuevas: un actor con `MpActor` (+ `MpInput`), con Tools › *Make selection a network actor* o `/new-mp-feature`; túnel solo para lo que no cubren `to_server` / `to_all` / `Mp.state()`.
+- [ ] Features nuevas: un actor con `MpActor` (+ `MpInput`), con Tools › *Make selection a network actor* o `/new-mp-feature`; jugadas de un juego sin peones con `MpOrders`; túnel solo para lo que no cubren `to_server` / `to_all` / `Mp.state()` / `MpOrders`.

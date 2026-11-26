@@ -57,6 +57,7 @@ mp_kit	MpMatchmaker	node	Node	Node	addons/mp_kit/mp_matchmaker.gd
 mp_kit	MpNetConfig	resource	Resource	Resource	addons/mp_kit/core/mp_net_config.gd
 mp_kit	MpNetQuality	node	Node	Node	addons/mp_kit/core/mp_net_quality.gd
 mp_kit	MpOnline	node	Node	Node	addons/mp_kit/online/mp_online.gd
+mp_kit	MpOrders	node	Node	Node	addons/mp_kit/nodes/mp_orders.gd
 mp_kit	MpProcessRunner	resource	Resource	Resource	addons/mp_kit/lobby/mp_process_runner.gd
 mp_kit	MpProcessRunnerStub	resource	MpProcessRunner	Resource	addons/mp_kit/lobby/mp_process_runner_stub.gd
 mp_kit	MpReplicate	node	Node	Node	addons/mp_kit/mp_replicate.gd
