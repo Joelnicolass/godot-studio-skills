@@ -23,14 +23,14 @@ Con el kit:
 - Código estándar de Godot: patrones probados (señales, bus `Events`, FSM, componentes…), tipado real, `gdformat` / `gdlint`, y GUT + CI si hay tests (skill `godot-code-quality`).
 - Un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
 - MpKit aparte del gameplay; notas entre sesiones en Engram o `.studio/MEMORY.md` si hace falta.
-- El juego vive en **otro** repo; acá hay skills, commands, agentes y addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit, CommandKit, UnlockKit, StatKit, DeckKit, DiceKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- El juego vive en **otro** repo; acá hay skills, commands, agentes y addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit, CommandKit, UnlockKit, StatKit, DeckKit, DiceKit, GestureKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Pieza               | Dónde                                                                          | Qué es                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orquestador         | `skills/godot-studio-workflow/`                                                | El agente del chat: entrevista + `/implement-feature` (PRD/RFC opcionales)                       |
-| Cómo escribir Godot | `skills/`                                                                      | Arquitectura, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, percepción, sangre y otras sustancias, bots, tableros, turnos, recursos y jugadas, juicy, materiales, investigar features, visual, memoria, tests y CI, un banco de determinismo (con AgentKit) |
+| Cómo escribir Godot | `skills/`                                                                      | Arquitectura, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, percepción, sangre y otras sustancias, bots, tableros, turnos, recursos y jugadas, gestos táctiles, juicy, materiales, investigar features, visual, memoria, tests y CI, un banco de determinismo (con AgentKit) |
 | Subagentes          | `agents/`                                                                      | Tech lead, developer, reviewer; tester y visual opcionales. Playtester: módulo playtest          |
-| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/add-bots`, `/add-grid`, `/add-turns`, `/add-wallet`, `/add-commands`, `/add-unlocks`, `/add-stats`, `/add-deck`, `/add-dice`, `/create-prd`, … |
+| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/add-bots`, `/add-grid`, `/add-turns`, `/add-wallet`, `/add-commands`, `/add-unlocks`, `/add-stats`, `/add-deck`, `/add-dice`, `/add-gestures`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer con nodos y sin RPCs a mano: el juego en un `.tres` (`MpGame`), el mundo en un nodo (`MpWorld`), los verbos de la partida en `Mp`, más `MpActor`, `MpInput`, `MpState`, `MpMatch`. Predicción, buffers adaptativos, compensación de lag y calidad de red; LAN, dedicated, salas online, partida privada, web, relay para servidores sin IP pública (Railway), deploy a VPS y asistente *Setup game*. **Cero** gameplay. Empezá por `addons/mp_kit/QUICKSTART.md` (paso a paso: `GUIDE.md`); pruebas sin juego en `mpkit_lab/run/all.sh`. |
 | AgentKit            | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | CLI de agentes + harness. Este kit lo instala; no se mantiene acá.                               |
 | FsmKit              | `addons/fsm_kit/`                                                              | `FsmMachine` + `FsmState`. Sin autoload.                                                         |
@@ -49,6 +49,7 @@ Con el kit:
 | StatKit             | `addons/stat_kit/`                                                             | Estadísticas con bonus: `StatSheet` (datos puros: una base por estadística y modificadores `StatModifier` que suman, suman porcentajes, multiplican o fijan, en orden ADD → PERCENT → MUL → SET; límites por estadística; la fuente se da al agregar y `remove_source` saca todo lo de una; `stat_changed` solo si cambia, `to_dict`) y el nodo `StatBlock`, que muestra los valores finales en el inspector. Sin ítems, inventario, duración de buffs ni UI, sin red. Empezá por `addons/stat_kit/README.md`; tests en `statkit_lab/`. |
 | DeckKit             | `addons/deck_kit/`                                                             | Cartas: `CardStack` (datos puros: una pila en orden con el índice 0 arriba, copias por índice, robar, mover entre pilas, mezclar con tu `RandomNumberGenerator`, rellenar con el descarte, `to_dict`), el recurso `CardData`, los nodos `CardPile` y `Deck` (con `rng_seed` o el rng de la partida) y un `HandView` que muestra una mano en abanico, dibujada o con una escena por carta, también en el editor. Sin reglas de cartas, costos ni turnos, sin red. Empezá por `addons/deck_kit/README.md`; tests en `deckkit_lab/`. |
 | DiceKit             | `addons/dice_kit/`                                                             | Dados: `DieData` (caras con valor, etiquetas e ícono; d4 a d20 listos) y `DiceRoll` (datos puros: `sum()`, `count(tag)`, los más altos o bajos, volver a tirar algunos, dados mezclados, `to_dict`), tirados con tu `RandomNumberGenerator` (la misma semilla, las mismas tiradas), el nodo `DiceRoller` (botón Roll en el inspector, dados extra) y `DiceTray3D` (los dados giran y caen en 3D, con tu malla). Sin reglas de juego, sin física, sin red. Empezá por `addons/dice_kit/README.md`; tests en `dicekit_lab/`. |
+| GestureKit          | `addons/gesture_kit/`                                                          | Gestos táctiles que Godot no trae: tocar con varios dedos, doble toque, mantener apretado, swipe, arrastrar con la velocidad al soltar, pellizcar y girar. Un `GestureArea` (Control) que avisa con señales o aprieta acciones del Mapa de entrada, y un `GestureReader` de datos puros. El mouse es un dedo (Alt + arrastrar son dos). Sin stick ni botones (los trae Godot), sin cámara. Empezá por `addons/gesture_kit/README.md`; tests en `gesturekit_lab/`. |
 
 Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es código del juego.
 
@@ -114,23 +115,24 @@ Camino corto (default):
 16. `/add-stats` — estadísticas con bonus: ADD → PERCENT → MUL → SET, límites, fuentes que se sacan de una vez y valores finales en el inspector (addon StatKit)
 17. `/add-deck` — cartas: mazo con semilla, mano, descarte, robar, mezclar y rellenar, copias de una carta, una mano en abanico (addon DeckKit)
 18. `/add-dice` — dados: caras con números o símbolos, suma y conteo por etiqueta, ventaja y volver a tirar, semilla, bandeja 3D (addon DiceKit)
-19. `/new-mp-feature` — solo scaffold de un actor MpKit
-20. `/create-material` — material / textura procedural con [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
-21. `/research-feature` — entender una mecánica de un juego similar (investigación web, y decompilarlo si se puede abrir) antes de implementarla
-22. `/workflow-status`
+19. `/add-gestures` — gestos táctiles: tocar con varios dedos, doble toque, mantener, swipe, arrastrar y lanzar, pellizcar y girar, con el mouse como dedo (addon GestureKit)
+20. `/new-mp-feature` — solo scaffold de un actor MpKit
+21. `/create-material` — material / textura procedural con [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
+22. `/research-feature` — entender una mecánica de un juego similar (investigación web, y decompilarlo si se puede abrir) antes de implementarla
+23. `/workflow-status`
 
 Contrato escrito, si lo pedís:
 
-23. `/create-prd` → `PRD.md` (GDD **corto y vivo**, no el título entero)
-24. `/verify-prd` → `PRD-REVIEW.md`
-25. `/extract-features` → `FEATURES.md`
-26. `/generate-rules` → `RULES.md`
-27. `/create-visual-guide` → `VISUAL.md`
-28. `/generate-rfcs` → `RFCs/` + `RFCS.md`
-29. `/implement-rfc <id>`
-30. `/review-rfc <id>`
-31. `/manage-changes`
-32. `/test-strategy` — opcional
+24. `/create-prd` → `PRD.md` (GDD **corto y vivo**, no el título entero)
+25. `/verify-prd` → `PRD-REVIEW.md`
+26. `/extract-features` → `FEATURES.md`
+27. `/generate-rules` → `RULES.md`
+28. `/create-visual-guide` → `VISUAL.md`
+29. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+30. `/implement-rfc <id>`
+31. `/review-rfc <id>`
+32. `/manage-changes`
+33. `/test-strategy` — opcional
 
 ## Instalar addons en un proyecto Godot
 
@@ -152,6 +154,7 @@ Contrato escrito, si lo pedís:
 ./install.sh --addon /path/to/godot-project stat_kit   # StatKit
 ./install.sh --addon /path/to/godot-project deck_kit   # DeckKit
 ./install.sh --addon /path/to/godot-project dice_kit   # DiceKit
+./install.sh --addon /path/to/godot-project gesture_kit # GestureKit
 ./install.sh --addon /path/to/godot-project agent_kit  # AgentKit (lo trae del repo playtest)
 ```
 
@@ -184,6 +187,7 @@ Cada kit trae un **ejemplo mínimo**: la integración más chica que anda, para 
 | StatKit | `addons/stat_kit/examples/minimal/minimal.tscn`: la carta de un héroe con espada, escudo y pantano que se ponen y se sacan, y una bendición de dos bonus que se apila y se saca con `remove_source`| — | [README](addons/stat_kit/README.md) | `statkit_lab/` |
 | DeckKit | `addons/deck_kit/examples/minimal/minimal.tscn`: un mazo de 12 cartas (tres copias de una), robar a una mano de 5 que usa una escena propia por carta, descartar con un clic, rellenar el mazo mezclado y repartir con una semilla (la misma semilla, el mismo orden)| — | [README](addons/deck_kit/README.md) | `deckkit_lab/` |
 | DiceKit | `addons/dice_kit/examples/minimal/minimal.tscn`: un dado propio (3 hit, 2 blank, 1 crit) que se tira de a 1, 2 o 3 en una bandeja 3D; con la misma semilla vuelven las mismas tiradas| — | [README](addons/dice_kit/README.md) | `dicekit_lab/` |
+| GestureKit | `addons/gesture_kit/examples/minimal/minimal.tscn`: una tarjeta que se arrastra y se lanza, se pellizca y se gira con dos dedos (Alt + arrastrar con el mouse), vuelve con un doble toque, se marca manteniendo y cambia de color con un swipe | — | [README](addons/gesture_kit/README.md) | `gesturekit_lab/` |
 
 Cada lab es un proyecto Godot chico, con el kit por symlink; su README dice cómo correr los tests.
 
@@ -209,6 +213,7 @@ addons/unlock_kit/
 addons/stat_kit/
 addons/deck_kit/
 addons/dice_kit/
+addons/gesture_kit/
 mpkit_lab/                     # tests, pruebas de red y ejemplos de MpKit, sin juego
 fsmkit_lab/                    # tests y ejemplo de FsmKit, sin juego
 platkit_lab/                   # tests y ejemplo de PlatKit, sin juego
@@ -222,6 +227,7 @@ unlockkit_lab/                 # tests y ejemplo de UnlockKit, sin juego
 statkit_lab/                   # tests y ejemplo de StatKit, sin juego
 deckkit_lab/                   # tests y ejemplo de DeckKit, sin juego
 dicekit_lab/                   # tests y ejemplo de DiceKit, sin juego
+gesturekit_lab/                # tests y ejemplo de GestureKit, sin juego
 grasskit_lab/                  # tests y ejemplos de GrassKit, sin juego
 perceptionkit_lab/             # tests y ejemplos de PerceptionKit, sin juego
 spillkit_lab/                  # tests y ejemplos de SpillKit, sin juego
@@ -253,6 +259,7 @@ skills/
   godot-stat-kit/
   godot-deck-kit/
   godot-dice-kit/
+  godot-gesture-kit/
   godot-material-maker/
   godot-feature-research/
   godot-determinism/

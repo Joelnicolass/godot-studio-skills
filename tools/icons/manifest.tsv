@@ -4,6 +4,7 @@ command_kit	CommandKit	emblem			addons/command_kit/icons/command_kit.svg	command
 deck_kit	DeckKit	emblem			addons/deck_kit/icons/deck_kit.svg	deck_kit	
 dice_kit	DiceKit	emblem			addons/dice_kit/icons/dice_kit.svg	dice_kit	
 fsm_kit	FsmKit	emblem			addons/fsm_kit/icons/fsm_kit.svg	fsm_kit	
+gesture_kit	GestureKit	emblem			addons/gesture_kit/icons/gesture_kit.svg	gesture_kit	
 grass_kit	GrassKit	emblem			addons/grass_kit/icons/grass_kit.svg	grass_kit	
 grid_kit	GridKit	emblem			addons/grid_kit/icons/grid_kit.svg	grid_kit	
 mp_kit	MpKit	emblem			addons/mp_kit/icons/mp_kit.svg	mp_kit	
@@ -33,6 +34,7 @@ dice_kit	DieData	resource	Resource	addons/dice_kit/resources/die_data.gd	addons/
 dice_kit	DieFace	resource	Resource	addons/dice_kit/resources/die_face.gd	addons/dice_kit/icons/die_face.svg	die_face	
 fsm_kit	FsmMachine	node	Node	addons/fsm_kit/fsm_machine.gd	addons/fsm_kit/icons/fsm_machine.svg	state_graph	
 fsm_kit	FsmState	node	Node	addons/fsm_kit/fsm_state.gd	addons/fsm_kit/icons/fsm_state.svg	state	
+gesture_kit	GestureArea	node	Control	addons/gesture_kit/nodes/gesture_area.gd	addons/gesture_kit/icons/gesture_area.svg	pointing_hand	
 grass_kit	GrassClear3D	node	Node3D	addons/grass_kit/field/grass_clear_3d.gd	addons/grass_kit/icons/grass_clear_3d.svg	grass_gap	
 grass_kit	GrassClearing	resource	Resource	addons/grass_kit/core/grass_clearing.gd	addons/grass_kit/icons/grass_clearing.svg	grass_gaps	
 grass_kit	GrassField3D	node	Node3D	addons/grass_kit/field/grass_field_3d.gd	addons/grass_kit/icons/grass_field_3d.svg	tuft	

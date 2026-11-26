@@ -41,6 +41,7 @@ SKILL_NAMES=(
   godot-stat-kit
   godot-deck-kit
   godot-dice-kit
+  godot-gesture-kit
   godot-material-maker
   godot-feature-research
   godot-visual-qa
@@ -75,10 +76,10 @@ Instalador del kit Godot studio (skills + commands + subagentes + addons).
   ./install.sh --all                Cursor y Claude Code
   ./install.sh --project            ./.cursor/ del cwd (./.claude/ con --claude; los dos con --all)
   ./install.sh --dest DIR           Skills en DIR (commands y agents al lado)
-  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|unlock_kit|stat_kit|deck_kit|dice_kit|all]
+  ./install.sh --addon GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|unlock_kit|stat_kit|deck_kit|dice_kit|gesture_kit|all]
                                     Copia el addon al proyecto Godot (default: mp_kit)
                                     agent_kit se instala desde godot-studio-playtest
-  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|unlock_kit|stat_kit|deck_kit|dice_kit|all]
+  ./install.sh --addon-only GODOT_ROOT [mp_kit|agent_kit|fsm_kit|plat_kit|rts_kit|prop_kit|grass_kit|perception_kit|spill_kit|bot_kit|grid_kit|turn_kit|wallet_kit|command_kit|unlock_kit|stat_kit|deck_kit|dice_kit|gesture_kit|all]
                                     Solo el addon
   ./install.sh --agent-addon GODOT_ROOT
                                     Alias de --addon GODOT_ROOT agent_kit
@@ -466,6 +467,12 @@ install_addon() {
       echo "Habilitá el plugin DiceKit (sin autoload). Las reglas usan DieData.roll(n, rng) o DiceRoll.of(dice, rng): sum(), count(tag); d4 a d20 listos en addons/dice_kit/dice;"
       echo "en la escena, un DiceRoller (con rng_seed y el botón Roll del inspector) y una DiceTray3D opcional. Arrancá desde addons/dice_kit/examples/minimal."
       ;;
+    gesture_kit)
+      copy_one_addon "$project" "gesture_kit"
+      echo
+      echo "Habilitá el plugin GestureKit (sin autoload). Un GestureArea (Full Rect, con el HUD encima) avisa tapped, double_tapped, long_pressed, swiped, dragged, pinched y twisted,"
+      echo "y puede apretar acciones desde el inspector. Con el mouse: un clic es un dedo, Alt + arrastrar son dos. Arrancá desde addons/gesture_kit/examples/minimal."
+      ;;
     all)
       install_addon "$project" "mp_kit"
       echo
@@ -502,9 +509,11 @@ install_addon() {
       install_addon "$project" "deck_kit"
       echo
       install_addon "$project" "dice_kit"
+      echo
+      install_addon "$project" "gesture_kit"
       ;;
     *)
-      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | turn_kit | wallet_kit | command_kit | unlock_kit | stat_kit | deck_kit | dice_kit | all)" >&2
+      echo "Addon desconocido: ${which} (mp_kit | agent_kit | fsm_kit | plat_kit | rts_kit | prop_kit | grass_kit | perception_kit | spill_kit | bot_kit | grid_kit | turn_kit | wallet_kit | command_kit | unlock_kit | stat_kit | deck_kit | dice_kit | gesture_kit | all)" >&2
       exit 1
       ;;
   esac
@@ -566,6 +575,7 @@ if [[ "$MODE" == "list" ]]; then
   echo "  - addons/stat_kit   (./install.sh --addon /path/to/godot-project stat_kit)"
   echo "  - addons/deck_kit   (./install.sh --addon /path/to/godot-project deck_kit)"
   echo "  - addons/dice_kit   (./install.sh --addon /path/to/godot-project dice_kit)"
+  echo "  - addons/gesture_kit (./install.sh --addon /path/to/godot-project gesture_kit)"
   echo
   echo "AgentKit / playtester (repo aparte, este instalador lo trae):"
   echo "  https://github.com/Joelnicolass/godot-studio-playtest"
@@ -618,6 +628,7 @@ install_harness() {
     echo "  estadísticas: godot-stat-kit"
     echo "  cartas:       godot-deck-kit"
     echo "  dados:        godot-dice-kit"
+    echo "  gestos:       godot-gesture-kit"
     echo "  materiales:   godot-material-maker"
     echo "  investigar:   godot-feature-research"
   fi
@@ -627,7 +638,7 @@ install_harness() {
     echo
     install_commands "$CMD_DEST"
     echo
-    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /add-grid, /add-turns, /add-wallet, /add-commands, /add-unlocks, /add-stats, /add-deck, /add-dice, /create-material, /research-feature, /create-prd, …"
+    echo "Listo (commands). En ${label}: /implement-feature, /add-juicy, /add-state-machine, /add-platformer-2d, /add-rts-controls, /add-props, /add-grass, /add-perception, /add-spill, /add-bots, /add-grid, /add-turns, /add-wallet, /add-commands, /add-unlocks, /add-stats, /add-deck, /add-dice, /add-gestures, /create-material, /research-feature, /create-prd, …"
   fi
 
   if [[ "$DO_AGENTS" -eq 1 ]]; then

@@ -86,7 +86,7 @@ Acciones semánticas en Project Settings → Input Map: `move_left`, `attack`, `
 - Movimiento continuo / hold: `_physics_process` + `Input.get_vector(...)`.
 - One-shot de gameplay (salto, ataque): `_unhandled_input` (la UI ya pudo consumir el evento).
 - `_input` solo para interceptar (pausa, remap).
-- Celular o tablet: `VirtualJoystick` y `TouchScreenButton` aprietan las mismas acciones; el juego no lee toques. Mostrarlos solo en teléfonos, mirar arrastrando en 3D y acciones de un toque: [touch.md](touch.md).
+- Celular o tablet: `VirtualJoystick` y `TouchScreenButton` aprietan las mismas acciones; el juego no lee toques. Mostrarlos solo en teléfonos, mirar arrastrando en 3D y acciones de un toque: [touch.md](touch.md). Gestos que Godot no trae (swipe, doble toque, mantener, pellizcar, girar): GestureKit (`godot-gesture-kit`, `/add-gestures`).
 
 El catcher de input llama `apply_*` (en red, el `MpInput` del actor manda las acciones y el servidor aplica); no spawnea ni puntúa.
 
