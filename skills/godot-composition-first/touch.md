@@ -25,6 +25,8 @@ TouchControls (CanvasLayer)
 
 ## What Godot does not have
 
+**Gestures.** Godot has no swipe, no double tap with a distance, no long press (except on Android, as a right click), no two- or three-finger tap, and no two-finger pinch and twist on iOS and the web. The GestureKit addon is for that (skill `godot-gesture-kit`, `/add-gestures`): a `GestureArea` that reports each gesture with a signal or presses an action, with the HUD on top.
+
 **Showing it only on phones.** Desktop browsers often say they have a touch screen, so `DisplayServer.is_touchscreen_available()` (and `VISIBILITY_TOUCHSCREEN_ONLY`) show the controls on a laptop. Filter by platform, and also show them on the first real touch:
 
 ```gdscript
@@ -99,11 +101,12 @@ func tap(action: StringName) -> void:
 
 ## Testing it without a phone
 
-Touches are simulated with `get_viewport().push_input(event)` (`InputEventScreenTouch`, `InputEventScreenDrag` with their `index`), reading `Input.get_action_strength()`. In the editor, **Project Settings › Input Devices › Pointing › Emulate Touch From Mouse** lets you try one finger with the mouse. Two fingers and the browser, on the phone.
+Touches are simulated with `get_viewport().push_input(event)` (`InputEventScreenTouch`, `InputEventScreenDrag` with their `index`), reading `Input.get_action_strength()`. In the editor, **Project Settings › Input Devices › Pointing › Emulate Touch From Mouse** lets you try one finger with the mouse. Two fingers and the browser, on the phone; a GestureKit `GestureArea` also simulates two fingers with Alt + drag.
 
 ## Antipatterns
 
 - Writing your own stick: `VirtualJoystick` already appears where the finger lands, has a dead zone and presses the actions with strength.
 - The game reading touches: the controls press actions and the game reads actions, whether the input comes from the keyboard, a gamepad or the screen.
 - `DisplayServer.is_touchscreen_available()` as "it is a phone": on the desktop web it lies.
+- A swipe, a pinch or a double tap read by hand with `InputEventScreenTouch`: GestureKit already reads them.
 - A `InputEventScreenDrag`'s `relative` to look, with two fingers in the browser.
