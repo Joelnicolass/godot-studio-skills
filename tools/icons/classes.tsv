@@ -6,6 +6,14 @@ bot_kit	BotGoal3D	node	Node3D	Node3D	addons/bot_kit/nodes/bot_goal_3d.gd
 bot_kit	BotMode	node	Node	Node	addons/bot_kit/nodes/bot_mode.gd
 bot_kit	BotWeapon	resource	Resource	Resource	addons/bot_kit/core/bot_weapon.gd
 command_kit	GameCommands	node	Node	Node	addons/command_kit/nodes/game_commands.gd
+deck_kit	CardData	resource	Resource	Resource	addons/deck_kit/resources/card_data.gd
+deck_kit	CardPile	node	Node	Node	addons/deck_kit/nodes/card_pile.gd
+deck_kit	Deck	node	CardPile	Node	addons/deck_kit/nodes/deck.gd
+deck_kit	HandView	node	Control	Control	addons/deck_kit/nodes/hand_view.gd
+dice_kit	DiceRoller	node	Node	Node	addons/dice_kit/nodes/dice_roller.gd
+dice_kit	DiceTray3D	node	Node3D	Node3D	addons/dice_kit/nodes/dice_tray_3d.gd
+dice_kit	DieData	resource	Resource	Resource	addons/dice_kit/resources/die_data.gd
+dice_kit	DieFace	resource	Resource	Resource	addons/dice_kit/resources/die_face.gd
 fsm_kit	FsmMachine	node	Node	Node	addons/fsm_kit/fsm_machine.gd
 fsm_kit	FsmState	node	Node	Node	addons/fsm_kit/fsm_state.gd
 grass_kit	GrassClear3D	node	Node3D	Node3D	addons/grass_kit/field/grass_clear_3d.gd
@@ -19,6 +27,7 @@ grass_kit	GrassQuality	resource	Resource	Resource	addons/grass_kit/core/grass_qu
 grass_kit	GrassWind	resource	Resource	Resource	addons/grass_kit/core/grass_wind.gd
 grid_kit	GridBoard	node	Node	Node	addons/grid_kit/nodes/grid_board.gd
 grid_kit	GridCursor	node	Node3D	Node3D	addons/grid_kit/nodes/grid_cursor.gd
+grid_kit	GridFog	node	Node3D	Node3D	addons/grid_kit/nodes/grid_fog.gd
 grid_kit	GridLayout	resource	Resource	Resource	addons/grid_kit/resources/grid_layout.gd
 grid_kit	GridView3D	node	Node3D	Node3D	addons/grid_kit/nodes/grid_view_3d.gd
 mp_kit	MpActor	node	Node	Node	addons/mp_kit/nodes/mp_actor.gd
@@ -121,7 +130,12 @@ rts_kit	RtsWedgeFormation	resource	RtsFormation	Resource	addons/rts_kit/orders/f
 spill_kit	SpillPool3D	node	Node3D	Node3D	addons/spill_kit/nodes/spill_pool_3d.gd
 spill_kit	SpillSource3D	node	Node3D	Node3D	addons/spill_kit/nodes/spill_source_3d.gd
 spill_kit	SpillType	resource	Resource	Resource	addons/spill_kit/core/spill_type.gd
+stat_kit	StatBlock	node	Node	Node	addons/stat_kit/nodes/stat_block.gd
+stat_kit	StatModifier	resource	Resource	Resource	addons/stat_kit/resources/stat_modifier.gd
 turn_kit	TurnClock	node	Node	Node	addons/turn_kit/nodes/turn_clock.gd
 turn_kit	TurnSeat	node	Node	Node	addons/turn_kit/nodes/turn_seat.gd
+unlock_kit	UnlockEntry	node	Node	Node	addons/unlock_kit/nodes/unlock_entry.gd
+unlock_kit	UnlockTree	node	Node	Node	addons/unlock_kit/nodes/unlock_tree.gd
+unlock_kit	UnlockTreeView	node	Control	Control	addons/unlock_kit/nodes/unlock_tree_view.gd
 wallet_kit	Wallet	node	Node	Node	addons/wallet_kit/nodes/wallet.gd
 wallet_kit	WalletSubstitute	resource	Resource	Resource	addons/wallet_kit/resources/wallet_substitute.gd

@@ -33,13 +33,47 @@ func _frames(count: int) -> void:
 		await get_tree().process_frame
 
 
+# The editor's own save, without the thumbnail: headless has no viewport texture to make one from (the engine
+# reports "Parameter t is null" in texture_2d_get when it tries).
+func _save_edited_scene() -> void:
+	EditorInterface.save_scene_as(EditorInterface.get_edited_scene_root().scene_file_path, false)
+
+
+# Undo and redo as a person does, with the editor's shortcut: the editor keeps its own list of every history's
+# steps, and calling `UndoRedo.undo()` on a history directly leaves that list behind ("Inconsistent redo history").
+func _editor_undo() -> void:
+	await _press_z(false)
+
+
+func _editor_redo() -> void:
+	await _press_z(true)
+
+
+func _press_z(shift: bool) -> void:
+	var key := InputEventKey.new()
+	key.keycode = KEY_Z
+	key.command_or_control_autoremap = true
+	key.shift_pressed = shift
+	key.pressed = true
+	await _send(key)
+	var up := key.duplicate() as InputEventKey
+	up.pressed = false
+	await _send(up)
+
+
+func _send(event: InputEvent) -> void:
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+	await _frames(2)
+
+
 ## A copy of an example (the addon's own files stay as they are).
 func _open_copy(source: String, name: String) -> Node:
 	var folder := FOLDER.path_join("run_%d" % Time.get_ticks_usec())
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var copy := folder.path_join(name)
 	var text := FileAccess.get_file_as_string(source)
-	text = RegEx.create_from_string(" uid=\"uid://[a-z0-9]+\"").sub(text, "", true)
+	text = RegEx.create_from_string(' uid="uid://[a-z0-9]+"').sub(text, "", true)
 	var file := FileAccess.open(copy, FileAccess.WRITE)
 	file.store_string(text)
 	file.close()
@@ -102,27 +136,34 @@ func _check_3d(kit: EditorPlugin) -> void:
 	var restore: Variant = plugin._get_handle_value(gizmo, 0, false)
 	plugin._set_handle(gizmo, 0, false, camera, camera.unproject_position(eye + forward * 9.0))
 	plugin._commit_handle(gizmo, 0, false, restore, false)
-	_check(absf(sensor.sight_radius_m - 9.0) < 0.15, "dragging the sight handle 9 m ahead (%.1f)" % sensor.sight_radius_m)
-	_history(sensor).undo()
+	_check(
+		absf(sensor.sight_radius_m - 9.0) < 0.15, "dragging the sight handle 9 m ahead (%.1f)" % sensor.sight_radius_m
+	)
+	await _editor_undo()
 	_check(is_equal_approx(sensor.sight_radius_m, 12.0), "Ctrl+Z: back to 12 m")
-	_history(sensor).redo()
+	await _editor_redo()
 	_check(absf(sensor.sight_radius_m - 9.0) < 0.15, "Ctrl+Shift+Z: 9 m again")
 	# The angle: its handle 45° off ahead, a 90° view.
 	restore = plugin._get_handle_value(gizmo, 2, false)
 	var side := forward.rotated(Vector3.UP, deg_to_rad(-45.0)) * 8.0
 	plugin._set_handle(gizmo, 2, false, camera, camera.unproject_position(eye + side))
 	plugin._commit_handle(gizmo, 2, false, restore, false)
-	_check(absf(sensor.view_angle_deg - 90.0) <= 2.0, "dragging the angle handle: a 90° view (%.0f)" % sensor.view_angle_deg)
-	_history(sensor).undo()
+	_check(
+		absf(sensor.view_angle_deg - 90.0) <= 2.0,
+		"dragging the angle handle: a 90° view (%.0f)" % sensor.view_angle_deg
+	)
+	await _editor_undo()
 	_check(is_equal_approx(sensor.view_angle_deg, 100.0), "Ctrl+Z: 100° again")
 	# The eyes: seen from the side, 0.5 m higher.
-	camera.global_transform = Transform3D(Basis.looking_at(Vector3(-1, 0, 0)), sensor.global_position + Vector3(10, 0.5, 0))
+	camera.global_transform = Transform3D(
+		Basis.looking_at(Vector3(-1, 0, 0)), sensor.global_position + Vector3(10, 0.5, 0)
+	)
 	await _frames(3)
 	restore = plugin._get_handle_value(gizmo, 4, false)
 	plugin._set_handle(gizmo, 4, false, camera, camera.unproject_position(sensor.global_position + Vector3(0, 0.5, 0)))
 	plugin._commit_handle(gizmo, 4, false, restore, false)
 	_check(absf(sensor.eye_height_m - 0.5) < 0.05, "dragging the eye handle up 0.5 m (%.2f)" % sensor.eye_height_m)
-	_history(sensor).undo()
+	await _editor_undo()
 	_check(is_zero_approx(sensor.eye_height_m), "Ctrl+Z: the eyes back at the sensor")
 	# Cancelled: the value as it was.
 	restore = plugin._get_handle_value(gizmo, 3, false)
@@ -135,11 +176,14 @@ func _check_3d(kit: EditorPlugin) -> void:
 	sensor.lose_radius_m = 16.0
 	_check(sensor._get_configuration_warnings().is_empty(), "and stops warning")
 	# Saved: the values, no internal shape.
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(5)
 	var saved := FileAccess.get_file_as_string(root.scene_file_path)
-	_check(saved.contains("sight_radius_m = 9.0") or saved.contains("sight_radius_m = 9"), "the saved scene has the dragged radius")
-	_check(not saved.contains("parent=\"Guard/Head/Sensor\""), "and no shape under the sensor (its own is internal)")
+	_check(
+		saved.contains("sight_radius_m = 9.0") or saved.contains("sight_radius_m = 9"),
+		"the saved scene has the dragged radius"
+	)
+	_check(not saved.contains('parent="Guard/Head/Sensor"'), "and no shape under the sensor (its own is internal)")
 
 
 func _check_2d(kit: EditorPlugin) -> void:
@@ -168,7 +212,7 @@ func _check_2d(kit: EditorPlugin) -> void:
 	release.position = motion.position
 	kit._forward_canvas_gui_input(release)
 	_check(absf(sensor.sight_radius_px - 250.0) <= 1.0, "dragged to 250 px (%.0f)" % sensor.sight_radius_px)
-	_history(sensor).undo()
+	await _editor_undo()
 	_check(is_equal_approx(sensor.sight_radius_px, 340.0), "Ctrl+Z: 340 px again")
 	press.position = to_screen * Vector2(150, 150)
 	_check(not kit._forward_canvas_gui_input(press), "a press away from the handles is left to the editor")

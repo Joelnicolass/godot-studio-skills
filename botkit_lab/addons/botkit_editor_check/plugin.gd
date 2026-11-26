@@ -32,13 +32,47 @@ func _frames(count: int) -> void:
 		await get_tree().process_frame
 
 
+# The editor's own save, without the thumbnail: headless has no viewport texture to make one from (the engine
+# reports "Parameter t is null" in texture_2d_get when it tries).
+func _save_edited_scene() -> void:
+	EditorInterface.save_scene_as(EditorInterface.get_edited_scene_root().scene_file_path, false)
+
+
+# Undo and redo as a person does, with the editor's shortcut: the editor keeps its own list of every history's
+# steps, and calling `UndoRedo.undo()` on a history directly leaves that list behind ("Inconsistent redo history").
+func _editor_undo() -> void:
+	await _press_z(false)
+
+
+func _editor_redo() -> void:
+	await _press_z(true)
+
+
+func _press_z(shift: bool) -> void:
+	var key := InputEventKey.new()
+	key.keycode = KEY_Z
+	key.command_or_control_autoremap = true
+	key.shift_pressed = shift
+	key.pressed = true
+	await _send(key)
+	var up := key.duplicate() as InputEventKey
+	up.pressed = false
+	await _send(up)
+
+
+func _send(event: InputEvent) -> void:
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+	await _frames(2)
+
+
 ## A copy of an example (the addon's own files stay as they are).
 func _open_copy(source: String, name: String) -> Node:
 	var folder := FOLDER.path_join("run_%d" % Time.get_ticks_usec())
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var copy := folder.path_join(name)
 	var text := FileAccess.get_file_as_string(source)
-	text = RegEx.create_from_string(" uid=\"uid://[a-z0-9]+\"").sub(text, "", true)
+	text = RegEx.create_from_string(' uid="uid://[a-z0-9]+"').sub(text, "", true)
 	var file := FileAccess.open(copy, FileAccess.WRITE)
 	file.store_string(text)
 	file.close()
@@ -107,9 +141,9 @@ func _check_bot(kit: EditorPlugin) -> void:
 	plugin._set_handle(gizmo, 0, false, camera, camera.unproject_position(feet + Vector3(0, 1.8, 0)))
 	plugin._commit_handle(gizmo, 0, false, restore, false)
 	_check(absf(bot.eye_height_m - 1.8) < 0.03, "dragging the eye handle to 1.8 m (%.2f)" % bot.eye_height_m)
-	_history(bot).undo()
+	await _editor_undo()
 	_check(is_equal_approx(bot.eye_height_m, 1.6), "Ctrl+Z: back to 1.6 m")
-	_history(bot).redo()
+	await _editor_redo()
 	_check(absf(bot.eye_height_m - 1.8) < 0.03, "Ctrl+Shift+Z: 1.8 m again")
 	# The aim: to 0.9 m, then a cancelled drag.
 	restore = plugin._get_handle_value(gizmo, 1, false)
@@ -138,12 +172,17 @@ func _check_bot(kit: EditorPlugin) -> void:
 	mode.free()
 	# In the editor it never plays.
 	await _frames(30)
-	_check(robot.global_position.is_equal_approx(start) and bot.input.held().is_empty(), "in the editor it presses nothing and the robot stays")
-	EditorInterface.save_scene()
+	_check(
+		robot.global_position.is_equal_approx(start) and bot.input.held().is_empty(),
+		"in the editor it presses nothing and the robot stays"
+	)
+	_save_edited_scene()
 	await _frames(5)
 	var saved := FileAccess.get_file_as_string(root.scene_file_path)
 	_check(saved.contains("eye_height_m = 1.8"), "the saved scene has the dragged eye height")
-	_check(not saved.contains("body = NodePath") and not saved.contains("BotDebug"), "and no body (its parent) nor drawing")
+	_check(
+		not saved.contains("body = NodePath") and not saved.contains("BotDebug"), "and no body (its parent) nor drawing"
+	)
 
 
 func _check_goal(kit: EditorPlugin) -> void:
@@ -165,9 +204,9 @@ func _check_goal(kit: EditorPlugin) -> void:
 	plugin._set_handle(gizmo, 0, false, camera, camera.unproject_position(at + Vector3.RIGHT * 15.0))
 	plugin._commit_handle(gizmo, 0, false, restore, false)
 	_check(absf(goal.reach_m - 15.0) <= 0.5, "dragging the reach handle to 15 m (%.1f)" % goal.reach_m)
-	_history(goal).undo()
+	await _editor_undo()
 	_check(is_equal_approx(goal.reach_m, 25.0), "Ctrl+Z: 25 m again")
-	_history(goal).redo()
+	await _editor_redo()
 	_check(absf(goal.reach_m - 15.0) <= 0.5, "Ctrl+Shift+Z: 15 m")
 	goal.reach_m = 0.0
 	_check(goal._get_configuration_warnings().size() == 1, "no reach warns")

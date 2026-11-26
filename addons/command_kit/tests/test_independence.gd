@@ -17,6 +17,10 @@ const OTHER_KITS: Array[String] = [
 	"grid_kit",
 	"turn_kit",
 	"wallet_kit",
+	"unlock_kit",
+	"stat_kit",
+	"deck_kit",
+	"dice_kit",
 	"Mp",
 	"Fsm",
 	"Rts",
@@ -37,7 +41,26 @@ const OTHER_KITS: Array[String] = [
 	"TurnSeat",
 	"Purse",
 	"Wallet",
-	"WalletSubstitute"
+	"WalletSubstitute",
+	"UnlockGraph",
+	"UnlockTree",
+	"UnlockEntry",
+	"UnlockTreeView",
+	"StatSheet",
+	"StatModifier",
+	"StatBlock",
+	"CardData",
+	"CardStack",
+	"CardPile",
+	"Deck",
+	"HandView",
+	"DieFace",
+	"DieData",
+	"DiceRoll",
+	"DiceRoller",
+	"DiceTray3D",
+	"CellFog",
+	"GridFog"
 ]
 
 

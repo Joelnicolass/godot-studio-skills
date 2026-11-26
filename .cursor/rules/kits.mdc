@@ -1,0 +1,14 @@
+---
+description: Reglas de diseño de cada kit del repo
+alwaysApply: true
+---
+
+# Reglas de diseño de los kits
+
+Además de las reglas de la skill de cada kit:
+
+- Cuando dos kits tienen que actuar juntos, el kit ofrece un punto de enganche con un `Callable` (`tree.buy(id, wallet.pay)`), no una receta de varios pasos que el usuario tiene que respetar en orden. Ningún kit nombra a otro.
+- El núcleo de un kit nunca crea un `RandomNumberGenerator`: lo recibe. El nodo puede crear uno propio desde `rng_seed` (0: una semilla propia, distinta en cada nodo) y siempre acepta el de la partida en `rng`; cambiar `rng_seed` no toca un `rng` asignado.
+- En un kit nuevo, el nodo expone su núcleo como propiedad (`fog.fog`, `pile.stack`) y reenvía solo las llamadas de «En 3 pasos», cada una con su comentario `##`.
+
+Estas reglas también viven en `CLAUDE.md`; cambiá las dos.

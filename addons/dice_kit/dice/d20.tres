@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="DieData" format=3 uid="uid://brhqvllxsihxd"]
+
+[ext_resource type="Script" uid="uid://dvd5eaon342sa" path="res://addons/dice_kit/resources/die_data.gd" id="1_data"]
+[ext_resource type="Script" uid="uid://h8fk3b7cni8" path="res://addons/dice_kit/resources/die_face.gd" id="2_face"]
+
+[sub_resource type="Resource" id="Resource_1"]
+script = ExtResource("2_face")
+value = 1
+
+[sub_resource type="Resource" id="Resource_2"]
+script = ExtResource("2_face")
+value = 2
+
+[sub_resource type="Resource" id="Resource_3"]
+script = ExtResource("2_face")
+value = 3
+
+[sub_resource type="Resource" id="Resource_4"]
+script = ExtResource("2_face")
+value = 4
+
+[sub_resource type="Resource" id="Resource_5"]
+script = ExtResource("2_face")
+value = 5
+
+[sub_resource type="Resource" id="Resource_6"]
+script = ExtResource("2_face")
+value = 6
+
+[sub_resource type="Resource" id="Resource_7"]
+script = ExtResource("2_face")
+value = 7
+
+[sub_resource type="Resource" id="Resource_8"]
+script = ExtResource("2_face")
+value = 8
+
+[sub_resource type="Resource" id="Resource_9"]
+script = ExtResource("2_face")
+value = 9
+
+[sub_resource type="Resource" id="Resource_10"]
+script = ExtResource("2_face")
+value = 10
+
+[sub_resource type="Resource" id="Resource_11"]
+script = ExtResource("2_face")
+value = 11
+
+[sub_resource type="Resource" id="Resource_12"]
+script = ExtResource("2_face")
+value = 12
+
+[sub_resource type="Resource" id="Resource_13"]
+script = ExtResource("2_face")
+value = 13
+
+[sub_resource type="Resource" id="Resource_14"]
+script = ExtResource("2_face")
+value = 14
+
+[sub_resource type="Resource" id="Resource_15"]
+script = ExtResource("2_face")
+value = 15
+
+[sub_resource type="Resource" id="Resource_16"]
+script = ExtResource("2_face")
+value = 16
+
+[sub_resource type="Resource" id="Resource_17"]
+script = ExtResource("2_face")
+value = 17
+
+[sub_resource type="Resource" id="Resource_18"]
+script = ExtResource("2_face")
+value = 18
+
+[sub_resource type="Resource" id="Resource_19"]
+script = ExtResource("2_face")
+value = 19
+
+[sub_resource type="Resource" id="Resource_20"]
+script = ExtResource("2_face")
+value = 20
+
+[resource]
+script = ExtResource("1_data")
+faces = Array[ExtResource("2_face")]([SubResource("Resource_1"), SubResource("Resource_2"), SubResource("Resource_3"), SubResource("Resource_4"), SubResource("Resource_5"), SubResource("Resource_6"), SubResource("Resource_7"), SubResource("Resource_8"), SubResource("Resource_9"), SubResource("Resource_10"), SubResource("Resource_11"), SubResource("Resource_12"), SubResource("Resource_13"), SubResource("Resource_14"), SubResource("Resource_15"), SubResource("Resource_16"), SubResource("Resource_17"), SubResource("Resource_18"), SubResource("Resource_19"), SubResource("Resource_20")])

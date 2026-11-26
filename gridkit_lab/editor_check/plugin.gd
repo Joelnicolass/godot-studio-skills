@@ -36,6 +36,7 @@ func _run() -> void:
 	await _check_scene_with_external_layout()
 	await _check_scene_without_layout()
 	await _check_heights()
+	await _check_fog()
 	_finish()
 
 
@@ -105,6 +106,12 @@ func _make_level(layout: GridLayout) -> Node3D:
 	return root
 
 
+# The editor's own save, without the thumbnail: headless has no viewport texture to make one from (the engine
+# reports "Parameter t is null" in texture_2d_get when it tries).
+func _save_edited_scene() -> void:
+	EditorInterface.save_scene_as(EditorInterface.get_edited_scene_root().scene_file_path, false)
+
+
 func _save_scene(root: Node, path: String) -> void:
 	var packed := PackedScene.new()
 	packed.pack(root)
@@ -151,15 +158,15 @@ func _check_scene_with_external_layout() -> void:
 	await _paint_stroke(bar, "water", hit["at"])
 	_check("c: the stroke painted the cell", board.get_value(cell, &"terrain") == &"water")
 	_check("c: the history has 'Paint grid cells'", undo_redo.get_current_action_name() == "Paint grid cells")
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("c: undo gives the old value back", board.get_value(cell, &"terrain") == &"plain")
-	undo_redo.redo()
+	await _editor_redo()
 	await _frames(2)
 	_check("c: redo paints it again", board.get_value(cell, &"terrain") == &"water")
 	_check("e: something is unsaved before saving", not _status("").is_empty())
 	_check("e: and it is named for this scene", not _status(root.scene_file_path).is_empty())
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(10)
 	var saved := ResourceLoader.load(TMP + "/ext.tres", "", ResourceLoader.CACHE_MODE_IGNORE) as GridLayout
 	_check(
@@ -173,11 +180,11 @@ func _check_scene_with_external_layout() -> void:
 	# Painting and undoing back to the start leaves nothing to save.
 	var again_time := FileAccess.get_modified_time(TMP + "/ext.tres")
 	await _paint_stroke(bar, "plain", hit["at"])
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("d: a stroke undone leaves the layout as saved", board.get_value(cell, &"terrain") == &"water")
 	_check("e: so nothing is unsaved", _status("").is_empty())
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(10)
 	_check("d: and the file is not written again", FileAccess.get_modified_time(TMP + "/ext.tres") == again_time)
 
@@ -199,13 +206,13 @@ func _check_scene_without_layout() -> void:
 	_check("f: the first stroke makes a layout", board.layout != null and board.get_value(cell, &"terrain") == &"water")
 	_check("f: inside the scene, not a file", board.layout != null and board.layout.resource_path.is_empty())
 	_check("f: nothing to write on its own", _status("").is_empty())
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(10)
 	_check(
 		"f: the scene on disk has the painted value",
 		FileAccess.get_file_as_string(TMP + "/no_layout.tscn").contains("water")
 	)
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("f: undoing the first stroke takes the layout out", board.layout == null)
 	# The bar looks at the board a few times a second.
@@ -220,7 +227,7 @@ func _check_scene_without_layout() -> void:
 		"g: as one step: 'Save grid shape as layout'",
 		undo_redo.get_current_action_name() == "Save grid shape as layout"
 	)
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("g: undo takes it out", board.layout == null)
 	# The bar looks at the board a few times a second.
@@ -233,12 +240,12 @@ func _check_scene_without_layout() -> void:
 	var new_cell: Vector2i = outside["cell"]
 	await _paint_stroke(bar, "Add cells", outside["at"])
 	_check("h: Add cells added a cell", board.has_cell(new_cell))
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("h: undo took it out", not board.has_cell(new_cell))
 	await _paint_stroke(bar, "Remove cells", hit["at"])
 	_check("h: Remove cells removed a cell", not board.has_cell(cell))
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("h: undo put it back", board.has_cell(cell))
 
@@ -269,12 +276,12 @@ func _check_heights() -> void:
 	_check("i: as one step: 'Paint grid cells'", undo_redo.get_current_action_name() == "Paint grid cells")
 	await _frames(2)
 	_check("i: the tile went up", view.tile_at(cell) != null and view.tile_at(cell).position.y == 1.0)
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(3)
 	_check("j: undo takes the height key and the layout out", board.height_key == &"" and board.layout == null)
 	_check("j: and the cell is on the ground", board.get_value(cell, &"height") == null)
 	_check("j: with its tile", view.tile_at(cell) != null and view.tile_at(cell).position.y == 0.0)
-	undo_redo.redo()
+	await _editor_redo()
 	await _frames(3)
 	_check("j: redo raises it again", board.height_key == &"height" and board.get_value(cell, &"height") == 1)
 	_check("j: and the layout is back with it", board.layout != null and board.layout.get_value(cell, &"height") == 1)
@@ -297,12 +304,12 @@ func _check_heights() -> void:
 	(boxes[0] as SpinBox).value = 0.5
 	await _paint_stroke(bar, "Raise", top)
 	_check("k: and so does the brush: Raise by 0.5 lifts it to 2", board.get_value(cell, &"height") == 2)
-	undo_redo.undo()
+	await _editor_undo()
 	await _frames(2)
 	_check("k: undo lowers it to 1.5", board.get_value(cell, &"height") == 1.5)
-	undo_redo.redo()
+	await _editor_redo()
 	await _frames(2)
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(10)
 	var packed := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene
 	var saved := packed.instantiate() if packed != null else null
@@ -318,6 +325,37 @@ func _check_heights() -> void:
 	)
 	if saved != null:
 		saved.free()
+
+
+# GridFog in the real editor: it does not cover the map, Preview shows the fog for a few seconds and gives every tile
+# back, and nothing of it is saved with the scene.
+func _check_fog() -> void:
+	var root := await _open(TMP + "/no_layout.tscn")
+	var view := root.get_node(^"Board/View") as GridView3D
+	var fog := GridFog.new()
+	fog.name = "Fog"
+	view.add_child(fog)
+	fog.owner = root
+	await _frames(10)
+	var caps := fog.get_child(0, true) as MultiMeshInstance3D
+	var middle := view.tile_at(Vector2i.ZERO)
+	var rim := view.tile_at(Vector2i(3, 0))
+	_check("m: in the editor the fog covers nothing", caps.multimesh.instance_count == 0 and rim.visible)
+	fog.preview_button.call()
+	await _frames(5)
+	_check("m: Preview covers the rim", caps.multimesh.instance_count > 0 and not rim.visible)
+	_check("m: and leaves the middle in sight", middle.visible)
+	await get_tree().create_timer(4.5).timeout
+	await _frames(5)
+	_check("m: after a few seconds every tile is back", caps.multimesh.instance_count == 0 and rim.visible)
+	_save_edited_scene()
+	await _frames(10)
+	var saved := FileAccess.get_file_as_string(TMP + "/no_layout.tscn")
+	_check("m: the saved scene has the fog node", saved.contains("GridFog") or saved.contains("grid_fog.gd"))
+	_check(
+		"m: and none of its caps or the hidden tiles",
+		not saved.contains("MultiMesh") and not saved.contains("visible = false")
+	)
 
 
 func _check_bar(node: Node, label: String) -> void:
@@ -432,6 +470,28 @@ func _paint_stroke(bar: Control, text: String, at: Vector2) -> void:
 	await _send(up)
 	button.button_pressed = false
 	await _frames(2)
+
+
+# Undo and redo as a person does, with the editor's shortcut: the editor keeps its own list of every history's
+# steps, and calling `UndoRedo.undo()` on a history directly leaves that list behind ("Inconsistent redo history").
+func _editor_undo() -> void:
+	await _press_z(false)
+
+
+func _editor_redo() -> void:
+	await _press_z(true)
+
+
+func _press_z(shift: bool) -> void:
+	var key := InputEventKey.new()
+	key.keycode = KEY_Z
+	key.command_or_control_autoremap = true
+	key.shift_pressed = shift
+	key.pressed = true
+	await _send(key)
+	var up := key.duplicate() as InputEventKey
+	up.pressed = false
+	await _send(up)
 
 
 func _send(event: InputEvent) -> void:

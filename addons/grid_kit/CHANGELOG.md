@@ -1,5 +1,17 @@
 # Cambios de GridKit
 
+## 0.8.0
+
+Niebla de guerra por jugador.
+
+- **`CellFog`:** lo que sabe cada jugador del tablero, como datos puros. Para cada observador (un asiento, un equipo: un entero desde 0) cada casilla está `HIDDEN`, `EXPLORED` o `VISIBLE`. `see(observer, cells)` deja visibles exactamente esas casillas y pasa a exploradas las que se dejaron de ver; `reveal` suma visibles, `explore` hace conocer el terreno sin verlo, `clear_visible`, `clear()` y `clear_observer(observer)` vuelven atrás. Las señales `revealed`, `faded`, `explored` y `cleared` dicen solo lo que cambió, ordenado. `to_dict` / `CellFog.from_dict` para el guardado y el replay, también después de pasar por JSON; `observer_to_dict` / `set_observer_from_dict` para mandarle a cada jugador solo lo suyo. Anda en hexágonos y en cuadrados.
+- **`GridFog`** (hijo de un `GridView3D`): envuelve un `CellFog` (el propio o el de tus reglas con `use_fog`) y dibuja la niebla de `shown_observer`: las losetas ocultas no se dibujan y quedan bajo una tapa, las exploradas se oscurecen, las visibles se ven como son. Redibuja solo lo que cambió. `fade_time` hace el cambio gradual y `tile_shown(cell, tile)` avisa para animar. `see_around(observer, cells, radius, blocks)` para lo que ven las unidades, con lo que tapa la vista. En el editor no tapa el mapa; **Preview** la muestra unos segundos.
+- **`CellGrid.cells_near(centers, radius)`**, **`line(a, b)`** y **`cells_visible_from(center, radius, blocks)`** (y sus atajos en `GridBoard`): las casillas a `radius` pasos de cualquiera de las del centro; la línea recta entre dos casillas; lo que se ve desde una casilla cuando algunas tapan la vista.
+- **Ejemplo `fog_3d`:** dos jugadores con una exploradora cada uno y la niebla de cada uno.
+- **Chequeo del editor del lab:** la niebla en el editor real (**Preview** y lo que se guarda). Los chequeos de editor de los labs guardan sin miniatura y deshacen con el atajo del editor, así que ya no muestran `Parameter "t" is null` ni `Inconsistent redo history`.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.7.0
 
 - **`GridView3D.cell_right_clicked(cell)`:** el clic derecho sobre una casilla, con la misma regla que `cell_clicked` (un arrastre no es un clic), `input_enabled` y la casilla alta de un tablero con alturas. Sirve para elegir con el izquierdo y ordenar con el derecho, como en Civilization. El botón del medio sigue siendo de la cámara, y el toque sigue siendo el izquierdo.

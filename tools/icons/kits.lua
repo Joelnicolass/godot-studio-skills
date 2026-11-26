@@ -10,6 +10,8 @@
 local kits = {
 	{ id = "bot_kit", name = "BotKit", color = "#a7b4c8" }, -- steel
 	{ id = "command_kit", name = "CommandKit", color = "#98a2ff" }, -- lavender
+	{ id = "deck_kit", name = "DeckKit", color = "#ff6f91" }, -- rose
+	{ id = "dice_kit", name = "DiceKit", color = "#eef2f7" }, -- bone
 	{ id = "fsm_kit", name = "FsmKit", color = "#ea62c2" }, -- magenta
 	{ id = "grass_kit", name = "GrassKit", color = "#8fd03f" }, -- lime
 	{ id = "grid_kit", name = "GridKit", color = "#2fc4cc" }, -- cyan
@@ -19,7 +21,9 @@ local kits = {
 	{ id = "prop_kit", name = "PropKit", color = "#2faf7c" }, -- emerald
 	{ id = "rts_kit", name = "RtsKit", color = "#f58a33" }, -- orange
 	{ id = "spill_kit", name = "SpillKit", color = "#e5484d" }, -- red
+	{ id = "stat_kit", name = "StatKit", color = "#7cd6ff" }, -- sky
 	{ id = "turn_kit", name = "TurnKit", color = "#c08a5c" }, -- copper
+	{ id = "unlock_kit", name = "UnlockKit", color = "#5ad368" }, -- green
 	{ id = "wallet_kit", name = "WalletKit", color = "#f4c531" }, -- gold
 }
 
@@ -34,6 +38,18 @@ local icons = {
 
 	-- command_kit
 	GameCommands = { "prompt" },
+
+	-- deck_kit
+	CardData = { "card" },
+	CardPile = { "card_pile" },
+	Deck = { "card_deck" },
+	HandView = { "card_fan" },
+
+	-- dice_kit
+	DiceRoller = { "dice_pair" },
+	DiceTray3D = { "dice_tray" },
+	DieData = { "die" },
+	DieFace = { "die_face" },
 
 	-- fsm_kit
 	FsmMachine = { "state_graph" },
@@ -53,6 +69,7 @@ local icons = {
 	-- grid_kit
 	GridBoard = { "checker" },
 	GridCursor = { "cell_cursor" },
+	GridFog = { "fog" },
 	GridLayout = { "grid_sheet" },
 	GridView3D = { "iso_tile" },
 
@@ -168,9 +185,18 @@ local icons = {
 	SpillSource3D = { "drops" },
 	SpillType = { "flask" },
 
+	-- stat_kit
+	StatBlock = { "stat_sheet" },
+	StatModifier = { "plus_minus" },
+
 	-- turn_kit
 	TurnClock = { "clock" },
 	TurnSeat = { "chair" },
+
+	-- unlock_kit
+	UnlockEntry = { "padlock_open" },
+	UnlockTree = { "tech_tree" },
+	UnlockTreeView = { "tech_tree_window" },
 
 	-- wallet_kit
 	Wallet = { "pouch" },

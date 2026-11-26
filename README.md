@@ -23,14 +23,14 @@ Con el kit:
 - Código estándar de Godot: patrones probados (señales, bus `Events`, FSM, componentes…), tipado real, `gdformat` / `gdlint`, y GUT + CI si hay tests (skill `godot-code-quality`).
 - Un RFC a la vez, con **árbol de archivos** aprobado, review, playtest y pase visual si los pedís
 - MpKit aparte del gameplay; notas entre sesiones en Engram o `.studio/MEMORY.md` si hace falta.
-- El juego vive en **otro** repo; acá hay skills, commands, agentes y addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit, CommandKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
+- El juego vive en **otro** repo; acá hay skills, commands, agentes y addons (MpKit, FsmKit, PlatKit, RtsKit, PropKit, GrassKit, PerceptionKit, SpillKit, BotKit, GridKit, TurnKit, WalletKit, CommandKit, UnlockKit, StatKit, DeckKit, DiceKit). AgentKit / playtester: [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest)
 
 | Pieza               | Dónde                                                                          | Qué es                                                                                           |
 | ------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Orquestador         | `skills/godot-studio-workflow/`                                                | El agente del chat: entrevista + `/implement-feature` (PRD/RFC opcionales)                       |
 | Cómo escribir Godot | `skills/`                                                                      | Arquitectura, composición, calidad de código, MpKit, FSM, plataformas 2D, controles de RTS, props y su navmesh, pasto, percepción, sangre y otras sustancias, bots, tableros, turnos, recursos y jugadas, juicy, materiales, investigar features, visual, memoria, tests y CI, un banco de determinismo (con AgentKit) |
 | Subagentes          | `agents/`                                                                      | Tech lead, developer, reviewer; tester y visual opcionales. Playtester: módulo playtest          |
-| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/add-bots`, `/add-grid`, `/add-turns`, `/add-wallet`, `/add-commands`, `/create-prd`, … |
+| Commands            | `commands/`                                                                    | `/implement-feature`, `/add-juicy`, `/add-state-machine`, `/add-platformer-2d`, `/add-rts-controls`, `/add-props`, `/add-grass`, `/add-perception`, `/add-spill`, `/add-bots`, `/add-grid`, `/add-turns`, `/add-wallet`, `/add-commands`, `/add-unlocks`, `/add-stats`, `/add-deck`, `/add-dice`, `/create-prd`, … |
 | MpKit               | `addons/mp_kit/`                                                               | Multiplayer con nodos y sin RPCs a mano: el juego en un `.tres` (`MpGame`), el mundo en un nodo (`MpWorld`), los verbos de la partida en `Mp`, más `MpActor`, `MpInput`, `MpState`, `MpMatch`. Predicción, buffers adaptativos, compensación de lag y calidad de red; LAN, dedicated, salas online, partida privada, web, relay para servidores sin IP pública (Railway), deploy a VPS y asistente *Setup game*. **Cero** gameplay. Empezá por `addons/mp_kit/QUICKSTART.md` (paso a paso: `GUIDE.md`); pruebas sin juego en `mpkit_lab/run/all.sh`. |
 | AgentKit            | [godot-studio-playtest](https://github.com/Joelnicolass/godot-studio-playtest) | CLI de agentes + harness. Este kit lo instala; no se mantiene acá.                               |
 | FsmKit              | `addons/fsm_kit/`                                                              | `FsmMachine` + `FsmState`. Sin autoload.                                                         |
@@ -41,10 +41,14 @@ Con el kit:
 | PerceptionKit       | `addons/perception_kit/`                                                       | Lo que percibe un actor, en 2D y 3D: un cono de vista que sigue viendo hasta más lejos, conciencia de lo cercano en todas las direcciones, muros que tapan, ruidos oídos, cualquier sentido propio del juego (luz, alarmas), una memoria que olvida con la última posición, bandos como capas de física, y manijas para arrastrar la vista en el editor. Sin red adentro; sin estados ni combate. Empezá por `addons/perception_kit/README.md`; tests en `perceptionkit_lab/`. |
 | SpillKit            | `addons/spill_kit/`                                                            | Lo que derrama un cuerpo, en 3D (sangre, icor, aceite, baba, tinta): cada golpe salpica y mancha el piso, al morir crece un charco que sigue la pendiente; cada sustancia es un tipo con el aspecto húmedo del kit, texturas PBR propias o el shader del juego; reglas como valores, una sola propiedad para la red, Compatibility y WebGL 2, botones para probarlo en el editor |
 | BotKit              | `addons/bot_kit/`                                                              | Bots que juegan a tu personaje como una persona, en 3D: un nodo que aprieta las teclas de un jugador (un `Input` propio que tu personaje lee), ve al enemigo más cercano sin muros en el medio, apunta con límites humanos (reacción, error, cono, ráfagas, adelanto y parábola), elige el arma por la distancia, recorre el navmesh hacia pickups, a donde vio al enemigo o a cualquier punto, y sale de donde se traba; conductas propias como nodos hijos, presets de dificultad, la vista y las manijas en el editor. Sin red adentro. Empezá por `addons/bot_kit/README.md`; tests en `botkit_lab/`. |
-| GridKit             | `addons/grid_kit/`                                                             | Tableros de hexágonos o de cuadrados con la misma API: `CellGrid` (`HexGrid` y `SquareGrid`; datos puros: valores por casilla, vecinos, distancia, rango, caminos, flood, `to_dict`), el mapa como un `GridLayout` (un `.tres`) y nodos para verlo y elegir casillas en 3D (`GridBoard`, `GridView3D`, `GridCursor`), con un pincel en la vista 3D del editor (terreno, casillas y alturas). Sin reglas de juego, sin red. Empezá por `addons/grid_kit/README.md`; tests en `gridkit_lab/`. |
+| GridKit             | `addons/grid_kit/`                                                             | Tableros de hexágonos o de cuadrados con la misma API: `CellGrid` (`HexGrid` y `SquareGrid`; datos puros: valores por casilla, vecinos, distancia, rango, caminos, flood, `to_dict`), el mapa como un `GridLayout` (un `.tres`) y nodos para verlo y elegir casillas en 3D (`GridBoard`, `GridView3D`, `GridCursor`), niebla de guerra por jugador (`CellFog` y `GridFog`: oculta, explorada, visible), con un pincel en la vista 3D del editor (terreno, casillas y alturas). Sin reglas de juego, sin red. Empezá por `addons/grid_kit/README.md`; tests en `gridkit_lab/`. |
 | TurnKit             | `addons/turn_kit/`                                                             | Turnos, rondas y ciclos: `TurnCycle` (datos puros: acciones por turno, rondas, ciclos y fin configurables, asientos inactivos y, opcionales, jugador inicial que rota, fases dentro del turno, tiempo por turno e iniciativa, `to_dict`) y un reloj con un hijo por jugador (`TurnClock`, `TurnSeat`). Sin reglas de juego, sin red. Empezá por `addons/turn_kit/README.md`; tests en `turnkit_lab/`. |
 | WalletKit           | `addons/wallet_kit/`                                                           | Recursos y monedas: `Purse` (datos puros: montos por clave, topes que devuelven lo perdido, pagar todo o nada, sustitutos con tasa que cubren lo que falta (`WalletSubstitute`), `payment_for` para mostrar el costo, `to_dict`) y el nodo `Wallet`. Sin precios ni UI, sin red. Empezá por `addons/wallet_kit/README.md`; tests en `walletkit_lab/`. |
 | CommandKit          | `addons/command_kit/`                                                          | Jugadas validadas con historial: cada jugada es una función de tu juego (`do_<nombre>(seat, args…)`, con `can_<nombre>` que da el motivo de rechazo y `undo_<nombre>` opcional); `CommandLog` (datos puros: corre solo las válidas, guarda `{name, seat, args}`, deshace la última, repite un historial) y el nodo `GameCommands`. Sin reglas de juego, sin azar, sin red. Empezá por `addons/command_kit/README.md`; tests en `commandkit_lab/`. |
+| UnlockKit           | `addons/unlock_kit/`                                                           | Árboles de desbloqueo: `UnlockGraph` (datos puros: qué se puede desbloquear ahora, requisitos que se piden todos (`requires`) o alcanza con uno (`requires_any`), un costo que el kit no cobra: `buy(id, pay)` recibe la función que cobra; `why_not`, `lock` para deshacer, `to_dict`), el nodo `UnlockTree` armado con hijos `UnlockEntry` (una adentro de otra la requiere; `new_graph()` da un grafo por jugador) y un `UnlockTreeView` que dibuja el árbol, también en el editor y con una escena propia por entrada. Sin efectos ni red. Empezá por `addons/unlock_kit/README.md`; tests en `unlockkit_lab/`. |
+| StatKit             | `addons/stat_kit/`                                                             | Estadísticas con bonus: `StatSheet` (datos puros: una base por estadística y modificadores `StatModifier` que suman, suman porcentajes, multiplican o fijan, en orden ADD → PERCENT → MUL → SET; límites por estadística; la fuente se da al agregar y `remove_source` saca todo lo de una; `stat_changed` solo si cambia, `to_dict`) y el nodo `StatBlock`, que muestra los valores finales en el inspector. Sin ítems, inventario, duración de buffs ni UI, sin red. Empezá por `addons/stat_kit/README.md`; tests en `statkit_lab/`. |
+| DeckKit             | `addons/deck_kit/`                                                             | Cartas: `CardStack` (datos puros: una pila en orden con el índice 0 arriba, copias por índice, robar, mover entre pilas, mezclar con tu `RandomNumberGenerator`, rellenar con el descarte, `to_dict`), el recurso `CardData`, los nodos `CardPile` y `Deck` (con `rng_seed` o el rng de la partida) y un `HandView` que muestra una mano en abanico, dibujada o con una escena por carta, también en el editor. Sin reglas de cartas, costos ni turnos, sin red. Empezá por `addons/deck_kit/README.md`; tests en `deckkit_lab/`. |
+| DiceKit             | `addons/dice_kit/`                                                             | Dados: `DieData` (caras con valor, etiquetas e ícono; d4 a d20 listos) y `DiceRoll` (datos puros: `sum()`, `count(tag)`, los más altos o bajos, volver a tirar algunos, dados mezclados, `to_dict`), tirados con tu `RandomNumberGenerator` (la misma semilla, las mismas tiradas), el nodo `DiceRoller` (botón Roll en el inspector, dados extra) y `DiceTray3D` (los dados giran y caen en 3D, con tu malla). Sin reglas de juego, sin física, sin red. Empezá por `addons/dice_kit/README.md`; tests en `dicekit_lab/`. |
 
 Qué **no** entra acá: puntaje, copy, escenas de un título, `GameSession`, `SceneDirector`. Eso es código del juego.
 
@@ -106,23 +110,27 @@ Camino corto (default):
 12. `/add-turns` — turnos: de quién es, acciones, fases, tiempo por turno, rondas, ciclos y jugador inicial que rota (addon TurnKit)
 13. `/add-wallet` — recursos y monedas: topes, pagar todo o nada, sustitutos con tasa y el costo para mostrar (addon WalletKit)
 14. `/add-commands` — jugadas validadas con motivo de rechazo, deshacer y un historial que se guarda y se repite (addon CommandKit)
-15. `/new-mp-feature` — solo scaffold de un actor MpKit
-16. `/create-material` — material / textura procedural con [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
-17. `/research-feature` — entender una mecánica de un juego similar (investigación web, y decompilarlo si se puede abrir) antes de implementarla
-18. `/workflow-status`
+15. `/add-unlocks` — árboles de desbloqueo: qué se puede desbloquear, qué requiere qué (todos o uno de) y cuánto cuesta, comprar en una llamada, armados en el editor (addon UnlockKit)
+16. `/add-stats` — estadísticas con bonus: ADD → PERCENT → MUL → SET, límites, fuentes que se sacan de una vez y valores finales en el inspector (addon StatKit)
+17. `/add-deck` — cartas: mazo con semilla, mano, descarte, robar, mezclar y rellenar, copias de una carta, una mano en abanico (addon DeckKit)
+18. `/add-dice` — dados: caras con números o símbolos, suma y conteo por etiqueta, ventaja y volver a tirar, semilla, bandeja 3D (addon DiceKit)
+19. `/new-mp-feature` — solo scaffold de un actor MpKit
+20. `/create-material` — material / textura procedural con [Material Maker](https://github.com/RodZill4/material-maker) → `.tres`
+21. `/research-feature` — entender una mecánica de un juego similar (investigación web, y decompilarlo si se puede abrir) antes de implementarla
+22. `/workflow-status`
 
 Contrato escrito, si lo pedís:
 
-19. `/create-prd` → `PRD.md` (GDD **corto y vivo**, no el título entero)
-20. `/verify-prd` → `PRD-REVIEW.md`
-21. `/extract-features` → `FEATURES.md`
-22. `/generate-rules` → `RULES.md`
-23. `/create-visual-guide` → `VISUAL.md`
-24. `/generate-rfcs` → `RFCs/` + `RFCS.md`
-25. `/implement-rfc <id>`
-26. `/review-rfc <id>`
-27. `/manage-changes`
-28. `/test-strategy` — opcional
+23. `/create-prd` → `PRD.md` (GDD **corto y vivo**, no el título entero)
+24. `/verify-prd` → `PRD-REVIEW.md`
+25. `/extract-features` → `FEATURES.md`
+26. `/generate-rules` → `RULES.md`
+27. `/create-visual-guide` → `VISUAL.md`
+28. `/generate-rfcs` → `RFCs/` + `RFCS.md`
+29. `/implement-rfc <id>`
+30. `/review-rfc <id>`
+31. `/manage-changes`
+32. `/test-strategy` — opcional
 
 ## Instalar addons en un proyecto Godot
 
@@ -140,6 +148,10 @@ Contrato escrito, si lo pedís:
 ./install.sh --addon /path/to/godot-project turn_kit   # TurnKit
 ./install.sh --addon /path/to/godot-project wallet_kit # WalletKit
 ./install.sh --addon /path/to/godot-project command_kit # CommandKit
+./install.sh --addon /path/to/godot-project unlock_kit # UnlockKit
+./install.sh --addon /path/to/godot-project stat_kit   # StatKit
+./install.sh --addon /path/to/godot-project deck_kit   # DeckKit
+./install.sh --addon /path/to/godot-project dice_kit   # DiceKit
 ./install.sh --addon /path/to/godot-project agent_kit  # AgentKit (lo trae del repo playtest)
 ```
 
@@ -164,10 +176,14 @@ Cada kit trae un **ejemplo mínimo**: la integración más chica que anda, para 
 | PerceptionKit | `addons/perception_kit/examples/minimal_3d/minimal_3d.tscn`: un guardia que gira la cabeza hacia lo que percibe (y `minimal_2d`) | `guards_3d` | [README](addons/perception_kit/README.md) | `perceptionkit_lab/` |
 | SpillKit | `addons/spill_kit/examples/minimal_3d/minimal_3d.tscn`: un muñeco que sangra, mancha el piso y deja un charco | `substances_3d` (seis sustancias: aspecto del kit, PBR propio, shader propio) | [README](addons/spill_kit/README.md) | `spillkit_lab/` |
 | BotKit | `addons/bot_kit/examples/minimal_3d/minimal_3d.tscn`: un robot que te caza alrededor de unos muros | `arena_3d` (cuatro bots, rifle y granadas, pickups, huir herido) | [README](addons/bot_kit/README.md) | `botkit_lab/` |
-| GridKit | `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn`: un tablero hexagonal de radio 4 que sale de un `GridLayout`; un clic marca la casilla y sus vecinas | `squares_3d` (cuadrados de 8 × 8: rango y camino) | [README](addons/grid_kit/README.md) | `gridkit_lab/` |
+| GridKit | `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn`: un tablero hexagonal de radio 4 que sale de un `GridLayout`; un clic marca la casilla y sus vecinas | `squares_3d` (cuadrados de 8 × 8: rango y camino), `fog_3d` (la niebla de dos jugadores) | [README](addons/grid_kit/README.md) | `gridkit_lab/` |
 | TurnKit | `addons/turn_kit/examples/minimal/minimal.tscn`: tres asientos se pasan el turno con fases (`draw`, `play`) y 10 segundos por turno, el primero de cada ronda rota y la partida termina a los dos ciclos | — | [README](addons/turn_kit/README.md) | `turnkit_lab/` |
 | WalletKit | `addons/wallet_kit/examples/minimal/minimal.tscn`: cosechar con topes que pierden lo que sobra y construir con sustitutos con tasa (2 de comida cubren 1 de madera, el oro cubre todo 1 a 1) | — | [README](addons/wallet_kit/README.md) | `walletkit_lab/` |
 | CommandKit | `addons/command_kit/examples/minimal/minimal.tscn`: fichas por turnos en un tablero de 5 × 5 con `do_place`, `can_place` y `undo_place`, con rechazo de casillas ocupadas, Undo y Replay | — | [README](addons/command_kit/README.md) | `commandkit_lab/` |
+| UnlockKit | `addons/unlock_kit/examples/minimal/minimal.tscn`: nueve tecnologías en tres ramas con `UnlockEntry` anidadas, un enlace cruzado, un «uno de» y una del principio, dibujadas por un `UnlockTreeView`; un clic en la vista compra con puntos (`tree.buy`)| — | [README](addons/unlock_kit/README.md) | `unlockkit_lab/` |
+| StatKit | `addons/stat_kit/examples/minimal/minimal.tscn`: la carta de un héroe con espada, escudo y pantano que se ponen y se sacan, y una bendición de dos bonus que se apila y se saca con `remove_source`| — | [README](addons/stat_kit/README.md) | `statkit_lab/` |
+| DeckKit | `addons/deck_kit/examples/minimal/minimal.tscn`: un mazo de 12 cartas (tres copias de una), robar a una mano de 5 que usa una escena propia por carta, descartar con un clic, rellenar el mazo mezclado y repartir con una semilla (la misma semilla, el mismo orden)| — | [README](addons/deck_kit/README.md) | `deckkit_lab/` |
+| DiceKit | `addons/dice_kit/examples/minimal/minimal.tscn`: un dado propio (3 hit, 2 blank, 1 crit) que se tira de a 1, 2 o 3 en una bandeja 3D; con la misma semilla vuelven las mismas tiradas| — | [README](addons/dice_kit/README.md) | `dicekit_lab/` |
 
 Cada lab es un proyecto Godot chico, con el kit por symlink; su README dice cómo correr los tests.
 
@@ -189,6 +205,10 @@ addons/grid_kit/
 addons/turn_kit/
 addons/wallet_kit/
 addons/command_kit/
+addons/unlock_kit/
+addons/stat_kit/
+addons/deck_kit/
+addons/dice_kit/
 mpkit_lab/                     # tests, pruebas de red y ejemplos de MpKit, sin juego
 fsmkit_lab/                    # tests y ejemplo de FsmKit, sin juego
 platkit_lab/                   # tests y ejemplo de PlatKit, sin juego
@@ -198,6 +218,10 @@ gridkit_lab/                   # tests y ejemplo de GridKit, sin juego
 turnkit_lab/                   # tests y ejemplo de TurnKit, sin juego
 walletkit_lab/                 # tests y ejemplo de WalletKit, sin juego
 commandkit_lab/                # tests y ejemplo de CommandKit, sin juego
+unlockkit_lab/                 # tests y ejemplo de UnlockKit, sin juego
+statkit_lab/                   # tests y ejemplo de StatKit, sin juego
+deckkit_lab/                   # tests y ejemplo de DeckKit, sin juego
+dicekit_lab/                   # tests y ejemplo de DiceKit, sin juego
 grasskit_lab/                  # tests y ejemplos de GrassKit, sin juego
 perceptionkit_lab/             # tests y ejemplos de PerceptionKit, sin juego
 spillkit_lab/                  # tests y ejemplos de SpillKit, sin juego
@@ -225,6 +249,10 @@ skills/
   godot-turn-kit/
   godot-wallet-kit/
   godot-command-kit/
+  godot-unlock-kit/
+  godot-stat-kit/
+  godot-deck-kit/
+  godot-dice-kit/
   godot-material-maker/
   godot-feature-research/
   godot-determinism/
