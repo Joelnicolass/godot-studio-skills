@@ -832,59 +832,37 @@ Una partida en la PC del host (privada u online) toma `pause_while_waiting` del 
 
 #### Bots en los asientos libres
 
-El kit no trae IA: dice qué asientos nadie ocupa y deja que un bot tuyo los juegue con el mismo código de movimiento que un jugador. Todo junto, para abrir y apretar F6: `examples/bots_2d/` (el host arranca la partida, un bot en cada asiento libre y el que llega tarde toma su lugar). Del lado del servidor:
+El kit no trae IA: un **`MpSeatBots`** en el mundo pone un bot tuyo en cada asiento que nadie ocupa y lo saca cuando llega un jugador. Tu bot juega con el mismo código que un jugador: aprieta las teclas del asiento (`MpInput.bot_press`) o manda sus jugadas (`MpOrders.submit_as`). Todo junto, para abrir y apretar F6: `examples/bots_2d/` (bots con peones) y `examples/cards_2d/` (bots sin peones).
 
-| Nombre | Qué hace |
-|---|---|
-| `Mp.gate().vacant_slots()` | Los asientos que nadie ocupa: nunca tomados, o abandonados. No incluye uno ausente dentro de la gracia (su jugador puede volver) |
-| `Mp.gate().started(why)` | Arrancó la partida: el momento de poner los bots |
-| `Mp.gate().joined_late(slot)` | Con `late_join`, un jugador tomó un asiento que nadie ocupaba: el bot de ahí lo suelta |
-| `MpSlotSpawner.spawn_slot(slot)` | El peón de ese slot, sin jugador. Cuando alguien entra al slot, el spawner le da ese mismo peón (no crea otro). Si el que tenía se liberó (murió: `MpActor.despawn`), crea uno nuevo |
-| `MpInput.bot_press(action, strength)` / `bot_release` / `bot_release_all` / `bot_set_value` | Las teclas del bot: se leen igual que las de un jugador (`get_vector`, `is_action_just_pressed`, `mp_move`). Valen mientras nadie juega el asiento; cuando entra un jugador quedan sueltas y mandan las suyas |
-| `MpInput.has_player()` | Verdadero mientras un jugador juega ese asiento. Falso también mientras su jugador está ausente dentro de la gracia |
-
-Cuando arranca la partida, cada asiento libre se llena con un bot:
+1. **Un `MpSeatBots`** en el mundo, con **Bot Scene** = la escena de tu bot (un `Node` con su script).
+2. **Tu bot** declara lo que necesita y el kit se lo da antes de agregarlo: `var slot: int` (su asiento), `var pawn: Node` (el peón del asiento) y `var input: MpInput` (sus teclas). Con peón, el bot va abajo del peón; en un juego sin peones, abajo del `MpSeatBots`.
+3. **Listo:** en el servidor, cuando arranca la partida, cada asiento libre recibe un bot. Un asiento que se abandona recibe uno. Un jugador que entra tarde (`late_join`) o vuelve toma el asiento tal como lo dejó el bot (el peón, su mano en `MpSeatState`), y el bot se va soltando todas sus teclas. Un asiento cerrado (`close_seat`) no vuelve a tener bot. Solo, el bot va en cada asiento menos el del jugador (`fill_solo`).
 
 ```gdscript
-## arena.gd (el mundo): cuando arranca, un bot en cada asiento libre.
-@onready var players: MpSlotSpawner = %Players
-
-
-func _ready() -> void:
-	if not MpKit.is_authority():
-		return
-	## El peón queda en el mundo si su jugador se va: lo vuelve a jugar el bot.
-	players.despawn_on_leave = false
-	Mp.gate().started.connect(func(_why: String) -> void:
-		for slot in Mp.gate().vacant_slots():
-			players.spawn_slot(slot).add_child(Bot.new()))
-```
-
-El bot aprieta las teclas del asiento mientras no haya un jugador sentado:
-
-```gdscript
-## bot.gd: hijo del peón, solo en el servidor. Decide teclas; el movimiento es el del jugador (mp_move).
-class_name Bot
+## bot.gd (del ejemplo bots_2d): camina apretando las teclas del jugador. Solo existe en el servidor.
 extends Node
 
+var pawn: Node2D        # MpSeatBots los llena antes de agregarlo
 var input: MpInput
 
 
-func _ready() -> void:
-	input = get_parent().get_node("%MpInput")
-
-
 func _physics_process(_delta: float) -> void:
-	if input.has_player():
-		return
-	var target := Vector2(800, 300)
-	var to_target: Vector2 = target - (get_parent() as Node2D).global_position
-	input.bot_press(&"ui_right" if to_target.x > 0 else &"ui_left", clampf(absf(to_target.x) / 100.0, 0.0, 1.0))
+	var to := Vector2(800, 300) - pawn.global_position
+	input.bot_press(&"ui_right" if to.x > 0 else &"ui_left", clampf(absf(to.x) / 100.0, 0.0, 1.0))
 ```
 
-- En una partida con ticket, el jugador tarde entra al asiento que le dio el emisor (el primero libre): si ahí juega un bot, toma ese peón tal cual (posición, vida, lo sincronizado) y el `MpInput` sigue sus teclas desde el tick siguiente.
-- Solo no tiene asientos en la puerta (`vacant_slots()` vacío): ahí los bots los ponés vos, con `spawn_slot(2..N)`. `bot_press` anda igual.
-- Si tu bot no debe mover el peón de un jugador ausente dentro de la gracia, chequeá `Mp.gate().vacant_slots().has(slot)` además de `has_player()`.
+| `MpSeatBots` | Qué es |
+|---|---|
+| `bot_scene` | La escena de tu bot |
+| `players` | El spawner de los peones (vacío: los `Players` del `MpWorld`; sin Player Scene, un juego sin peones) |
+| `fill_solo` | Solo: bots en los otros asientos (los `seats` del `MpWorld`) |
+| `bot_of(slot)`, `remove(slot)`, `fill()` | El bot de un asiento; sacarlo; llenar los libres (lo hace solo al arrancar) |
+| señales `bot_added(slot, bot)`, `bot_removed(slot)` | Un bot empezó o dejó de jugar un asiento |
+
+Lo que usa el kit por abajo, por si armás tu propio relleno: `Mp.gate().vacant_slots()` (los asientos que nadie ocupa: nunca tomados o abandonados, nunca uno ausente dentro de la gracia ni uno cerrado), `Mp.gate().started`, `joined_late(slot)`, `seat_abandoned(slot, why)`, `MpSlotSpawner.spawn_slot(slot)` (el peón del asiento; quien entra después recibe ese mismo) y `MpInput.has_player()`.
+
+- Si el peón de un jugador que se va tiene que quedar para que lo juegue el bot, apagá `despawn_on_leave` en el `MpSlotSpawner`.
+- En una partida con ticket, el jugador tarde entra al asiento que le dio el emisor: si ahí juega un bot, toma ese peón tal cual y el `MpInput` sigue sus teclas desde el tick siguiente.
 
 #### Un asiento que se cierra
 
@@ -1201,6 +1179,7 @@ Un peer cuenta como **listo** cuando su mundo cargó: el servidor emite `MpKit.c
 | `MpState` (`set_value`, `watch`) | Sí, al cargar |
 | Sync de un `MpActor`, un nodo que crea un spawner | Sí, al cargar |
 | `MpOrders` | Sí: todas las jugadas, en `began` + `applied` |
+| `MpSeatState` | Sí, solo la máquina de ese asiento |
 | `to_all`, `broadcast_custom`, un `@rpc` tuyo | **No**: es un momento. Para el que está cargando usá `broadcast_custom(canal, datos, true)` o `MpKit.ready_peers()` |
 | Algo tuyo que tiene que quedar (un estado completo, una lista) | Mandalo vos en `client_world_ready` con `MpKit.push_custom_to(peer_id, canal, datos)` |
 
@@ -1222,6 +1201,22 @@ Para lo que no es de un actor (una jugada, un chat, un emote):
 - **`custom_channels`** (en `game.tres`): vacío permite todos. Un canal que no está en la lista no se manda, y avisa una vez.
 - **Topes:** un cliente manda hasta 8 KB por mensaje y 30 por segundo (ráfaga de 60); lo que pasa de ahí se descarta en el servidor. El relay corta los mensajes de más de 256 KB: partí lo grande (`MpOrders` ya manda el historial en partes).
 - **En el servidor, `to_server` y el túnel corren al toque**, dentro de la misma llamada: una respuesta que manda el servidor a sí mismo llega antes de que termine la función que la pidió.
+
+### 7.12 Lo que ve un solo asiento: `MpSeatState`
+
+`MpState` es público: lo ven todos. Lo que solo ve un asiento (su mano de cartas, su munición, su objetivo secreto) va en un **`MpSeatState`** en el mundo. El ejemplo `examples/cards_2d` guarda ahí la mano de cada uno.
+
+```gdscript
+# en el servidor: reparte
+seat_state.set_value(slot, &"hand", [2, 5, 9])
+# en la máquina de ese asiento: su mano, ahora y en cada cambio
+seat_state.watch(&"hand", func(hand: Variant) -> void: show_hand(hand), [])
+```
+
+- **Solo llega a la máquina de ese asiento**, otra vez cuando carga tarde o vuelve. El servidor los ve todos (`value_of(slot, key)`); un cliente solo los suyos (`get_value(key)`, `values()`).
+- **Son del asiento, no del jugador:** el que toma el asiento después (un jugador tarde, un bot de `MpSeatBots`) los encuentra ahí.
+- `set_value(slot, key, null)` borra uno, `add(slot, key, n)` suma, `clear_seat(slot)` borra todos. `changed(key, value)` y `watch` avisan solo los del asiento de esta máquina.
+- Usa el canal `mp_seat_state` del túnel (si tu juego lista `custom_channels`, agregalo). `MpSeatState.of(nodo)` lo encuentra desde cualquier lado.
 
 ## 8. Probar
 
@@ -1339,7 +1334,7 @@ Toda la matriz de casos automáticos: `mpkit_lab/run/all.sh` (una hora con una c
 | `--dedicated` | Arranca como servidor dedicado y carga el mundo |
 | `--listen-host` | Arranca hosteando LAN, sin tocar el menú |
 | `--client1` / `--client2` + `--join-ip=IP` | Arranca uniéndose a esa IP (por defecto `127.0.0.1`) |
-| `--start-seats=N` | Cuántos asientos espera la partida para arrancar (0: todos) |
+| `--start-seats=N` | Cuántos asientos espera la partida para arrancar (0: todos). En un listen host no cuenta el suyo: con el host y un cliente, 1 |
 | `--late-join` | Un recién llegado toma un asiento libre con la partida empezada |
 | `--load-timeout-s=N` | Cuánto espera la puerta a los que cargan (15 s; en web, con pantallas de carga largas, subilo) |
 | `--room-server` | Abre la escena de salas (`rooms_scene` del juego, o `MpFlow.room_server_path`) |
@@ -2398,6 +2393,8 @@ Cambió de pestaña: el navegador la pausó. Ver [11.5](#115-pestaña-oculta).
 | toda la red y las escenas en un lugar | un **MpGame** (`game.tres`) en **Flow › Game** |
 | un mundo en red sin cablear nodos | un **MpWorld** con **Player Scene** |
 | un juego por turnos, de cartas o de tablero (sin peones) | un **MpWorld** sin Player Scene y un **MpOrders**: `submit`, `judge`, `applied` ([7.9](#79-un-juego-por-turnos-de-cartas-o-de-tablero-mporders)) |
+| algo que solo ve un jugador (su mano, su munición) | un **MpSeatState**: `set_value(slot, key, value)` en el servidor, `watch(key, cb)` en su máquina |
+| bots en los asientos libres | un **MpSeatBots** con tu escena de bot (`slot`, `pawn`, `input`) |
 | mandarle algo propio al que carga tarde o vuelve | `MpKit.client_world_ready` + `MpKit.push_custom_to` ([7.10](#710-lo-que-le-llega-al-que-carga-tarde-o-vuelve)) |
 | saber qué asiento mandó un mensaje del túnel | `MpKit.slot_of_sender(from_peer)` |
 | probar dos ventanas sin clics | `-- --listen-host` en una y `-- --client1` en la otra ([8.2](#82-lan-dos-ventanas-en-tu-pc)) |

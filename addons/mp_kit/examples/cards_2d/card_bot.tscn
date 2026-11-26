@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://hgl7k6fui70h"]
+
+[ext_resource type="Script" path="res://addons/mp_kit/examples/cards_2d/card_bot.gd" id="1_bot"]
+
+[node name="CardBot" type="Node"]
+script = ExtResource("1_bot")
