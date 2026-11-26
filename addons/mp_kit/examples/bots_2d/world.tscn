@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" path="res://addons/mp_kit/examples/bots_2d/world.gd" id="0_b0tw"]
 [ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_world.gd" id="1_kv7qk"]
+[ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_seat_bots.gd" id="10_seatbots"]
+[ext_resource type="PackedScene" path="res://addons/mp_kit/examples/bots_2d/bot.tscn" id="11_bot"]
 [ext_resource type="PackedScene" path="res://addons/mp_kit/examples/minimal_2d/player.tscn" id="2_ynx0c"]
 [ext_resource type="Script" path="res://addons/mp_kit/mp_slot_spawner.gd" id="3_00wl7"]
 [ext_resource type="Script" path="res://addons/mp_kit/nodes/mp_state.gd" id="4_2de3r"]
@@ -87,3 +89,7 @@ offset_top = 136.0
 offset_right = 16.0
 offset_bottom = 136.0
 script = ExtResource("9_arv07")
+
+[node name="SeatBots" type="Node" parent="."]
+script = ExtResource("10_seatbots")
+bot_scene = ExtResource("11_bot")

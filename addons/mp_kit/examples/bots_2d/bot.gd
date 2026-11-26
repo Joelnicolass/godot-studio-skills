@@ -1,15 +1,15 @@
 extends Node
 
-## A bot on a pawn whose seat nobody plays (world.gd puts it there, on the server). It walks to a point, then to
-## another, by pressing the player's keys (MpInput.bot_press): the pawn's mp_move moves it as it moves a player. While a
-## player plays the seat (a late player, or its own player back) it waits: MpInput reads that player's keys.
+## A bot on a pawn whose seat nobody plays (the world's MpSeatBots puts it there, on the server). It walks to a point,
+## then to another, by pressing the player's keys (MpInput.bot_press): the pawn's mp_move moves it as it moves a player.
+## A player who takes the seat (a late player, or its own player back) gets the pawn and MpSeatBots takes the bot off.
 
 ## Where it walks: a point inside this rectangle, a new one each time it gets there.
 const AREA := Rect2(160, 100, 640, 340)
 ## Closer than this (pixels) to its point: there.
 const ARRIVED := 12.0
 
-## The pawn it plays and its keys: world.gd, which creates the bot, hands them over before adding it.
+## The pawn it plays and its keys: MpSeatBots hands them over before adding it.
 var pawn: Node2D
 var input: MpInput
 

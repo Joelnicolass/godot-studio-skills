@@ -82,6 +82,8 @@ mp_kit	MpReplicate	node	Node	addons/mp_kit/mp_replicate.gd	addons/mp_kit/icons/m
 mp_kit	MpRoomDirectory	node	Node	addons/mp_kit/mp_room_directory.gd	addons/mp_kit/icons/mp_room_directory.svg	rooms	
 mp_kit	MpRoomRules	resource	Resource	addons/mp_kit/rooms/mp_room_rules.gd	addons/mp_kit/icons/mp_room_rules.svg	checklist	
 mp_kit	MpRoomServer	node	Node	addons/mp_kit/rooms/mp_room_server.gd	addons/mp_kit/icons/mp_room_server.svg	house_rack	
+mp_kit	MpSeatBots	node	Node	addons/mp_kit/nodes/mp_seat_bots.gd	addons/mp_kit/icons/mp_seat_bots.svg	robot	slots
+mp_kit	MpSeatState	node	Node	addons/mp_kit/nodes/mp_seat_state.gd	addons/mp_kit/icons/mp_seat_state.svg	braces	dim
 mp_kit	MpSlotSpawner	node	MpSpawner	addons/mp_kit/mp_slot_spawner.gd	addons/mp_kit/icons/mp_slot_spawner.svg	pawn	slots
 mp_kit	MpSpawner	node	MultiplayerSpawner	addons/mp_kit/mp_spawner.gd	addons/mp_kit/icons/mp_spawner.svg	pawn	plus
 mp_kit	MpStartButton	node	Button	addons/mp_kit/nodes/mp_start_button.gd	addons/mp_kit/icons/mp_start_button.svg	play_button	

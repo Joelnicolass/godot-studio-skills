@@ -64,6 +64,8 @@ mp_kit	MpReplicate	node	Node	Node	addons/mp_kit/mp_replicate.gd
 mp_kit	MpRoomDirectory	node	Node	Node	addons/mp_kit/mp_room_directory.gd
 mp_kit	MpRoomRules	resource	Resource	Resource	addons/mp_kit/rooms/mp_room_rules.gd
 mp_kit	MpRoomServer	node	Node	Node	addons/mp_kit/rooms/mp_room_server.gd
+mp_kit	MpSeatBots	node	Node	Node	addons/mp_kit/nodes/mp_seat_bots.gd
+mp_kit	MpSeatState	node	Node	Node	addons/mp_kit/nodes/mp_seat_state.gd
 mp_kit	MpSlotSpawner	node	MpSpawner	MultiplayerSpawner	addons/mp_kit/mp_slot_spawner.gd
 mp_kit	MpSpawner	node	MultiplayerSpawner	MultiplayerSpawner	addons/mp_kit/mp_spawner.gd
 mp_kit	MpStartButton	node	Button	Button	addons/mp_kit/nodes/mp_start_button.gd
