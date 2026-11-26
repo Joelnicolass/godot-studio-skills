@@ -1,0 +1,82 @@
+[gd_scene format=3 uid="uid://b8pvkwdnvmkia"]
+
+[ext_resource type="Script" path="res://addons/bot_kit/examples/turn_based/turn_based.gd" id="1_turns"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/turn_based/villager.gd" id="2_villager"]
+[ext_resource type="Script" path="res://addons/bot_kit/nodes/bot_brain.gd" id="3_brain"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/turn_based/gather.gd" id="4_gather"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/turn_based/build.gd" id="5_build"]
+[ext_resource type="Script" path="res://addons/bot_kit/examples/turn_based/rest.gd" id="6_rest"]
+
+[node name="TurnBased" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_turns")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.12, 0.13, 0.16, 1)
+
+[node name="Villager" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_villager")
+
+[node name="BotBrain" type="Node" parent="Villager"]
+unique_name_in_owner = true
+script = ExtResource("3_brain")
+think_s = 0.4
+rng_seed = 7
+
+[node name="Gather" type="Node" parent="Villager/BotBrain"]
+script = ExtResource("4_gather")
+score = 4.0
+
+[node name="Build" type="Node" parent="Villager/BotBrain"]
+script = ExtResource("5_build")
+score = 4.5
+
+[node name="Rest" type="Node" parent="Villager/BotBrain"]
+script = ExtResource("6_rest")
+score = 4.5
+
+[node name="Column" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 24.0
+offset_right = -32.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="Help" type="Label" parent="Column"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.64, 0.72, 1)
+
+[node name="State" type="Label" parent="Column"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+
+[node name="Scores" type="Control" parent="Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+
+[node name="Log" type="Label" parent="Column"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)

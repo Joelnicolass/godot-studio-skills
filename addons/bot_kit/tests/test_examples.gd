@@ -1,9 +1,10 @@
 extends "res://addons/bot_kit/tests/bot_test.gd"
 
-## Both examples, played headless from start to end.
+## The three examples, played headless from start to end.
 
 const MINIMAL := "res://addons/bot_kit/examples/minimal_3d/minimal_3d.tscn"
 const ARENA := "res://addons/bot_kit/examples/arena_3d/arena_3d.tscn"
+const TURN_BASED := "res://addons/bot_kit/examples/turn_based/turn_based.tscn"
 
 
 func _seconds(seconds: float) -> void:
@@ -58,3 +59,53 @@ func test_arena_bots_fight_take_pickups_and_come_back() -> void:
 	for fighter in fighters:
 		alive += 0 if fighter.get(&"dead") else 1
 	check(alive >= 3, "and the dead come back (%d alive)" % alive)
+
+
+func _key(keycode: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	tree.root.push_input(event)
+
+
+## Every turn until the house is built (at most 200): the ids it chose.
+func _play(scene: Node) -> Array[StringName]:
+	var villager := scene.get_node(^"%Villager")
+	var turns: Array[StringName] = []
+	var record := func(choice: BotChoice) -> void: turns.append(choice.id)
+	villager.connect(&"acted", record)
+	for i in 200:
+		if villager.call(&"is_done"):
+			break
+		scene.call(&"turn")
+	villager.disconnect(&"acted", record)
+	return turns
+
+
+func test_turn_based_the_villager_builds_its_house() -> void:
+	var scene := (load(TURN_BASED) as PackedScene).instantiate()
+	root.add_child(scene)
+	var villager := scene.get_node(^"%Villager")
+	var brain := scene.get_node(^"%BotBrain") as BotBrain
+	check(brain._get_configuration_warnings().is_empty(), "its brain has no warnings")
+	_key(KEY_SPACE)
+	check(int(villager.get(&"turns")) == 1 and brain.current.id == &"Gather", "Space: one turn, it gathers first")
+	check(brain.last_choices.size() == 3, "it weighed its three options")
+	var turns := _play(scene)
+	check(villager.call(&"is_done"), "the house is built (%d turns)" % villager.get(&"turns"))
+	check(turns.has(&"Gather") and turns.has(&"Build") and turns.has(&"Rest"), "it gathered, built and rested")
+	check(int(villager.get(&"energy")) >= 0 and int(villager.get(&"wood")) >= 0, "never below 0 energy or wood")
+	_key(KEY_N)
+	check(near(brain.noise, 0.3), "N: noise")
+	_key(KEY_R)
+	var noisy := _play(scene)
+	_key(KEY_R)
+	check(int(villager.get(&"turns")) == 0 and brain.current == null, "R: the first turn again")
+	check(_play(scene) == noisy, "the same seed plays the same turns, noise and all")
+	_key(KEY_R)
+	_key(KEY_A)
+	check(brain.auto_think, "A: turns on their own")
+	await tree.create_timer(1.0).timeout
+	check(int(villager.get(&"turns")) >= 2, "it took turns on its own (%d)" % villager.get(&"turns"))
+	await tree.process_frame
+	check(not (scene.get_node(^"%Help") as Label).text.is_empty(), "the screen says the keys")

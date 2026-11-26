@@ -1,5 +1,19 @@
 # Changelog de BotKit
 
+## 0.2.0
+
+- **Elegir por puntaje sin cuerpo ni tiempo real**, para un bot por turnos, de cartas o de estrategia:
+  - `BotChoice`: una opción con `id`, `score` y `payload`.
+  - `BotBrainCore.best(choices, current_id, rng, noise)`: datos puros. Gana el puntaje más alto por encima de 0 (entre iguales, el primero), y lo actual se queda hasta que otra opción lo supere. El ruido (`noise`) sale del `rng` que le pasás, así que la misma semilla elige igual; sin ruido no toma ningún número.
+  - `BotBrain` (nodo): elige entre sus hijos `BotOption` y las opciones del juego (`options`), con `think(context)` o solo cada `think_s` (`auto_think`). Avisa con `chose` y tiene `current`, `last_choices`, `noise`, `rng_seed` y `rng`. Avisa en el editor si no tiene opciones o si dos tienen el mismo id.
+  - `BotOption` (nodo): una opción con `score` en el inspector, `_score(context)` o `_choices(context)`.
+- **`Bot3D` elige sus modos con `BotBrainCore.best`.** Su API, sus modos y su conducta no cambian, y sus tests pasan sin cambios.
+- **Ejemplo `turn_based`:** un aldeano que construye una casa por turnos, con el puntaje de cada opción en pantalla, ruido y la misma semilla con los mismos turnos.
+- **Íconos** para `BotBrain` y `BotOption`.
+- **`botkit_lab`:** 50 tests, y el chequeo del editor revisa el `BotBrain` del ejemplo.
+
+Nada que actualizar en tu proyecto.
+
 ## 0.1.1
 
 - **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem. Reemplazan a los tres que traía el kit (`editor/bot_3d.svg`, `bot_goal_3d.svg`, `bot_mode.svg`).

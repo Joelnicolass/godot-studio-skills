@@ -469,36 +469,22 @@ func _choose_weapon(distance_m: float) -> void:
 		weapon_changed.emit(best)
 
 
-## The mode that wants it most; a tie keeps the one it runs.
+## The mode that wants it most (`BotBrainCore.best`); a tie keeps the one it runs.
 func _choose_mode() -> void:
-	var names: Array[StringName] = []
-	var wants: Array[float] = []
-	var nodes: Array[BotMode] = []
+	var choices: Array[BotChoice] = []
 	if target != null:
-		names.append(FIGHT)
-		wants.append(fight_want)
-		nodes.append(null)
-	names.append(ROAM)
-	wants.append(roam_want)
-	nodes.append(null)
+		choices.append(BotChoice.new(FIGHT, fight_want))
+	choices.append(BotChoice.new(ROAM, roam_want))
 	for child in get_children():
 		var each := child as BotMode
 		if each != null and each.enabled:
-			names.append(StringName(each.name))
-			wants.append(each._want(self))
-			nodes.append(each)
-	var best := -1
-	var current_want := -INF
-	for i in names.size():
-		if names[i] == mode:
-			current_want = wants[i]
-		if wants[i] > 0.0 and (best < 0 or wants[i] > wants[best]):
-			best = i
-	if best < 0 or names[best] == mode or wants[best] <= current_want:
+			choices.append(BotChoice.new(StringName(each.name), each._want(self), each))
+	var best := BotBrainCore.best(choices, mode)
+	if best == null or best.id == mode:
 		return
 	_leave_mode()
-	mode = names[best]
-	_mode_node = nodes[best]
+	mode = best.id
+	_mode_node = best.payload as BotMode
 	if _mode_node != null:
 		_mode_node._enter(self)
 	else:

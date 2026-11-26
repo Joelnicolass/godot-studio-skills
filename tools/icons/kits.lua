@@ -31,10 +31,12 @@ local kits = {
 local icons = {
 	-- bot_kit
 	Bot3D = { "robot" },
+	BotBrain = { "brain" },
 	BotDebug = { "bug" },
 	BotDifficulty = { "bars" },
 	BotGoal3D = { "flag" },
 	BotMode = { "gear" },
+	BotOption = { "signpost" },
 	BotWeapon = { "crosshair" },
 
 	-- command_kit
