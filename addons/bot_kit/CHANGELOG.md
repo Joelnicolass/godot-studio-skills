@@ -1,5 +1,19 @@
 # BotKit changelog
 
+## 0.2.0
+
+- **Picking by score with no body and no real time**, for a turn-based, card or strategy bot:
+  - `BotChoice`: a choice with `id`, `score` and `payload`.
+  - `BotBrainCore.best(choices, current_id, rng, noise)`: plain data. The highest score above 0 wins (between equal ones, the first), and what it does stays until another choice beats it. The noise (`noise`) comes from the `rng` you pass, so the same seed picks the same way; with no noise it draws no number.
+  - `BotBrain` (node): picks among its `BotOption` children and the game's choices (`options`), with `think(context)` or on its own every `think_s` (`auto_think`). It tells you with `chose` and has `current`, `last_choices`, `noise`, `rng_seed` and `rng`. It warns in the editor when it has no options or two share an id.
+  - `BotOption` (node): a choice with `score` in the inspector, `_score(context)` or `_choices(context)`.
+- **`Bot3D` picks its modes with `BotBrainCore.best`.** Its API, its modes and its behaviour do not change, and its tests pass unchanged.
+- **The `turn_based` example:** a villager that builds a house by turns, with each option's score on screen, noise, and the same turns with the same seed.
+- **Icons** for `BotBrain` and `BotOption`.
+- **`botkit_lab`:** 50 tests, and the editor check checks the example's `BotBrain`.
+
+Nothing to update in your project.
+
 ## 0.1.1
 
 - **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem. They replace the three the kit shipped (`editor/bot_3d.svg`, `bot_goal_3d.svg`, `bot_mode.svg`).

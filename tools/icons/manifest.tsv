@@ -18,10 +18,12 @@ turn_kit	TurnKit	emblem			addons/turn_kit/icons/turn_kit.svg	turn_kit
 unlock_kit	UnlockKit	emblem			addons/unlock_kit/icons/unlock_kit.svg	unlock_kit	
 wallet_kit	WalletKit	emblem			addons/wallet_kit/icons/wallet_kit.svg	wallet_kit	
 bot_kit	Bot3D	node	Node3D	addons/bot_kit/nodes/bot_3d.gd	addons/bot_kit/icons/bot_3d.svg	robot	
+bot_kit	BotBrain	node	Node	addons/bot_kit/nodes/bot_brain.gd	addons/bot_kit/icons/bot_brain.svg	brain	
 bot_kit	BotDebug	node	Node3D	addons/bot_kit/core/bot_debug.gd	addons/bot_kit/icons/bot_debug.svg	bug	
 bot_kit	BotDifficulty	resource	Resource	addons/bot_kit/core/bot_difficulty.gd	addons/bot_kit/icons/bot_difficulty.svg	bars	
 bot_kit	BotGoal3D	node	Node3D	addons/bot_kit/nodes/bot_goal_3d.gd	addons/bot_kit/icons/bot_goal_3d.svg	flag	
 bot_kit	BotMode	node	Node	addons/bot_kit/nodes/bot_mode.gd	addons/bot_kit/icons/bot_mode.svg	gear	
+bot_kit	BotOption	node	Node	addons/bot_kit/nodes/bot_option.gd	addons/bot_kit/icons/bot_option.svg	signpost	
 bot_kit	BotWeapon	resource	Resource	addons/bot_kit/core/bot_weapon.gd	addons/bot_kit/icons/bot_weapon.svg	crosshair	
 command_kit	GameCommands	node	Node	addons/command_kit/nodes/game_commands.gd	addons/command_kit/icons/game_commands.svg	prompt	
 deck_kit	CardData	resource	Resource	addons/deck_kit/resources/card_data.gd	addons/deck_kit/icons/card_data.svg	card	

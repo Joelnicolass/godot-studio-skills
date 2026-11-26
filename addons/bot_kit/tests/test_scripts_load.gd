@@ -60,5 +60,7 @@ func test_no_other_kit_or_game() -> void:
 				continue
 			var code := FileAccess.get_file_as_string(dir.path_join(file))
 			for word in ["mp_kit", "MpKit", "MpInput", "fsm_kit", "FsmMachine", "FsmState", "perception_kit", "Perception",
-					"rts_kit", "prop_kit", "grass_kit", "plat_kit", "spill_kit", "Intervendoom", "Eternauta", "Sacrifice"]:
+					"rts_kit", "prop_kit", "grass_kit", "plat_kit", "spill_kit", "grid_kit", "turn_kit", "wallet_kit",
+					"command_kit", "unlock_kit", "stat_kit", "deck_kit", "dice_kit", "gesture_kit", "GestureArea",
+					"Intervendoom", "Eternauta", "Sacrifice", "Albores"]:
 				check(not code.contains(word), "%s names no other kit or game (%s)" % [file, word])
