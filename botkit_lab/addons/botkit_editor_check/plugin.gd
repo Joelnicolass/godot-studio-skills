@@ -5,7 +5,9 @@ extends EditorPlugin
 ## - the robot's Bot3D has the kit's gizmo; dragging its eye and aim handles from the 3D view's camera changes them,
 ##   each one step that undoes and redoes; a cancelled drag leaves the value; the warnings; the saved scene keeps the
 ##   values, no drawing and no body (empty is its parent);
-## - a pickup's BotGoal3D has the gizmo; dragging its reach handle from above, undone and redone.
+## - a pickup's BotGoal3D has the gizmo; dragging its reach handle from above, undone and redone;
+## - the turn-based example's BotBrain: no warning with options whose scripts are not @tool, a warning for two options
+##   with one id and for none, it never thinks in the editor, and the saved scene keeps its values.
 ## Nothing unless the editor starts with BOTKIT_EDITOR_CHECK=1:
 ##   BOTKIT_EDITOR_CHECK=1 godot --headless --editor --path botkit_lab
 ## Prints EDITOR CHECK PASS (exit 0) or EDITOR CHECK FAIL: n.
@@ -113,6 +115,7 @@ func _run() -> void:
 	if kit != null:
 		await _check_bot(kit)
 		await _check_goal(kit)
+	await _check_brain()
 	print("EDITOR CHECK PASS" if _fails == 0 else "EDITOR CHECK FAIL: %d" % _fails)
 	get_tree().quit(0 if _fails == 0 else 1)
 
@@ -210,6 +213,32 @@ func _check_goal(kit: EditorPlugin) -> void:
 	_check(absf(goal.reach_m - 15.0) <= 0.5, "Ctrl+Shift+Z: 15 m")
 	goal.reach_m = 0.0
 	_check(goal._get_configuration_warnings().size() == 1, "no reach warns")
+
+
+func _check_brain() -> void:
+	var root := await _open_copy(EXAMPLES.path_join("turn_based/turn_based.tscn"), "turns.tscn")
+	_check(root != null and root.name == &"TurnBased", "the copy of turn_based is open")
+	var brain := root.get_node(^"Villager/BotBrain") as BotBrain
+	var build := brain.get_node(^"Build") as BotOption
+	_check(build != null and not (build.get_script() as Script).is_tool(), "its options are the game's, not @tool")
+	_check(brain._get_configuration_warnings().is_empty(), "no warning on the example's brain (ids read, not called)")
+	build.id = &"Gather"
+	_check(brain._get_configuration_warnings().size() == 1, "two options with one id warn")
+	build.id = &""
+	var lonely := BotBrain.new()
+	root.add_child(lonely)
+	_check(lonely._get_configuration_warnings().size() == 1, "a brain with no option warns")
+	lonely.free()
+	brain.auto_think = true
+	await _frames(30)
+	_check(brain.current == null and brain.last_choices.is_empty(), "in the editor it never thinks")
+	brain.auto_think = false
+	brain.noise = 0.25
+	_save_edited_scene()
+	await _frames(5)
+	var saved := FileAccess.get_file_as_string(root.scene_file_path)
+	_check(saved.contains("noise = 0.25") and saved.contains("rng_seed = 7"), "the saved scene keeps noise and seed")
+	_check(saved.contains("score = 4.5") and not saved.contains("auto_think"), "and the options' scores, auto off")
 
 
 func _remove(folder: String) -> void:

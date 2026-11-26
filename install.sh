@@ -418,6 +418,7 @@ install_addon() {
       echo
       echo "Habilitá el plugin BotKit (sin autoload; la vista y las manijas del editor). Un Bot3D hijo del personaje,"
       echo "que lee bot.input donde leía Input; enemigos en el grupo bot_target; el navmesh horneado. Arrancá desde addons/bot_kit/examples/minimal_3d o arena_3d."
+      echo "Un bot por turnos que elige por puntaje: un BotBrain con un BotOption por acción (addons/bot_kit/examples/turn_based)."
       ;;
     grid_kit)
       copy_one_addon "$project" "grid_kit"
