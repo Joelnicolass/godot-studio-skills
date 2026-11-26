@@ -33,7 +33,7 @@ Everything is in `addons/rts_kit/`. Kit points are `Vector3` with the ground on 
 | Class | Members |
 |---|---|
 | `RtsSelection` | exports `local_slot`, `box`, `occluder_mask`, `occluder`, `max_size`, `group_count`, `new_units_group`, `same_type_radius`, `double_click_s`, `double_click_px`; `units()`, `bodies()`, `size()`, `count`, `has(u)`, `group(i)`, `can_select(u)`, `clear()`, `select_only(list)`, `remove(list)`, `click(unit, screen, shift, ctrl)`, `select_rect(from, to, additive)`, `show_box`, `hide_box`, `define_group(i)`, `extend_group(i)`, `select_group(i)`, `drop(u)`, `add_new(u)`, `same_kind_near(u)`; signal `changed(units)` |
-| `RtsPointer` | exports `dimension`, `camera`, `local_slot`, `local_team`, `ground_mask`, `unit_mask`, `pick_mask`, `ground`, `pick_px`, `ground_bounds_2d`; `ground_at(screen)`, `unit_under(screen, skip)`, `body_under(screen, skip)`, `is_empty_at`, `relation(body)`, `is_enemy`, `camera_yaw()`, `camera_dragged()`, `action_pointer()`, `pointer_now()`, `cast_3d` |
+| `RtsPointer` | exports `dimension`, `camera`, `local_slot`, `local_team`, `ground_mask`, `unit_mask`, `pick_mask`, `ground`, `pick_px`, `ground_bounds_2d`; `ground_at(screen)`, `unit_under(screen, skip)`, `body_under(screen, skip)`, `is_empty_at`, `relation(body)`, `is_enemy`, `camera_yaw()`, `camera_dragged()`, `camera_takes_drag()`, `action_pointer()`, `pointer_now()`, `cast_3d` |
 | `RtsCommandInput` | exports `local_slot`, `local_team`, `install_keymap`, `command_on_macos`, `command_keys` (action -> command), `formation_action_prefix`, pieces; `run_command(id)`, `set_formation(id)`, `right_at`, `left_at`, `context_kind` |
 | `RtsSelectInput` | `select_action`, `rect_threshold_px`, `view`; `left_at(screen, shift, ctrl)`, `is_boxing()`; signals `armed_clicked(mode, screen)`, `clicked_other(body)`, `clicked_empty` |
 | `RtsOrderButton` | `order_action`, `menu_action`, `menu` (optional `RtsOrderMenu`; it can change while the game runs), `view`; `is_open()` |
@@ -43,7 +43,7 @@ Everything is in `addons/rts_kit/`. Kit points are `Vector3` with the ground on 
 | `RtsGroupKeys` | `handle(event) -> bool` (Alt held: never a group key) |
 | `RtsArmedPreview` | `modes`, `hz`; Callable `answer(mode, payload, screen, ground) -> [status, site]`; `preview()` |
 | `RtsWorldInput` (static) | `modal_group`, `blocked(from)` |
-| `RtsKeymap` (static) | `install(command_on_macos)`, `bindings(command_on_macos)` |
+| `RtsKeymap` (static) | `install(command_on_macos)`, `bindings(command_on_macos)`; `ALL_DEVICES` (every default binding: a tap is a left click) |
 | `RtsRefusal` (constants) | `NO_GROUND`, `NOBODY`, `NO_ANCHOR`, `NO_TARGET`, `NOT_TAKEN` |
 
 ## Command UIs (all optional)
@@ -62,4 +62,4 @@ Everything is in `addons/rts_kit/`. Kit points are `Vector3` with the ground on 
 
 ## Cameras
 
-`RtsCamera3D` (`mode` FOLLOW / FREE, `follow`, `set_follow`, `focus`, `yaw`, `is_dragging`, `free_target`, `free_pitch_deg`, `free_min_distance`, `free_max_distance`, `pan_speed`, `bounds`, `ground`, `ground_clearance`, `height_at`, `height_of`, `edge_area`, `edges_over_gui`, `wheel_blockers`, `effect`, `follow_yaw_property`, the follow formula, `debug_pointer`), `RtsCamera2D` (`mode`, `follow`, `focus`, `yaw`, `bounds`, `can_turn`, `min_zoom`, `max_zoom`, `pan_speed`, `edge_area`, `edges_over_gui`, `wheel_blockers`), `RtsCameraEffect` (`offset()`, `roll()`).
+`RtsCamera3D` (`mode` FOLLOW / FREE, `follow`, `set_follow`, `focus(point, seconds)`, `yaw`, `is_dragging`, `takes_drag`, `select_drag_pans`, touch: `touch_enabled`, `touch_drag_px`, `pinch_zoom`, `twist_turn`, `twist_start_deg`; `free_target`, `free_pitch_deg`, `free_min_distance`, `free_max_distance`, `pan_speed`, `bounds`, `ground`, `ground_clearance`, `height_at`, `height_of`, `edge_area`, `edges_over_gui`, `wheel_blockers`, `effect`, `follow_yaw_property`, the follow formula, `debug_pointer`), `RtsCamera2D` (`mode`, `follow`, `focus(point, seconds)`, `yaw`, `is_dragging`, `takes_drag`, `bounds`, `can_turn`, `select_drag_pans`, `min_zoom`, `max_zoom`, `pan_speed`, `edge_area`, `edges_over_gui`, `wheel_blockers`, the same touch exports), `RtsCameraEffect` (`offset()`, `roll()`).

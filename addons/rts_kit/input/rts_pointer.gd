@@ -15,8 +15,9 @@ const OTHER := &"other"
 
 ## AUTO: 3D when the viewport has a Camera3D, else 2D.
 @export var dimension := Dimension.AUTO
-## The camera that steers the view (RtsCamera3D, RtsCamera2D or any node with `is_dragging()` and
-## `debug_pointer`). Empty: the viewport's camera, with no drag and no forced pointer.
+## The camera that steers the view (RtsCamera3D, RtsCamera2D or any node with `is_dragging()`,
+## `takes_drag()` and `debug_pointer`, each optional). Empty: the viewport's camera, with no drag and
+## no forced pointer.
 @export var camera: Node
 ## The player of this screen.
 @export var local_slot := 1
@@ -55,6 +56,12 @@ func team() -> int:
 ## True while the camera counts the pointer as dragged: a click that ends a drag is not an order.
 func camera_dragged() -> bool:
 	return camera != null and camera.has_method("is_dragging") and bool(camera.call("is_dragging"))
+
+
+## True while the held button or finger moves the camera's view (its `takes_drag()`): that drag draws
+## no selection box.
+func camera_takes_drag() -> bool:
+	return camera != null and camera.has_method("takes_drag") and bool(camera.call("takes_drag"))
 
 
 ## Where a keyboard action aims: the camera's forced `debug_pointer` when set (a test flow), else the
