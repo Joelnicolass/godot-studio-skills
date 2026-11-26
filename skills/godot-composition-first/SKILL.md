@@ -84,7 +84,7 @@ Semantic actions in Project Settings → Input Map: `move_left`, `attack`, `paus
 - Continuous / hold movement: `_physics_process` + `Input.get_vector(...)`.
 - Gameplay one-shot (jump, attack): `_unhandled_input` (UI may already have consumed the event).
 - `_input` only to intercept (pause, remap).
-- Phone or tablet: `VirtualJoystick` and `TouchScreenButton` press the same actions; the game reads no touches. Showing them only on phones, looking by dragging in 3D and one-press actions: [touch.md](touch.md).
+- Phone or tablet: `VirtualJoystick` and `TouchScreenButton` press the same actions; the game reads no touches. Showing them only on phones, looking by dragging in 3D and one-press actions: [touch.md](touch.md). Gestures Godot does not have (swipe, double tap, long press, pinch, twist): GestureKit (`godot-gesture-kit`, `/add-gestures`).
 
 The input catcher calls `apply_*` (on a network, the actor's `MpInput` sends the actions and the server applies); it does not spawn or score.
 

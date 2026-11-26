@@ -13,6 +13,7 @@ local kits = {
 	{ id = "deck_kit", name = "DeckKit", color = "#ff6f91" }, -- rose
 	{ id = "dice_kit", name = "DiceKit", color = "#eef2f7" }, -- bone
 	{ id = "fsm_kit", name = "FsmKit", color = "#ea62c2" }, -- magenta
+	{ id = "gesture_kit", name = "GestureKit", color = "#ffa98c" }, -- peach
 	{ id = "grass_kit", name = "GrassKit", color = "#8fd03f" }, -- lime
 	{ id = "grid_kit", name = "GridKit", color = "#2fc4cc" }, -- cyan
 	{ id = "mp_kit", name = "MpKit", color = "#3d8ef5" }, -- blue
@@ -54,6 +55,9 @@ local icons = {
 	-- fsm_kit
 	FsmMachine = { "state_graph" },
 	FsmState = { "state" },
+
+	-- gesture_kit
+	GestureArea = { "pointing_hand" },
 
 	-- grass_kit
 	GrassClear3D = { "grass_gap" },
