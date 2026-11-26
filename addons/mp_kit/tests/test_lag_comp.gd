@@ -57,3 +57,36 @@ func test_a_rewind_never_lands_between_a_teleport() -> void:
 	check(seen == Vector2.ZERO, "half a tick before a teleport it was still at the old pose, as the shooter saw it: %s" % seen)
 	node.free()
 	MpLagComp.clear()
+
+
+## A hurtbox under the rewound body (an Area3D child) is where the body was too, for a ray that collides with areas.
+func test_a_rewind_moves_the_hurtbox_under_the_body() -> void:
+	MpLagComp.clear()
+	var body := CharacterBody3D.new()
+	var hurtbox := Area3D.new()
+	var shape := CollisionShape3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.5
+	shape.shape = sphere
+	hurtbox.add_child(shape)
+	body.add_child(hurtbox)
+	tree.root.add_child(body)
+	var shooter := Node3D.new()
+	tree.root.add_child(shooter)
+	for i in 60:
+		body.position = Vector3(i * 0.2, 0, 0)
+		MpLagComp.record(body, 20.0 + i / 60.0)
+		MpLagComp.record(shooter, 20.0 + i / 60.0)
+	await tree.physics_frame
+	await tree.physics_frame
+	var space := body.get_world_3d().direct_space_state
+	var ray := PhysicsRayQueryParameters3D.create(Vector3(0, 5, 0), Vector3(0, -5, 0))
+	ray.collide_with_areas = true
+	ray.collide_with_bodies = false
+	check(space.intersect_ray(ray).is_empty(), "now the hurtbox is far from x = 0")
+	var hit: Variant = MpLagComp.rewind(20.0, func() -> Variant: return space.intersect_ray(ray), shooter)
+	check(not (hit as Dictionary).is_empty() and (hit as Dictionary)["collider"] == hurtbox, "rewound, the ray hits it at x = 0")
+	check(space.intersect_ray(ray).is_empty(), "and after the rewind it is back")
+	body.free()
+	shooter.free()
+	MpLagComp.clear()

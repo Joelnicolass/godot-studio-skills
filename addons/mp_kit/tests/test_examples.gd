@@ -153,3 +153,31 @@ func test_sports_2d_player_without_prediction() -> void:
 	Input.action_release(&"ui_select")
 	check(int(player.get(&"slide_ticks")) > 0, "and slides")
 	player.free()
+
+
+## The turn-based example solo: one screen plays both seats through MpOrders (submit_as), the judge refuses a taken cell,
+## and the game ends; Again starts another one. A world with no player scene spawns no pawn.
+func test_turns_2d_solo_plays_a_game() -> void:
+	const TURNS := "res://addons/mp_kit/examples/turns_2d"
+	var world := (load(TURNS.path_join("world.tscn")) as PackedScene).instantiate()
+	tree.root.add_child(world)
+	await tree.process_frame
+	var orders := world.get_node(^"%Orders") as MpOrders
+	var rules: Object = world.get(&"rules")
+	check(orders.start().has("first"), "the game began, its first seat drawn (%s)" % [orders.start()])
+	check(world.get_node(^"MpWorld/Actors").get_child_count() == 0, "no player scene: no pawn")
+	var refused: Array[String] = []
+	orders.rejected.connect(func(_m: StringName, _a: Array, reason: String) -> void: refused.append(reason))
+	world.call(&"play", 4)
+	world.call(&"play", 4)
+	check(refused == ["That cell is taken."], "a taken cell is refused with the judge's reason (%s)" % [refused])
+	for cell in [0, 8, 2, 6, 1, 3, 5, 7]:
+		if int(rules.get(&"winner")) == 0:
+			world.call(&"play", cell)
+	check(int(rules.get(&"winner")) != 0, "the game ended (%d)" % int(rules.get(&"winner")))
+	check(orders.last_seq() == orders.moves().size() and orders.last_seq() >= 5, "every move kept (%d)" % orders.last_seq())
+	var again := world.get_node(^"%Again") as Button
+	check(again.visible, "Again shows when it is over")
+	again.pressed.emit()
+	check(orders.last_seq() == 0 and int(rules.get(&"winner")) == 0, "Again: a new game")
+	world.free()
