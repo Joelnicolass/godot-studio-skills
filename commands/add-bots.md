@@ -1,5 +1,5 @@
 ---
-description: "Bots (BotKit addon): a node on your character that plays like a person, pressing its keys; it sees, aims with a person's limits, picks a weapon, walks the navmesh, with your own behaviours and difficulty presets, in 3D."
+description: "Bots (BotKit addon): a node on your character that plays like a person, pressing its keys; it sees, aims with a person's limits, picks a weapon, walks the navmesh, with your own behaviours and difficulty presets, in 3D. Or a turn-based, card or strategy bot that picks by score (BotBrain)."
 ---
 
 Add **bots that play a character like a person** to the **game's Godot project** with the BotKit addon:
@@ -9,9 +9,11 @@ Add **bots that play a character like a person** to the **game's Godot project**
 - a `BotGoal3D` on each pickup worth it;
 - a `BotMode` per behaviour of the game's own (flee, guard), if needed.
 
+Or, for a bot with **no body** (by turns, cards, strategy), a `BotBrain` on what the bot plays, with one `BotOption` per thing it can do; the game does what it chose.
+
 Then the person sees its sight and handles in the 3D view and watches it play with `show_in_game`; the agent builds and explains.
 
-This is **not** the character, its weapons, its health or its death: the kit presses keys and the game turns them into movement and shots. **Not** the network: a network game decides which seat a bot plays and connects its keys to its input. **Not** a strategy or RTS AI.
+This is **not** the character, its weapons, its health or its death: the kit presses keys and the game turns them into movement and shots. **Not** the network: a network game decides which seat a bot plays and connects its keys to its input. In a turn-based bot, the kit picks: which options there are, what each is worth and what it does are the game's.
 
 Load: `godot-bot-kit`, `godot-composition-first`.
 
@@ -34,6 +36,12 @@ If missing, ask in one batch:
 5. Whether a behaviour of its own is needed (flee when hurt, guard, follow a leader) and the difficulty (easy, normal, hard, or the numbers).
 6. Whether the game is networked (with MpKit or what), and whether the level has its navmesh baked.
 
+If the bot has no body (by turns, cards, strategy), instead of the above:
+
+1. What it can do on its turn (the actions or the legal orders) and what it knows of the match (what its player sees).
+2. What makes it want each thing (its state, the rival's) and whether there are personalities or difficulties (how much noise).
+3. Whether the match has a seed (the same decisions with the same seed) and whether the bot thinks on each turn or on its own, now and then.
+
 ## 2. Plan
 
 Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` deleted), for example:
@@ -50,7 +58,16 @@ Show the file tree before touching the game (`[+]` new, `[~]` changed, `[-]` del
 [~] levels/arena/arena.tscn             # navmesh baked; the bots that fill the seats
 ```
 
-Start from `addons/bot_kit/examples/minimal_3d` (a robot that hunts you) or `arena_3d` (four bots, rifle and grenades, pickups, fleeing, difficulty).
+By turns, for example:
+
+```
+[+] bots/bot_brain.tscn                  # BotBrain: noise by difficulty; one BotOption per action
+[+] bots/options/attack.gd              # the game's BotOption: _score(context) with what its player sees
+[+] bots/options/expand.gd
+[~] match/seat.gd                        # the context (what the seat sees); brain.rng = the match's; chose -> the move
+```
+
+Start from `addons/bot_kit/examples/minimal_3d` (a robot that hunts you), `arena_3d` (four bots, rifle and grenades, pickups, fleeing, difficulty) or `turn_based` (a villager by turns that picks by score).
 
 ## 3. Implement
 
@@ -63,10 +80,12 @@ Follow [godot-bot-kit](../skills/godot-bot-kit/SKILL.md) and `addons/bot_kit/REA
 - `BotGoal3D` on the pickups (a taken pickup hides); `wanted` for when it is worth it.
 - On death `enabled = false`, on respawn `true`. In a network game, `enabled` only where the game is decided and the signals of `bot.input` connected to its input.
 - Tell the person how to see it: selecting the bot shows its sight, cone and distance in the 3D view; `show_in_game` draws what it thinks.
+- By turns: one `BotOption` per action with its `score` in the inspector and `_score(context)` with the game's rules (or `brain.options` for the legal orders that are not nodes); `brain.think(context)` on each turn, or `auto_think`; the move in `chose`. `brain.rng` is the match's if it has a seed; `noise` by difficulty. With no nodes, `BotBrainCore.best(choices, &"", rng, noise)`.
 
 ## 4. Done when
 
 - The bot shows no warning and the person saw its sight and handles.
 - F6: the bot walks the level, fights with a person's limits, switches weapon by distance, goes to the pickups it needs and gets out of where it is stuck.
 - In a network game, it plays on the server and a person who takes its seat replaces it with no stuck keys.
+- By turns: the `BotBrain` shows no warning, picks what the game expects in clear cases, and the same seed plays the same way.
 - Nothing of the character, its weapons, its health or its network inside `addons/bot_kit`.

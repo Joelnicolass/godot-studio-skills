@@ -177,6 +177,7 @@ Each kit is an addon copied into the game with `./install.sh --addon <project> <
 | Enemies or guards that see and hear | PerceptionKit | `/add-perception` | `addons/perception_kit/examples/minimal_3d/` |
 | Blood, marks and puddles (or oil, slime, ink) | SpillKit | `/add-spill` | `addons/spill_kit/examples/minimal_3d/` |
 | Bots that play like a person (shooter, arena) | BotKit | `/add-bots` | `addons/bot_kit/examples/minimal_3d/` |
+| A turn-based bot that picks by score (utility AI) | BotKit (`BotBrain`) | `/add-bots` | `addons/bot_kit/examples/turn_based/` |
 | Boards of hexagons or squares, fog of war | GridKit | `/add-grid` | `addons/grid_kit/examples/minimal_3d/` |
 | Turns, phases, rounds and time per turn | TurnKit | `/add-turns` | `addons/turn_kit/examples/minimal/` |
 | Resources and coins (limits, costs, substitutes) | WalletKit | `/add-wallet` | `addons/wallet_kit/examples/minimal/` |

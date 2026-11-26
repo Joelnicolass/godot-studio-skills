@@ -1,6 +1,6 @@
 # <img src="icons/bot_kit.svg" width="32" height="32" alt=""> BotKit
 
-Bots that play your character like a person, in 3D:
+Bots that play your character like a person, in 3D, and a brain that picks by score in any game:
 - **One node on your character.** `Bot3D` presses the same keys a player presses, in `bot.input`, which reads like Godot's `Input`. Your character walks, jumps and shoots with its own code, without knowing whether a person or a bot plays it.
 - **It sees** the nearest enemy of a group, within its reach and with no wall in between, and remembers where it saw one last.
 - **It fights like a person:** it turns at a person's speed, aims with an error, takes a moment to react before its first shot, fires only inside a cone, in bursts, aims ahead of a walking enemy and lobs grenades in an arc over cover. It keeps its distance and steps sideways.
@@ -8,6 +8,7 @@ Bots that play your character like a person, in 3D:
 - **It walks the level** on its navmesh: to a pickup (`BotGoal3D`), to where it saw an enemy, or to any point it can reach. Stuck, it jumps and picks another way.
 - **Your own behaviours** (flee, guard, follow a leader) are child nodes (`BotMode`): the bot does what it wants most.
 - **Difficulty:** three presets (easy, normal, hard) in a resource (`BotDifficulty`).
+- **Picking by score, in any game:** `BotBrain` picks, among its options (`BotOption`), the one it wants most, with a little noise for an easy bot. It works for a villager by turns or a card or strategy rival, with no body and no real time. It is the same rule `Bot3D` picks its modes with.
 - **In the editor:** its sight, its fire cone and its fight distance drawn in the 3D view, with handles for its eye and aim heights; each goal's reach, with its handle.
 
 It has no network code and no autoload, and BotKit depends on no other kit. In a network game it runs on the server and its keys travel like a player's (below, [Network](#network)).
@@ -25,6 +26,11 @@ Enable the **BotKit** plugin for the drawings and handles in the editor. The nod
   - **1, 2, 3:** easy, normal, hard.
   - **F:** draw what each one thinks.
   - **Left and right:** turn round the arena.
+- `examples/turn_based/turn_based.tscn`: a villager builds a house, one turn at a time. Its `BotBrain` picks between gathering wood, building and resting by its energy and wood, and shows each option's score (below, [Picking by score](#picking-by-score-botbrain)). Keys:
+  - **Space:** one turn.
+  - **A:** turns on their own (`auto_think`).
+  - **N:** noise.
+  - **R:** again, with the same seed and the same turns.
 
 ## Getting started
 
@@ -34,6 +40,8 @@ Enable the **BotKit** plugin for the drawings and handles in the editor. The nod
 4. **Bake the level's navmesh** (a `NavigationRegion3D` › Bake NavigationMesh): it walks on it.
 
 With that it already fights and walks the level. For more: weapons in `weapons`, a difficulty in `difficulty`, a `BotGoal3D` on each pickup.
+
+For a bot with no body (by turns, cards, strategy): [Picking by score](#picking-by-score-botbrain).
 
 ## Minimal example
 
@@ -96,6 +104,68 @@ When a person takes the seat (`keys.has_player()`, or `Mp.gate().joined_late`), 
 
 **Without MpKit:** `enabled = multiplayer.is_server()` on each machine, and whatever your network does with a player's keys, connected to the same three signals.
 
+## Picking by score (`BotBrain`)
+
+For a bot with no body and no real time: a villager by turns, a card or strategy rival. Each option says how much it wants it, and the one that wants it most wins. Adding an option is adding a node, not touching a decision tree.
+
+1. **Add a `BotBrain`** as a child of what the bot plays (the villager, the seat), and a `BotOption` child of the brain for each thing it can do. A fixed score goes in the inspector (`score`); one that comes from the game, in `_score(context)`.
+2. **Ask it to think:** `brain.think()` on each turn, or turn on `auto_think` and it thinks on its own every `think_s`.
+3. **Do what it chose:** in `chose(choice)`, which `think()` also returns. `choice.id` is the option's name and `choice.payload`, the `BotOption` node.
+
+```gdscript
+# gather.gd (from the turn_based example): gather wood, more the less it has
+extends BotOption
+
+const Villager := preload("res://addons/bot_kit/examples/turn_based/villager.gd")
+
+@export var enough_wood := 8
+
+func _score(context: Variant) -> float:
+	var villager := context as Villager  # the brain's parent
+	if villager.energy < Villager.GATHER_ENERGY:
+		return 0.0
+	return score * (1.0 - float(villager.wood) / enough_wood)
+```
+
+**The rules** (`BotBrainCore.best`):
+- A score of 0 or less is out. If none is left, `think()` returns null and does not emit `chose`.
+- The highest wins. Between equal ones the first wins: the children in their order, then `options`.
+- What it chose last (`current`) stays until another option beats it; a tie keeps it. `current = null` forgets it.
+- `noise` (0 to 1) moves each score, before it picks, by up to that share of itself, up or down (0.15: ±15 %). So an easy bot picks a worse one now and then. The numbers come from `rng`, so the same seed picks the same way.
+
+| Property | Default | What it is |
+|---|---|---|
+| `auto_think` | off | It thinks on its own every `think_s`, about its parent; turned on, it thinks right away. Off, the game calls `think()` |
+| `think_s` | 0.5 s | How often it thinks with `auto_think` |
+| `noise` | 0 | How far each score moves at random (0.15: ±15 %) |
+| `rng_seed` | 0 | The seed of its own `rng`; with 0, a different one each run. Changing it leaves an assigned `rng` alone |
+
+**What the game uses:**
+- `think(context = null) -> BotChoice`. The context reaches each option; with null, the brain's parent.
+- The `chose(choice)` signal.
+- `current`.
+- `last_choices`: everything it weighed last time, to show the scores.
+- `rng`: assign your match's to share it.
+- `options = func(context) -> Array[BotChoice]`: the game's choices besides the children, for example one per legal order or one per enemy.
+
+**An option (`BotOption`):**
+- `enabled`, `id` (empty: the node's name) and `score`.
+- For a score from the game, override `_score(context)`.
+- For several choices from one node (one per enemy), override `_choices(context)`.
+
+**With no nodes.** `BotChoice` (`id`, `score`, `payload`) and `BotBrainCore` are plain data. The game's rules can use them directly, for example a bot that plays a seat or a tool that plays matches on its own:
+
+```gdscript
+var choices: Array[BotChoice] = []
+for order in legal_orders:
+	choices.append(BotChoice.new(order.name, score_of(order), order))
+var best := BotBrainCore.best(choices, &"", rng, 0.15)  # nothing current, 15 % noise, the match's rng
+if best != null:
+	play(best.payload)
+```
+
+`best(choices, current_id = &"", rng = null, noise = 0)`: with no noise it draws no number and `rng` may be null. With noise it draws one number per choice, in order, and never changes the choices' scores.
+
 ## The bot (`Bot3D`)
 
 | Property | Default | What it is |
@@ -140,6 +210,10 @@ When a person takes the seat (`keys.has_player()`, or `Mp.gate().joined_late`), 
 | It to go only when it needs it | `goal.wanted = func(bot): return bot.body.health < 80` |
 | It to flee when hurt | A `BotMode` child of the bot that wants 2 under some health and walks with `bot.walk_to()` |
 | The bot not to play while dead | `bot.enabled = false`; back alive, `true` |
+| A bot by turns that picks what to do | A `BotBrain` with one `BotOption` per action; `brain.think()` on each turn, and you do it in `chose` |
+| An easy bot that picks worse now and then | `brain.noise = 0.2` |
+| The same decisions with the same seed | `brain.rng = your_match_rng` (or `rng_seed` in the inspector) |
+| Picking among the game's legal orders | `brain.options = func(context): return choices`, or `BotBrainCore.best(choices, &"", rng)` with no node |
 | To see what it thinks | `show_in_game` |
 | A bot in a network game | [Network](#network) |
 
@@ -171,7 +245,7 @@ A place worth walking to for a bot with nobody to fight: put one in a pickup's s
 
 ## Your own modes (`BotMode`)
 
-What your bot does besides fighting and roaming: flee, guard a door, follow a leader, carry a flag. A child node of the `Bot3D` that overrides `_want(bot)` (how much it wants to run now) and `_tick(bot, delta)` (every frame while it runs), and if needed `_enter` and `_exit`. On each think the bot does what it wants most: its fight wants `fight_want` (1) while it sees an enemy, its roam `roam_want` (0.1) always. A tie keeps what it does.
+What your bot does besides fighting and roaming: flee, guard a door, follow a leader, carry a flag. A child node of the `Bot3D` that overrides `_want(bot)` (how much it wants to run now) and `_tick(bot, delta)` (every frame while it runs), and if needed `_enter` and `_exit`. On each think the bot does what it wants most: its fight wants `fight_want` (1) while it sees an enemy, its roam `roam_want` (0.1) always. A tie keeps what it does. The rule is `BotBrainCore.best`'s, with no noise.
 
 ```gdscript
 # flee.gd (from the arena_3d example): hurt, it runs to the nearest health
@@ -189,7 +263,8 @@ func _tick(bot: Bot3D, delta: float) -> void:
 - **The bot:** select it and the 3D view draws its sight (its difficulty's `sight_m`, around its eyes), its fire cone ahead, the distance it keeps in a fight (around its feet) and where it aims on an enemy. The handles move `eye_height_m` and `aim_height_m`.
 - **The goal:** its reach, with a handle to drag it.
 - Every drag undoes. The sight, the cone and the distance live in the difficulty (a shared preset): they are drawn, and changed in the inspector.
-- **Warnings:** a bot that is not on a character, an empty group, a weapon with `min_m` above `max_m`, a `BotMode` outside a bot, a goal without reach.
+- **Warnings:** a bot that is not on a character, an empty group, a weapon with `min_m` above `max_m`, a `BotMode` outside a bot, a goal without reach, a `BotBrain` with no `BotOption` (it picks only among what `options` gives), two options with one id, a `BotOption` outside a brain. Godot only asks `@tool` scripts for their warnings: a `BotOption` or a `BotMode` of yours without `@tool` does not warn about its own.
+- **`BotBrain` in the editor:** the options and their fixed scores are in the inspector. In the editor it never thinks.
 
 ## Performance
 
@@ -197,6 +272,7 @@ func _tick(bot: Bot3D, delta: float) -> void:
 - Every frame: one ray for the line of fire while it aims, a few navmesh queries while it fights (so it never steps off the mesh), and its path.
 - It asks the NavigationServer3D for its path when the goal changes and every `repath_s` (1 s). A random point tries up to eight paths.
 - It creates no nodes while it plays. `show_in_game` does draw; leave it off on a server.
+- A `BotBrain` (and each think of a `Bot3D`) makes one `BotChoice` per option: small objects, not nodes.
 - Measured on an M4: 16 bots fighting in an arena with walls cost about 0.8 ms a frame in all (0.05 ms each), their characters' movement aside.
 
 ## Tips and recommendations
@@ -213,7 +289,7 @@ func _tick(bot: Bot3D, delta: float) -> void:
 The first version was the bots of a network shooter, which filled the empty seats and gave their place to a person. This kit made them generic:
 - **A bot that presses keys instead of moving the body:** the character moves the same with a person or a bot, and the network does not change.
 - **A person's limits on the aim** (turn, error, reaction, cone, bursts), as in the bots of arena shooters: so a bot can be beaten.
-- **Choosing by score** (the weapon, what it does): each option says how much it wants, and the one that wants most wins. Adding one is adding a node, not touching a state machine.
+- **Choosing by score** (the weapon, what it does): each option says how much it wants, and the one that wants most wins. Adding one is adding a node, not touching a state machine. With no body, `BotBrain` is the utility AI of strategy games, with the difficulty's noise.
 - **Roaming by goals with priority**, to where it saw the enemy and to a random reachable point, with a jump to get out of where it got stuck.
 
 ## Tests
@@ -234,9 +310,13 @@ The result is `BOTKIT TESTS PASS (n)`. The tests cover:
 - **the weapons:** by distance and score, `chance`, the game's rule, no weapon that fits holds its fire, `fire_within_m` and its own distance;
 - **the roam:** the goal of the highest priority within its reach (round a wall), a hidden one or one it does not want does not count, the difficulty's scale, to where it saw the enemy, a random point never on an island, stuck it jumps and changes, without a navmesh it stands;
 - **the modes:** fight and roam, a mode that wants more takes over and hands back, a tie keeps what it does, an off one never runs, a mode walks with the bot's functions;
+- **picking by score:**
+  - `BotBrainCore.best`: the highest above 0, the first of a tie, what it does until another beats it;
+  - the noise: one number from the `rng` per choice, none with no noise, the same seed picks the same way, the scores do not change;
+  - `BotBrain`: its children and `options` in order, the context (its parent or the game's), `chose`, `current` and forgetting it, `rng_seed` and an assigned `rng`, `auto_think` every `think_s`, the warnings;
 - **off or freed:** it lets go of every key, also those of an input it was connected to; without `turn_body` it only writes where it looks;
 - **every file loads; the presets rise in difficulty; what runs on a server uses no camera or screen; no other kit or game is named;**
-- **both examples, from start to end.**
+- **the three examples, from start to end**, also the turn-based example's keys and its same turns with the same seed.
 
 A test that stops on a script error, or never gets to check anything, fails.
 
@@ -246,7 +326,7 @@ The handles have their own check in a real editor:
 BOTKIT_EDITOR_CHECK=1 godot --headless --editor --path botkit_lab
 ```
 
-It checks that the bot and the goal have the kit's gizmo, drags their handles from the 3D view's camera, undoes and redoes each drag, and saves the scene with its values. It prints `EDITOR CHECK PASS`.
+It checks that the bot and the goal have the kit's gizmo, drags their handles from the 3D view's camera, undoes and redoes each drag, and saves the scene with its values. In the turn-based example it checks the `BotBrain`'s warnings (with options that are not `@tool`), that it never thinks in the editor and that the scene saves its noise, its seed and the scores. It prints `EDITOR CHECK PASS`.
 
 ## Outside the kit
 
@@ -256,4 +336,5 @@ This is the game's:
 - the real weapons: the damage, the ammo, the heat (the kit takes your rule in `weapon_score`);
 - which pickup is worth it for whom (`wanted`);
 - health, death and respawn (turn the bot off with `enabled`);
+- in a `BotBrain`, what the bot can do, how much it wants each thing and what happens when it picks it (the kit only picks);
 - in a network game: which seat a bot plays, and when a person takes it.

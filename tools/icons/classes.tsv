@@ -1,9 +1,11 @@
 kit	class	kind	base	native_base	script
 bot_kit	Bot3D	node	Node3D	Node3D	addons/bot_kit/nodes/bot_3d.gd
+bot_kit	BotBrain	node	Node	Node	addons/bot_kit/nodes/bot_brain.gd
 bot_kit	BotDebug	node	Node3D	Node3D	addons/bot_kit/core/bot_debug.gd
 bot_kit	BotDifficulty	resource	Resource	Resource	addons/bot_kit/core/bot_difficulty.gd
 bot_kit	BotGoal3D	node	Node3D	Node3D	addons/bot_kit/nodes/bot_goal_3d.gd
 bot_kit	BotMode	node	Node	Node	addons/bot_kit/nodes/bot_mode.gd
+bot_kit	BotOption	node	Node	Node	addons/bot_kit/nodes/bot_option.gd
 bot_kit	BotWeapon	resource	Resource	Resource	addons/bot_kit/core/bot_weapon.gd
 command_kit	GameCommands	node	Node	Node	addons/command_kit/nodes/game_commands.gd
 deck_kit	CardData	resource	Resource	Resource	addons/deck_kit/resources/card_data.gd
