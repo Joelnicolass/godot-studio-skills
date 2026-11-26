@@ -2,6 +2,17 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.28.0
+
+- **Trying online on your PC:** `bash addons/mp_kit/deploy/online_local.sh <game_id> [max_players]` brings up a local issuer and relay for your game (fresh keys and secret on every run, nothing written to the project) and prints how to open each copy. It replaces the scripts El Eternauta and the insults site had of their own.
+- **`?issuer=` in the web build:** `?issuer=http://127.0.0.1:8891` in the page's address does what `--issuer-url=` does on desktop, to test with the local issuer. It only takes a local address (localhost, 127.0.0.1, [::1]): a page on the internet cannot point the game at another server. Intervendoom did it on its own.
+- **The seats' log:** `--seat-log` on the server (or `MpMatch.log_seats`) writes one line per event: "MpKit seats: seat 2 in", "seat 2 loaded (1/2)", "match started (all_loaded)", "seat 2 away", "seat 2 back", "seat 3 abandoned (grace_over)", "seat 3 closed", "peer N turned away (match_started)". Sacrifice had it (`SeatPresence`).
+- **Back in the LAN seat after closing the game:** with `MpFlow.remember_seats` (or `--remember-seats`) the client keeps its seat's credential in `user://` and comes back to it even after the game was closed, within the grace. Off by default; two copies on one PC, each with its own `--seat-file=`. Albores asked for it.
+- **Lab:** `run/remember.sh` (a killed client, one with no credential turned away, one with its file back in its seat, and the host's seat log) and `run/local_online.sh` (the local script, no Godot).
+- **Docs:** the shape of `version`, `kit` and `session` for the issuer (issuer/README.md).
+
+What to update: nothing in your project; everything new is off by default. If your game had its own script for a local issuer, you can swap it for `deploy/online_local.sh`. `MpKit.VERSION` moves to 0.28.0, so server and clients must run the same build.
+
 ## 0.27.0
 
 - **`MpSeatState`: what only one seat sees** (its hand of cards, its ammo, its secret goal), next to `MpState`'s public values. The server writes `set_value(slot, key, value)` and only that seat's machine gets it (`changed`, `watch`), again when it loads late or comes back. It belongs to the seat, not to the player: whoever takes it later (a late player, a bot) finds it there. El Eternauta asked for it (its `PrivateChannel`).

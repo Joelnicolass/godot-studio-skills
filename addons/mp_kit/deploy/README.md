@@ -8,6 +8,10 @@ One Linux binary does everything: client, room server (`--room-server`) and ever
 - On your PC: the Linux export templates of your Godot version (Editor → Manage Export Templates).
 - In the project: `MpFlow` with `room_server_path` pointing at your scene with `MpRoomServer` (for the lobby) and an `MpNetConfig`.
 
+## Try it online on your PC
+
+`bash addons/mp_kit/deploy/online_local.sh <game_id> [max_players]` brings up a local issuer and relay (copied from `addons/mp_kit` into a cache folder, with fresh keys and secret on every run: nothing is written to the project), with the issuer serving your game, and prints the commands to open each copy of the game. Ctrl+C stops both. It needs Node 20+, npm and openssl. Ports: `RELAY_PORT` (8890) and `ISSUER_PORT` (8891); accepted web pages: `WEB_ORIGINS`.
+
 ## 1. Export
 
 Copy the presets of [export_presets.example.cfg](export_presets.example.cfg) into your `export_presets.cfg` (or create them in Project → Export) and export:

@@ -1353,6 +1353,10 @@ func _leave_and_join_cards(slot: int) -> bool:
 func _play_turns() -> void:
 	await _until(func() -> bool: return MpKit.is_networked() and MpKit.has_local_slot(), "this peer has a seat")
 	var slot := MpKit.local_slot()
+	## `--probe-expect-seat=N`: a game opened again with its remembered credential is back in its own seat.
+	var expected := int(MpBoot.user_value("probe-expect-seat", "0"))
+	if expected > 0:
+		_check(slot == expected, "back in its own seat %d (got %d)" % [expected, slot])
 	if not await _until(_turns_world_ready, "the turn-based world is up and its game began"):
 		return
 	var world := get_tree().current_scene
@@ -1377,6 +1381,11 @@ func _play_turns() -> void:
 			world.call(&"play", (rules.get(&"cells") as PackedInt32Array).find(0))
 			await _until(func() -> bool: return orders.last_seq() > before, "move %d taken" % (moved + 1))
 			moved += 1
+			if moved == 1 and MpBoot.user_flag("probe-announce-move"):
+				## Says it moved and plays no more: the runner kills this copy now.
+				_echo("TURNS MOVED %d" % slot)
+				while true:
+					await get_tree().process_frame
 			if moved == 2 and MpBoot.user_flag("probe-rejoin") and not rejoined:
 				rejoined = true
 				var cells_before: PackedInt32Array = (rules.get(&"cells") as PackedInt32Array).duplicate()
