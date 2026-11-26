@@ -323,6 +323,9 @@ En 2D el mundo se mide en píxeles, y las distancias del kit se escriben en la u
 - Las dos: cambiá `mode` al correr (los ejemplos lo hacen con F).
 - 2D: `RtsCamera2D` con `bounds`, `min_zoom`, `max_zoom`; `can_turn` para que Q / E giren la vista.
 - Un temblor: un script que extiende `RtsCameraEffect`, en `effect`.
+- Táctil: no hay nada que hacer. Un dedo arrastra el mapa, dos pellizcan y giran, un toque selecciona. Ajustá `touch_drag_px`, `pinch_zoom` y `twist_turn`; poné `touch_enabled = false` si tu juego lee los dedos por su cuenta.
+- Un mapa de estrategia, donde arrastrar con el botón izquierdo lo mueve: `select_drag_pans = true`.
+- Deslizarse hasta un punto (una alerta, una unidad): `camera.focus(point, seconds)`.
 
 ### 5.8 Teclas
 

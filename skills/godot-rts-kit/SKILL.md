@@ -4,9 +4,10 @@ description: >-
   Agrega controles de RTS a un juego Godot 4, 2D o 3D, con el addon RtsKit:
   unidades (RtsUnit), selección y grupos, órdenes tipadas en formación, clic
   derecho según el contexto, órdenes armadas, un panel de comandos o menú radial
-  (opcionales), señales del cursor, cámaras de RTS. Usar cuando el usuario quiere
-  un RTS, seleccionar unidades, rectángulo de selección, grupos de control,
-  formaciones, attack-move, un panel de comandos o /add-rts-controls. No es
+  (opcionales), señales del cursor, cámaras de RTS con táctil (arrastrar,
+  pellizcar, girar). Usar cuando el usuario quiere un RTS, seleccionar unidades,
+  rectángulo de selección, grupos de control, formaciones, attack-move, un panel
+  de comandos, una cámara de mapa de estrategia o táctil, o /add-rts-controls. No es
   pathfinding ni combate (son del juego). Sin red adentro: MpKit lo conecta el juego.
 ---
 

@@ -2,14 +2,22 @@
 class_name RtsCamera3D
 extends Camera3D
 
-## The camera of a 3D RTS, in two modes with one contract (`yaw`, `is_dragging()`, `focus()`,
-## `debug_pointer`), so formations and input never ask which one is on.
+## The camera of a 3D RTS, in two modes with one contract (`yaw`, `is_dragging()`, `takes_drag()`,
+## `focus()`, `debug_pointer`), so formations and input never ask which one is on.
 ##
 ## FOLLOW: third person behind a body (`follow`): it places itself from the body's height and the
 ## zoom, turns with the keys, the screen edges and free look, and zooms with the wheel. FREE: a
 ## top-down view over a point of the map: it pans with the keys, the screen edges and a middle drag,
 ## turns with the keys or the orbit modifier + drag, zooms with the wheel between `free_min_distance`
-## and `free_max_distance`, and stays inside `bounds`.
+## and `free_max_distance`, and stays inside `bounds`. With `select_drag_pans`, a drag of the select
+## button also moves the map (a strategy map). `focus(point, seconds)` glides there.
+##
+## On a touch screen (`touch_enabled`), in both modes: one finger drags the map (FREE) or looks
+## (FOLLOW), two fingers pinch to zoom and twist to turn; in FREE the ground under them stays under
+## them. A tap stays a click (`is_dragging()` is false until a finger travels `touch_drag_px`), a
+## two-finger touch never is one, and a gesture that starts over the UI is the UI's. The mouse
+## Godot emulates from a finger never moves the view a second time, nor counts as the pointer at an
+## edge.
 ##
 ## In both the eye never goes below `ground_clearance` over the ground under it (a ray to `ground`,
 ## and `height_at` when the game gives one: live terrain that moves before its collision does). The
@@ -19,6 +27,8 @@ extends Camera3D
 ## (RtsWorldInput).
 
 enum Mode { FOLLOW, FREE }
+
+const TouchGesture := preload("rts_touch_gesture.gd")
 
 @export var mode := Mode.FREE:
 	set(value):
@@ -32,11 +42,11 @@ enum Mode { FOLLOW, FREE }
 @export_flags_3d_physics var ground_mask := 1
 ## The eye never goes lower than this over the ground under it.
 @export var ground_clearance := 0.5
-## Edges only work while the pointer hovers this control (a HUD bar stays out). Empty: anywhere but
-## the UI (`edges_over_gui`).
+## Edges only work while the pointer hovers this control (a HUD bar stays out), and a finger only
+## moves the view when it lands on it. Empty: anywhere but the UI (`edges_over_gui`).
 @export var edge_area: Control
 ## Without `edge_area`, the edges also work while the pointer is over the UI (a control whose mouse
-## filter is not Ignore). Off: a HUD button or panel at an edge does not move the camera.
+## filter is not Ignore), and the fingers too. Off: a HUD button or panel does not move the camera.
 @export var edges_over_gui := false
 ## The wheel does not zoom while the pointer is over one of these.
 @export var wheel_blockers: Array[Control] = []
@@ -114,6 +124,29 @@ enum Mode { FOLLOW, FREE }
 @export var pan_speed := 12.0
 ## The map rectangle (x, z) the free target stays in; empty = anywhere.
 @export var bounds := Rect2()
+## A drag of `select_action` also moves the map, past `drag_px` (a strategy map). Off for an RTS,
+## where that drag draws the selection box.
+@export var select_drag_pans := false
+
+@export_group("Touch")
+## Reads the fingers: one drags, two pinch to zoom and twist to turn. A gesture whose first finger
+## lands over the UI is the UI's (the edges' rule: `edge_area`, `edges_over_gui`). Off: the fingers
+## reach the game only as the mouse Godot emulates.
+@export var touch_enabled := true:
+	set(value):
+		touch_enabled = value
+		if _touch != null:
+			_touch.clear()
+## Pixels a finger travels before it is a drag (the map moves, the touch is no click). A finger
+## shakes more than a mouse: a phone's touch slop is about 8 dp.
+@export var touch_drag_px := 12.0
+## How much two fingers zoom: 1 keeps the ground under them (the distance follows their gap), 0 =
+## no pinch.
+@export_range(0.0, 2.0, 0.05) var pinch_zoom := 1.0
+## How much the view turns with two fingers: 1 turns the map with them, 0 = no twist.
+@export_range(0.0, 2.0, 0.05) var twist_turn := 1.0
+## Degrees the fingers twist before the view turns, so a pinch does not turn it by accident.
+@export_range(0.0, 45.0, 0.5) var twist_start_deg := 10.0
 
 @export_group("Debug")
 ## When x >= 0 it replaces the real pointer for the edges and keyboard aiming (test flows).
@@ -135,6 +168,8 @@ var height_at: Callable
 
 var _dragged := false
 var _drag_travel := 0.0
+var _touch := TouchGesture.new()
+var _glide: Tween
 var _mouse_inside := true
 ## The last pointer this viewport got as an event; x < 0 until the first one.
 var _pointer := Vector2(-1.0, -1.0)
@@ -158,6 +193,9 @@ func _notification(what: int) -> void:
 		_mouse_inside = true
 	elif what == NOTIFICATION_WM_MOUSE_EXIT:
 		_mouse_inside = false
+	elif what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		# The fingers lifted while the window was away never reach it.
+		_touch.clear()
 
 
 ## FOLLOW: the body to stand behind (its `follow_yaw_property` gives the yaw).
@@ -168,24 +206,55 @@ func set_follow(node: Node3D) -> void:
 	_place()
 
 
-## FREE: look at `point` (a kit point, kept inside `bounds`). FOLLOW: nothing (false).
-func focus(point: Vector3) -> bool:
+## FREE: look at `point` (a kit point, kept inside `bounds`), at once or gliding there in
+## `seconds` (a pan by the player stops the glide). FOLLOW: nothing (false).
+func focus(point: Vector3, seconds := 0.0) -> bool:
 	if mode != Mode.FREE:
 		return false
-	free_target = _clamped(point)
-	_place()
+	_stop_glide()
+	var to := _clamped(point)
+	if seconds <= 0.0 or not is_inside_tree():
+		free_target = to
+		_place()
+		return true
+	_glide = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_glide.tween_property(self, ^"free_target", to, seconds)
 	return true
 
 
-## True while a held button travelled past `drag_px`: the click that ends it is not an order.
+## True while a held button travelled past `drag_px` (a finger: `touch_drag_px`; two fingers:
+## always): the click that ends it is not an order.
 func is_dragging() -> bool:
 	return _dragged
 
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouse:
-		_pointer = (event as InputEventMouse).position
+## True while a held button or finger moves the view instead of picking: the camera's fingers, the
+## look gesture, and in FREE the orbit button, or the select button with `select_drag_pans`.
+## RtsSelectInput draws no box then (RtsPointer.camera_takes_drag).
+func takes_drag() -> bool:
 	if not current or RtsWorldInput.blocked(self):
+		return false
+	if _touch.is_active() or _free_look():
+		return true
+	return (
+		mode == Mode.FREE and (_held(orbit_action) or (select_drag_pans and _held(select_action)))
+	)
+
+
+func _input(event: InputEvent) -> void:
+	# The mouse Godot emulates from a finger is no pointer for the edges: a finger lifted at an edge
+	# would pan for ever.
+	if event is InputEventMouse and event.device != InputEvent.DEVICE_ID_EMULATION:
+		_pointer = (event as InputEventMouse).position
+	# A finger lifts even while the world is blocked, so none stays down.
+	if event is InputEventScreenTouch and not event.pressed:
+		_touch.lift((event as InputEventScreenTouch).index)
+		return
+	if not current or RtsWorldInput.blocked(self):
+		return
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		if touch_enabled:
+			_on_touch(event)
 		return
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
@@ -205,7 +274,12 @@ func _input(event: InputEvent) -> void:
 		elif wheel_out:
 			_nudge_zoom(wheel_step * _wheel_factor(button))
 	elif event is InputEventMouseMotion:
-		_on_motion(event as InputEventMouseMotion)
+		# The mouse Godot emulates from a finger, and any mouse while the camera's fingers are down
+		# (a desktop that emulates touch from the mouse): the fingers already moved the view.
+		var motion := event as InputEventMouseMotion
+		var emulated := touch_enabled and motion.device == InputEvent.DEVICE_ID_EMULATION
+		if not emulated and not _touch.is_active():
+			_on_motion(motion)
 
 
 func _on_motion(motion: InputEventMouseMotion) -> void:
@@ -222,10 +296,107 @@ func _on_motion(motion: InputEventMouseMotion) -> void:
 				yaw -= deg_to_rad(motion.relative.x * look_deg_per_px)
 			else:
 				_drag_pan(motion.relative)
+		elif select_drag_pans and _held(select_action):
+			held = true
+			# Past the threshold only, so a click with a shaky hand does not nudge the map.
+			if _dragged or _drag_travel + motion.relative.length() > drag_px:
+				_drag_pan(motion.relative)
 	if held:
 		_drag_travel += motion.relative.length()
 		if _drag_travel > drag_px:
 			_dragged = true
+
+
+# A finger down (a pressed ScreenTouch; `_input` lifts them) or a finger moving.
+func _on_touch(event: InputEvent) -> void:
+	_touch.drag_px = touch_drag_px
+	_touch.twist_start = deg_to_rad(twist_start_deg)
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		var ours := false
+		if _touch.is_idle():
+			ours = _gesture_starts_at(touch.position)
+			if ours:
+				_dragged = false
+				_drag_travel = 0.0
+		_touch.press(touch.index, touch.position, ours)
+	else:
+		var drag := event as InputEventScreenDrag
+		var step := _touch.move(drag.index, drag.position, drag.relative)
+		if step.fingers == 1:
+			_finger_drag(step.drag)
+		elif step.fingers == 2:
+			_two_fingers(step)
+	if _touch.is_dragged():
+		_dragged = true
+
+
+## A gesture is the camera's when its first finger lands where the edges work: on `edge_area`, or
+## anywhere but the UI. Godot updates the hovered control from the mouse it emulates from that
+## finger, before the finger's own event; with that emulation off only `edge_area` can tell.
+func _gesture_starts_at(screen: Vector2) -> bool:
+	if not Input.emulate_mouse_from_touch:
+		return edge_area == null or edge_area.get_global_rect().has_point(screen)
+	return _edges_work_here()
+
+
+func _finger_drag(relative: Vector2) -> void:
+	if relative == Vector2.ZERO:
+		return
+	if mode == Mode.FOLLOW:
+		yaw -= deg_to_rad(relative.x * look_deg_per_px)
+		look_pitch_deg += relative.y * look_deg_per_px
+	else:
+		_drag_pan(relative)
+
+
+# Two fingers: the pinch zooms (the distance follows their gap), the twist turns the view, and in
+# FREE the ground under their middle stays under it, so the map zooms and turns around the fingers
+# and follows them.
+func _two_fingers(step: TouchGesture.Move) -> void:
+	var plane_y := _ground_y(free_target, free_target.y)
+	var anchor: Variant = null
+	if mode == Mode.FREE:
+		_place()
+		anchor = _ground_under(step.middle_from, plane_y)
+	if pinch_zoom > 0.0 and step.ratio != 1.0:
+		zoom = _zoom_for_distance(pow(1.0 / step.ratio, pinch_zoom))
+		target_zoom = zoom
+	yaw += step.twist * twist_turn
+	if mode != Mode.FREE:
+		return
+	_place()
+	var now: Variant = _ground_under(step.middle_to, plane_y)
+	if anchor == null or now == null:
+		_drag_pan(step.middle_to - step.middle_from)
+		return
+	var shift := (anchor as Vector3) - (now as Vector3)
+	_stop_glide()
+	free_target = _clamped(free_target + Vector3(shift.x, 0.0, shift.z))
+
+
+## The zoom whose distance is `factor` times the current one (FREE: between `free_min_distance` and
+## `free_max_distance`; FOLLOW: the follow formula's distance), kept between 0 and 1.
+func _zoom_for_distance(factor: float) -> float:
+	if mode == Mode.FREE:
+		var span := free_max_distance - free_min_distance
+		if span <= 0.0:
+			return zoom
+		return clampf((free_distance() * factor - free_min_distance) / span, 0.0, 1.0)
+	if is_zero_approx(distance_zoom_scale):
+		return zoom
+	var scale := distance_zoom_base + distance_zoom_scale * zoom
+	return clampf((scale * factor - distance_zoom_base) / distance_zoom_scale, 0.0, 1.0)
+
+
+## Where the ray through `screen` meets the height `y`; null when it does not (the sky).
+func _ground_under(screen: Vector2, y: float) -> Variant:
+	var from := project_ray_origin(screen)
+	var along := project_ray_normal(screen)
+	if absf(along.y) < 0.0001:
+		return null
+	var t := (y - from.y) / along.y
+	return from + along * t if t > 0.0 else null
 
 
 func _process(delta: float) -> void:
@@ -321,9 +492,16 @@ func _drag_pan(relative: Vector2) -> void:
 
 ## Moves the free target by (right, forward) world units of the view.
 func _pan(step: Vector2) -> void:
+	_stop_glide()
 	free_target = _clamped(
 		free_target + RtsSpace.right(yaw) * step.x + RtsSpace.ahead(yaw) * step.y
 	)
+
+
+func _stop_glide() -> void:
+	if _glide != null and _glide.is_valid():
+		_glide.kill()
+	_glide = null
 
 
 func _clamped(point: Vector3) -> Vector3:

@@ -3,10 +3,11 @@ class_name RtsSelectInput
 extends Node
 
 ## The left button in the world. A press that travels `rect_threshold_px` becomes a selection box
-## (never while something is armed, with Ctrl held or while the camera drags). A click goes to what is
-## armed (an order icon: RtsOrderInput; anything else: `armed_clicked` for the game); otherwise it
-## selects the unit under it, shows a body that is no unit (`clicked_other`), or, a plain click on the
-## ground, clears the selection (`clicked_empty`).
+## (never while something is armed, with Ctrl held, or while the camera drags or takes the drag: a
+## finger or a select drag that moves the map; a box the camera takes over is dropped). A click goes
+## to what is armed (an order icon: RtsOrderInput; anything else: `armed_clicked` for the game);
+## otherwise it selects the unit under it, shows a body that is no unit (`clicked_other`), or, a
+## plain click on the ground, clears the selection (`clicked_empty`).
 ## Mouse events come from `view` (the Control that covers the world, so the HUD keeps its clicks);
 ## without one, from unhandled input.
 
@@ -91,7 +92,14 @@ func _on_event(event: InputEvent) -> void:
 			_release(button)
 	elif event is InputEventMouseMotion and _left_down:
 		var at := (event as InputEventMouseMotion).position
-		var busy := (armed != null and armed.is_armed()) or pointer.camera_dragged()
+		var busy := (
+			(armed != null and armed.is_armed())
+			or pointer.camera_dragged()
+			or pointer.camera_takes_drag()
+		)
+		if busy and _rect:
+			_rect = false
+			selection.hide_box()
 		if not _rect and not busy and not _press_ctrl:
 			_rect = (
 				absf(at.x - _press_at.x) >= rect_threshold_px
