@@ -50,14 +50,18 @@ func test_bots_2d_fills_the_free_seats() -> void:
 		if pawn:
 			starts[slot] = pawn.global_position
 	check(actors.get_node_or_null(^"Pawn_1") != null and not actors.get_node(^"Pawn_1").has_node(^"Bot"), "this player's seat has no bot")
-	for i in 60:
+	## The farthest each bot got from where it started: a bot that reached its point may be walking back by now.
+	var farthest := {}
+	for i in 90:
 		await tree.physics_frame
+		for slot in starts.keys():
+			var pawn := actors.get_node("Pawn_%d" % slot) as Node2D
+			farthest[slot] = maxf(float(farthest.get(slot, 0.0)), pawn.global_position.distance_to(starts[slot]))
 	var walked := 0
 	for slot in starts.keys():
-		var pawn := actors.get_node("Pawn_%d" % slot) as Node2D
-		if pawn.global_position.distance_to(starts[slot]) > 40.0:
+		if float(farthest.get(slot, 0.0)) > 40.0:
 			walked += 1
-	check(walked == starts.size(), "every bot walked with the player's mp_move (%d of %d)" % [walked, starts.size()])
+	check(walked == starts.size(), "every bot walked with the player's mp_move (%d of %d: %s)" % [walked, starts.size(), farthest])
 	world.free()
 
 
@@ -180,4 +184,35 @@ func test_turns_2d_solo_plays_a_game() -> void:
 	check(again.visible, "Again shows when it is over")
 	again.pressed.emit()
 	check(orders.last_seq() == 0 and int(rules.get(&"winner")) == 0, "Again: a new game")
+	world.free()
+
+
+## The card example solo: this seat's hand is its own (MpSeatState), the bots in the other seats play their turns
+## (MpSeatBots), a card not in the hand is refused, and when every card was played the server deals again.
+func test_cards_2d_solo_plays_rounds_with_bots() -> void:
+	const CARDS := "res://addons/mp_kit/examples/cards_2d"
+	var world := (load(CARDS.path_join("world.tscn")) as PackedScene).instantiate()
+	tree.root.add_child(world)
+	await tree.process_frame
+	var seats := world.get_node(^"%SeatState") as MpSeatState
+	var orders := world.get_node(^"%Orders") as MpOrders
+	var rules: Object = world.get(&"rules")
+	var hand: Array = seats.get_value(&"hand", [])
+	check(hand.size() == 3, "a hand of three (%s)" % [hand])
+	check(world.get_node(^"%Hand").get_child_count() == 3, "shown as three buttons")
+	var refused: Array[String] = []
+	orders.rejected.connect(func(_m: StringName, _a: Array, reason: String) -> void: refused.append(reason))
+	world.call(&"play", 100)
+	check(refused == ["That card is not in your hand."], "a card not in the hand is refused (%s)" % [refused])
+	var end := Time.get_ticks_msec() + 20000
+	while Time.get_ticks_msec() < end and orders.last_seq() < 12:
+		if int(rules.get(&"turn")) == 1:
+			var mine: Array = seats.get_value(&"hand", [])
+			if not mine.is_empty():
+				world.call(&"play", mine[0])
+		await tree.process_frame
+	var tricks: Dictionary = rules.get(&"tricks")
+	check(orders.last_seq() >= 12, "four tricks were played, the bots playing their turns (%d moves)" % orders.last_seq())
+	check(tricks[1] + tricks[2] + tricks[3] >= 4, "every trick has a winner (%s)" % [tricks])
+	check((seats.get_value(&"hand", []) as Array).size() >= 1, "after a round the server dealt again")
 	world.free()

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dnfk01p11dew0"]
+
+[ext_resource type="Script" path="res://addons/mp_kit/examples/bots_2d/bot.gd" id="1_bot"]
+
+[node name="Bot" type="Node"]
+script = ExtResource("1_bot")

@@ -2,6 +2,17 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.27.0
+
+- **`MpSeatState`: lo que solo ve un asiento** (su mano de cartas, su munición, su objetivo secreto), al lado de lo público de `MpState`. El servidor escribe `set_value(slot, key, value)` y solo la máquina de ese asiento lo recibe (`changed`, `watch`), otra vez cuando carga tarde o vuelve. Es del asiento, no del jugador: el que lo toma después (un jugador tarde, un bot) lo encuentra ahí. Lo pidió El Eternauta (su `PrivateChannel`).
+- **`MpSeatBots`: bots en los asientos libres.** Pone tu `bot_scene` en cada asiento que nadie ocupa cuando arranca la partida o se abandona uno, lo saca (soltando sus teclas) cuando un jugador toma el asiento, y nunca vuelve a un asiento cerrado. Le da al bot su `slot`, el `pawn` y el `input` del asiento. Solo, llena los otros asientos. Lo pidieron El Eternauta (`SquadBots`) e Intervendoom (`bot_filler`).
+- **`MpOrders.of(nodo)`** lo encuentra desde cualquier lado.
+- **Ejemplo `cards_2d`:** la carta más alta para tres, sin peones, con `MpOrders`, `MpSeatState` y `MpSeatBots`. `mpkit_lab/run/cards.sh` lo juega en red: el host arranca solo con bots, un cliente entra tarde, toma el asiento de un bot con la mano que tenía, se va y vuelve.
+- **`bots_2d`** pone sus bots con `MpSeatBots` (`bot.tscn`) en vez de su propio código.
+- **Guía:** §7.12 (`MpSeatState`), «Bots en los asientos libres» con `MpSeatBots` (§7.5), y `--start-seats` en un listen host no cuenta el asiento del host.
+
+Qué actualizar: nada en tu proyecto. Si tu juego llena asientos con bots a mano, podés cambiarlo por un `MpSeatBots`. `MpKit.VERSION` pasa a 0.27.0, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.26.0
 
 - **`MpOrders`: las jugadas de un juego sin peones** (por turnos, de cartas, de tablero, las órdenes de un RTS). Un nodo en el mundo:
