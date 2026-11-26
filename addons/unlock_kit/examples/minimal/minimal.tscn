@@ -1,0 +1,136 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://addons/unlock_kit/examples/minimal/minimal.gd" id="1_12ypy"]
+[ext_resource type="Script" path="res://addons/unlock_kit/nodes/unlock_tree_view.gd" id="2_3iabi"]
+[ext_resource type="Script" path="res://addons/unlock_kit/nodes/unlock_tree.gd" id="3_id1uh"]
+[ext_resource type="Script" path="res://addons/unlock_kit/nodes/unlock_entry.gd" id="4_amefe"]
+
+[node name="Minimal" type="Control" unique_id=469360082]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_12ypy")
+
+[node name="Box" type="VBoxContainer" parent="." unique_id=893825971]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -290.0
+offset_top = -220.0
+offset_right = 290.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Points" type="Label" parent="Box" unique_id=387848833]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Box" unique_id=629299263]
+layout_mode = 2
+alignment = 1
+
+[node name="AddPoints" type="Button" parent="Box/Buttons" unique_id=1968597811]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+3 points"
+
+[node name="Reset" type="Button" parent="Box/Buttons" unique_id=1556387124]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset"
+
+[node name="View" type="Control" parent="Box" unique_id=1237615015 node_paths=PackedStringArray("tree")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+script = ExtResource("2_3iabi")
+tree = NodePath("../../Tree")
+
+[node name="Log" type="Label" parent="Box" unique_id=1792612229]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Tree" type="Node" parent="." unique_id=795073102]
+unique_name_in_owner = true
+script = ExtResource("3_id1uh")
+
+[node name="Land" type="Node" parent="Tree" unique_id=1164842654]
+
+[node name="Farming" type="Node" parent="Tree/Land" unique_id=382351180]
+script = ExtResource("4_amefe")
+description = "Grow food on cleared land."
+start_unlocked = true
+
+[node name="Irrigation" type="Node" parent="Tree/Land/Farming" unique_id=74497673]
+script = ExtResource("4_amefe")
+description = "Bring water to the fields."
+cost = Dictionary[StringName, int]({
+&"points": 2
+})
+
+[node name="Aqueduct" type="Node" parent="Tree/Land/Farming/Irrigation" unique_id=1092047939 node_paths=PackedStringArray("requires")]
+script = ExtResource("4_amefe")
+description = "Carry water from far away."
+cost = Dictionary[StringName, int]({
+&"points": 4
+})
+requires = [NodePath("../../../../Stone/Masonry")]
+
+[node name="Pottery" type="Node" parent="Tree/Land/Farming" unique_id=1225257610]
+script = ExtResource("4_amefe")
+description = "Store what you grow."
+cost = Dictionary[StringName, int]({
+&"points": 1
+})
+
+[node name="Stone" type="Node" parent="Tree" unique_id=698787469]
+
+[node name="Masonry" type="Node" parent="Tree/Stone" unique_id=1892274483]
+script = ExtResource("4_amefe")
+description = "Cut and stack stone."
+cost = Dictionary[StringName, int]({
+&"points": 2
+})
+
+[node name="Walls" type="Node" parent="Tree/Stone/Masonry" unique_id=705333976]
+script = ExtResource("4_amefe")
+description = "Keep the town safe."
+cost = Dictionary[StringName, int]({
+&"points": 3
+})
+
+[node name="Lore" type="Node" parent="Tree" unique_id=614832411]
+
+[node name="Writing" type="Node" parent="Tree/Lore" unique_id=811872669]
+script = ExtResource("4_amefe")
+description = "Keep records."
+cost = Dictionary[StringName, int]({
+&"points": 2
+})
+
+[node name="Library" type="Node" parent="Tree/Lore/Writing" unique_id=1860403888]
+script = ExtResource("4_amefe")
+description = "Keep many records."
+cost = Dictionary[StringName, int]({
+&"points": 3
+})
+
+[node name="Market" type="Node" parent="Tree" unique_id=1517300921 node_paths=PackedStringArray("requires_any")]
+script = ExtResource("4_amefe")
+description = "Trade what you make: needs Pottery or Writing."
+cost = Dictionary[StringName, int]({
+&"points": 3
+})
+requires_any = [NodePath("../Land/Farming/Pottery"), NodePath("../Lore/Writing")]
+
+[connection signal="unlocked" from="Tree/Land/Farming/Irrigation/Aqueduct" to="." method="_on_aqueduct_unlocked"]

@@ -1,5 +1,17 @@
 # GridKit changes
 
+## 0.8.0
+
+Fog of war per player.
+
+- **`CellFog`:** what each player knows of the board, as plain data. For each observer (a seat, a team: a whole number from 0 up) every cell is `HIDDEN`, `EXPLORED` or `VISIBLE`. `see(observer, cells)` leaves exactly those cells visible and turns the ones no longer seen into explored; `reveal` adds visible cells, `explore` makes the terrain known without seeing it, `clear_visible`, `clear()` and `clear_observer(observer)` go back. The signals `revealed`, `faded`, `explored` and `cleared` say only what changed, sorted. `to_dict` / `CellFog.from_dict` for the save and the replay, also after a trip through JSON; `observer_to_dict` / `set_observer_from_dict` to send each player only theirs. Works on hexes and on squares.
+- **`GridFog`** (child of a `GridView3D`): wraps a `CellFog` (its own, or your rules' with `use_fog`) and draws the fog of `shown_observer`: hidden tiles are not drawn and stay under a cap, explored ones are darkened, visible ones show as they are. It redraws only what changed. `fade_time` makes the change gradual and `tile_shown(cell, tile)` tells you so you can animate. `see_around(observer, cells, radius, blocks)` for what the units see, with what blocks the view. In the editor it does not cover the map; **Preview** shows it for a few seconds.
+- **`CellGrid.cells_near(centers, radius)`**, **`line(a, b)`** and **`cells_visible_from(center, radius, blocks)`** (and their shortcuts on `GridBoard`): the cells within `radius` steps of any of the centers; the straight line between two cells; what a cell sees when some cells block the view.
+- **`fog_3d` example:** two players with a scout each and each one's fog.
+- **The lab's editor check:** the fog in the real editor (**Preview** and what is saved). The labs' editor checks save without a thumbnail and undo with the editor's shortcut, so they no longer show `Parameter "t" is null` or `Inconsistent redo history`.
+
+Nothing to update in your project.
+
 ## 0.7.0
 
 - **`GridView3D.cell_right_clicked(cell)`:** a right click on a cell, with the same rule as `cell_clicked` (a drag is not a click), `input_enabled` and the tall cell of a board with heights. Use it to pick with the left button and order with the right, as in Civilization. The middle button stays with the camera, and a tap is still the left button.

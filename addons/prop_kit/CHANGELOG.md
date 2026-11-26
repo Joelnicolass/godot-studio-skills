@@ -1,5 +1,11 @@
 # PropKit changelog
 
+## 0.2.5
+
+- **Baking without a screen prints no errors:** **Bake** saves the scene before baking. In an editor with no screen (`--headless`) it now saves it without a thumbnail, since there is no view to take one from and Godot reported `Parameter "t" is null`. With a screen, nothing changes.
+
+Nothing to update in your project.
+
 ## 0.2.4
 
 - **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.

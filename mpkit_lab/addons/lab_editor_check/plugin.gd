@@ -23,7 +23,8 @@ func _run(scene_path: String) -> void:
 	await _frames(30)
 	var root := EditorInterface.get_edited_scene_root()
 	_check(root != null and root.scene_file_path == scene_path, "the scene opened in the editor")
-	if root == null:
+	# Never go on with another scene: the check edits and saves the one it opened.
+	if root == null or root.scene_file_path != scene_path:
 		_end()
 		return
 	var world := root.get_node_or_null("MpWorld")
@@ -43,7 +44,7 @@ func _run(scene_path: String) -> void:
 	await _frames(10)
 	_check_pieces(added, root, "an MpWorld added like the Add Child dialog does")
 	_check(added.get_node_or_null("SpawnPoints/P1") is Marker3D, "3D markers under a 3D node")
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(10)
 	## The Setup game wizard, inside the editor (what its Create button runs).
 	var folder := "res://scratch/editor_game"
@@ -59,7 +60,10 @@ func _run(scene_path: String) -> void:
 	EditorInterface.open_scene_from_path(folder.path_join("world.tscn"))
 	await _frames(30)
 	var made := EditorInterface.get_edited_scene_root()
-	_check(made != null and made.get_node_or_null("MpWorld/Players") != null, "the wizard's world opens in the editor with its MpWorld")
+	_check(
+		made != null and made.get_node_or_null("MpWorld/Players") != null,
+		"the wizard's world opens in the editor with its MpWorld"
+	)
 	_end()
 
 
@@ -83,3 +87,9 @@ func _end() -> void:
 func _frames(n: int) -> void:
 	for i in n:
 		await EditorInterface.get_base_control().get_tree().process_frame
+
+
+# The editor's own save, without the thumbnail: headless has no viewport texture to make one from (the engine
+# reports "Parameter t is null" in texture_2d_get when it tries).
+func _save_edited_scene() -> void:
+	EditorInterface.save_scene_as(EditorInterface.get_edited_scene_root().scene_file_path, false)

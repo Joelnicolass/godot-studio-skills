@@ -1,6 +1,8 @@
 kit	class	kind	base	script	icon	glyph	mark
 bot_kit	BotKit	emblem			addons/bot_kit/icons/bot_kit.svg	bot_kit	
 command_kit	CommandKit	emblem			addons/command_kit/icons/command_kit.svg	command_kit	
+deck_kit	DeckKit	emblem			addons/deck_kit/icons/deck_kit.svg	deck_kit	
+dice_kit	DiceKit	emblem			addons/dice_kit/icons/dice_kit.svg	dice_kit	
 fsm_kit	FsmKit	emblem			addons/fsm_kit/icons/fsm_kit.svg	fsm_kit	
 grass_kit	GrassKit	emblem			addons/grass_kit/icons/grass_kit.svg	grass_kit	
 grid_kit	GridKit	emblem			addons/grid_kit/icons/grid_kit.svg	grid_kit	
@@ -10,7 +12,9 @@ plat_kit	PlatKit	emblem			addons/plat_kit/icons/plat_kit.svg	plat_kit
 prop_kit	PropKit	emblem			addons/prop_kit/icons/prop_kit.svg	prop_kit	
 rts_kit	RtsKit	emblem			addons/rts_kit/icons/rts_kit.svg	rts_kit	
 spill_kit	SpillKit	emblem			addons/spill_kit/icons/spill_kit.svg	spill_kit	
+stat_kit	StatKit	emblem			addons/stat_kit/icons/stat_kit.svg	stat_kit	
 turn_kit	TurnKit	emblem			addons/turn_kit/icons/turn_kit.svg	turn_kit	
+unlock_kit	UnlockKit	emblem			addons/unlock_kit/icons/unlock_kit.svg	unlock_kit	
 wallet_kit	WalletKit	emblem			addons/wallet_kit/icons/wallet_kit.svg	wallet_kit	
 bot_kit	Bot3D	node	Node3D	addons/bot_kit/nodes/bot_3d.gd	addons/bot_kit/icons/bot_3d.svg	robot	
 bot_kit	BotDebug	node	Node3D	addons/bot_kit/core/bot_debug.gd	addons/bot_kit/icons/bot_debug.svg	bug	
@@ -19,6 +23,14 @@ bot_kit	BotGoal3D	node	Node3D	addons/bot_kit/nodes/bot_goal_3d.gd	addons/bot_kit
 bot_kit	BotMode	node	Node	addons/bot_kit/nodes/bot_mode.gd	addons/bot_kit/icons/bot_mode.svg	gear	
 bot_kit	BotWeapon	resource	Resource	addons/bot_kit/core/bot_weapon.gd	addons/bot_kit/icons/bot_weapon.svg	crosshair	
 command_kit	GameCommands	node	Node	addons/command_kit/nodes/game_commands.gd	addons/command_kit/icons/game_commands.svg	prompt	
+deck_kit	CardData	resource	Resource	addons/deck_kit/resources/card_data.gd	addons/deck_kit/icons/card_data.svg	card	
+deck_kit	CardPile	node	Node	addons/deck_kit/nodes/card_pile.gd	addons/deck_kit/icons/card_pile.svg	card_pile	
+deck_kit	Deck	node	CardPile	addons/deck_kit/nodes/deck.gd	addons/deck_kit/icons/deck.svg	card_deck	
+deck_kit	HandView	node	Control	addons/deck_kit/nodes/hand_view.gd	addons/deck_kit/icons/hand_view.svg	card_fan	
+dice_kit	DiceRoller	node	Node	addons/dice_kit/nodes/dice_roller.gd	addons/dice_kit/icons/dice_roller.svg	dice_pair	
+dice_kit	DiceTray3D	node	Node3D	addons/dice_kit/nodes/dice_tray_3d.gd	addons/dice_kit/icons/dice_tray_3d.svg	dice_tray	
+dice_kit	DieData	resource	Resource	addons/dice_kit/resources/die_data.gd	addons/dice_kit/icons/die_data.svg	die	
+dice_kit	DieFace	resource	Resource	addons/dice_kit/resources/die_face.gd	addons/dice_kit/icons/die_face.svg	die_face	
 fsm_kit	FsmMachine	node	Node	addons/fsm_kit/fsm_machine.gd	addons/fsm_kit/icons/fsm_machine.svg	state_graph	
 fsm_kit	FsmState	node	Node	addons/fsm_kit/fsm_state.gd	addons/fsm_kit/icons/fsm_state.svg	state	
 grass_kit	GrassClear3D	node	Node3D	addons/grass_kit/field/grass_clear_3d.gd	addons/grass_kit/icons/grass_clear_3d.svg	grass_gap	
@@ -32,6 +44,7 @@ grass_kit	GrassQuality	resource	Resource	addons/grass_kit/core/grass_quality.gd	
 grass_kit	GrassWind	resource	Resource	addons/grass_kit/core/grass_wind.gd	addons/grass_kit/icons/grass_wind.svg	wind	
 grid_kit	GridBoard	node	Node	addons/grid_kit/nodes/grid_board.gd	addons/grid_kit/icons/grid_board.svg	checker	
 grid_kit	GridCursor	node	Node3D	addons/grid_kit/nodes/grid_cursor.gd	addons/grid_kit/icons/grid_cursor.svg	cell_cursor	
+grid_kit	GridFog	node	Node3D	addons/grid_kit/nodes/grid_fog.gd	addons/grid_kit/icons/grid_fog.svg	fog	
 grid_kit	GridLayout	resource	Resource	addons/grid_kit/resources/grid_layout.gd	addons/grid_kit/icons/grid_layout.svg	grid_sheet	
 grid_kit	GridView3D	node	Node3D	addons/grid_kit/nodes/grid_view_3d.gd	addons/grid_kit/icons/grid_view_3d.svg	iso_tile	
 mp_kit	MpActor	node	Node	addons/mp_kit/nodes/mp_actor.gd	addons/mp_kit/icons/mp_actor.svg	pawn	
@@ -134,7 +147,12 @@ rts_kit	RtsWedgeFormation	resource	RtsFormation	addons/rts_kit/orders/formations
 spill_kit	SpillPool3D	node	Node3D	addons/spill_kit/nodes/spill_pool_3d.gd	addons/spill_kit/icons/spill_pool_3d.svg	puddle	
 spill_kit	SpillSource3D	node	Node3D	addons/spill_kit/nodes/spill_source_3d.gd	addons/spill_kit/icons/spill_source_3d.svg	drops	
 spill_kit	SpillType	resource	Resource	addons/spill_kit/core/spill_type.gd	addons/spill_kit/icons/spill_type.svg	flask	
+stat_kit	StatBlock	node	Node	addons/stat_kit/nodes/stat_block.gd	addons/stat_kit/icons/stat_block.svg	stat_sheet	
+stat_kit	StatModifier	resource	Resource	addons/stat_kit/resources/stat_modifier.gd	addons/stat_kit/icons/stat_modifier.svg	plus_minus	
 turn_kit	TurnClock	node	Node	addons/turn_kit/nodes/turn_clock.gd	addons/turn_kit/icons/turn_clock.svg	clock	
 turn_kit	TurnSeat	node	Node	addons/turn_kit/nodes/turn_seat.gd	addons/turn_kit/icons/turn_seat.svg	chair	
+unlock_kit	UnlockEntry	node	Node	addons/unlock_kit/nodes/unlock_entry.gd	addons/unlock_kit/icons/unlock_entry.svg	padlock_open	
+unlock_kit	UnlockTree	node	Node	addons/unlock_kit/nodes/unlock_tree.gd	addons/unlock_kit/icons/unlock_tree.svg	tech_tree	
+unlock_kit	UnlockTreeView	node	Control	addons/unlock_kit/nodes/unlock_tree_view.gd	addons/unlock_kit/icons/unlock_tree_view.svg	tech_tree_window	
 wallet_kit	Wallet	node	Node	addons/wallet_kit/nodes/wallet.gd	addons/wallet_kit/icons/wallet.svg	pouch	
 wallet_kit	WalletSubstitute	resource	Resource	addons/wallet_kit/resources/wallet_substitute.gd	addons/wallet_kit/icons/wallet_substitute.svg	exchange	
