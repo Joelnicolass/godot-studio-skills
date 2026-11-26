@@ -8,7 +8,8 @@ Transportes: lo marcado **T** corre en ENet, WebSocket y relay (`TRANSPORT=enet|
 | Caso | Prueba |
 |---|---|
 | Jugar solo, sin red | `--probe=solo` (all.sh) |
-| El ejemplo mínimo (`examples/minimal_2d`, lo que escribe el asistente) por red: dedicado + cliente que se mueve y suma | `minimal.sh`; que siga siendo lo del asistente: `tests/test_examples.gd` |
+| El ejemplo mínimo (`examples/minimal_2d`, lo que escribe el asistente) por red: dedicado + cliente que se mueve y suma, y `Mp.player(Mp.me())` en el cliente es su peón | `minimal.sh`; que siga siendo lo del asistente: `tests/test_examples.gd` |
+| El ejemplo por turnos (`examples/turns_2d`, `MpOrders`, sin peones) por red: un host y un cliente juegan hasta el final; cada uno recibe solo su propio rechazo; el cliente se va después de su segunda jugada, vuelve, recibe todas las jugadas y sigue; los dos terminan con el mismo tablero, hash y cantidad de jugadas | `turns.sh`; solo: `tests/test_examples.gd`; `MpOrders` y el túnel: `tests/test_orders.gd`, `tests/test_custom_tunnel.gd` |
 | LAN: host + cliente + tardío | `arena.sh` listen **T** |
 | Dedicado + cliente + tardío | `arena.sh` dedicated **T** |
 | Unirse a una dirección muerta: falla limpio y el menú sigue | `session.sh` deadjoin |

@@ -2,6 +2,37 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.26.0
+
+- **`MpOrders`: las jugadas de un juego sin peones** (por turnos, de cartas, de tablero, las órdenes de un RTS). Un nodo en el mundo:
+  - un asiento manda `submit(name, args)`;
+  - el servidor pregunta a tu `judge` y numera las que acepta;
+  - todos reciben `applied(seq, slot, name, args)` en el mismo orden, el servidor también, y el rechazo le llega solo al asiento que la mandó (`rejected`).
+  - `begin(start)` arranca la partida con tu semilla.
+  - El que carga tarde, vuelve o pide `resync()` recibe `began` y todas las jugadas otra vez (`is_replaying()`), en partes que entran en el relay.
+  - Con `state_hash`, cada jugada lleva el hash del servidor y un peer distinto recibe `desynced(seq)`.
+  - Solo y en el host, todo corre al toque; un bot juega desde el servidor con `submit_as`.
+- **Ejemplo `turns_2d`:** un tres en línea por turnos sin peones, con `MpOrders`. `mpkit_lab/run/turns.sh` lo juega en red: un host y un cliente que se va a mitad de partida, vuelve y sigue.
+- **Un `MpWorld` sin Player Scene es un juego sin peones.** Ya no avisa, ningún asiento recibe peón y el servidor igual sabe cuándo cargó cada cliente (`client_world_ready`).
+- **`MpKit.slot_of_sender(from_peer)`:** el asiento que mandó un mensaje del túnel, igual en solo, en el host y en un cliente. `slot_for_peer(1)` da 0 jugando solo.
+- **`broadcast_custom` desde un handler de `custom_received`** ya no se pierde en silencio: sale justo después del mensaje que se atiende, en el orden pedido. El mismo canal con los mismos datos (un eco) se descarta con un aviso, y una cadena que nunca termina se corta a los 256 (`CUSTOM_CHAIN_MAX`).
+- **Un canal fuera de `custom_channels`** avisa una vez en vez de perderse sin decir nada.
+- **`Mp.player(slot)` y `pawn_for(slot)` en un cliente** encuentran el peón que hizo el servidor; antes daban null.
+- **La compensación de lag** mueve también los cuerpos y áreas que cuelgan del actor (una hurtbox `Area3D`), no solo el actor.
+- **Un rechazo de entrada queda en el log** del servidor y del cliente, con su motivo.
+- **`MpWorld` avisa en el editor** si es la raíz de la escena: ahí arma piezas 2D y no puede ubicar a los jugadores.
+- **Presets de export de ejemplo:** dejan afuera los ejemplos, tests, archivos de deploy y herramientas del editor del kit.
+- **Guía:**
+  - lo que más les costó a otros juegos, al principio;
+  - juegos por turnos (§7.9);
+  - qué le llega al que carga tarde o vuelve (§7.10);
+  - el túnel con sus topes (§7.11);
+  - dos ventanas sin clics y los flags de la puerta (§8);
+  - el bug de Godot 4.7.2 que vacía los `Packed*Array` al exportar y el origen de un iframe (§11);
+  - lo que sorprende del emisor (§10).
+
+Qué actualizar: nada en tu proyecto. Si tu juego hacía un `broadcast_custom` desde `custom_received` y contaba con que se ignorara, ahora sale. `MpKit.VERSION` pasa a 0.26.0, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.25.2
 
 - **Iconos propios en el editor:** cada nodo y recurso del kit tiene el suyo, del color del kit: se ven en el árbol de escena, en «Agregar nodo» y en el FileSystem.

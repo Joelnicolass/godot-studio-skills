@@ -15,7 +15,7 @@ Archivos (`res://addons/mp_kit/`):
 | `mp_custom_pipe.gd` | `class_name MpCustomPipe` — un canal del túnel |
 | `mp_replicate.gd` | `class_name MpReplicate` — authority / sync / freeze / lerp opcional |
 | `mp_spawner.gd` | `class_name MpSpawner` — MultiplayerSpawner que retiene su alcance por peer hasta que el spawner de ese peer está listo; `spawn_here(data)`: spawnea en el servidor o en solo, `null` en un cliente |
-| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — un pawn packed por slot ocupado; `spawn_slot(slot)`, `pawn_for(slot)` (`null` si se liberó: `MpActor.despawn`; `spawn_slot` crea otro con el mismo nombre, también en el mismo frame) |
+| `mp_slot_spawner.gd` | `class_name MpSlotSpawner` — un pawn packed por slot ocupado; `spawn_slot(slot)`, `pawn_for(slot)` en todos los peers (un cliente lo encuentra por nombre u `owner_slot`; `null` si se liberó: `MpActor.despawn`; `spawn_slot` crea otro con el mismo nombre, también en el mismo frame); sin `pawn_scene`, un juego sin peones |
 | `mp_boot_menu.gd` | `class_name MpBootMenu` — lobby drop-in (`mp_boot_menu.tscn`) |
 | `mp_flow.gd` | `class_name MpFlow` — flow opcional (escenas, host/join/1P, catálogo de mundos) |
 | `mp_world_ref.gd` | `class_name MpWorldRef` — un mundo del catálogo (`id` + escena) |
@@ -34,6 +34,7 @@ Estos archivos **no** nombran `GameSession`, `SceneDirector`, copy, `PlayerId` n
 | `nodes/mp_actor.gd` (`MpActor`) | Sync, dueño, `to_server` → `mp_sv_*`, `to_all` → `mp_all_*`, predicción (`mp_move`; con predicción, todo `sync_extra` viaja con la pose, desde 0.24) con correcciones que se desvanecen en pantalla (`correction_smoothing_s`), suavizado adaptativo (`shared_timeline`: un mismo retraso para todos los que lo prenden; `max_extrapolate_s`; `draw_delay()`), `snap()` en el servidor después de un teletransporte (viaja con la pose), compensación de lag (`rewound`, `seen_position_of`, `view_lag`) |
 | `nodes/mp_input.gd` (`MpInput`) | Las teclas del dueño con la API de `Input`; cada tick manda todos los frames sin confirmar, en delta (`MpInputPacket`); el servidor nunca frena a un jugador (un frame tardío se supone); buffer adaptativo que el dueño mantiene lleno con su ritmo; un rejoin reinicia el input, un asiento sin conexión no tiene teclas apretadas |
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Valores de partida (`watch(key, cb)`: valor actual y después cada cambio); inicio, espera de asientos, ausencias, fin |
+| `nodes/mp_orders.gd` (`MpOrders`) | Las jugadas de un juego sin peones: `submit(name, args)`, `submit_as(slot, name, args)` y `begin(start)` (servidor), `judge(slot, name, args) -> String`, `state_hash() -> int`; señales `began(start)`, `applied(seq, slot, name, args)`, `rejected(name, args, reason)` (solo en el asiento que la mandó), `desynced(seq)`; `is_replaying()`, `resync()`, `last_seq()`, `start()`, `moves()`; canal `mp_orders` del túnel; historial en partes de 200 al que carga tarde o vuelve |
 | `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Quién mira esta pantalla: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`, `slot_of(node)` (el slot local si la escena no tiene asiento); se pasa por `@export` a HUD / audio / órdenes |
 | `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Salir (anda con el mundo pausado); la invitación de una partida privada |
 | `core/mp_net_quality.gd` | RTT, jitter (percentil 97), pérdida y nota por conexión |
@@ -94,6 +95,7 @@ Input de pawn y semántica del dict custom **fuera** del kit.
 - `report_loaded()` — el mundo local terminó de cargar (MpFlow la llama con `world_reports_loaded`): un cliente avisa al servidor (su asiento cuenta en la puerta), el servidor o solo le avisan a la puerta que su propio mundo entró
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — servidor: peers con slot y world_ready (mandales tus efectos `@rpc` de un instante con `rpc_id`; reproducilo también en el servidor)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
+- `slot_of_sender(from_peer)`: el asiento que mandó un mensaje del túnel, igual en solo, host y cliente. Un `broadcast_custom` desde un handler de `custom_received` sale justo después (un eco del mismo canal y datos se descarta con aviso; una cadena se corta en `CUSTOM_CHAIN_MAX`, 256); un canal fuera de `custom_channels` avisa una vez
 
 Editor: [editor.md](editor.md).
 

@@ -10,6 +10,8 @@ extends MpSpawner
 ## A pawn your game frees (MpActor.despawn: it died) is forgotten: pawn_for gives null and spawn_slot makes a new one, which
 ## keeps the name Pawn_<slot> even in the frame the old one leaves.
 
+## The scene each seat gets. Empty: a game with no pawns (by turns, cards, a board): no seat gets one, and the world
+## still tells the server when it is loaded on each client (client_world_ready), as with pawns.
 @export var pawn_scene: PackedScene
 @export var spawn_points: NodePath
 @export var actor_name_prefix: String = "Pawn_"
@@ -24,7 +26,6 @@ func _ready() -> void:
 			extra_scenes.append(pawn_scene)
 	super._ready()
 	if pawn_scene == null:
-		push_warning("MpSlotSpawner '%s': assign pawn_scene" % name)
 		return
 	if not MpKit.is_networked():
 		spawn_slot(MpKit.local_slot())
@@ -90,12 +91,22 @@ func spawn_slot(slot: int) -> Node:
 	return pawn
 
 
-## The pawn of `slot`, or null: none yet, or the one it had was freed or is being freed (MpActor.despawn).
+## The pawn of `slot`, or null: none yet, or the one it had was freed or is being freed (MpActor.despawn). On every
+## peer: a client knows the pawns the server spawned by their name (Pawn_<slot>) or their MpActor's owner_slot.
 func pawn_for(slot: int) -> Node:
 	var pawn: Variant = _pawns.get(slot)
 	if is_instance_valid(pawn) and not (pawn as Node).is_queued_for_deletion():
 		return pawn
 	_pawns.erase(slot)
+	if MpKit.is_authority() or _root == null or slot <= 0:
+		return null
+	var named := _root.get_node_or_null(NodePath("%s%d" % [actor_name_prefix, slot]))
+	if named != null and not named.is_queued_for_deletion():
+		return named
+	for child in _root.get_children():
+		var net := MpActor.of(child)
+		if net != null and net.owner_slot == slot and not child.is_queued_for_deletion():
+			return child
 	return null
 
 

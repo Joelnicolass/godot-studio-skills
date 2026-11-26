@@ -29,7 +29,8 @@ const START := "res://addons/mp_kit/nodes/mp_start_button.gd"
 const WAITING := "res://addons/mp_kit/nodes/mp_waiting_label.gd"
 const PIECES := ["SpawnPoints", "Actors", "Players", "State", "Match"]
 
-## The scene every seat gets (it needs an MpActor). Same as Players › Pawn Scene.
+## The scene every seat gets (it needs an MpActor); the same as Players › Pawn Scene. Empty: a game with no pawns (by
+## turns, cards, a board), whose seats send their moves through the custom tunnel (MpKit.send_custom).
 @export var player_scene: PackedScene:
 	set(next):
 		player_scene = next
@@ -194,6 +195,9 @@ func _in_3d() -> bool:
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var out := PackedStringArray()
-	if player_scene == null:
-		out.append("Set Player Scene: the scene every seat gets (it needs an MpActor).")
+	if is_inside_tree() and get_tree().edited_scene_root == self:
+		out.append(
+			"MpWorld is the scene's root: it builds 2D pieces and cannot place players. Make a Node2D or Node3D the root "
+			+ "and put MpWorld under it."
+		)
 	return out
