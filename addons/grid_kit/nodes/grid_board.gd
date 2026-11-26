@@ -170,6 +170,18 @@ func cells_in_range(cell: Vector2i, range_radius: int) -> Array[Vector2i]:
 	return grid.cells_in_range(cell, range_radius)
 
 
+func cells_near(centers: Array[Vector2i], range_radius: int) -> Array[Vector2i]:
+	return grid.cells_near(centers, range_radius)
+
+
+func line(a: Vector2i, b: Vector2i) -> Array[Vector2i]:
+	return grid.line(a, b)
+
+
+func cells_visible_from(center: Vector2i, range_radius: int, blocks: Callable = Callable()) -> Array[Vector2i]:
+	return grid.cells_visible_from(center, range_radius, blocks)
+
+
 func find_path(from: Vector2i, to: Vector2i, cost: Callable = Callable()) -> Array[Vector2i]:
 	return grid.find_path(from, to, cost)
 

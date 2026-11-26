@@ -1,0 +1,128 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://addons/deck_kit/examples/minimal/minimal.gd" id="1_main"]
+[ext_resource type="Script" path="res://addons/deck_kit/nodes/deck.gd" id="2_deck"]
+[ext_resource type="Script" path="res://addons/deck_kit/nodes/card_pile.gd" id="3_pile"]
+[ext_resource type="Script" path="res://addons/deck_kit/nodes/hand_view.gd" id="4_view"]
+[ext_resource type="Script" path="res://addons/deck_kit/resources/card_data.gd" id="5_card"]
+[ext_resource type="PackedScene" path="res://addons/deck_kit/examples/minimal/card_face.tscn" id="6_face"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/strike_card.tres" id="c0_strike"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/volley_card.tres" id="c1_volley"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/guard_card.tres" id="c2_guard"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/scout_card.tres" id="c3_scout"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/rest_card.tres" id="c4_rest"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/coin_card.tres" id="c5_coin"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/gem_card.tres" id="c6_gem"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/storm_card.tres" id="c7_storm"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/festival_card.tres" id="c8_festival"]
+[ext_resource type="Resource" path="res://addons/deck_kit/examples/minimal/cards/drought_card.tres" id="c9_drought"]
+
+[node name="Minimal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Box" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -280.0
+offset_right = 320.0
+offset_bottom = 280.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Counts" type="Label" parent="Box"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Box"]
+layout_mode = 2
+alignment = 1
+
+[node name="Draw" type="Button" parent="Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Draw"
+
+[node name="Refill" type="Button" parent="Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refill"
+
+[node name="SeedLabel" type="Label" parent="Box/Buttons"]
+layout_mode = 2
+text = "  Seed"
+
+[node name="Seed" type="SpinBox" parent="Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 9999.0
+value = 1.0
+
+[node name="Table" type="HBoxContainer" parent="Box"]
+layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="DeckView" type="Control" parent="Box/Table" node_paths=PackedStringArray("pile")]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+script = ExtResource("4_view")
+pile = NodePath("../../../Deck")
+card_size = Vector2(90, 126)
+spread = 3.0
+hover_lift = 0.0
+keyboard = false
+
+[node name="DiscardView" type="Control" parent="Box/Table" node_paths=PackedStringArray("pile")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+script = ExtResource("4_view")
+pile = NodePath("../../../Discard")
+card_size = Vector2(90, 126)
+spread = 3.0
+hover_lift = 0.0
+keyboard = false
+drag_cards = true
+
+[node name="HandView" type="Control" parent="Box" node_paths=PackedStringArray("pile")]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("4_view")
+pile = NodePath("../../Hand")
+card_scene = ExtResource("6_face")
+fan_degrees = 12.0
+drag_cards = true
+
+[node name="Log" type="Label" parent="Box"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Deck" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_deck")
+start_cards = Array[ExtResource("5_card")]([ExtResource("c0_strike"), ExtResource("c1_volley"), ExtResource("c2_guard"), ExtResource("c3_scout"), ExtResource("c4_rest"), ExtResource("c5_coin"), ExtResource("c5_coin"), ExtResource("c5_coin"), ExtResource("c6_gem"), ExtResource("c7_storm"), ExtResource("c8_festival"), ExtResource("c9_drought")])
+face_up = false
+rng_seed = 1
+
+[node name="Hand" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_pile")
+max_size = 5
+
+[node name="Discard" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_pile")

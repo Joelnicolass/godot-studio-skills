@@ -22,7 +22,7 @@ static func bake_open_scene() -> void:
 			var saved: PropNavBake = node.get(&"saved")
 			if saved != null and not saved.resource_path.is_empty():
 				bakes.append(saved.resource_path)
-	EditorInterface.save_scene()
+	_save_open_scene(path)
 	var args := PackedStringArray(
 		[
 			"--headless", "--path", ProjectSettings.globalize_path("res://"), TOOL_SCENE, "--",
@@ -45,3 +45,12 @@ static func bake_open_scene() -> void:
 		ResourceLoader.load(bake, "", ResourceLoader.CACHE_MODE_REPLACE)
 	EditorInterface.get_resource_filesystem().scan()
 	EditorInterface.reload_scene_from_path(path)
+
+
+# The editor's own save. Without a screen (a headless editor, a build machine) there is no view to make the scene's
+# thumbnail from and the engine reports an error, so it saves without one; with a screen it keeps the thumbnail.
+static func _save_open_scene(path: String) -> void:
+	if DisplayServer.get_name() == "headless":
+		EditorInterface.save_scene_as(path, false)
+	else:
+		EditorInterface.save_scene()

@@ -6,11 +6,12 @@ Add a **board of hexagons or squares** to the **game's Godot project** with the 
 - a `GridBoard` with the board's shape (hexagons or squares, size or radius) or with a saved `GridLayout`;
 - a `GridView3D` child with one scene per cell (`tiles`);
 - a `GridCursor` for each thing that gets marked (valid moves, selection, hover);
+- if the game has fog of war, a `GridFog` child of the `GridView3D` (and a `CellFog` in the rules);
 - the game's grid (`CellGrid`) for the rules, if the game has rules about cells.
 
 Then the person paints the map with the **GridKit** bar in the 3D view; the agent builds the board and wires what a click does.
 
-This is **not** the game's rules, units, fog or turns: the kit knows cells, neighbors, distance, range and paths, and the game decides what they mean. **Not** the network.
+This is **not** the game's rules, units or turns: the kit knows cells, neighbors, distance, range, paths and what each player knows, and the game decides what they mean and what each unit sees. **Not** the network.
 
 Load: `godot-grid-kit`, `godot-composition-first`.
 
@@ -31,7 +32,8 @@ If missing, ask in one batch:
 3. Whether the map is painted by hand in the editor (a `GridLayout`) or built by the game (generated, loaded from a file, over the network).
 4. What a click does and what hover marks; which cursors are needed (moves, selection, path).
 5. Whether there are rules about cells (range, cost to move, paths): who owns them and where in the game they live.
-6. Whether the game is networked or turn-based (the kit brings neither: the game connects).
+6. Whether there is fog of war: how many players, how far each unit or city sees, whether some regions are revealed to everyone.
+7. Whether the game is networked or turn-based (the kit brings neither: the game connects).
 
 ## 2. Plan
 
@@ -57,6 +59,7 @@ Follow [godot-grid-kit](../skills/godot-grid-kit/SKILL.md) and `addons/grid_kit/
 - Tiles are scenes with a `Node3D` root; `cell_size` is the width, side to side (hexagons), or the side (squares).
 - Rules use a `CellGrid` (`board.grid`, or the match state's with `board.use_grid`), not the nodes: `neighbors`, `distance`, `cells_in_range`, `find_path(from, to, cost)`, `flood`.
 - One `GridCursor` per meaning, with `highlight(cells)` and `clear()`.
+- If there is fog: the state keeps a `CellFog` and works it out again after every order with `see(seat, grid.cells_near(own_cells, radius))` (or `cells_visible_from` when the terrain blocks the view); the scene puts a `GridFog` child of the `GridView3D` with `use_fog(state.fog)` and `shown_observer` on this machine's seat. The game's pieces and clicks on hidden cells are filtered with `fog.sees(seat, cell)`. On the network, each client gets only `fog.observer_to_dict(seat)`.
 - If the cells have heights: `height_key` (for example `height`) and `height_scale` on the `GridBoard`; everything that stands on the board is placed with `board.cell_to_position(cell)`, which already carries the height. Tiles are solid downward.
 - Tell the person how to paint: selecting the `GridBoard` shows the **GridKit** bar (a tile, **Erase**, **Add cells**, **Remove cells**, and **Raise**, **Lower** and **Set height** for heights); a stroke undoes with Ctrl+Z; what is painted is stored in the `layout`.
 - Run `godot --headless --path gridkit_lab --script res://addons/grid_kit/tests/grid_test_runner.gd` if you touch the kit.

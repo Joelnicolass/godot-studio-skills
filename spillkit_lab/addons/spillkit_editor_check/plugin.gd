@@ -47,12 +47,18 @@ func _frames(count: int) -> void:
 		await get_tree().process_frame
 
 
+# The editor's own save, without the thumbnail: headless has no viewport texture to make one from (the engine
+# reports "Parameter t is null" in texture_2d_get when it tries).
+func _save_edited_scene() -> void:
+	EditorInterface.save_scene_as(EditorInterface.get_edited_scene_root().scene_file_path, false)
+
+
 ## A scene to edit, written in a folder of its own (the addon's files stay as they are).
 func _open(text: String, name: String) -> Node:
 	var folder := FOLDER.path_join("run_%d" % Time.get_ticks_usec())
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var path := folder.path_join(name)
-	text = RegEx.create_from_string(" uid=\"uid://[a-z0-9]+\"").sub(text, "", true)
+	text = RegEx.create_from_string(' uid="uid://[a-z0-9]+"').sub(text, "", true)
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	file.store_string(text)
 	file.close()
@@ -96,7 +102,9 @@ func _run() -> void:
 
 
 func _check_minimal() -> void:
-	var root := await _open(FileAccess.get_file_as_string(EXAMPLES.path_join("minimal_3d/minimal_3d.tscn")), "minimal_3d.tscn")
+	var root := await _open(
+		FileAccess.get_file_as_string(EXAMPLES.path_join("minimal_3d/minimal_3d.tscn")), "minimal_3d.tscn"
+	)
 	_check(root != null and root.name == "Minimal3D", "minimal_3d is open")
 	if root == null:
 		return
@@ -133,13 +141,16 @@ func _check_minimal() -> void:
 	_check(source._get_configuration_warnings().is_empty(), "with its type, no warning")
 	await _press(source, "Spray")
 	source.heavy_from = 0.3
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(5)
 	var saved := FileAccess.get_file_as_string(root.scene_file_path)
 	_check(saved.contains("heavy_from = 0.3"), "the saved scene keeps a changed value")
 	for word in ["CPUParticles3D", "MultiMesh", "wound"]:
 		_check(not saved.contains(word), "the saved scene holds nothing the kit drew (%s)" % word)
-	_check(saved.count("[node name=") == root.get_tree().edited_scene_root.find_children("*", "", true, true).size() + 1, "and only the scene's own nodes")
+	_check(
+		saved.count("[node name=") == root.get_tree().edited_scene_root.find_children("*", "", true, true).size() + 1,
+		"and only the scene's own nodes"
+	)
 
 
 func _check_body_alone() -> void:
@@ -148,14 +159,17 @@ func _check_body_alone() -> void:
 	if root == null:
 		return
 	var source := root.get_node_or_null(^"Spill") as SpillSource3D
-	_check(SpillPool3D.of(root.get_world_3d()) == null or SpillPool3D.of(root.get_world_3d()).get_parent() != root, "it has no pool of its own")
+	_check(
+		SpillPool3D.of(root.get_world_3d()) == null or SpillPool3D.of(root.get_world_3d()).get_parent() != root,
+		"it has no pool of its own"
+	)
 	_check(await _press(source, "Spray"), "the Spray button")
 	var pool := SpillPool3D.of(root.get_world_3d())
 	_check(pool != null and pool.get_parent() == root, "a pool was made in the edited scene")
 	_check(pool != null and pool.sprays_played(source.type) == 1, "and the drops fly (no floor: no mark)")
 	_check(root.get_child_count() == 1, "the made pool is internal: the scene's tree shows only the Spill")
 	EditorInterface.mark_scene_as_unsaved()
-	EditorInterface.save_scene()
+	_save_edited_scene()
 	await _frames(5)
 	var saved := FileAccess.get_file_as_string(root.scene_file_path)
 	_check(not saved.contains("SpillPool3D") and saved.count("[node name=") == 2, "the saved scene has no pool")

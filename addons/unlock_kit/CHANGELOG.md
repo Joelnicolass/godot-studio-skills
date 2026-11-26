@@ -1,0 +1,10 @@
+# UnlockKit changes
+
+## 0.1.0
+
+First version:
+
+- `UnlockGraph`: tech, talent or skill trees as plain data. Each entry has requirements that are all needed (`requires`), requirements of which one is enough (`requires_any`) and a cost. `add(id, needs, cost, needs_any)`, `can_unlock`, `why_not` (a `String`: `""`, `"unknown"`, `"already_unlocked"`, `"locked"`), `missing`, `buy(id, pay)` (charges with your function and unlocks, in one call), `unlock` with no cost and `lock` to undo, `available_ids`, `depth` for the columns, `problems` (unknown requirements, an entry that requires itself, circles), `restore` and `to_dict(with_entries)` / `from_dict`. Signals `unlocked`, `locked` and `availability_changed`.
+- `UnlockTree` and `UnlockEntry`: the tree built in the editor. An entry inside another one requires it; a plain `Node` groups a branch; `requires` adds cross links, `requires_any` the "one of" ones, `start_unlocked` marks the starting ones and `view_position` places the box by hand. Each entry emits its own `unlocked` and `locked`, and extends with a script of its own for the game's data. Changing the tree rebuilds it once per frame, keeping what was unlocked (not when the whole tree leaves). `new_graph()` builds one graph per player and `use_graph` shows it. Editor warnings for a repeated id, a requirement from another tree or that is not an entry, a circle, a negative amount, `start_unlocked` under an entry that does not start unlocked, an empty tree and, in `use_graph`, ids without an entry.
+- `UnlockTreeView`: draws the tree (in the editor too) in columns by depth, or in rows top to bottom (`direction`), with the color of each state, `corner_radius`, the font of the game's theme, curves (dashed for `requires_any`), tooltips and the signals `entry_pressed` and `entry_hovered`. With `entry_scene`, it instances your scene per entry (your own theme, focus and art).
+- Example `examples/minimal`, the kit's own tests and `unlockkit_lab/` with a check inside the real editor.

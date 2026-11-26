@@ -1,16 +1,18 @@
 # <img src="icons/grid_kit.svg" width="32" height="32" alt=""> GridKit
 
-Boards of hexagons **or squares** for strategy, tactics, board games or puzzles, with the same API for both shapes. Three levels:
+Boards of hexagons **or squares** for strategy, tactics, board games or puzzles, with the same API for both shapes. Four levels:
 
 - **`CellGrid`** (`HexGrid` and `SquareGrid`): the board as plain data (`RefCounted`, no nodes, no scene). It holds values per cell and answers neighbors, distance, range, paths and flood fills. Your game's rules use it directly, and it tests headless.
 - **`GridLayout`**: the map (the shape and the values of every cell) as a `Resource` you save to a `.tres`.
+- **`CellFog`**: the fog of war as plain data. For each player, every cell is hidden (never seen), explored (seen before) or visible (seen now).
 - **Nodes to show it and paint it:**
   - `GridBoard` builds or shows a grid, from the inspector or from a `GridLayout`.
   - `GridView3D` draws it with one scene per cell and reports clicks and hover.
   - `GridCursor` marks cells.
+  - `GridFog` draws one player's fog: it hides the tiles they do not know and darkens those they saw before.
   - A **brush in the editor's 3D view** paints the values of the cells, raises and lowers their heights and adds or removes cells.
 
-GridKit has **no** game rules, no units, no fog, no network and no autoload.
+GridKit has **no** game rules, no units, no network and no autoload. The fog knows what each player knows; what each unit sees (its range, what blocks the view) is your game's to decide.
 
 ## Install
 
@@ -18,7 +20,7 @@ GridKit has **no** game rules, no units, no fog, no network and no autoload.
 ./install.sh --addon /path/to/godot-project grid_kit
 ```
 
-Enable the **GridKit** plugin (types `GridBoard`, `GridView3D` and `GridCursor` in Create Node, and the brush bar in the 3D view).
+Enable the **GridKit** plugin (types `GridBoard`, `GridView3D`, `GridCursor` and `GridFog` in Create Node, and the brush bar in the 3D view).
 
 ## In 3 steps
 
@@ -106,6 +108,41 @@ func _on_cell_changed(changed: Vector2i, key: StringName, _value: Variant) -> vo
 		piece.position = board.cell_to_position(cell)
 ```
 
+## Fog of war
+
+A `GridFog` child of the `GridView3D` keeps what each player knows and draws one player's fog. A player is a number from 0 up, the same one your game uses for the seat or the team.
+
+| State | What the player knows | How it is drawn |
+| --- | --- | --- |
+| `HIDDEN` | Nothing: never saw it | The tile is not drawn; a cap of `hidden_color` stays |
+| `EXPLORED` | The terrain: saw it before, not now | The tile, darkened with `explored_color` |
+| `VISIBLE` | Everything: sees it now | The tile as it is |
+
+After every move, player 0 sees 2 cells around their units, and what they stop seeing stays explored. An enemy unit shows only if the player sees it:
+
+```gdscript
+@export var fog: GridFog
+
+
+func _after_move(my_units: Array[Vector2i], enemy: Node3D, enemy_cell: Vector2i) -> void:
+	fog.see_around(0, my_units, 2)
+	enemy.visible = fog.sees(0, enemy_cell)
+```
+
+- **`see(observer, cells)`** leaves exactly those cells visible: the ones seen before and not now become explored. It is the usual call, once a turn or after every order. `see_around(observer, cells, radius)` does the same with the cells within `radius` steps (`board.cells_near(cells, radius)`).
+- **What blocks the view.** `see_around(observer, cells, radius, blocks)` takes `func(cell) -> bool`: a cell that blocks (a mountain, a forest) is seen, but hides what is behind it. Inside it uses `board.cells_visible_from(center, radius, blocks)`, which draws a line (`board.line(a, b)`) to every cell in range.
+- **`reveal(observer, cells)`** adds visible cells without taking the others away (a flare, a scout running ahead). `clear_visible(observer)` turns everything visible into explored.
+- **`explore(observer, cells)`** makes the terrain known without seeing it now: a region turned face up on the table, a bought map. For every player, call it once per player.
+- **Starting over.** `clear()` hides everything for everyone; `clear_observer(observer)`, for one player.
+- **`shown_observer`** picks which fog is drawn (in a networked match, the fog of this machine's player). With -1 none is drawn: a spectator or a replay sees the whole board.
+- **Changing little by little.** `fade_time` (seconds) makes the veil come and go gradually, and a revealed cell come out of the dark. Hiding and switching `shown_observer` are always at once. `tile_shown(cell, tile)` says when a tile the fog was hiding shows again, so you can animate it.
+- **Clicks still arrive.** `GridView3D` reports clicks and hover on hidden cells too (it uses no colliders). If a hidden cell cannot be picked, filter with `fog.sees(...)` or `fog.knows(...)`, as the example does.
+- What the game puts on the board (units, cities, marks) the game shows or hides itself with `sees(observer, cell)` and `knows(observer, cell)`: the kit does not know what belongs to whom.
+- **Rules use `CellFog`, not the node.** The match state keeps a `CellFog` (with `to_dict` for the save and the replay), and the scene shows it with `fog.use_fog(state.fog)`. The rules work out what is visible with the grid: `state.fog.see(seat, state.grid.cells_near(own_cells, 1))`.
+- **On the network, each their own.** `to_dict` holds what every player knows: sending it to a rival gives them the map. Send each client `fog.observer_to_dict(seat)`, and on the other side `fog.set_observer_from_dict(seat, data)`.
+- **Darkening uses `material_overlay`.** While a tile is explored, its meshes carry the fog's veil in `material_overlay`, and get back the one they had when it is seen again. If your game highlights tiles, do it with `material_override` or a child node, not `material_overlay`.
+- **In the editor the fog is not drawn**, so the map stays in sight and can be painted. The inspector's **Preview** button shows it for 4 seconds (the middle visible, a ring explored, the rest hidden) to tune the colors.
+
 ## Examples
 
 - `examples/minimal_3d/minimal_3d.tscn` (F6): a hexagon of radius 4 with water on the rim, plain, forest and mountain, read from `map.tres` (a `GridLayout`). A click marks the cell and its 6 neighbors, and the pointer marks the cell under it.
@@ -120,6 +157,18 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 ```
 
 - `examples/squares_3d/squares_3d.tscn` (F6): an 8 × 8 board of squares with two tiles. A click marks the cells within 2 steps (`cells_in_range`) and the path from the previous click (`find_path`).
+- `examples/fog_3d/fog_3d.tscn` (F6): the map of `minimal_3d` with two players, each with a scout. Each player sees `sight` cells around theirs; what they saw before stays darkened and the rest covered. A click on a cell you see moves your scout. **Switch player** draws the other player's fog, and the rival scout shows only where you see it.
+
+```
+Fog3D                     # fog_3d.gd: sight = 2 and the start cells, in the inspector; moves the scouts
+├── Camera, Sun
+├── Board                 # GridBoard: layout = minimal_3d/map.tres
+│   └── View              # GridView3D: the tiles of minimal_3d
+│       ├── %Fog          # GridFog: shown_observer = 0
+│       ├── Scout1        # red GridCursor: player 1's scout
+│       └── Scout2        # blue GridCursor: player 2's
+└── UI                    # how many cells they see, explored and do not know; Switch player, Reset
+```
 
 ## Coordinates
 
@@ -160,6 +209,9 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 | `center_cell()` | The cell closest to the middle of the shape (the average of the centers), or `NO_CELL` on an empty board |
 | `distance(a, b)` | Steps between two cells (a method of the grid: it depends on the shape) |
 | `cells_in_range(cell, radius)` | The cells at `radius` steps or fewer, `cell` included |
+| `cells_near(centers, radius)` | The cells at `radius` steps or fewer from any of `centers`, each once: what a group of units sees, the land around every town |
+| `line(a, b)` | The cells a straight line from the center of `a` to the center of `b` crosses, both included: one per step. For line of sight and aiming |
+| `cells_visible_from(center, radius, blocks)` | The cells in range that `center` sees: `blocks` is `func(cell) -> bool`; a blocking cell is seen but hides what is behind it. Without `blocks`, it is `cells_in_range` |
 | `find_path(from, to, cost)` | The cheapest path (A*). `cost` is `func(from, to) -> float`; `INF` or a negative value is impassable. Without `cost`, every step costs 1 |
 | `flood(cell, accepts)` | The cells connected to `cell` that satisfy `accepts(cell) -> bool` |
 | `cell_to_local(cell, cell_size)` / `local_to_cell(point, cell_size)` | From the center of a cell to the plane, and from the plane to a cell |
@@ -204,7 +256,7 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 
 - **Inspector:** `layout`, `shape` (Hexagons or Squares), `diagonals` (squares only), `columns`, `rows`, `radius` (above 0: every cell within `radius` steps of (0, 0), in both shapes), `cell_size`, `height_key` (the key of the height; empty: a flat board) and `height_scale` (world units per height of 1). With a `layout`, the grid comes from the layout and the inspector shape does not apply. `save_shape_as_layout()` makes a layout from the current shape (in the editor, the button of the GridKit bar does the same, with undo).
 - **Grid:** `grid` is the `CellGrid` it shows. `use_grid(grid)` shows your rules' grid instead of its own, and `use_own_grid()` goes back to the one from the layout or the inspector.
-- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `find_path`, `flood`, `outline`, `cells_with` and `center_cell`, plus `cell_to_position(cell) -> Vector3` (the center of the cell, with its height in Y), `cell_height(cell) -> float` (the height in world units; 0 without a `height_key`), `position_to_cell(point) -> Vector2i` (`NO_CELL` off the board) and `position_to_any_cell(point)` (the cell under the point even if it is not on the board). These two only look at X and Z: height does not change the answer. The rest (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) goes through `board.grid`.
+- **Queries:** `has_cell`, `cells`, `set_value`, `get_value`, `neighbors`, `neighbor`, `direction_to`, `distance`, `cells_in_range`, `cells_near`, `line`, `cells_visible_from`, `find_path`, `flood`, `outline`, `cells_with` and `center_cell`, plus `cell_to_position(cell) -> Vector3` (the center of the cell, with its height in Y), `cell_height(cell) -> float` (the height in world units; 0 without a `height_key`), `position_to_cell(point) -> Vector2i` (`NO_CELL` off the board) and `position_to_any_cell(point)` (the cell under the point even if it is not on the board). These two only look at X and Z: height does not change the answer. The rest (`values`, `size`, `add_cell`, `erase_value`, `to_dict`) goes through `board.grid`.
 - **Editing many at once:** `paint(key, {cell: value})` (a `null` value deletes the key) and `set_cells(add, remove, values)` (`values` is `{cell: {key: value}}` for the new cells). In the editor, with a `layout`, they write the layout too; in play, only the grid.
 - **Signals:** `cell_changed(cell, key, value)` and `rebuilt` (another grid, another shape, `cell_size`, `height_key` or `height_scale`, or cells added or removed). Views and cursors update themselves with it.
 
@@ -231,6 +283,33 @@ Minimal3D                 # minimal_3d.gd: only connects the signals; its @expor
 - When the board changes (`rebuilt`), the cursor handles it **once per frame**: marks on cells that are gone are freed and the rest move into place (none is made again). The default marker shares one mesh and one material among all marks.
 - On a board with heights, each mark floats `lift` above its cell and follows it when its height changes.
 - Use one cursor per meaning: valid moves, selection, hover.
+
+### `CellFog` (RefCounted): what each player knows
+
+| Member | What it does |
+| --- | --- |
+| `state(observer, cell)` | `CellFog.State.HIDDEN`, `EXPLORED` or `VISIBLE` |
+| `sees(observer, cell)` / `knows(observer, cell)` | Sees it now / saw it at some time or sees it now |
+| `see(observer, cells)` | Exactly those cells are visible; those seen before and not now, explored |
+| `reveal(observer, cells)` | Adds visible cells |
+| `explore(observer, cells)` | Hidden cells become explored without being seen (visible ones stay visible) |
+| `clear_visible(observer)` | Everything visible becomes explored |
+| `clear()` / `clear_observer(observer)` | Everything is hidden again, for all or for one player |
+| `visible_cells(observer)` / `explored_cells(observer)` | The lists, sorted by row and column. Hidden cells are not listed: the fog does not know the board |
+| `observers()` | The players that know some cell |
+| `to_dict()` / `CellFog.from_dict(data)` | Every player's, to save or compare a replay; comes back the same after a trip through JSON |
+| `observer_to_dict(observer)` / `set_observer_from_dict(observer, data)` | One player's only, to send to their machine without showing them the others' |
+| signals `revealed(observer, cells)`, `faded(observer, cells)`, `explored(observer, cells)`, `cleared(observer)` | Only the cells that changed state, sorted by row and column. `explored` comes with every cell that becomes explored: through `explore` or because it stopped being seen (then `faded` comes too). `see` emits `faded`, `explored` and then `revealed` |
+
+An observer is a whole number from 0 up: a seat, a team. There is nothing to declare.
+
+### `GridFog` (Node3D, child of a `GridView3D`)
+
+- **Inspector:** `shown_observer` (the fog that is drawn; -1: none), `hidden_color` (the cap of hidden cells; transparent: no cap, but the tile stays hidden), `explored_color` (what darkens explored tiles), `fade_time`, `lift` and the **Preview** button.
+- **Fog:** `fog` is the `CellFog` it shows. `use_fog(fog)` shows your rules' and `use_own_fog()` goes back to one of its own, all hidden. Both emit `rebuilt`.
+- **Methods:** those of `CellFog` (`state`, `sees`, `knows`, `see`, `reveal`, `explore`, `clear_visible`, `clear`, `clear_observer`, `visible_cells`, `explored_cells`, `to_dict`) plus `see_around(observer, cells, radius := 1, blocks := Callable())`. The rest goes through `fog.fog`.
+- **Signals:** those of `CellFog`, also when they change in your rules' `CellFog`, `tile_shown(cell, tile)` and `rebuilt`.
+- It redraws once a frame and only the cells that changed; the whole board when the view redraws, the board changes or `shown_observer` changes. It darkens a tile with a `material_overlay` on its meshes and gives it back as it was when it is seen, when `shown_observer` changes or when the node leaves the tree.
 
 ## Tips
 
@@ -291,9 +370,10 @@ It prints `GRIDKIT TESTS PASS (n)`. The tests cover:
 - Heights: `cell_to_position` with and without a `height_key`, with int and float, a value that is not a number; the tile and the mark move without being made again; `height_scale` and `height_key` place everything again; the preview of a layout; clicks on a tall cell that hides a low one and on a low one in the open, on hexagons and on squares, with the view moved, turned and scaled, off the board and after each change; and that nothing changes without a `height_key`.
 - The brush stroke (no editor): paint, repeat, erase, add and remove cells with their values, raise, lower and set heights, making the layout and the height key, and that its result undoes everything.
 - The brush tool with a stand-in undo history: the bar's buttons, a height stroke as one step that undoes and redoes, Shift, the numbers of the bar, and that the brush finds a tall cell by its top.
-- Both examples played with mouse events.
+- The fog: reveal, clear what is visible, `see` (only the changes, in order), explore, forget per player or for all, sorted signals, a negative observer, one player's fog there and back through JSON, save and load, `cells_near`, `line` and `cells_visible_from` on hexes and squares, `see_around` with what blocks; the node that covers, darkens and gives the tiles back, a tile with its own `material_overlay`, the cap at the cell's height and with `lift`, no cap with a transparent `hidden_color`, `fade_time` and `tile_shown`, a redrawn tile that is covered again, `use_fog` with the rules' signals and the warning outside a view.
+- The three examples played with mouse events.
 - That the addon names no other kit.
 
-The editor check (`godot --headless --editor --path gridkit_lab -- --gridkit-editor-check`) goes through the real editor: the bar, tile and height strokes with the editor's undo, picking a tall cell from the 3D view's camera, and what is saved on disk.
+The editor check (`godot --headless --editor --path gridkit_lab -- --gridkit-editor-check`) goes through the real editor: the bar, tile and height strokes with the editor's undo, picking a tall cell from the 3D view's camera, what is saved on disk, and the fog (it does not cover the map in the editor, **Preview** shows it and gives the tiles back, and none of it is saved).
 
 What neither of them covers (it needs a real window and mouse): how the bar looks, the real drag and the brush marker on a tall cell.

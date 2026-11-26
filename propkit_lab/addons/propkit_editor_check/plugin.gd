@@ -34,6 +34,40 @@ func _frames(count: int) -> void:
 		await get_tree().process_frame
 
 
+# The editor's own save, without the thumbnail: headless has no viewport texture to make one from (the engine
+# reports "Parameter t is null" in texture_2d_get when it tries).
+func _save_edited_scene() -> void:
+	EditorInterface.save_scene_as(EditorInterface.get_edited_scene_root().scene_file_path, false)
+
+
+# Undo and redo as a person does, with the editor's shortcut: the editor keeps its own list of every history's
+# steps, and calling `UndoRedo.undo()` on a history directly leaves that list behind ("Inconsistent redo history").
+func _editor_undo() -> void:
+	await _press_z(false)
+
+
+func _editor_redo() -> void:
+	await _press_z(true)
+
+
+func _press_z(shift: bool) -> void:
+	var key := InputEventKey.new()
+	key.keycode = KEY_Z
+	key.command_or_control_autoremap = true
+	key.shift_pressed = shift
+	key.pressed = true
+	await _send(key)
+	var up := key.duplicate() as InputEventKey
+	up.pressed = false
+	await _send(up)
+
+
+func _send(event: InputEvent) -> void:
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+	await _frames(2)
+
+
 func _run() -> void:
 	await _frames(10)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(COPY.get_base_dir()))
@@ -41,7 +75,7 @@ func _run() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(COPY.get_base_dir().path_join(old)))
 	var text := FileAccess.get_file_as_string(SOURCE)
 	# Its own scene: no uid of the example's.
-	text = RegEx.create_from_string(" uid=\"uid://[a-z0-9]+\"").sub(text, "", false)
+	text = RegEx.create_from_string(' uid="uid://[a-z0-9]+"').sub(text, "", false)
 	var file := FileAccess.open(COPY, FileAccess.WRITE)
 	file.store_string(text)
 	file.close()
@@ -64,9 +98,9 @@ func _run() -> void:
 	var first := scatter.get_child(0) as Node3D
 	_check(first.owner == root, "each prop is owned by the scene, so it is saved")
 	var undo := history.get_history_undo_redo(history.get_object_history_id(scatter))
-	undo.undo()
+	await _editor_undo()
 	_check(scatter.get_child_count() == 0, "undo takes the scatter back (%d)" % scatter.get_child_count())
-	undo.redo()
+	await _editor_redo()
 	_check(scatter.get_child_count() == planted and scatter.get_child(0) == first, "redo puts the same props back")
 	_check(first.owner == root, "owned by the scene again")
 
@@ -75,13 +109,13 @@ func _run() -> void:
 	scatter.rules.random_seed += 1
 	scatter_edit.scatter(scatter)
 	_check(scatter.get_child(0) != first, "«Scatter» again replaces them")
-	undo.undo()
+	await _editor_undo()
 	_check(scatter.get_child(0) == first and first.position == moved, "undo brings back the hand-moved prop")
 	scatter.rules.random_seed -= 1
 
 	scatter_edit.clear(scatter)
 	_check(scatter.get_child_count() == 0, "«Clear» removes them")
-	undo.undo()
+	await _editor_undo()
 	_check(scatter.get_child_count() == planted, "undo puts them back")
 
 	var zones := root.find_children("*", "PropNavZones3D", true, false)[0] as PropNavZones3D
@@ -90,18 +124,26 @@ func _run() -> void:
 	await _frames(30)
 	root = EditorInterface.get_edited_scene_root()
 	zones = root.find_children("*", "PropNavZones3D", true, false)[0] as PropNavZones3D
-	_check(zones.saved != null and zones.saved.resource_path == COPY.get_basename() + "_nav.res", "«Bake» saves next to the scene and the scene points at it")
+	_check(
+		zones.saved != null and zones.saved.resource_path == COPY.get_basename() + "_nav.res",
+		"«Bake» saves next to the scene and the scene points at it"
+	)
 	_check(zones.saved != null and zones.saved.pieces.size() == 16, "every zone is in it")
 	var warnings := zones._get_configuration_warnings()
 	_check(not "\n".join(warnings).contains("does not match"), "it matches the props (%s)" % [warnings])
 	await _frames(60)
-	_check(zones.region_of(0) != null and zones.region_of(0).navigation_mesh != null, "the editor shows the saved navmesh")
+	_check(
+		zones.region_of(0) != null and zones.region_of(0).navigation_mesh != null, "the editor shows the saved navmesh"
+	)
 
 	scatter = root.find_children("*", "PropScatter3D", true, false)[0] as PropScatter3D
 	scatter.rules.random_seed += 1
 	load(SCATTER_EDIT).scatter(scatter)
 	warnings = zones._get_configuration_warnings()
-	_check("\n".join(warnings).contains("does not match"), "after a new scatter the saved bake is flagged (%s)" % [warnings])
+	_check(
+		"\n".join(warnings).contains("does not match"),
+		"after a new scatter the saved bake is flagged (%s)" % [warnings]
+	)
 	load(BAKE_RUN).bake_open_scene()
 	await _frames(30)
 	root = EditorInterface.get_edited_scene_root()
@@ -130,7 +172,9 @@ func _shots(folder: String) -> void:
 	var scatter := root.find_children("*", "PropScatter3D", true, false)[0] as Node3D
 	EditorInterface.edit_node(scatter)
 	await _frames(30)
-	EditorInterface.get_editor_viewport_3d(0).get_texture().get_image().save_png(folder.path_join("editor_3d_scatter.png"))
+	EditorInterface.get_editor_viewport_3d(0).get_texture().get_image().save_png(
+		folder.path_join("editor_3d_scatter.png")
+	)
 	EditorInterface.open_scene_from_path("res://addons/prop_kit/examples/grove_2d/grove_2d.tscn")
 	EditorInterface.set_main_screen_editor("2D")
 	await _frames(60)

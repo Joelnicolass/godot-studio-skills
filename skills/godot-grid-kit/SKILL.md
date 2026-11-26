@@ -6,12 +6,14 @@ description: >-
   cell, neighbors, distance, range, paths with cost and flood fills), the map as
   a resource you save (GridLayout), a GridBoard that shows it, a GridView3D that
   draws one scene per cell and reports clicks and hover with no colliders,
-  GridCursor to mark cells, and a brush in the editor's 3D view to paint the
+  GridCursor to mark cells, fog of war per player (CellFog and GridFog:
+  hidden, explored, visible), and a brush in the editor's 3D view to paint the
   terrain, raise and lower the height of each cell and add or remove cells
   with undo. Use when the user wants a board, a
   hex or square grid, a turn-based strategy, tactics or board game or a puzzle
   on a grid, to paint a map in the editor, paths or movement ranges on a grid,
-  or /add-grid. Not the game's rules, units, fog, turns or the network.
+  fog of war or explored cells, or /add-grid. Not the game's rules, units, turns
+  or the network.
 ---
 
 # Godot — boards of hexagons or squares (GridKit)
@@ -37,6 +39,7 @@ Enable the **GridKit** plugin (the brush bar in the 3D view; the nodes work with
 - **Paths and ranges.** `find_path(from, to, cost)` with `cost` as `func(from, to) -> float` (`INF` is impassable); `cells_in_range`, `flood`. All in a fixed order (row, then column): the same result every run.
 - **Clicks without colliders.** `GridView3D.cell_clicked` / `cell_right_clicked` / `cell_hovered` (pick with the left button, order with the right); a camera drag is not a click (`click_max_drag_px`).
 - **One cursor per meaning.** One `GridCursor` for valid moves, another for the selection, another for hover.
+- **The fog belongs to the rules.** The state keeps a `CellFog` (hidden, explored, visible per seat) and works it out again after every order with `fog.see(seat, grid.cells_near(own_cells, radius))`, or with `grid.cells_visible_from(center, radius, blocks)` when the terrain blocks the view; the scene draws it with a `GridFog` child of the `GridView3D` (`use_fog(state.fog)`, `shown_observer` = this machine's seat, `fade_time` to change little by little). The game's units show with `fog.sees(seat, cell)`, and clicks on hidden cells are filtered the same way. On the network, each client gets only theirs: `fog.observer_to_dict(seat)`.
 - **No kit depends on another.** GridKit has no rules, units, turns or network: the game connects.
 
 ## Tree
@@ -47,10 +50,11 @@ Level
 └── Board (GridBoard)              # layout = res://maps/level_1.tres, or shape + columns × rows
     └── View (GridView3D)          # tiles = {plain, forest, water}; value_key = terrain
         ├── Moves (GridCursor)     # the valid moves
-        └── Hover (GridCursor)     # the cell under the pointer
+        ├── Hover (GridCursor)     # the cell under the pointer
+        └── Fog (GridFog)          # optional: the fog of this machine's player
 ```
 
-Start from `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexagons, map in a `GridLayout`) or `squares_3d` (8 × 8 squares, range and path).
+Start from `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexagons, map in a `GridLayout`) `squares_3d` (8 × 8 squares, range and path) or `fog_3d` (two players' fog).
 
 ## What goes where
 
@@ -60,6 +64,7 @@ Start from `addons/grid_kit/examples/minimal_3d/minimal_3d.tscn` (hexagons, map 
 | `GridLayout`: the saved map, and the brush that paints it | Which maps exist and which one loads; the match state |
 | One scene per cell and the click and hover signals | The tile scenes, the units on the board, what a click does |
 | Marking cells (`GridCursor`) | Which ones to mark and when |
+| What each player knows of each cell (`CellFog`) and the drawn fog (`GridFog`) | What each unit sees (range, what blocks it), when it is worked out, which game pieces hide |
 
 ## Essential API
 
@@ -80,11 +85,13 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 
 | Piece | What you use |
 |---|---|
-| `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors(cell, on_board_only)`, `neighbor`, `direction_to`, `distance(a, b)`, `cells_in_range`, `find_path`, `flood`, `outline(rings)`, `cells_with(key, value)`, `center_cell`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
+| `CellGrid` (`HexGrid.rect/hexagon`, `SquareGrid.rect/disc`) | `set_value`, `get_value`, `erase_value`, `neighbors(cell, on_board_only)`, `neighbor`, `direction_to`, `distance(a, b)`, `cells_in_range`, `cells_near(centers, radius)`, `line(a, b)`, `cells_visible_from(center, radius, blocks)`, `find_path`, `flood`, `outline(rings)`, `cells_with(key, value)`, `center_cell`, `add_cells`, `remove_cells`, `to_dict` / `CellGrid.from_dict`, `value_changed`, `cells_changed` |
 | `GridLayout` | `make_grid()` (a copy), `GridLayout.from_grid(grid)`, `set_value`, `erase_value`, `add_cell`, `remove_cell` |
 | `GridBoard` | `layout`, `shape`, `diagonals`, `columns`, `rows`, `radius`, `cell_size`, `height_key`, `height_scale`; `use_grid(grid)`, `paint(key, {cell: value})`, `set_cells(add, remove)`, `cell_to_position` (with the height in Y), `cell_height`, `position_to_cell` (X and Z only); `cell_changed`, `rebuilt` |
 | `GridView3D` | `tiles`, `default_tile`, `value_key`; `cell_clicked`, `cell_right_clicked`, `cell_hovered`, `tile_created`, `drawn`, `tile_at`, `cell_at_screen`, `cell_at_ray` |
 | `GridCursor` | `highlight(cells)`, `clear()`, `highlighted()`; `marker`, `color`, `lift`, `fill` |
+| `CellFog` | `state(observer, cell)` (`HIDDEN`, `EXPLORED`, `VISIBLE`), `sees`, `knows`, `see(observer, cells)`, `reveal`, `explore`, `clear_visible`, `clear()`, `clear_observer`, `visible_cells`, `explored_cells`, `to_dict` / `CellFog.from_dict`, `observer_to_dict` / `set_observer_from_dict`; `revealed`, `faded`, `explored`, `cleared` |
+| `GridFog` | `shown_observer`, `hidden_color`, `explored_color`, `fade_time`; `use_fog(fog)`, `see_around(observer, cells, radius, blocks)` and those of `CellFog`; `tile_shown`; **Preview** in the inspector |
 
 ## Done when
 
@@ -102,3 +109,5 @@ func _on_cell_clicked(cell: Vector2i) -> void:
 - Game rules (movement, weapon range, who owns what) inside the kit's nodes: they go in the game.
 - One cursor per cell instead of one cursor per meaning.
 - Adding the height by hand (`position.y = height * …`) or moving the tiles from the game: set `height_key` on the `GridBoard` and use `cell_to_position`.
+- A fog of your own (a dictionary of seen cells per player, tiles hidden by hand): use `CellFog` in the rules and `GridFog` in the scene.
+- Calling `reveal` every turn without clearing: what is no longer seen stays visible. `see` leaves visible only the cells seen now.

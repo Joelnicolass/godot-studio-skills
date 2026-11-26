@@ -18,4 +18,12 @@ Keep the ES/EN mirror on the same cut. Do not land on the principals “to get a
 
 Skills in `skills/`, commands in `commands/`, subagents in `agents/`: the same files install into Claude Code (`./install.sh --claude`) and Cursor (`./install.sh`). Do not write instructions that only hold in one harness without naming the other’s equivalent. The flow **always** asks for the file tree (`[+]` / `[~]` / `[-]`) before touching the game; do not add a path that skips it. A read-only subagent carries `readonly: true` (Cursor) **and** `disallowedTools` (Claude Code).
 
+Design rules of every kit, besides those of its skill:
+
+- When two kits have to act together, the kit offers a hook that takes a `Callable` (`tree.buy(id, wallet.pay)`), not a recipe of several steps the user has to keep in order. No kit names another.
+- A kit's core never creates a `RandomNumberGenerator`: it receives one. The node may create its own from `rng_seed` (0: a seed of its own, different for every node) and always accepts the match's in `rng`; changing `rng_seed` does not touch an assigned `rng`.
+- In a new kit, the node exposes its core as a property (`fog.fog`, `pile.stack`) and forwards only the calls of "In 3 steps", each with its `##` comment.
+
+These rules also live in `.cursor/rules/kits.mdc`; change both.
+
 This rule also lives in `.cursor/rules/release-candidate.mdc`; change both.

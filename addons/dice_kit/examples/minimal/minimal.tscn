@@ -1,0 +1,98 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://addons/dice_kit/examples/minimal/minimal.gd" id="1_main"]
+[ext_resource type="Script" path="res://addons/dice_kit/nodes/dice_roller.gd" id="2_roller"]
+[ext_resource type="Script" path="res://addons/dice_kit/nodes/dice_tray_3d.gd" id="3_tray"]
+[ext_resource type="Resource" path="res://addons/dice_kit/examples/minimal/attack_die.tres" id="4_die"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_table"]
+size = Vector2(6, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_felt"]
+albedo_color = Color(0.13, 0.33, 0.24, 1)
+roughness = 0.9
+
+[sub_resource type="Environment" id="Environment_room"]
+background_mode = 1
+background_color = Color(0.09, 0.1, 0.12, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.55, 0.6, 1)
+ambient_light_energy = 0.35
+
+[node name="Minimal" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 2.3, 2.3)
+current = true
+fov = 50.0
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.536875, 0.636738, -0.55347, 0, 0.656033, 0.754732, 0.843661, -0.405197, 0.352208, 0, 4, 0)
+light_energy = 0.9
+shadow_enabled = true
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_room")
+
+[node name="Table" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_table")
+surface_material_override/0 = SubResource("StandardMaterial3D_felt")
+
+[node name="Roller" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_roller")
+die = ExtResource("4_die")
+count = 3
+
+[node name="Tray" type="Node3D" parent="." node_paths=PackedStringArray("roller")]
+unique_name_in_owner = true
+script = ExtResource("3_tray")
+roller = NodePath("../Roller")
+
+[node name="Ui" type="CanvasLayer" parent="."]
+
+[node name="Box" type="VBoxContainer" parent="Ui"]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 96.0
+grow_horizontal = 2
+
+[node name="Buttons" type="HBoxContainer" parent="Ui/Box"]
+layout_mode = 2
+alignment = 1
+
+[node name="Roll1" type="Button" parent="Ui/Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Roll 1"
+
+[node name="Roll2" type="Button" parent="Ui/Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Roll 2"
+
+[node name="Roll3" type="Button" parent="Ui/Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Roll 3"
+
+[node name="SeedLabel" type="Label" parent="Ui/Box/Buttons"]
+layout_mode = 2
+text = "  Seed (0: random)"
+
+[node name="Seed" type="SpinBox" parent="Ui/Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 99999.0
+rounded = true
+
+[node name="Result" type="Label" parent="Ui/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Press Roll"
+horizontal_alignment = 1

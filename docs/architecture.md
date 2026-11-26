@@ -177,10 +177,14 @@ Each kit is an addon copied into the game with `./install.sh --addon <project> <
 | Enemies or guards that see and hear | PerceptionKit | `/add-perception` | `addons/perception_kit/examples/minimal_3d/` |
 | Blood, marks and puddles (or oil, slime, ink) | SpillKit | `/add-spill` | `addons/spill_kit/examples/minimal_3d/` |
 | Bots that play like a person (shooter, arena) | BotKit | `/add-bots` | `addons/bot_kit/examples/minimal_3d/` |
-| Boards of hexagons or squares | GridKit | `/add-grid` | `addons/grid_kit/examples/minimal_3d/` |
+| Boards of hexagons or squares, fog of war | GridKit | `/add-grid` | `addons/grid_kit/examples/minimal_3d/` |
 | Turns, phases, rounds and time per turn | TurnKit | `/add-turns` | `addons/turn_kit/examples/minimal/` |
 | Resources and coins (limits, costs, substitutes) | WalletKit | `/add-wallet` | `addons/wallet_kit/examples/minimal/` |
 | Validated moves with undo and replay | CommandKit | `/add-commands` | `addons/command_kit/examples/minimal/` |
+| Tech, talent or skill trees | UnlockKit | `/add-unlocks` | `addons/unlock_kit/examples/minimal/` |
+| Stats with bonuses (equipment, buffs, techs) | StatKit | `/add-stats` | `addons/stat_kit/examples/minimal/` |
+| Deck, hand and discard (draw, seeded shuffle, refill) | DeckKit | `/add-deck` | `addons/deck_kit/examples/minimal/` |
+| Dice (roll, add up, count symbols, seed) | DiceKit | `/add-dice` | `addons/dice_kit/examples/minimal/` |
 
 The minimal example is the smallest integration that works; each kit's README explains its code and adds tips and recommendations. What the kit does not do (the rules, the score, how an RTS unit moves) stays in the game.
 
