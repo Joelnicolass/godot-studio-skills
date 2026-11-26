@@ -97,6 +97,7 @@ Pawn input and custom-dict meaning **outside** the kit.
 - `report_loaded()` — the local world finished loading (MpFlow calls it with `world_reports_loaded`): a client tells the server (its seat counts at the gate), the server or solo tells the gate its own world is in
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — server: peers with a slot and world_ready (send your own one-off `@rpc` effects to these with `rpc_id`; play it on the server too)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
+- `remember_seats` (and `--remember-seats`, `--seat-file=`): the client keeps its LAN seat's credential in `SEATS_FILE` (`user://mpkit_seats.cfg`) and shows it again even after the game was closed; a credential older than `SEAT_MEMORY_S` (1 h) is not shown. `forget_seat_credentials()` removes it from disk too
 - `slot_of_sender(from_peer)`: the seat that sent a tunnel message, the same solo, host and client. A `broadcast_custom` from a `custom_received` handler goes out right after (an echo of the same channel and data is dropped with a warning; a chain stops at `CUSTOM_CHAIN_MAX`, 256); a channel not in `custom_channels` warns once
 
 Editor: [editor.md](editor.md).

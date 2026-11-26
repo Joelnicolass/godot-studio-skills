@@ -87,7 +87,7 @@ The issuer refuses to start without the key, the relay URL or a game: it never r
 
 ## 4. API (v1)
 
-Every player request says who asks: `game`, `version` (the game's), `kit` (MpKit's), `platform`, `install` (random, 16 to 64 letters, digits, `_` or `-`; kept by the game) and `session` (new in each process, so two copies of the game on one PC get two seats). The IP comes from the connection, never from the body. Answers are JSON; a refusal is `{"error": "<word>", …}`.
+Every player request says who asks: `game`, `version` (the game's) and `kit` (MpKit's), both shaped like a version (`1.2.0`, `0.28.0-rc.1`), `platform`, `install` (random, 16 to 64 letters, digits, `_` or `-`; kept by the game) and `session` (8 to 64 of the same characters, new in each process, so two copies of the game on one PC get two seats). The IP comes from the connection, never from the body. Answers are JSON; a refusal is `{"error": "<word>", …}`.
 
 | Route | Who | What |
 |---|---|---|

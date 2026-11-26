@@ -122,6 +122,9 @@ enum StartWhen {
 @export var pause_while_waiting: bool = true
 ## The clients' world pauses too while the match waits for seats (with pause_while_waiting).
 @export var pause_clients: bool = true
+## A client keeps its LAN seat's credential in user:// (`--remember-seats`), so a game closed and opened again gets its
+## seat back within the grace. Two copies of the game on one PC: give each its own file with `--seat-file=user://x.cfg`.
+@export var remember_seats: bool = false
 ## Shown on a client the server turned away because the match already started.
 @export var match_started_status: String = "The match already started"
 ## Shown on a client whose seat the game closed (close_seat: its pawn is out of the match) when it tries to come back.
@@ -196,6 +199,7 @@ func _ready() -> void:
 	if MpBoot.user_flag("no-flow"):
 		return
 	_pick_world_from_args()
+	MpKit.remember_seats = remember_seats or MpKit.remember_seats
 	if net_config:
 		max_players = net_config.effective_max_players()
 		custom_channels = net_config.custom_channels
