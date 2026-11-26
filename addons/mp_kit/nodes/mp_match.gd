@@ -22,6 +22,10 @@ signal finished(result: Dictionary)
 ## off: then the players walk, and the game holds its own systems (a day clock, threats, bots) until this says false.
 signal waiting_changed(waiting: bool)
 
+## Server: prints each seat's story in the log, one line per event ("MpKit seats: seat 2 loaded (1/2)", "seat 3 away",
+## "seat 3 back", "seat 3 abandoned (grace_over)", "match started (all_loaded)"). Also with `--seat-log`.
+@export var log_seats := false
+
 ## True while the match waits for its seats (every peer: the server says so).
 var waiting: bool:
 	get:
@@ -46,8 +50,30 @@ func _ready() -> void:
 	gate.seat_abandoned.connect(_on_seat_abandoned)
 	MpKit.peer_left.connect(_on_peer_left)
 	MpKit.peer_joined.connect(_on_peer_joined)
+	if MpKit.is_networked() and (log_seats or MpBoot.user_flag("seat-log")):
+		_log_seats(gate)
 	if gate.phase != MpMatchGate.Phase.FILLING:
 		all_loaded.emit.call_deferred()
+
+
+## Server: the seats' story in the log, from the gate's signals.
+func _log_seats(gate: MpMatchGate) -> void:
+	var say := func(text: String) -> void: print("MpKit seats: " + text)
+	gate.seat_admitted.connect(
+		func(slot: int, back: bool) -> void: say.call("seat %d %s" % [slot, "back" if back else "in"])
+	)
+	gate.seat_loaded.connect(
+		func(slot: int, loaded: int, expected: int) -> void: say.call("seat %d loaded (%d/%d)" % [slot, loaded, expected])
+	)
+	gate.started.connect(func(why: String) -> void: say.call("match started (%s)" % why))
+	gate.seat_away.connect(func(slot: int) -> void: say.call("seat %d away" % slot))
+	gate.seat_abandoned.connect(func(slot: int, why: String) -> void: say.call("seat %d abandoned (%s)" % [slot, why]))
+	gate.joined_late.connect(func(slot: int) -> void: say.call("seat %d joined late" % slot))
+	gate.seat_closed.connect(func(slot: int) -> void: say.call("seat %d closed" % slot))
+	gate.turned_away.connect(
+		func(peer_id: int, why: String) -> void: say.call("peer %d turned away (%s)" % [peer_id, why])
+	)
+	finished.connect(func(result: Dictionary) -> void: say.call("match finished %s" % [result]))
 
 
 ## Server (or solo) only: the match is over. Every peer gets `finished(result)`; a lobby match also tells the room.

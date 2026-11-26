@@ -28,6 +28,8 @@ step "issuer at ready" run_godot --headless --path "$LAB" res://probe/issuer_at_
 step minimal bash "$HERE/minimal.sh"
 step turns bash "$HERE/turns.sh"
 step cards bash "$HERE/cards.sh"
+step remember bash "$HERE/remember.sh"
+step "local online" bash "$HERE/local_online.sh"
 step relay bash "$HERE/relay.sh"
 if [ "$QUICK" = 1 ]; then
   step "arena enet" env SCENARIOS="dedicated lag" bash "$HERE/arena.sh"

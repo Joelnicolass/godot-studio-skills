@@ -21,12 +21,42 @@ static var _install: String = ""
 static var _session: String = ""
 ## Room code (as the issuer writes it) -> the seat ticket this process got there.
 static var _seat_tickets: Dictionary = {}
+## The page's `?issuer=` (web), read once: null until then.
+static var _query_issuer: Variant = null
 
 
-## The flags win over what an MpNetConfig set.
+## The `issuer` of a page's query (`?issuer=http://127.0.0.1:8791&x=1`) when it is a local address (localhost,
+## 127.0.0.1, [::1]); "" otherwise. A page on the internet cannot point the game at another server with it.
+static func local_issuer_from_query(query: String) -> String:
+	for pair in query.trim_prefix("?").split("&", false):
+		var parts := pair.split("=", true, 1)
+		if parts.size() != 2 or parts[0] != "issuer":
+			continue
+		var address := parts[1].uri_decode().strip_edges()
+		var rest := ""
+		if address.begins_with("http://"):
+			rest = address.trim_prefix("http://")
+		elif address.begins_with("https://"):
+			rest = address.trim_prefix("https://")
+		else:
+			return ""
+		var host := rest.get_slice("/", 0)
+		if host.begins_with("[::1]"):
+			return address.trim_suffix("/")
+		host = host.get_slice(":", 0)
+		return address.trim_suffix("/") if host in ["127.0.0.1", "localhost"] else ""
+	return ""
+
+
+## The flags win over what an MpNetConfig set. In a web build, `?issuer=http://127.0.0.1:PORT` in the page's address
+## plays the part of `--issuer-url=` for a local issuer (tests): only localhost is taken, never another server.
 static func from_flags() -> void:
 	var flag_url := MpBoot.user_value("issuer-url", "")
 	var flag_game := MpBoot.user_value("issuer-game", "")
+	if flag_url.is_empty() and OS.has_feature("web"):
+		if _query_issuer == null:
+			_query_issuer = local_issuer_from_query(str(JavaScriptBridge.eval("location.search", true)))
+		flag_url = str(_query_issuer)
 	if not flag_url.is_empty():
 		url = flag_url
 	if not flag_game.is_empty():

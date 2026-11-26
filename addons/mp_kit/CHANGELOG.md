@@ -2,6 +2,17 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.28.0
+
+- **Probar online en tu PC:** `bash addons/mp_kit/deploy/online_local.sh <game_id> [max_players]` levanta un emisor y un relay locales para tu juego (claves y secreto nuevos en cada corrida, nada escrito en el proyecto) e imprime cómo abrir cada copia. Reemplaza los scripts propios que tenían El Eternauta y la web de insultos.
+- **`?issuer=` en el build web:** `?issuer=http://127.0.0.1:8891` en la dirección de la página hace lo mismo que `--issuer-url=` en escritorio, para probar con el emisor local. Solo toma una dirección local (localhost, 127.0.0.1, [::1]): una página de internet no puede apuntar el juego a otro servidor. Lo hacía Intervendoom por su cuenta.
+- **El log de los asientos:** `--seat-log` en el servidor (o `MpMatch.log_seats`) escribe una línea por evento: «MpKit seats: seat 2 in», «seat 2 loaded (1/2)», «match started (all_loaded)», «seat 2 away», «seat 2 back», «seat 3 abandoned (grace_over)», «seat 3 closed», «peer N turned away (match_started)». Lo tenía Sacrifice (`SeatPresence`).
+- **Volver al asiento de LAN después de cerrar el juego:** con `MpFlow.remember_seats` (o `--remember-seats`) el cliente guarda la credencial de su asiento en `user://` y vuelve a él aunque el juego se haya cerrado, dentro de la gracia. Apagado de entrada; dos copias en una PC, cada una con su `--seat-file=`. Lo pidió Albores.
+- **Lab:** `run/remember.sh` (un cliente matado, uno sin credencial rechazado, uno con su archivo de vuelta en su asiento, y el log de los asientos del host) y `run/local_online.sh` (el script local, sin Godot).
+- **Docs:** la forma de `version`, `kit` y `session` para el emisor (issuer/README.md).
+
+Qué actualizar: nada en tu proyecto; todo lo nuevo viene apagado. Si tu juego tenía su propio script para un emisor local, podés cambiarlo por `deploy/online_local.sh`. `MpKit.VERSION` pasa a 0.28.0, así que servidor y clientes tienen que ir con el mismo build.
+
 ## 0.27.0
 
 - **`MpSeatState`: lo que solo ve un asiento** (su mano de cartas, su munición, su objetivo secreto), al lado de lo público de `MpState`. El servidor escribe `set_value(slot, key, value)` y solo la máquina de ese asiento lo recibe (`changed`, `watch`), otra vez cuando carga tarde o vuelve. Es del asiento, no del jugador: el que lo toma después (un jugador tarde, un bot) lo encuentra ahí. Lo pidió El Eternauta (su `PrivateChannel`).

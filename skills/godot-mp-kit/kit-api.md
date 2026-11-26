@@ -97,6 +97,7 @@ Input de pawn y semántica del dict custom **fuera** del kit.
 - `report_loaded()` — el mundo local terminó de cargar (MpFlow la llama con `world_reports_loaded`): un cliente avisa al servidor (su asiento cuenta en la puerta), el servidor o solo le avisan a la puerta que su propio mundo entró
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — servidor: peers con slot y world_ready (mandales tus efectos `@rpc` de un instante con `rpc_id`; reproducilo también en el servidor)
 - `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
+- `remember_seats` (y `--remember-seats`, `--seat-file=`): el cliente guarda la credencial de su asiento de LAN en `SEATS_FILE` (`user://mpkit_seats.cfg`) y la presenta de nuevo aunque el juego se haya cerrado; una credencial de más de `SEAT_MEMORY_S` (1 h) no se presenta. `forget_seat_credentials()` la borra también del disco
 - `slot_of_sender(from_peer)`: el asiento que mandó un mensaje del túnel, igual en solo, host y cliente. Un `broadcast_custom` desde un handler de `custom_received` sale justo después (un eco del mismo canal y datos se descarta con aviso; una cadena se corta en `CUSTOM_CHAIN_MAX`, 256); un canal fuera de `custom_channels` avisa una vez
 
 Editor: [editor.md](editor.md).
