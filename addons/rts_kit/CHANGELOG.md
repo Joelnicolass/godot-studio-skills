@@ -1,5 +1,17 @@
 # RtsKit changelog
 
+## 0.4.0
+
+- **Touch in both cameras.** `RtsCamera3D` and `RtsCamera2D` read the fingers (`touch_enabled`, on by default): one finger drags the map (FREE) or looks around (3D FOLLOW); two fingers pinch to zoom (`pinch_zoom`: at 1 the ground stays under them, the distance follows their gap) and twist to turn (`twist_turn`, once past `twist_start_deg`, so a pinch does not turn the map; in 2D with `can_turn`). In FREE the map zooms and turns around the fingers. A tap stays a click: a finger is a drag only past `touch_drag_px` (12 px; a finger shakes more than a mouse), and a two-finger touch is never a click. A gesture whose first finger lands on the UI is the UI's, by the edges' rule (`edge_area`, `edges_over_gui`). A finger that lifts while a modal is open, or while the window is away, does not stay down.
+- **The mouse Godot emulates from a finger** never moves the view a second time, and is no longer the pointer of the edges (a finger lifted at an edge panned for ever).
+- **`takes_drag()`** in both cameras, and `RtsPointer.camera_takes_drag()`: true while a held button or finger moves the view (a finger, the orbit button, the look gesture, a select drag with `select_drag_pans`). `RtsSelectInput` draws no box then, and drops a box the camera takes over: a finger that moves the map no longer selects what it swept.
+- **`select_drag_pans`** (FREE, off by default) in both cameras: a drag of the select button moves the map once past `drag_px`, as on a strategy map. Leave it off in an RTS, where that drag draws the box.
+- **`focus(point, seconds)`** in both cameras glides the free view there, easing in and out; a pan by the player stops the glide. `focus(point)` stays instant.
+- **`RtsKeymap`** binds its defaults for every device (`RtsKeymap.ALL_DEVICES`, as Project Settings saves an action), so a tap (the emulated mouse, device -1) is a left click.
+- **Tests:** the fingers through Godot's own input (`Input.parse_input_event`, with the emulated mouse arriving first), with the camera, the pointer and the select input together: a tap selects, a finger that moves the map draws no box and changes no selection, a two-finger touch is no click, a finger on a HUD button is the button's, and a slow select drag that moves the map draws no box. And each camera: tap, drag, pinch and twist around the fingers, fingers lifted under a modal or when the window loses focus, the UI's gestures, the emulated mouse, `takes_drag`, the select drag and the glide.
+
+**Update:** on a touch screen the cameras now move with the fingers. Before, a finger reached the game only as the emulated mouse, and in an RTS a drag drew a box. Turn `touch_enabled` off to keep that, or if your game reads the fingers itself. Actions your project defines in Project Settings keep their bindings; the ones `RtsKeymap` adds now take a tap as well.
+
 ## 0.3.1
 
 - **Its own icons in the editor:** every node and resource of the kit has one, in the kit's colour: they show in the scene tree, in "Add Node" and in the FileSystem.

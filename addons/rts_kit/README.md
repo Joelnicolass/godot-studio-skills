@@ -205,7 +205,21 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 
 ## Cameras
 
-`RtsCamera3D` and `RtsCamera2D` share one contract: `yaw`, `is_dragging()` (a click that ends a drag is no order), `focus(point)`, `debug_pointer`. Mode FOLLOW keeps a body in view (3D: third person behind it, turning with the keys, the edges and free look, zooming with the wheel; the eye never goes below the ground, including live ground from `height_at`). Mode FREE is the top-down view: pan with the arrows, the screen edges and a middle drag, turn with Q / E (3D), zoom with the wheel, stay inside `bounds`. The edges stop while the pointer is over the UI (a HUD button or panel: any control whose mouse filter is not *Ignore*); `edges_over_gui` lets them work over it. `edge_area` keeps them to one control (the world view); `wheel_blockers` keeps the wheel off a minimap. `RtsCameraEffect` adds a shake on top.
+`RtsCamera3D` and `RtsCamera2D` share one contract: `yaw`, `is_dragging()` (a click that ends a drag is no order), `takes_drag()` (a held button or finger is moving the view: `RtsSelectInput` draws no box), `focus(point, seconds)` (at once, or gliding there), `debug_pointer`. Mode FOLLOW keeps a body in view (3D: third person behind it, turning with the keys, the edges and free look, zooming with the wheel; the eye never goes below the ground, including live ground from `height_at`). Mode FREE is the top-down view: pan with the arrows, the screen edges and a middle drag (and a drag of the select button with `select_drag_pans`, a strategy map), turn with Q / E (3D), zoom with the wheel, stay inside `bounds`. The edges stop while the pointer is over the UI (a HUD button or panel: any control whose mouse filter is not *Ignore*); `edges_over_gui` lets them work over it. `edge_area` keeps them to one control (the world view); `wheel_blockers` keeps the wheel off a minimap. `RtsCameraEffect` adds a shake on top.
+
+On a touch screen both cameras read the fingers (`touch_enabled`, on by default). One finger drags the map (FREE) or looks around (3D FOLLOW). Two fingers pinch to zoom and twist to turn (2D with `can_turn`), and in FREE the map zooms and turns around them. A tap stays a click: a finger is a drag only past `touch_drag_px`, and a two-finger touch is never a click. A gesture whose first finger lands on the HUD is the HUD's, by the same rule as the edges. The kit's keymap takes a tap as a left click (the mouse Godot emulates from the finger), so a tap selects.
+
+| You want | Write |
+|---|---|
+| Taps that stay clicks on a phone | `touch_drag_px` (12): raise it if taps become drags |
+| A softer or stronger pinch | `pinch_zoom` (1: the ground stays under the fingers; 0: no pinch) |
+| No twist | `twist_turn = 0` |
+| A pinch that never turns the map by accident | `twist_start_deg` (10) |
+| Fingers over the HUD that move the map too | `edges_over_gui = true` |
+| A box drawn with a finger | a HUD toggle that sets `touch_enabled = false`: the next finger reaches `RtsSelectInput` as the emulated mouse and draws it |
+| Your own gestures | `touch_enabled = false`: the camera ignores the fingers |
+| A strategy map (a left drag moves it) | `select_drag_pans = true` |
+| Glide to an event | `camera.focus(point, 0.6)` |
 
 ## Cues and pings
 
@@ -218,7 +232,7 @@ MpKit.custom_received.connect(func(channel: StringName, data: Dictionary, from_p
 godot --headless --path rtskit_lab --script res://addons/rts_kit/tests/rts_test_runner.gd
 ```
 
-`RTSKIT TESTS PASS (n)`. They cover the formations' slots, who obeys, the slot match (greedy and by rows), retarget and retreat, the plain data of an order, the queue, the selection (click, kind, box in 2D and 3D with occlusion, limit, groups), the input on real colliders (pointer, context, armed cycle, box from mouse events, the radial menu, the command panel, the keys, modals), both cameras, the rig as one node in 2D and 3D (sockets, warnings, menu, edges, a HUD on top), the unit the inspector shows, that the kit names no other kit, and the three examples played end to end. A test that stops on a script error, or never gets to check anything, fails. `rtskit_lab/` is a project of its own for them; `addons/rts_kit` there is a symlink.
+`RTSKIT TESTS PASS (n)`. They cover the formations' slots, who obeys, the slot match (greedy and by rows), retarget and retreat, the plain data of an order, the queue, the selection (click, kind, box in 2D and 3D with occlusion, limit, groups), the input on real colliders (pointer, context, armed cycle, box from mouse events, the radial menu, the command panel, the keys, modals), both cameras (with their fingers), the fingers through Godot's own input (a tap selects, a finger that moves the map draws no box, two fingers are no click, a finger on the HUD is the HUD's), the rig as one node in 2D and 3D (sockets, warnings, menu, edges, a HUD on top), the unit the inspector shows, that the kit names no other kit, and the three examples played end to end. A test that stops on a script error, or never gets to check anything, fails. `rtskit_lab/` is a project of its own for them; `addons/rts_kit` there is a symlink.
 
 ## Tips and recommendations
 

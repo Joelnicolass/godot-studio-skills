@@ -7,7 +7,7 @@ Reusable pieces of the framework. Copy them to `res://addons/<name>/` in **each*
 | `mp_kit` | Multiplayer with nodes and no hand-written RPCs: the game in one `.tres` (`MpGame`), the world in one node (`MpWorld`), `MpActor` / `MpInput` / `MpState`, prediction and lag compensation; solo, LAN, dedicated, online rooms with one dedicated per match, private match, web and relay; the *Setup game* wizard. No gameplay |
 | `fsm_kit` | `FsmMachine` + `FsmState` (no autoload) |
 | `plat_kit` | 2D motor: coyote, jump buffer, apex, corner, lift (no levels) |
-| `rts_kit` | RTS command layer, 2D and 3D: units, selection and groups, orders in formations, command input (optional command panel / radial menu), RTS cameras. No network, no movement or combat |
+| `rts_kit` | RTS command layer, 2D and 3D: units, selection and groups, orders in formations, command input (optional command panel / radial menu), RTS cameras with touch. No network, no movement or combat |
 | `prop_kit` | Props, 2D and 3D: scatter over any ground (clusters, keep-outs, masks, variants), batch drawing (3D), the navmesh in zones with props as cheap obstructions and partial re-bakes on worker threads. No network, no prop behavior |
 | `grass_kit` | Grass, 3D: blades drawn on the GPU around the camera in cells that move with it, painted by hand with brushes in the 3D view, a ground read from the colliders (heights, normals, slope), clearings, trampling, a look that changes in play. No network, no game rules |
 | `perception_kit` | Perception, 2D and 3D: a view cone with a farther lose radius, near awareness, walls that hide, noises, any sense of the game's own, a memory that forgets, sides as physics layers, handles to drag the view in the editor. No network, no states or combat |

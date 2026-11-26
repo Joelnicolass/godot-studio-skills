@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## | Action | Default |
 ## |---|---|
-## | rts_select / rts_order | left / right mouse button |
+## | rts_select / rts_order | left / right mouse button (a tap is a left click) |
 ## | rts_order_menu | Tab (hold: the radial menu at the pointer) |
 ## | rts_order_attack / rts_order_guard / rts_order_move | A / G / M (arm the icon) |
 ## | rts_order_retreat | R |
@@ -23,6 +23,9 @@ extends RefCounted
 ## | rts_camera_orbit_modifier | Alt (Alt + left drag = middle drag) |
 
 const GROUP_KEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
+## The device of every default binding: all of them, as Project Settings > Input Map saves an action,
+## so a tap (the mouse Godot emulates from a finger, device -1) is a click too.
+const ALL_DEVICES := -1
 
 
 ## Adds the kit's actions the project lacks. `command_on_macos`: the group-set keys use Cmd on macOS
@@ -78,10 +81,12 @@ static func bindings(command_on_macos := true) -> Dictionary:
 static func _key(code: Key) -> InputEventKey:
 	var event := InputEventKey.new()
 	event.physical_keycode = code
+	event.device = ALL_DEVICES
 	return event
 
 
 static func _mouse(button: MouseButton) -> InputEventMouseButton:
 	var event := InputEventMouseButton.new()
 	event.button_index = button
+	event.device = ALL_DEVICES
 	return event

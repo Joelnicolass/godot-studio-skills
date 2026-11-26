@@ -323,6 +323,9 @@ In 2D the world is measured in pixels, and the kit's distances are written in th
 - Both: switch `mode` at runtime (the examples do it with F).
 - 2D: `RtsCamera2D` with `bounds`, `min_zoom`, `max_zoom`; `can_turn` to let Q / E turn the view.
 - A shake: a script that extends `RtsCameraEffect` as `effect`.
+- Touch: nothing to do. One finger drags the map, two pinch and twist, a tap selects. Tune `touch_drag_px`, `pinch_zoom` and `twist_turn`; set `touch_enabled = false` if your game reads the fingers itself.
+- A strategy map, where a drag of the left button moves it: `select_drag_pans = true`.
+- Glide to a point (an alert, a unit): `camera.focus(point, seconds)`.
 
 ### 5.8 Keys
 
