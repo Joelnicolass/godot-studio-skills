@@ -185,6 +185,7 @@ Cada kit es un addon que se copia al juego con `./install.sh --addon <proyecto> 
 | Estadísticas con bonus (equipo, buffs, tecnologías) | StatKit | `/add-stats` | `addons/stat_kit/examples/minimal/` |
 | Mazo, mano y descarte (robar, mezclar con semilla, rellenar) | DeckKit | `/add-deck` | `addons/deck_kit/examples/minimal/` |
 | Dados (tirar, sumar, contar símbolos, semilla) | DiceKit | `/add-dice` | `addons/dice_kit/examples/minimal/` |
+| Gestos táctiles (swipe, doble toque, mantener, pellizcar, girar) | GestureKit | `/add-gestures` | `addons/gesture_kit/examples/minimal/` |
 
 El ejemplo mínimo es la integración más chica que anda; el README de cada kit explica su código y suma tips y recomendaciones. Lo que el kit no hace (las reglas, el puntaje, el movimiento de una unidad de RTS) queda en el juego.
 

@@ -16,6 +16,7 @@ dice_kit	DieData	resource	Resource	Resource	addons/dice_kit/resources/die_data.g
 dice_kit	DieFace	resource	Resource	Resource	addons/dice_kit/resources/die_face.gd
 fsm_kit	FsmMachine	node	Node	Node	addons/fsm_kit/fsm_machine.gd
 fsm_kit	FsmState	node	Node	Node	addons/fsm_kit/fsm_state.gd
+gesture_kit	GestureArea	node	Control	Control	addons/gesture_kit/nodes/gesture_area.gd
 grass_kit	GrassClear3D	node	Node3D	Node3D	addons/grass_kit/field/grass_clear_3d.gd
 grass_kit	GrassClearing	resource	Resource	Resource	addons/grass_kit/core/grass_clearing.gd
 grass_kit	GrassField3D	node	Node3D	Node3D	addons/grass_kit/field/grass_field_3d.gd

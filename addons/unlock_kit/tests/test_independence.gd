@@ -14,6 +14,7 @@ const OTHER_KITS: Array[String] = [
 	"perception_kit",
 	"spill_kit",
 	"agent_kit",
+	"gesture_kit",
 	"command_kit",
 	"turn_kit",
 	"grid_kit",
@@ -59,6 +60,8 @@ const OTHER_KITS: Array[String] = [
 	"DiceTray3D",
 	"CellFog",
 	"GridFog",
+	"GestureReader",
+	"GestureArea"
 ]
 
 
