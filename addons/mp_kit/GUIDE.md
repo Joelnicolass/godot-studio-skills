@@ -798,7 +798,7 @@ An `MpMatch` in the world says when the match starts, who left and who came back
 - **A seat nobody holds can be played by a bot of yours** (below, "Bots in the free seats"): that slot's pawn on the server, with the keys of `MpInput.bot_press`. When a player takes the seat (late join, or the one coming back), the pawn stays as it is and its keys move it.
 - **A dedicated by hand serves one match after another** (a VPS started with `--dedicated`): when its match ends (`Mp.finish()`) and the last player leaves, or everyone stayed away past the grace (`all_gone`), it loads a fresh world (score and actors from zero) and opens every seat again. A game with a rematch screen can call `MpFlow.next_open_match()` itself once its players left. **If your game ends the match its own way** (not with `Mp.finish()`), tell the kit on the server with `MpKit.broadcast_session_ended(result)`, or call `MpFlow.next_open_match()` when it is over and empty; otherwise the next match only opens once everyone's grace passed, and whoever arrives before is turned away (`match_started`). Clients get the gate's state when they are admitted and, with the pause, pause as soon as their world loads, so their `MatchClock` starts at 0.
 
-The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`, `seat_closed_status`) and **Match end** group (`stay_after_finish_s`: "An end screen that waits for the player", below). Everything new comes off: untouched, the match starts as it always did. A match on the host's PC (private or online, `MpLocalServer`) takes `start_on_timeout`, `late_join`, `host_can_start` and `pause_while_waiting` from the game's `MpFlow`; the grace and the load time, from its `MpLobbyConfig` (60 s each). A room server's match takes everything from its `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. The host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button (on the client of slot 1 of a match on its PC, with `host_can_start`, `start_now()` asks the server to start).
+The knobs are in the `MpFlow` inspector, **Match start** group (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`, `seat_closed_status`) and **Match end** group (`stay_after_finish_s`: "An end screen that waits for the player", below; `match_max_s`). Everything new comes off: untouched, the match starts as it always did. A match on the host's PC (private or online, `MpLocalServer`) takes `start_on_timeout`, `late_join`, `host_can_start`, `pause_while_waiting`, `rejoin_grace_s`, `stay_after_finish_s` and `match_max_s` (2 h; 0 = no limit, for a room that stays open for hours) from the game's `MpFlow`; it waits at least 60 s for the seats to load, longer if `load_timeout_s` is longer. A room server's match takes everything from its `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). In the editor's Remote tree, `/root/MpKit/Gate` shows `phase`, `expected`, `loaded` and `away`. The host can start with those already loaded: `MpStartButton`, or `Mp.gate().can_start_now()` / `Mp.gate().start_now()` from your own button (on the client of slot 1 of a match on its PC, with `host_can_start`, `start_now()` asks the server to start).
 
 #### A lobby you walk
 
@@ -1162,7 +1162,8 @@ func _on_applied(_seq: int, slot: int, _move: StringName, args: Array) -> void:
 	rules.place(slot, args[0])
 ```
 
-- **A peer that loads late, comes back or drifted apart** gets `began(start)` and every move again. Meanwhile `is_replaying()` is true: skip sounds and animations.
+- **A peer that loads late, comes back or drifted apart** gets `began(start)` and every move again. Meanwhile `is_replaying()` is true: skip sounds and animations. When it has them all it gets **`caught_up(seq)`** (`seq` is `last_seq()`, 0 with no move yet) and `is_replaying()` is false again: a good moment to show the board or let a bot of that machine move. A client gets it every time it loads; the server and solo never wait for one.
+- **Every `submit` ends in `applied` or `rejected`.** Besides your judge's reasons, `rejected` brings the ones of the tunnel, for a move that never reached the judge: `MpKit.CUSTOM_RATE_LIMITED`, `CUSTOM_TOO_BIG`, `CUSTOM_NO_SEAT` ([7.11](#711-the-tunnel-the-matchs-messages-with-no-node)). A bot on a client can send its moves as fast as it wants: the kit spaces them out.
 - **Solo and on the host** `submit` runs at once, with the same signals. A bot or a timer that ends a turn moves from the server with `submit_as(slot, name, args)`.
 - **`state_hash`**: the server sends its hash with each move and every peer compares its own. If it differs, it emits `desynced(seq)`, and `resync()` asks for every move again.
 - **`moves()`** are every move since `begin`, to save the match or replay it.
@@ -1196,10 +1197,12 @@ For what belongs to no actor (a move, a chat line, an emote):
 | `MpKit.slot_of_sender(from_peer)` | The seat that sent it, the same with and without network. Never trust a seat inside `data` |
 | `MpKit.broadcast_custom(channel, data, only_ready)` | From the server to everyone (and here). With `true`, only to those that loaded |
 | `MpKit.push_custom_to(peer_id, channel, data)` | From the server to one peer |
+| `MpKit.custom_refused(channel, data, reason)` | On the client that sent it: a message that never reached `custom_received`, and why |
 
 - **From a `custom_received` handler**, a `broadcast_custom` goes out right after the message being handled, in order. The same channel with the same data from its own emit is an echo: it is dropped with a warning (relay only what a client sent: `from_peer != 1`).
 - **`custom_channels`** (in `game.tres`): empty allows all. A channel not on the list is not sent, and warns once.
-- **Caps:** a client sends up to 8 KB per message and 30 per second (a burst of 60); past that the server drops it. The relay cuts messages over 256 KB: split what is big (`MpOrders` already sends the history in parts).
+- **Caps:** a client sends up to 8 KB per message (`custom_max_bytes`) and 30 per second, 60 at once (`custom_limit`). Past that pace its messages **wait on the client** and leave in order as soon as they may: none is lost. The relay cuts messages over 256 KB: split what is big (`MpOrders` already sends the history in parts).
+- **What is not sent says so:** `custom_refused(channel, data, reason)` on the client that sent it, on the next frame, with a warning the first time. `reason` is `MpKit.CUSTOM_TOO_BIG` (over `custom_max_bytes`), `CUSTOM_NO_SEAT` (before `slot_assigned`) or `CUSTOM_RATE_LIMITED` (more than 256 waiting, or a server that got them bunched up anyway). `data` is what you sent (`{}` when the server refused it for its size). `MpOrders` turns it into `rejected`. If you change `custom_limit` or `custom_max_bytes`, change them on every machine.
 - **On the server, `to_server` and the tunnel run at once**, inside the same call: an answer the server sends itself arrives before the function that asked for it ends.
 
 ### 7.12 What only one seat sees: `MpSeatState`
@@ -1413,7 +1416,7 @@ Create it as a new resource (**New › Resource › MpLobbyConfig**).
 | `rejoin_grace_s` | How long a player who dropped from the match may take to come back | 60.0 |
 | `load_timeout_s` | How long the match waits for everyone to load the world | 60.0 |
 | `idle_no_players_s` | The match closes if it stays empty this long | 60.0 |
-| `match_max_s` | The longest a match may run (2 hours) | 7200.0 |
+| `match_max_s` | The longest a match may run (2 hours; 0 = no limit) | 7200.0 |
 
 Any field is overridden with a flag of its name, with dashes: `max_matches` → `--max-matches=8`, `lobby_port` → `--lobby-port=7701`. A whole other `.tres`: `--lobby-config=res://other.tres`.
 
@@ -2261,6 +2264,12 @@ It is Godot 4.7's, not the kit's or your game's: loading on a thread a script th
 
 **A client is turned away right away with `timeout`, only against a remote server or relay.**
 The server's log says `MpKit: the server turned peer N away (timeout)`: its ticket did not arrive in `admission_timeout_s`. The kit's network timeouts count real time, so a far server is fine. If the server runs your own timers for network things, use `MpKit.after_real(seconds, callable)`, not `create_timer`: with `--fixed-fps` (it stops syncing to the clock and can run thousands of frames a second) or `Engine.time_scale`, game time is not real time.
+
+**A move or a message from a client never arrives, and nothing says why.**
+Since MpKit 0.29 nothing on the tunnel is lost without a word: listen to `MpKit.custom_refused` (or `MpOrders.rejected`) on that client. The usual one is `no_seat`: it sent before `slot_assigned`. A channel missing from the `game.tres`'s `custom_channels` warns once on the sender.
+
+**The server's log says `Unable to send packet on channel 0, max channels: 0`.**
+Something was sent to a connection ENet is already closing. Since 0.29 MpKit does not do it: neither when it cuts a peer (turned away, a seat taken back by its player) nor when two clients leave in the same tick (the server runs with `server_relay` off: clients only talk to it). If your game disconnects peers itself, do it with `MpKit.reject_peer(peer_id, reason)`, not with the `MultiplayerPeer`'s `disconnect_peer`.
 
 **A second client does not get in: "The match already started" (`match_started`).**
 The gate already started the match: after the start only a seat that left comes back. For several to get in, have them load before the start (`start_seats` = 0 waits for every seat, `--start-seats=N`), or turn on `late_join` (`--late-join`) for a game people drop in and out of. On a dedicated by hand, the next match opens by itself once this one ends and everyone left.

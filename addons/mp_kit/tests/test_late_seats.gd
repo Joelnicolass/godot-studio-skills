@@ -53,6 +53,31 @@ func test_the_flow_says_how_long_a_finished_match_stays() -> void:
 	flow.free()
 
 
+func test_a_room_on_this_pc_keeps_seats_and_runs_as_long_as_the_flow_says() -> void:
+	var flow := MpFlow.new()
+	var config := MpLobbyConfig.new()
+	flow.fill_match_start(config)
+	check(
+		config.rejoin_grace_s == 60.0 and config.load_timeout_s == 60.0 and config.match_max_s == 7200.0,
+		"by default as before: a 60 s grace, 60 s to load, 2 h at most"
+	)
+	flow.rejoin_grace_s = 21600.0
+	flow.load_timeout_s = 120.0
+	flow.match_max_s = 0.0
+	flow.fill_match_start(config)
+	var grace := config.rejoin_grace_s
+	check(grace == 21600.0, "MpFlow's rejoin_grace_s goes to the match's config (%s)" % grace)
+	check(config.load_timeout_s == 120.0, "a longer load_timeout_s too (%s)" % config.load_timeout_s)
+	check(config.match_max_s == 0.0, "match_max_s 0: no limit")
+	var fresh := MpLobbyConfig.new()
+	flow.load_timeout_s = 15.0
+	flow.fill_match_start(fresh)
+	check(fresh.load_timeout_s == 60.0, "a shorter one does not cut the 60 s a room needs (%s)" % fresh.load_timeout_s)
+	for field in ["rejoin_grace_s", "load_timeout_s"]:
+		check(config.agent_fields.has(field), "%s travels to the match process as a flag" % field)
+	flow.free()
+
+
 func _bot_input() -> MpInput:
 	var parent := Node2D.new()
 	var actor := MpActor.new()

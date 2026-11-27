@@ -93,10 +93,12 @@ enum StartWhen {
 @export var host_silent_timeout_s: float = 30.0
 
 @export_group("Match start")
-## Seconds a seat that dropped keeps its place (`--rejoin-grace-s=`). A room's match takes its MpLobbyConfig instead.
+## Seconds a seat that dropped keeps its place (`--rejoin-grace-s=`), also in a match on this PC (private or
+## online). A room server's match takes its MpLobbyConfig instead.
 @export var rejoin_grace_s: float = 60.0
 ## Seconds after the first player sat that the match waits for the rest to load (`--load-timeout-s=`); then it starts with
-## whoever loaded. The HUD says it waits (MpWaitingLabel). A room's match takes its MpLobbyConfig instead.
+## whoever loaded. The HUD says it waits (MpWaitingLabel). A match on this PC waits at least 60 s (its players
+## arrive with a code), longer when this is longer. A room server's match takes its MpLobbyConfig instead.
 @export var load_timeout_s: float = 15.0
 ## Off: the match never starts by time, only once every seat loaded or its host starts it (MpStartButton: a listen host, or,
 ## with host_can_start, the player who opened a match on its PC). `--start-on-timeout=false`. A room server's match: its
@@ -138,6 +140,9 @@ enum StartWhen {
 ## default): it closes MpLobbyConfig.result_quit_delay_s (3 s) after MpMatch.finish, and whoever is still in goes back to the
 ## lobby or the menu. `--stay-after-finish-s=`. A room server's match: its MpLobbyConfig.
 @export var stay_after_finish_s: float = 0.0
+## The longest a match on this PC (private or online) runs: past it its process is stopped (`match_max`). 0: no
+## limit, for a room that stays open for hours. `--match-max-s=`. A room server's match: its MpLobbyConfig.
+@export var match_max_s: float = 7200.0
 @export_group("")
 
 const PORT_MIN := 1
@@ -660,15 +665,26 @@ func effective_host_can_start() -> bool:
 	return host_can_start or raw in ["true", "1", "on", "yes"] or MpBoot.user_flag("host-can-start")
 
 
-## A match on this PC (MpLocalServer, private or online) starts, takes late players, may be started by its host (slot 1),
-## pauses while it waits and stays after the result as this flow says. `config` is an MpLobbyConfig, untyped on purpose: this
-## flow must not load the lobby scripts.
+## A match on this PC (MpLocalServer, private or online) starts, takes late players, may be started by its host
+## (slot 1), pauses while it waits, keeps a dropped seat, stays after the result and runs as long as this flow says.
+## `config` is an MpLobbyConfig, untyped on purpose: this flow must not load the lobby scripts.
 func fill_match_start(config: Resource) -> void:
 	config.set("start_on_timeout", effective_start_on_timeout())
 	config.set("late_join", effective_late_join())
 	config.set("pause_while_waiting", effective_pause_while_waiting())
 	config.set("starter_slot", 1 if effective_host_can_start() else 0)
 	config.set("stay_after_finish_s", effective_stay_after_finish_s())
+	config.set("rejoin_grace_s", _float_flag("rejoin-grace-s", rejoin_grace_s))
+	## Never shorter than the config's own (60 s): this flow's 15 s is for a LAN, where nobody types a code.
+	var load_s := _float_flag("load-timeout-s", load_timeout_s)
+	config.set("load_timeout_s", maxf(float(config.get("load_timeout_s")), load_s))
+	config.set("match_max_s", maxf(_float_flag("match-max-s", match_max_s), 0.0))
+
+
+## `--<flag>=N` when it is a number, else `value`.
+func _float_flag(flag: String, value: float) -> float:
+	var raw := MpBoot.user_value(flag, "")
+	return raw.to_float() if raw.is_valid_float() else value
 
 
 ## A dedicated by hand (no ticket): it serves one match after another, so there is a next one when a match ends.

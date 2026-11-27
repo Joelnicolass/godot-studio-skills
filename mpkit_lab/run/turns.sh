@@ -2,7 +2,9 @@
 # MpKit's turn-based example (addons/mp_kit/examples/turns_2d: three in a row, no pawns, MpOrders) over the network: a
 # listen host and a client play a game to the end. Each sends one move that is never legal and gets the refusal alone;
 # the client leaves after its second move and joins again, gets every move back and plays on. Both end with the same
-# board, hash and number of moves. Two Godot processes.
+# board, hash and number of moves. The client also sends 80 moves at once (more than the tunnel's 30 a second): every one
+# reaches the judge and comes back refused, none is lost; back after the rejoin it gets caught_up once.
+# Two Godot processes.
 # Prints PASS / FAIL lines and MPKIT TURNS PASS / FAIL (exit 0 / 1).
 . "$(dirname "$0")/lib.sh"
 net_group 2 "$@"
@@ -17,7 +19,7 @@ net_guard
 gd "$OUT/host.log" "$BOOT" -- --listen-host --mp-port="$PORT" --probe=turns_player --probe-linger-s=6
 HOST=$LAST_PID
 sleep 0.5
-gd "$OUT/client.log" "$BOOT" -- --client1 --mp-port="$PORT" --probe=turns_player --probe-rejoin --probe-linger-s=2
+gd "$OUT/client.log" "$BOOT" -- --client1 --mp-port="$PORT" --probe=turns_player --probe-rejoin --probe-burst=80 --probe-linger-s=2
 CLIENT=$LAST_PID
 wait_line "$OUT/client.log" "^PROBE turns_player (PASS|FAIL)" "$CLIENT" 90
 wait_line "$OUT/host.log" "^PROBE turns_player (PASS|FAIL)" "$HOST" 20

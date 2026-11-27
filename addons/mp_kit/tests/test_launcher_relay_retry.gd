@@ -1,7 +1,8 @@
 extends "res://addons/mp_kit/tests/mp_test.gd"
 
 ## MpMatchLauncher through the relay: a match whose port the relay refused (another live host) is launched again on
-## another port, and only the match that listens is reported. No process is started (a fake runner).
+## another port, and only the match that listens is reported; a match is stopped past match_max_s, never with 0. No
+## process is started (a fake runner).
 
 
 class FakeRunner extends MpProcessRunner:
@@ -68,3 +69,31 @@ func test_refused_port_moves_on() -> void:
 	launcher.abort("m1", "done")
 	launcher.queue_free()
 	MpMatchFiles.remove_dir(root)
+
+
+## A match that has run for three hours, listening and beating: stopped with match_max_s at 2 h, never with 0.
+func test_a_long_match_runs_past_two_hours_with_no_limit() -> void:
+	for max_s: float in [7200.0, 0.0]:
+		var config := MpLobbyConfig.new()
+		config.matches_root = "user://mpkit_test_max"
+		config.match_max_s = max_s
+		var launcher := MpMatchLauncher.new()
+		launcher.config = config
+		launcher.reap_on_ready = false
+		launcher.runner = FakeRunner.new()
+		tree.root.add_child(launcher)
+		var failed: Array = []
+		launcher.match_failed.connect(func(_id: String, reason: String) -> void: failed.append(reason))
+		launcher.launch("m1", {"seats": [{"slot": 1, "token": "abc"}]})
+		var state := {"listening": true, "heartbeat_ms": MpMatchFiles.now_ms()}
+		MpMatchFiles.write_json(MpMatchFiles.path_of(config.matches_root, "m1", MpMatchFiles.STATE), state)
+		launcher._matches["m1"]["started_ms"] = MpMatchFiles.now_ms() - 3 * 3600 * 1000
+		launcher.poll()
+		if max_s > 0.0:
+			check(failed == ["match_max"], "match_max_s 7200: stopped after three hours (%s)" % [failed])
+		else:
+			check(failed.is_empty() and launcher.is_listening("m1"), "match_max_s 0: still up after three hours (%s)" % [failed])
+			launcher.abort("m1", "done")
+		launcher.queue_free()
+		MpMatchFiles.remove_dir(config.matches_root)
+

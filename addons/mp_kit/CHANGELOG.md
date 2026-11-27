@@ -2,6 +2,19 @@
 
 Versions before 0.19.0 are in the kit repo's git history (the "MpKit 0.x.y: …" commits).
 
+## 0.29.0
+
+- **A client that sends too fast loses nothing:** past `custom_limit` (30 a second, 60 at once), `send_custom` keeps its messages on the client and sends them in order as soon as it may. Before, the server dropped them without a word, and with `MpOrders` a dropped move left the client waiting for ever (neither `applied` nor `rejected`). Albores found it with bots on clients.
+- **`MpKit.custom_refused(channel, data, reason)`:** on the client that sent it, a message that never reached `custom_received`: `CUSTOM_TOO_BIG` (over `custom_max_bytes`), `CUSTOM_NO_SEAT` (sent before `slot_assigned`) or `CUSTOM_RATE_LIMITED` (more than 256 waiting, or the server got them bunched up anyway). The server tells the client a few a second at most. `MpOrders` turns it into `rejected(name, args, reason)`: every `submit` ends in `applied` or `rejected`.
+- **`MpOrders.caught_up(seq)`:** a client has every move the server had for it (after loading, coming back or `resync()`) and `is_replaying()` is false again. Albores asked for it.
+- **No more `Unable to send packet on channel 0, max channels: 0` on the server:** when MpKit cut a peer (turned away, its seat taken back by its player) the server kept sending to it while ENet closed the connection. It now cuts through `SceneMultiplayer`, which stops at once; `peer_disconnected` and `peer_left` still come, now. The room server too.
+- **Nor when two clients leave in the same tick** (everyone quits when a match ends): the server told the second one that the first had left while ENet was closing it. MpKit's server and the lobby now run with `server_relay` off: a client only talks to the server, as through the relay already. A client can no longer send an RPC to another client through the server (no MpKit pattern did).
+- **Long rooms on a player's PC** (private or online): the match takes `rejoin_grace_s` from the game's `MpFlow` (it was always 60 s), waits for the seats as long as `load_timeout_s` says when that is longer than 60 s, and runs as long as the new `MpFlow.match_max_s` says (2 h by default, as before; 0 = no limit; `--match-max-s=`). Before, a 6 h room closed at 2 h. `MpLobbyConfig.match_max_s` = 0 is no limit too. Albores asked for it.
+- **`--seat-log` on a dedicated that runs one match after another** printed each line once per match that came before: its handlers now go with their `MpMatch`.
+- **Lab:** `tests/test_custom_pacing.gd` (a real server and clients in one process: 150 messages at once all arrive in order, what the server refuses comes back, a cut peer gets nothing more, two clients that leave at once get nothing sent to them); `run/turns.sh` sends 80 moves at once from the client (all reach the judge) and checks `caught_up` after coming back.
+
+What to update: nothing in your project. If you spaced out your client's messages by hand, you can drop it; if you waited for the end of the history with `call_deferred`, `caught_up` says it. A game that kicks peers itself should use `MpKit.reject_peer`. If a client of yours sent `rpc()` to the other clients, send it to the server and have the server hand it out (`to_all`, `broadcast_custom`). `MpKit.VERSION` moves to 0.29.0, so server and clients must run the same build.
+
 ## 0.28.0
 
 - **Trying online on your PC:** `bash addons/mp_kit/deploy/online_local.sh <game_id> [max_players]` brings up a local issuer and relay for your game (fresh keys and secret on every run, nothing written to the project) and prints how to open each copy. It replaces the scripts El Eternauta and the insults site had of their own.
