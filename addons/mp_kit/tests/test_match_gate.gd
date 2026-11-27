@@ -614,3 +614,18 @@ func test_the_next_match_opens_every_seat_again() -> void:
 	gate.arm([2])
 	check(gate.admit(11, "").slot == 2 and gate.closed_slots().is_empty(), "reset and arm: the next match has every seat")
 	_done(gate)
+
+
+func test_the_seat_log_goes_with_its_match() -> void:
+	var gate := MpMatchGate.new()
+	var before := gate.seat_admitted.get_connections().size()
+	var match_node := MpMatch.new()
+	match_node._log_seats(gate)
+	check(gate.seat_admitted.get_connections().size() == before + 1, "--seat-log listens to the gate")
+	match_node.free()
+	check(
+		gate.seat_admitted.get_connections().size() == before,
+		"a match that is gone stops logging: the next one does not print every line twice"
+	)
+	gate.free()
+

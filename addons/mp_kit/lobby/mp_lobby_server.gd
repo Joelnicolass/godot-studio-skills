@@ -186,7 +186,7 @@ func _reject(peer_id: int, code: String) -> void:
 	var closing := _peer
 	MpKit.after_real(config.reject_flush_s, func() -> void:
 		if closing != null and _peer == closing and multiplayer.get_peers().has(peer_id):
-			closing.disconnect_peer(peer_id))
+			MpTransport.cut_peer(multiplayer, closing, peer_id))
 
 
 func _to_client(peer_id: int, method: StringName, args: Array) -> void:
@@ -224,7 +224,7 @@ func rpc_hello(proto: int, display_name: String, resume_token: String) -> void:
 		if old != 0 and old != peer_id:
 			_peer_session.erase(old)
 			_session_peer.erase(sid)
-			_peer.disconnect_peer(old)
+			MpTransport.cut_peer(multiplayer, _peer, old)
 	else:
 		sid = Crypto.new().generate_random_bytes(16).hex_encode()
 		var token := Crypto.new().generate_random_bytes(16).hex_encode()

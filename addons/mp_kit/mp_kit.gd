@@ -9,7 +9,7 @@ extends Node
 
 ## The kit's version (plugin.cfg says the same; a test checks it). An exported game has no plugin.cfg: this is what the
 ## MpKit issuer is told.
-const VERSION := "0.28.0"
+const VERSION := "0.29.0"
 
 signal peer_joined(peer_id: int, slot: int)
 signal peer_left(peer_id: int, slot: int)
@@ -34,6 +34,11 @@ signal host_silent(seconds: float)
 signal host_back
 ## Opaque Dictionary pipe. Kit does not interpret `data`. from_peer is 1 when the server pushed.
 signal custom_received(channel: StringName, data: Dictionary, from_peer: int)
+## Only on the client that sent it: a send_custom that never reached the server's custom_received, and why:
+## CUSTOM_RATE_LIMITED (more than custom_limit allows), CUSTOM_TOO_BIG (over custom_max_bytes) or CUSTOM_NO_SEAT (this
+## client has no seat yet, or no longer). `data` is what was sent ({} when the server refused it for its size). A message
+## on the tunnel is never lost without it (only a channel missing from custom_channels, with a warning on the sender).
+signal custom_refused(channel: StringName, data: Dictionary, reason: String)
 
 var port: int = 7777
 var max_players: int = 2
@@ -61,9 +66,16 @@ const SEAT_MEMORY_S := 3600
 ## Broadcasts that custom_received handlers may chain from one broadcast_custom (each asked for while the last was
 ## emitting); past it the rest are dropped with an error: a handler that always broadcasts again would never end.
 const CUSTOM_CHAIN_MAX := 256
-## Largest Dictionary a client may send through the custom tunnel (var_to_bytes), and how often.
+## Largest Dictionary a client may send through the custom tunnel (var_to_bytes), and how often. The same on every
+## machine: a client paces its own messages with custom_limit and refuses one over custom_max_bytes before sending it.
 var custom_max_bytes: int = 8192
 var custom_limit := MpRateLimit.new(30.0, 60.0)
+## Why custom_refused: more than custom_limit, over custom_max_bytes, no seat to send from.
+const CUSTOM_RATE_LIMITED := "rate_limited"
+const CUSTOM_TOO_BIG := "too_big"
+const CUSTOM_NO_SEAT := "no_seat"
+## Client: messages that may wait for their turn under custom_limit; past it a new one is refused (rate_limited).
+const CUSTOM_OUTBOX_MAX := 256
 var rooms: MpRoomDirectory
 var matchmaker: MpMatchmaker
 ## The door of the match (armed by MpFlow / MpMatchAgent). Armed = every peer presents itself and the gate seats it.
@@ -94,6 +106,12 @@ var _custom_now_channel := StringName()
 var _custom_now_payload: Dictionary = {}
 ## Channels already warned about (not allowed, an echo), so a warning shows once.
 var _custom_warned: Dictionary = {}
+## Client: messages waiting for their turn under custom_limit, oldest first: [channel, payload].
+var _custom_outbox: Array = []
+## Client: its own count of what it sent, with half the server's burst (the network can bunch messages up on the way).
+var _custom_pace: MpRateLimit
+## Server: how often it tells one client that a message was refused (a client flooding it hears a few, not one each).
+var _custom_refusals := MpRateLimit.new(5.0, 10.0)
 var _pending_ticket: String = ""
 var _awaiting_ticket: Dictionary = {}
 ## Client: "host:port" of the server it joins, and the seat credential each server gave (memory only; kept across leave()).
@@ -139,6 +157,7 @@ func after_real(seconds: float, callable: Callable) -> void:
 func _process(_delta: float) -> void:
 	var now := Time.get_ticks_msec()
 	_beat(now)
+	_flush_custom_outbox(now)
 	if _real_due.is_empty():
 		return
 	var due: Array = []
@@ -288,6 +307,10 @@ func host(dedicated: bool = false) -> Error:
 		ids.dedicated = false
 		return int(made["error"]) as Error
 	_peer = peer
+	## Clients only talk to the server: it relays nothing between them, nor tells each who came and went. That notice
+	## went to a client ENet was already closing when two left in the same tick ("max channels: 0"), as at a match's end.
+	if multiplayer is SceneMultiplayer:
+		(multiplayer as SceneMultiplayer).server_relay = false
 	multiplayer.multiplayer_peer = peer
 	if dedicated:
 		ids.reset_dedicated()
@@ -376,6 +399,8 @@ func leave() -> void:
 	_world_ready.clear()
 	_awaiting_ticket.clear()
 	_pending_ticket = ""
+	_custom_outbox.clear()
+	_custom_pace = null
 	if gate:
 		gate.reset()
 	ids.reset_offline()
@@ -459,6 +484,9 @@ func is_custom_channel_allowed(channel: StringName) -> bool:
 
 
 ## Client → server (or local if offline / already server). Does not auto-broadcast.
+## A client sends at custom_limit's pace: past it, its messages wait here and leave in order as soon as they may (none
+## is lost). Over custom_max_bytes, before this client has a seat or with CUSTOM_OUTBOX_MAX already waiting, it is not
+## sent: custom_refused, here, on the next frame.
 func send_custom(channel: StringName, data: Dictionary) -> void:
 	if not _custom_channel_ok(channel):
 		return
@@ -469,7 +497,51 @@ func send_custom(channel: StringName, data: Dictionary) -> void:
 			peer_id = multiplayer.get_unique_id()
 		custom_received.emit(channel, payload, peer_id)
 		return
-	rpc_custom_to_server.rpc_id(1, String(channel), payload)
+	if ids.local_slot == 0:
+		_refuse_custom(channel, payload, CUSTOM_NO_SEAT)
+	elif var_to_bytes(payload).size() > custom_max_bytes:
+		_refuse_custom(channel, payload, CUSTOM_TOO_BIG)
+	elif _custom_outbox.size() >= CUSTOM_OUTBOX_MAX:
+		_refuse_custom(channel, payload, CUSTOM_RATE_LIMITED)
+	else:
+		_custom_outbox.append([channel, payload])
+		_flush_custom_outbox(Time.get_ticks_msec())
+
+
+## Client: sends the waiting messages custom_limit allows now, oldest first.
+func _flush_custom_outbox(now: int) -> void:
+	if _custom_outbox.is_empty():
+		return
+	if not is_networked() or is_server():
+		_custom_outbox.clear()
+		return
+	if _custom_pace == null:
+		_custom_pace = MpRateLimit.new(custom_limit.rate_per_s, maxf(1.0, custom_limit.burst * 0.5))
+	while not _custom_outbox.is_empty() and _custom_pace.allow(1, now):
+		var next: Array = _custom_outbox.pop_front()
+		rpc_custom_to_server.rpc_id(1, String(next[0]), next[1])
+
+
+## Client: says once per channel and reason why a message was not taken, and emits custom_refused on the next frame
+## (a handler that sends again at once cannot loop here).
+func _refuse_custom(channel: StringName, data: Dictionary, reason: String) -> void:
+	var why := {
+		CUSTOM_RATE_LIMITED: "more than custom_limit allows (%d a second); send less often, or more in each message"
+			% int(custom_limit.rate_per_s),
+		CUSTOM_TOO_BIG: "over custom_max_bytes (%d)" % custom_max_bytes,
+		CUSTOM_NO_SEAT: "this client has no seat (send after slot_assigned)",
+	}
+	_custom_warn(
+		"refused:%s:%s" % [reason, channel],
+		"MpKit: a message on '%s' was not taken: %s. custom_refused says so." % [channel, why.get(reason, reason)]
+	)
+	custom_refused.emit.call_deferred(channel, data, reason)
+
+
+## Server: tells `peer_id` its message on `channel` was refused (a few a second per peer at most).
+func _tell_refused(peer_id: int, channel: StringName, data: Dictionary, reason: String) -> void:
+	if _custom_refusals.allow(peer_id):
+		rpc_custom_refused.rpc_id(peer_id, String(channel), data, reason)
 
 
 ## Server: the peers whose world is loaded (a slot and world_ready), the ones that can play a one-off effect of yours now. A peer
@@ -628,10 +700,11 @@ func _on_peer_connected(id: int) -> void:
 func _on_peer_disconnected(id: int) -> void:
 	if not multiplayer.is_server():
 		return
+	custom_limit.forget(id)
+	_custom_refusals.forget(id)
 	if _awaiting_ticket.erase(id):
 		return
 	_world_ready.erase(id)
-	custom_limit.forget(id)
 	var slot := ids.unbind_peer(id)
 	if slot != 0 and gate.is_armed():
 		gate.mark_left(slot)
@@ -669,7 +742,7 @@ func _cut_peer(peer: MultiplayerPeer, id: int, reason: String) -> void:
 	push_warning("MpKit: the server turned peer %d away (%s)" % [id, reason])
 	if peer.has_method(&"set_kick_reason"):
 		peer.call(&"set_kick_reason", id, reason)
-	peer.disconnect_peer(id)
+	MpTransport.cut_peer(multiplayer, peer, id)
 
 
 ## Always presents (a ticket, a stored credential or ""): a server that admits nobody ignores it.
@@ -829,14 +902,17 @@ func rpc_custom_to_server(channel: String, data: Dictionary) -> void:
 	if not multiplayer.is_server():
 		return
 	var sender := multiplayer.get_remote_sender_id()
-	if ids.slot_for_peer(sender) == 0:
-		return
 	var name := StringName(channel)
 	if not is_custom_channel_allowed(name):
 		return
-	if var_to_bytes(data).size() > custom_max_bytes or not custom_limit.allow(sender):
-		return
-	custom_received.emit(name, data.duplicate(true), sender)
+	if ids.slot_for_peer(sender) == 0:
+		_tell_refused(sender, name, data, CUSTOM_NO_SEAT)
+	elif var_to_bytes(data).size() > custom_max_bytes:
+		_tell_refused(sender, name, {}, CUSTOM_TOO_BIG)
+	elif not custom_limit.allow(sender):
+		_tell_refused(sender, name, data, CUSTOM_RATE_LIMITED)
+	else:
+		custom_received.emit(name, data.duplicate(true), sender)
 
 
 ## The key of `node` for the calls MpKit routes (input frames, to_server): its path, the same on every peer.
@@ -900,3 +976,11 @@ func rpc_custom_from_server(channel: String, data: Dictionary) -> void:
 	if not is_custom_channel_allowed(name):
 		return
 	custom_received.emit(name, data.duplicate(true), 1)
+
+
+## Server -> the client whose message it did not take (custom_refused).
+@rpc("authority", "call_remote", "reliable")
+func rpc_custom_refused(channel: String, data: Dictionary, reason: String) -> void:
+	var name := StringName(channel)
+	if is_custom_channel_allowed(name):
+		_refuse_custom(name, data, reason)

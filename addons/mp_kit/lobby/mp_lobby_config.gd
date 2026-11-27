@@ -50,10 +50,12 @@ extends Resource
 @export var match_port_max: int = 7899
 @export var spawn_timeout_s: float = 20.0
 @export var ticket_ttl_s: float = 60.0
-## How long a dropped player may come back with the same token.
+## How long a dropped player may come back with the same token. A match on a player's PC (MpLocalServer) takes it
+## from the game's MpFlow.
 @export var rejoin_grace_s: float = 60.0
 ## How long the game may hold a match for every seat to load its world (counted from the first admission). The game
 ## decides what a seat that did not load means (for example, counting it as an abandon). The kit only carries the number.
+## A match on a player's PC (MpLocalServer) takes the game's MpFlow.load_timeout_s when it is longer.
 @export var load_timeout_s: float = 60.0
 ## Off: the match waits until every seat loaded or the player in starter_slot starts it (MpStartButton), however long that takes.
 ## A match on a player's PC (MpLocalServer) takes it from the game's MpFlow.
@@ -71,6 +73,8 @@ extends Resource
 @export var heartbeat_s: float = 2.0
 @export var heartbeat_stale_s: float = 10.0
 @export var idle_no_players_s: float = 60.0
+## The longest a match runs: past it the launcher stops its process (`match_max`). 0: no limit. A match on a player's PC
+## (MpLocalServer) takes it from the game's MpFlow.
 @export var match_max_s: float = 7200.0
 ## A leftover process is killed at startup only if its heartbeat is newer than this.
 @export var reap_heartbeat_max_s: float = 30.0

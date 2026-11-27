@@ -1,7 +1,8 @@
 extends "res://addons/mp_kit/tests/mp_test.gd"
 
 ## MpOrders on this machine (solo: the server and the only seat): moves judged, numbered and applied, refused with the
-## judge's reason, moves for another seat (a bot), a new match, and a hash that differs from the server's.
+## judge's reason, moves for another seat (a bot), a new match, a hash that differs from the server's, the history a
+## client gets (caught_up when it has it all) and a move the tunnel did not take (rejected with its reason).
 
 
 func _orders() -> MpOrders:
@@ -67,4 +68,42 @@ func test_a_hash_that_differs_says_desynced_once() -> void:
 	check(seen == [2], "the first move whose hash differs, once (%s)" % [seen])
 	orders._apply(5, 1, &"place", [5], 10)
 	check(orders.last_seq() == 3, "a move out of order is not applied")
+	orders.free()
+
+
+func test_a_client_says_caught_up_after_the_last_part_of_the_history() -> void:
+	var orders := _orders()
+	var log: Array = []
+	orders.began.connect(func(start: Dictionary) -> void: log.append("began %s" % start.get("seed")))
+	orders.applied.connect(
+		func(seq: int, _slot: int, _move: StringName, _args: Array) -> void:
+			log.append("%d%s" % [seq, " replay" if orders.is_replaying() else ""])
+	)
+	orders.caught_up.connect(func(seq: int) -> void: log.append("caught up %d %s" % [seq, orders.is_replaying()]))
+	# What a client gets when it loads late: the history in parts, the first with the start.
+	var first := {"k": "history", "from": 1, "start": {"seed": 3}, "o": [[1, 2, "place", [1], null]], "last": false}
+	orders._from_server(first)
+	check(log == ["began 3", "1 replay"] and orders.is_replaying(), "the first part: not caught up yet (%s)" % [log])
+	orders._from_server({"k": "history", "from": 2, "o": [[2, 1, "place", [2], null]], "last": true})
+	var all := ["began 3", "1 replay", "2 replay", "caught up 2 false"]
+	check(log == all, "the last part: caught_up(2), once (%s)" % [log])
+	orders._from_server({"k": "applied", "s": 3, "p": 2, "n": "place", "a": [3], "h": null})
+	check(log[-1] == "3", "a move after it is live (%s)" % [log])
+	log.clear()
+	orders._from_server({"k": "history", "from": 1, "start": {"seed": 4}, "o": [], "last": true})
+	check(log == ["began 4", "caught up 0 false"], "a history with no move yet: caught_up(0) (%s)" % [log])
+	orders.free()
+
+
+func test_a_move_the_tunnel_did_not_take_comes_back_rejected() -> void:
+	var orders := _orders()
+	var seen: Array = []
+	orders.rejected.connect(
+		func(move: StringName, args: Array, reason: String) -> void: seen.append([move, args, reason])
+	)
+	var sent := {"k": "submit", "n": "place", "a": [5]}
+	orders._on_refused(&"mp_orders", sent, MpKit.CUSTOM_RATE_LIMITED)
+	orders._on_refused(&"other_channel", sent, MpKit.CUSTOM_RATE_LIMITED)
+	orders._on_refused(&"mp_orders", {}, MpKit.CUSTOM_TOO_BIG)
+	check(seen == [[&"place", [5], "rate_limited"]], "only its own channel's move, with the reason (%s)" % [seen])
 	orders.free()

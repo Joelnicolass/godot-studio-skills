@@ -198,7 +198,7 @@ func _poll_match(match_id: String, now: int) -> void:
 	if not running:
 		_fail(match_id, "exited")
 		return
-	if now - int(m["started_ms"]) > int(config.match_max_s * 1000.0):
+	if config.match_max_s > 0.0 and now - int(m["started_ms"]) > int(config.match_max_s * 1000.0):
 		_fail(match_id, "match_max")
 		return
 	var state := MpMatchFiles.read_json(MpMatchFiles.path_of(root, match_id, MpMatchFiles.STATE))
