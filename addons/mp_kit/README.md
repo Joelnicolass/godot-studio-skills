@@ -357,17 +357,18 @@ The kit **does not read** the dict. It **does not auto-forward**. If the server 
 
 | Who | Method | What happens |
 |-----|--------|----------------|
-| Client, 1P, or the server itself | `MpKit.send_custom(channel, data)` | Client → RPC to the server. 1P / server: emits `custom_received` **locally** (`from_peer` 1 or your unique id). |
+| Client, 1P, or the server itself | `MpKit.send_custom(channel, data)` | Client → RPC to the server, at `custom_limit`'s pace (past it, it waits on the client, in order). 1P / server: emits `custom_received` **locally** (`from_peer` 1 or your unique id). |
 | Server only | `MpKit.broadcast_custom(channel, data)` | Emits on the server (`from_peer` = 1) **and** sends to every client. `broadcast_custom(channel, data, true)`: only to the peers whose world is loaded (`MpKit.ready_peers()`), for a one-off effect a peer still loading would lose. From a `custom_received` handler it goes out right after the message being handled; the same channel with the same data (an echo) is dropped with a warning. |
 | Server only | `MpKit.push_custom_to(peer_id, channel, data)` | One client. The server does **not** emit locally. |
 | Everyone | signal `MpKit.custom_received(channel, data, from_peer)` | That is where you receive. |
 | Everyone | `MpKit.slot_of_sender(from_peer)` | The seat that sent it, the same solo, on the host and on a client (`slot_for_peer(1)` gives 0 solo). |
+| The client that sent it | signal `MpKit.custom_refused(channel, data, reason)` | A message that never reached `custom_received`: `CUSTOM_TOO_BIG`, `CUSTOM_NO_SEAT` (before `slot_assigned`) or `CUSTOM_RATE_LIMITED`. On the next frame, with a warning the first time. |
 
 Allowlist: `configure(..., PackedStringArray(["emote"]))`. Empty = any name. A name not on it is dropped: what this machine sends warns once.
 
 For a turn-based game's moves (numbered, judged, replayed to a peer that comes back), use the `MpOrders` node instead of building it on the tunnel (GUIDE §7.9).
 
-Server limits (so a client cannot flood it): a tunnel message over `MpKit.custom_max_bytes` (8192) is dropped, and each client sends at most `MpKit.custom_limit` (30 per second, bursts of 60). `MpActor`'s `mp_sv_*` calls have their own limit (`MpActor.server_calls`: 60 per second, bursts of 120) and at most 4 KB of arguments. With ticket admission, at most `MpKit.max_pending_admission` (64) connections wait for a ticket at once.
+Server limits (so a client cannot flood it): a tunnel message over `MpKit.custom_max_bytes` (8192) is refused, and each client sends at most `MpKit.custom_limit` (30 per second, bursts of 60). A client keeps to that pace by itself (what is past it waits, up to `CUSTOM_OUTBOX_MAX`, 256) and refuses a message too big before sending it; what the server refuses anyway it says back to that client, a few a second at most (`custom_refused`). Change them on every machine. `MpActor`'s `mp_sv_*` calls have their own limit (`MpActor.server_calls`: 60 per second, bursts of 120) and at most 4 KB of arguments. With ticket admission, at most `MpKit.max_pending_admission` (64) connections wait for a ticket at once.
 
 Convenient node: child `MpCustomPipe`, `@export channel = &"emote"`.
 
@@ -521,7 +522,7 @@ High-level nodes (what a person uses; details and examples in [QUICKSTART.md](QU
 | `nodes/mp_local_seat.gd` | `MpLocalSeat`: who looks at this screen; `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo: show the match as another seat), `MpLocalSeat.of(node)` by group. HUD, audio, orders and the result take it by `@export` |
 | `nodes/mp_invite_label.gd` | `MpInviteLabel`: in the HUD; in a private match of this PC (`MpLocalServer`) it shows what friends type (`ip:port#CODE`), in an online room it hosts (`MpOnline`) the room's code; hidden otherwise. It finds them by group, without loading the rooms scripts |
 | `nodes/mp_world.gd` | `MpWorld`: one node in the world; in the editor it builds `SpawnPoints`, `Actors`, `Players` (`MpSlotSpawner`), `State` (`MpState`), `Match` (`MpMatch`) and `Hud/Leave` + `Hud/Invite` + `Hud/Start` + `Hud/Waiting`; `player_scene` is each seat's scene (empty: a game with no pawns) |
-| `nodes/mp_orders.gd` | `MpOrders`: the moves of a game with no pawns (by turns, cards, a board, an RTS's orders). `submit(name, args)`, `submit_as(slot, …)` and `begin(start)` on the server; `judge` (the server takes the move or gives the reason), `state_hash`; signals `began`, `applied(seq, slot, name, args)`, `rejected`, `desynced`; `is_replaying()`, `resync()`, `moves()`. It replays every move to a peer that loads late or comes back (GUIDE §7.9). `MpOrders.of(node)` |
+| `nodes/mp_orders.gd` | `MpOrders`: the moves of a game with no pawns (by turns, cards, a board, an RTS's orders). `submit(name, args)`, `submit_as(slot, …)` and `begin(start)` on the server; `judge` (the server takes the move or gives the reason), `state_hash`; signals `began`, `applied(seq, slot, name, args)`, `rejected` (the judge's reason, or the tunnel's: `rate_limited`, `too_big`, `no_seat`), `desynced`, `caught_up(seq)`; `is_replaying()`, `resync()`, `moves()`. It replays every move to a peer that loads late or comes back (GUIDE §7.9). `MpOrders.of(node)` |
 | `nodes/mp_seat_state.gd` | `MpSeatState`: values only one seat sees (its hand, its ammo). `set_value(slot, key, value)`, `add`, `clear_seat` on the server; `get_value(key)`, `values()`, `watch(key, cb)`, signal `changed` on the seat's machine; `value_of(slot, key)` (the server: all; a client: its own). They reach a peer that loads late or comes back again, and they belong to the seat: whoever takes it inherits them (GUIDE §7.12) |
 | `deploy/online_local.sh` | A local issuer and relay to try your game online on your PC: `bash addons/mp_kit/deploy/online_local.sh <game_id>` (GUIDE §10.4) |
 | `nodes/mp_seat_bots.gd` | `MpSeatBots`: a bot of yours (`bot_scene`) in every seat nobody holds; at the start and when one is abandoned; it goes when a player comes in, never in a closed seat. It hands the bot `slot`, `pawn` and `input` if it declares them. `bot_of`, `remove`, `fill`; signals `bot_added`, `bot_removed` (GUIDE §7.5, "Bots in the free seats") |
@@ -560,7 +561,7 @@ Low-level pieces:
 
 | File | Role |
 |------|------|
-| `mp_transport.gd` | `MpTransport`: builds the ENet (UDP) or WebSocket (TCP) peer from `--transport=enet\|ws`; `create_server`, `create_client`, `port_is_free` |
+| `mp_transport.gd` | `MpTransport`: builds the ENet (UDP) or WebSocket (TCP) peer from `--transport=enet\|ws`; `create_server`, `create_client`, `port_is_free`; `cut_peer(api, peer, id)` disconnects a peer through the `SceneMultiplayer`, which stops sending to it at once |
 | `mp_kit.gd` | ENet or WebSocket (`MpKit.transport`) + slots + session RPCs + Dictionary tunnel. Children `Rooms` / `Matchmaker`. |
 | `mp_ids.gd` | slot ↔ peer |
 | `mp_room_directory.gd` | hub rooms (opt-in); room seat ≠ hub slot |
@@ -631,7 +632,7 @@ The game injects, without touching the kit: `meta_validator` (each seat's pick),
 ### `MpMatchLauncher`
 
 - `launch(id, ticket)`: picks a free port in the range (`match_port_min`..`match_port_max`, checked with `MpTransport.port_is_free`), writes the ticket and creates the process. Cap `max_matches`: returns `ERR_BUSY`.
-- It follows `state.json` (heartbeat every `heartbeat_s`) and `result.json`. It kills a match without heartbeat (`heartbeat_stale_s`), one past `match_max_s` and those a previous run left behind (`reap_on_ready`, with a pid registry and an identity check: /proc on Linux, `ps` on macOS).
+- It follows `state.json` (heartbeat every `heartbeat_s`) and `result.json`. It kills a match without heartbeat (`heartbeat_stale_s`), one past `match_max_s` (0 = no limit; a match on the host's PC takes it from the game's `MpFlow`) and those a previous run left behind (`reap_on_ready`, with a pid registry and an identity check: /proc on Linux, `ps` on macOS).
 - Signals: `match_listening`, `match_ended(id, result)`, `match_failed(id, reason)`.
 - `executable`, `base_args` and `agent_args` are set by the game (`--headless --path <dir> <scene> -- --dedicated`...). The config's `agent_fields` are the values the server forwards to the dedicated as `--field=value` (including `transport`).
 - `keep_files` keeps the match folder (tests only); by default it is deleted when the match ends.
@@ -645,7 +646,7 @@ One value: `MpLobbyConfig.transport` or `--transport=enet|ws`. The server uses i
 
 - **Lobby**: the session has a token. If the link drops, the server keeps the seat for `resume_grace_s`. `MpLobbyClient.resume()` comes back with the same token (same session and seat). With `auto_resume = true` the client retries by itself every `resume_retry_s` for `resume_window_s` (match it to `resume_grace_s`) and emits `lobby_resuming(attempt)`; `lobby_lost("resume_window")` only when the window runs out.
 - **Match**: a player who dropped comes back to the same dedicated with **the same ticket** within `rejoin_grace_s` and gets their slot back (the game decides what to keep, e.g. their pawn). Past the grace, the seat counts as an abandon and the game decides the result. If the server has not noticed the drop yet, the ticket wins: the stale connection is dropped and the seat comes back as a rejoin. The start gate decides it (below), the same as on LAN.
-- `load_timeout_s`: how long the dedicated waits for every seat to load the world; what a seat that did not load means is up to the game.
+- `load_timeout_s`: how long the dedicated waits for every seat to load the world; what a seat that did not load means is up to the game. A match on the host's PC takes `rejoin_grace_s` from the game's `MpFlow`, and its `load_timeout_s` when it is longer than 60 s.
 - `start_on_timeout`, `starter_slot`, `late_join`, `pause_while_waiting`: whether it starts by time, which seat may start it (0 = none), whether players come in after the start and whether the world pauses while it waits (off: a lobby you walk). They travel to each match as flags (`--late-join=true`, `--pause-while-waiting=false`). A match on the host's PC (`MpLocalServer`) takes `start_on_timeout`, `late_join`, `pause_while_waiting` and, with `host_can_start`, `starter_slot` = 1 from the game's `MpFlow`. All off by default: it starts as it always did.
 - `stay_after_finish_s` (0): how long a finished match stays up while its players read the end screen; it closes once the last one left. It travels as `--stay-after-finish-s=`; a match on the host's PC takes it from the game's `MpFlow` (**Match end** group). At 0 it closes `result_quit_delay_s` after the result. The server going away after the end is the normal end: the client gets `MpKit.server_closed`, not `server_lost`.
 

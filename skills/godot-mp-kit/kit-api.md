@@ -36,7 +36,7 @@ These files **do not** name `GameSession`, `SceneDirector`, copy, `PlayerId`, or
 | `nodes/mp_state.gd`, `nodes/mp_match.gd` | Match values (`watch(key, cb)`: current value, then each change); start, waiting for seats, absences, end |
 | `nodes/mp_seat_state.gd` (`MpSeatState`) | Values per seat that only that seat sees: `set_value(slot, key, value)` (null removes), `add`, `clear_seat` (server); `get_value(key)`, `values()`, `watch(key, cb)` / `unwatch`, signal `changed(key, value)` (this machine's seat); `value_of(slot, key)`; `of(node)`; the `mp_seat_state` channel; resent on `client_world_ready` |
 | `nodes/mp_seat_bots.gd` (`MpSeatBots`) | `bot_scene`, `players` (empty: the `MpWorld`'s `Players`), `fill_solo`; `fill()`, `bot_of(slot)`, `remove(slot)`; signals `bot_added(slot, bot)`, `bot_removed(slot)`. It sets the bot's `slot`, `pawn` and `input` (the pawn's `MpInput`) if it declares them; taking it off lets go of its keys |
-| `nodes/mp_orders.gd` (`MpOrders`) | The moves of a game with no pawns: `submit(name, args)`, `submit_as(slot, name, args)` and `begin(start)` (server), `judge(slot, name, args) -> String`, `state_hash() -> int`; signals `began(start)`, `applied(seq, slot, name, args)`, `rejected(name, args, reason)` (only on the seat that sent it), `desynced(seq)`; `is_replaying()`, `resync()`, `last_seq()`, `start()`, `moves()`; the tunnel's `mp_orders` channel; history in parts of 200 to a peer that loads late or comes back |
+| `nodes/mp_orders.gd` (`MpOrders`) | The moves of a game with no pawns: `submit(name, args)`, `submit_as(slot, name, args)` and `begin(start)` (server), `judge(slot, name, args) -> String`, `state_hash() -> int`; signals `began(start)`, `applied(seq, slot, name, args)`, `rejected(name, args, reason)` (only on the seat that sent it; the judge's reason or the tunnel's: `MpKit.CUSTOM_RATE_LIMITED` / `CUSTOM_TOO_BIG` / `CUSTOM_NO_SEAT`), `desynced(seq)`, `caught_up(seq)` (a client has the whole history, `is_replaying()` false again); `is_replaying()`, `resync()`, `last_seq()`, `start()`, `moves()`; the tunnel's `mp_orders` channel; history in parts of 200 to a peer that loads late or comes back |
 | `nodes/mp_local_seat.gd` (`MpLocalSeat`) | Who looks at this screen: `slot`, `is_mine(slot)`, `is_online()`, `changed(slot)`, `preview_slot` (solo), `of(node)`, `slot_of(node)` (the local slot when the scene has no seat); handed to HUD / audio / orders by `@export` |
 | `nodes/mp_leave_button.gd`, `nodes/mp_invite_label.gd` | Leaving (it works while the world is paused); a private match's invite |
 | `core/mp_net_quality.gd` | RTT, jitter (97th percentile), loss and a grade per connection |
@@ -72,11 +72,12 @@ ENet's own peer cap is `max_players + max_pending_admission` (at most `MpKit.ENE
 - `session_ended(data)` — your `Dictionary`
 - `slot_assigned(slot)` — this client learned its slot
 - `custom_received(channel, data, from_peer)` — opaque tunnel (`from_peer` is `1` if the server pushed)
+- `custom_refused(channel, data, reason)` — on the client that sent it: a message that never reached `custom_received` (`CUSTOM_TOO_BIG`, `CUSTOM_NO_SEAT`, `CUSTOM_RATE_LIMITED`); `data` is `{}` when the server refused it for its size
 
 ## Kit RPCs (closed list)
 
 Client → server: `rpc_world_ready`, `rpc_custom_to_server`, `rpc_input_frames(key, packet)` (an `MpInput`'s frames), `rpc_actor_call(key, action, args, view)` (`MpActor.to_server`)  
-Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`, `rpc_input_slack(key, slack)` (an `MpInput`'s pacing)  
+Server → clients: `rpc_assign_slot`, `rpc_load_world`, `rpc_snapshot`, `rpc_session_ended`, `rpc_custom_from_server`, `rpc_custom_refused`, `rpc_input_slack(key, slack)` (an `MpInput`'s pacing)  
 `key` = `MpKit.route_key(node)` (the node's path, the same on every peer): what arrives for a node that is gone (it died) or not there yet is dropped with no error.  
 `MpRoomDirectory`: `rpc_assign_room` (authority → that peer; `room_id` travels as `String`)
 
@@ -96,7 +97,7 @@ Pawn input and custom-dict meaning **outside** the kit.
 - `after_real(seconds, callable)` — run it after REAL time (network timeouts; game time differs with `--fixed-fps` or `Engine.time_scale`). The kit's admission timeout and rejection flush use it
 - `report_loaded()` — the local world finished loading (MpFlow calls it with `world_reports_loaded`): a client tells the server (its seat counts at the gate), the server or solo tells the gate its own world is in
 - `is_peer_world_ready(peer_id)`; `ready_peers()` — server: peers with a slot and world_ready (send your own one-off `@rpc` effects to these with `rpc_id`; play it on the server too)
-- `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`
+- `send_custom(channel, data)` / `broadcast_custom(channel, data, only_world_ready = false)` / `push_custom_to` / `is_custom_channel_allowed`. A client's `send_custom` keeps to `custom_limit` (30/s, 60 at once): past it, its messages wait on the client in order (up to `CUSTOM_OUTBOX_MAX`, 256), none lost
 - `remember_seats` (and `--remember-seats`, `--seat-file=`): the client keeps its LAN seat's credential in `SEATS_FILE` (`user://mpkit_seats.cfg`) and shows it again even after the game was closed; a credential older than `SEAT_MEMORY_S` (1 h) is not shown. `forget_seat_credentials()` removes it from disk too
 - `slot_of_sender(from_peer)`: the seat that sent a tunnel message, the same solo, host and client. A `broadcast_custom` from a `custom_received` handler goes out right after (an echo of the same channel and data is dropped with a warning; a chain stops at `CUSTOM_CHAIN_MAX`, 256); a channel not in `custom_channels` warns once
 

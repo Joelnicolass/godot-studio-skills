@@ -10,7 +10,8 @@ extends Node
 ##    peer in order: `applied(seq, slot, name, args)`, the server too. A move it refuses goes back to its seat only:
 ##    `rejected(name, args, reason)`.
 ## 3. It keeps every move since `begin(start)` and sends them to a peer that loads the world late or comes back:
-##    that peer gets `began(start)` and every `applied` again (`is_replaying()`), so it rebuilds the match.
+##    that peer gets `began(start)` and every `applied` again (`is_replaying()`), so it rebuilds the match, and
+##    `caught_up(seq)` when it has them all.
 ## With `state_hash`, each move carries the server's hash after it; a peer whose own differs gets `desynced(seq)`.
 ## Its messages go through the custom tunnel on `channel` (add it to custom_channels if your game lists them).
 
@@ -19,10 +20,16 @@ extends Node
 signal began(start: Dictionary)
 ## A move the server took, in order (seq 1, 2, 3…), on every peer and on the server: apply it to your game.
 signal applied(seq: int, slot: int, name: StringName, args: Array)
-## Only on the machine of the seat that sent it: the server refused it, with your judge's reason.
+## Only on the machine of the seat that sent it: the server refused it, with your judge's reason. Or the move never
+## reached your judge: MpKit.CUSTOM_RATE_LIMITED (more moves a second than MpKit.custom_limit), CUSTOM_TOO_BIG or
+## CUSTOM_NO_SEAT. A submit always ends in `applied` or `rejected`.
 signal rejected(name: StringName, args: Array, reason: String)
 ## This peer's `state_hash` differs from the server's after move `seq`. `resync()` gets every move again.
 signal desynced(seq: int)
+## A client has every move the server had for it: after it loaded (late or not), came back or asked for `resync()`,
+## the history is applied (`seq` is `last_seq()`, 0 with no move yet) and `is_replaying()` is false again. The server
+## and solo never wait for one.
+signal caught_up(seq: int)
 
 const GROUP := &"mp_orders"
 ## Moves per history message to a peer that loads late (each message stays well under the relay's 256 KB).
@@ -61,12 +68,15 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	MpKit.custom_received.connect(_on_custom)
+	MpKit.custom_refused.connect(_on_refused)
 	MpKit.client_world_ready.connect(_on_world_ready)
 
 
 func _exit_tree() -> void:
 	if MpKit.custom_received.is_connected(_on_custom):
 		MpKit.custom_received.disconnect(_on_custom)
+	if MpKit.custom_refused.is_connected(_on_refused):
+		MpKit.custom_refused.disconnect(_on_refused)
 	if MpKit.client_world_ready.is_connected(_on_world_ready):
 		MpKit.client_world_ready.disconnect(_on_world_ready)
 
@@ -151,8 +161,12 @@ func _on_custom(on_channel: StringName, data: Dictionary, from_peer: int) -> voi
 				if from_peer != 1:
 					_send_history(from_peer)
 		return
-	# A client: what the server sends.
-	match kind:
+	_from_server(data)
+
+
+## A client: what the server sends.
+func _from_server(data: Dictionary) -> void:
+	match str(data.get("k", "")):
 		"begin":
 			_start_over(data.get("start", {}) as Dictionary)
 		"applied":
@@ -168,6 +182,20 @@ func _on_custom(on_channel: StringName, data: Dictionary, from_peer: int) -> voi
 				if move != null and move.size() == 5:
 					_apply(int(move[0]), int(move[1]), StringName(str(move[2])), move[3] as Array, move[4])
 			_replaying = not bool(data.get("last", true))
+			if not _replaying:
+				caught_up.emit(_moves.size())
+
+
+## A message of this channel the tunnel did not take: a move comes back as `rejected`, a resync asks again.
+func _on_refused(on_channel: StringName, data: Dictionary, reason: String) -> void:
+	if on_channel != channel:
+		return
+	match str(data.get("k", "")):
+		"submit":
+			rejected.emit(StringName(str(data.get("n", ""))), data.get("a", []) as Array, reason)
+		"want":
+			if reason == MpKit.CUSTOM_RATE_LIMITED:
+				MpKit.after_real(0.5, resync)
 
 
 ## Server: judges a move and, taken, applies it here and sends it to every peer with the world loaded.
