@@ -798,7 +798,7 @@ Un `MpMatch` en el mundo dice cuándo empieza la partida, quién se fue y quién
 - **Un asiento que nadie ocupa lo puede jugar un bot tuyo** (lo de abajo, «Bots en los asientos libres»): el peón de ese slot en el servidor, con las teclas de `MpInput.bot_press`. Si un jugador toma el asiento (late join, o el que vuelve), el peón queda como está y lo mueven sus teclas.
 - **Un dedicado a mano sirve una partida tras otra** (una VPS arrancada con `--dedicated`): cuando su partida termina (`Mp.finish()`) y se va el último jugador, o todos quedaron afuera pasada la gracia (`all_gone`), carga un mundo nuevo (puntos y actores desde cero) y abre otra vez todos los asientos. Un juego con pantalla de revancha puede llamar él mismo a `MpFlow.next_open_match()` cuando se fueron sus jugadores. **Si tu juego termina la partida a su manera** (no con `Mp.finish()`), avisale al kit en el servidor con `MpKit.broadcast_session_ended(result)`, o llamá a `MpFlow.next_open_match()` cuando terminó y quedó vacío; si no, la partida siguiente recién se abre cuando pasó la gracia de todos, y el que llega antes se rechaza (`match_started`). Los clientes reciben el estado de la puerta al ser admitidos y, con la pausa, se pausan apenas cargan su mundo, así que su `MatchClock` arranca en 0.
 
-Los knobs están en el inspector del `MpFlow`, grupo **Match start** (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`, `seat_closed_status`) y grupo **Match end** (`stay_after_finish_s`: «Una pantalla de fin que espera al jugador», abajo). Todo lo nuevo viene apagado: sin tocarlos, la partida arranca como siempre. Una partida en la PC del host (privada u online, `MpLocalServer`) toma `start_on_timeout`, `late_join`, `host_can_start` y `pause_while_waiting` del `MpFlow` del juego; la gracia y el tiempo de carga, de su `MpLobbyConfig` (60 s cada uno). La partida de un servidor de salas toma todo de su `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). En el Remote del editor, `/root/MpKit/Gate` muestra `phase`, `expected`, `loaded` y `away`. El host puede arrancar con los que ya cargaron: `MpStartButton`, o `Mp.gate().can_start_now()` / `Mp.gate().start_now()` desde un botón propio (en el cliente del slot 1 de una partida en su PC, con `host_can_start`, `start_now()` le pide al servidor que arranque).
+Los knobs están en el inspector del `MpFlow`, grupo **Match start** (`rejoin_grace_s`, `load_timeout_s`, `start_on_timeout`, `host_can_start`, `start_seats`, `late_join`, `pause_while_waiting`, `pause_clients`, `match_started_status`, `seat_closed_status`) y grupo **Match end** (`stay_after_finish_s`: «Una pantalla de fin que espera al jugador», abajo; `match_max_s`). Todo lo nuevo viene apagado: sin tocarlos, la partida arranca como siempre. Una partida en la PC del host (privada u online, `MpLocalServer`) toma `start_on_timeout`, `late_join`, `host_can_start`, `pause_while_waiting`, `rejoin_grace_s`, `stay_after_finish_s` y `match_max_s` (2 h; 0 = sin tope, para una sala que queda abierta horas) del `MpFlow` del juego; espera al menos 60 s a que carguen los asientos, más si `load_timeout_s` es más largo. La partida de un servidor de salas toma todo de su `MpLobbyConfig` (`start_on_timeout`, `late_join`, `starter_slot`, `pause_while_waiting`). En el Remote del editor, `/root/MpKit/Gate` muestra `phase`, `expected`, `loaded` y `away`. El host puede arrancar con los que ya cargaron: `MpStartButton`, o `Mp.gate().can_start_now()` / `Mp.gate().start_now()` desde un botón propio (en el cliente del slot 1 de una partida en su PC, con `host_can_start`, `start_now()` le pide al servidor que arranque).
 
 #### Un lobby que se camina
 
@@ -1162,7 +1162,8 @@ func _on_applied(_seq: int, slot: int, _move: StringName, args: Array) -> void:
 	rules.place(slot, args[0])
 ```
 
-- **El que carga tarde, vuelve o se desincronizó** recibe `began(start)` y todas las jugadas otra vez. Mientras tanto, `is_replaying()` es verdadero: salteá sonidos y animaciones.
+- **El que carga tarde, vuelve o se desincronizó** recibe `began(start)` y todas las jugadas otra vez. Mientras tanto, `is_replaying()` es verdadero: salteá sonidos y animaciones. Cuando las tiene todas recibe **`caught_up(seq)`** (`seq` es `last_seq()`, 0 si todavía no hubo jugadas) e `is_replaying()` vuelve a ser falso: buen momento para mostrar el tablero o dejar jugar a un bot de esa máquina. Un cliente lo recibe cada vez que carga; el servidor y el modo solo nunca esperan uno.
+- **Cada `submit` termina en `applied` o en `rejected`.** Además de los motivos de tu juez, `rejected` trae los del túnel, para una jugada que nunca llegó al juez: `MpKit.CUSTOM_RATE_LIMITED`, `CUSTOM_TOO_BIG`, `CUSTOM_NO_SEAT` ([7.11](#711-el-túnel-mensajes-de-la-partida-sin-un-nodo)). Un bot en un cliente puede mandar sus jugadas tan rápido como quiera: el kit las espacia.
 - **Solo y en el host** `submit` corre al toque, con las mismas señales. Un bot o un reloj que termina un turno juega desde el servidor con `submit_as(slot, name, args)`.
 - **`state_hash`**: el servidor manda su hash con cada jugada y cada peer compara el suyo. Si no coincide, emite `desynced(seq)`, y `resync()` pide todas las jugadas de nuevo.
 - **`moves()`** son todas las jugadas desde `begin`, para guardar la partida o repetirla.
@@ -1196,10 +1197,12 @@ Para lo que no es de un actor (una jugada, un chat, un emote):
 | `MpKit.slot_of_sender(from_peer)` | El asiento que lo mandó, igual con y sin red. Nunca confíes en un asiento que viene dentro de `datos` |
 | `MpKit.broadcast_custom(canal, datos, solo_listos)` | Del servidor a todos (y acá). Con `true`, solo a los que ya cargaron |
 | `MpKit.push_custom_to(peer_id, canal, datos)` | Del servidor a un solo peer |
+| `MpKit.custom_refused(canal, datos, motivo)` | En el cliente que lo mandó: un mensaje que nunca llegó a `custom_received`, y por qué |
 
 - **Desde un handler de `custom_received`**, un `broadcast_custom` sale justo después del mensaje que se está atendiendo, en orden. El mismo canal con los mismos datos desde su propia emisión es un eco: se descarta con un aviso (reenviá solo lo que vino de un cliente: `from_peer != 1`).
 - **`custom_channels`** (en `game.tres`): vacío permite todos. Un canal que no está en la lista no se manda, y avisa una vez.
-- **Topes:** un cliente manda hasta 8 KB por mensaje y 30 por segundo (ráfaga de 60); lo que pasa de ahí se descarta en el servidor. El relay corta los mensajes de más de 256 KB: partí lo grande (`MpOrders` ya manda el historial en partes).
+- **Topes:** un cliente manda hasta 8 KB por mensaje (`custom_max_bytes`) y 30 por segundo, 60 de golpe (`custom_limit`). Pasado ese ritmo, sus mensajes **esperan en el cliente** y salen en orden apenas pueden: no se pierde ninguno. El relay corta los mensajes de más de 256 KB: partí lo grande (`MpOrders` ya manda el historial en partes).
+- **Lo que no se manda avisa:** `custom_refused(canal, datos, motivo)` en el cliente que lo mandó, en el cuadro siguiente, con un aviso la primera vez. `motivo` es `MpKit.CUSTOM_TOO_BIG` (más que `custom_max_bytes`), `CUSTOM_NO_SEAT` (antes de `slot_assigned`) o `CUSTOM_RATE_LIMITED` (más de 256 esperando, o un servidor que igual los recibió amontonados). `datos` es lo que mandaste (`{}` cuando el servidor lo rechazó por el tamaño). `MpOrders` lo convierte en `rejected`. Si cambiás `custom_limit` o `custom_max_bytes`, cambialos en todas las máquinas.
 - **En el servidor, `to_server` y el túnel corren al toque**, dentro de la misma llamada: una respuesta que manda el servidor a sí mismo llega antes de que termine la función que la pidió.
 
 ### 7.12 Lo que ve un solo asiento: `MpSeatState`
@@ -1413,7 +1416,7 @@ Creala como recurso nuevo (**Nuevo › Recurso › MpLobbyConfig**).
 | `rejoin_grace_s` | Cuánto puede tardar en volver un jugador que se cayó de la partida | 60.0 |
 | `load_timeout_s` | Cuánto espera la partida a que todos carguen el mundo | 60.0 |
 | `idle_no_players_s` | La partida se cierra si queda vacía este tiempo | 60.0 |
-| `match_max_s` | Duración máxima de una partida (2 horas) | 7200.0 |
+| `match_max_s` | Duración máxima de una partida (2 horas; 0 = sin tope) | 7200.0 |
 
 Cualquier campo se pisa con un flag de su nombre, con guiones: `max_matches` → `--max-matches=8`, `lobby_port` → `--lobby-port=7701`. Otro `.tres` entero: `--lobby-config=res://otra.tres`.
 
@@ -2265,6 +2268,12 @@ Es de Godot 4.7, no del kit ni de tu juego: cargar en un hilo un script que tien
 
 **Un cliente se rechaza enseguida con `timeout`, solo contra un servidor o relay remoto.**
 El log del servidor dice `MpKit: the server turned peer N away (timeout)`: su ticket no llegó en `admission_timeout_s`. Los timeouts de red del kit cuentan tiempo real, así que un servidor lejos no es problema. Si el servidor corre temporizadores tuyos para cosas de red, usá `MpKit.after_real(segundos, callable)`, no `create_timer`: con `--fixed-fps` (deja de sincronizar con el reloj y puede correr miles de cuadros por segundo) o `Engine.time_scale`, el tiempo de juego no es tiempo real.
+
+**Una jugada o un mensaje de un cliente nunca llega, y nada dice por qué.**
+Desde MpKit 0.29 nada del túnel se pierde sin avisar: escuchá `MpKit.custom_refused` (o `MpOrders.rejected`) en ese cliente. El más común es `no_seat`: mandó antes de `slot_assigned`. Un canal que falta en los `custom_channels` del `game.tres` avisa una vez en el que manda.
+
+**El log del servidor dice `Unable to send packet on channel 0, max channels: 0`.**
+Algo se mandó a una conexión que ENet ya está cerrando. Desde 0.29 MpKit no lo hace: ni cuando corta a un peer (rechazado, un asiento que recupera su jugador) ni cuando dos clientes se van en el mismo tick (el servidor corre con `server_relay` apagado: los clientes solo hablan con él). Si tu juego desconecta peers por su cuenta, hacelo con `MpKit.reject_peer(peer_id, motivo)`, no con el `disconnect_peer` del `MultiplayerPeer`.
 
 **Un segundo cliente no entra: «The match already started» (`match_started`).**
 La puerta ya arrancó la partida: después del arranque solo vuelve un asiento que se fue. Para que entren varios, que carguen antes del arranque (`start_seats` = 0 espera todos los asientos, `--start-seats=N`), o prendé `late_join` (`--late-join`) para un juego de entrar y salir. En un dedicado a mano, la partida siguiente se abre sola cuando esta termina y se fueron todos.

@@ -56,24 +56,24 @@ func _ready() -> void:
 		all_loaded.emit.call_deferred()
 
 
-## Server: the seats' story in the log, from the gate's signals.
+## Server: the seats' story in the log, from the gate's signals. Each handler calls `_say` on this node, so it goes with
+## it: the next match's MpMatch tells its own story, not one line per match that came before.
 func _log_seats(gate: MpMatchGate) -> void:
-	var say := func(text: String) -> void: print("MpKit seats: " + text)
-	gate.seat_admitted.connect(
-		func(slot: int, back: bool) -> void: say.call("seat %d %s" % [slot, "back" if back else "in"])
-	)
+	gate.seat_admitted.connect(func(slot: int, back: bool) -> void: _say("seat %d %s" % [slot, "back" if back else "in"]))
 	gate.seat_loaded.connect(
-		func(slot: int, loaded: int, expected: int) -> void: say.call("seat %d loaded (%d/%d)" % [slot, loaded, expected])
+		func(slot: int, loaded: int, expected: int) -> void: _say("seat %d loaded (%d/%d)" % [slot, loaded, expected])
 	)
-	gate.started.connect(func(why: String) -> void: say.call("match started (%s)" % why))
-	gate.seat_away.connect(func(slot: int) -> void: say.call("seat %d away" % slot))
-	gate.seat_abandoned.connect(func(slot: int, why: String) -> void: say.call("seat %d abandoned (%s)" % [slot, why]))
-	gate.joined_late.connect(func(slot: int) -> void: say.call("seat %d joined late" % slot))
-	gate.seat_closed.connect(func(slot: int) -> void: say.call("seat %d closed" % slot))
-	gate.turned_away.connect(
-		func(peer_id: int, why: String) -> void: say.call("peer %d turned away (%s)" % [peer_id, why])
-	)
-	finished.connect(func(result: Dictionary) -> void: say.call("match finished %s" % [result]))
+	gate.started.connect(func(why: String) -> void: _say("match started (%s)" % why))
+	gate.seat_away.connect(func(slot: int) -> void: _say("seat %d away" % slot))
+	gate.seat_abandoned.connect(func(slot: int, why: String) -> void: _say("seat %d abandoned (%s)" % [slot, why]))
+	gate.joined_late.connect(func(slot: int) -> void: _say("seat %d joined late" % slot))
+	gate.seat_closed.connect(func(slot: int) -> void: _say("seat %d closed" % slot))
+	gate.turned_away.connect(func(peer_id: int, why: String) -> void: _say("peer %d turned away (%s)" % [peer_id, why]))
+	finished.connect(func(result: Dictionary) -> void: _say("match finished %s" % [result]))
+
+
+func _say(text: String) -> void:
+	print("MpKit seats: " + text)
 
 
 ## Server (or solo) only: the match is over. Every peer gets `finished(result)`; a lobby match also tells the room.

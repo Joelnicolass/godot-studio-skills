@@ -1366,6 +1366,9 @@ func _play_turns() -> void:
 	var moved := 0
 	var tried_wrong := false
 	var rejoined := false
+	## `--probe-burst=N`: N moves that are never legal at once, after the first one.
+	var burst := int(MpBoot.user_value("probe-burst", "0"))
+	var caught: Array[int] = []
 	var end := Time.get_ticks_msec() + int(step_timeout_s * 3000.0)
 	while Time.get_ticks_msec() < end:
 		var rules: Object = world.get(&"rules")
@@ -1376,6 +1379,14 @@ func _play_turns() -> void:
 			world.call(&"play", 99)
 			await _until(func() -> bool: return not refused.is_empty(), "a move that is never legal was refused")
 			_check(refused[0] in ["There is no such cell.", "It is not your turn."], "the judge's reason came back (%s)" % refused[0])
+			if burst > 0:
+				## More moves at once than MpKit.custom_limit lets through (30 a second, 60 at once): none is lost.
+				for i in burst:
+					world.call(&"play", 99)
+				await _until(func() -> bool: return refused.size() >= 1 + burst, "all %d moves of the burst answered" % burst)
+				var reasons := ["There is no such cell.", "It is not your turn."]
+				var judged := refused.filter(func(r: String) -> bool: return r in reasons)
+				_check(judged.size() == refused.size(), "every one reached the judge (%d of %d)" % [judged.size(), refused.size()])
 		elif int(rules.get(&"turn")) == slot:
 			var before := orders.last_seq()
 			world.call(&"play", (rules.get(&"cells") as PackedInt32Array).find(0))
@@ -1390,12 +1401,24 @@ func _play_turns() -> void:
 				rejoined = true
 				var cells_before: PackedInt32Array = (rules.get(&"cells") as PackedInt32Array).duplicate()
 				var seq_before := orders.last_seq()
+				## The new world's MpOrders, as it enters: its caught_up comes with the history, before the world is up.
+				var watch := func(node: Node) -> void:
+					if node is MpOrders:
+						(node as MpOrders).caught_up.connect(
+							func(seq: int) -> void: caught.append(seq if not (node as MpOrders).is_replaying() else -1)
+						)
+				get_tree().node_added.connect(watch)
 				if not await _leave_and_join_turns(slot):
 					return
+				get_tree().node_added.disconnect(watch)
 				world = get_tree().current_scene
 				orders = world.get_node(^"%Orders") as MpOrders
 				orders.rejected.connect(func(_m: StringName, _a: Array, reason: String) -> void: refused.append(reason))
 				await _until(func() -> bool: return orders.last_seq() >= seq_before, "back: every move came again")
+				_check(
+					caught.size() == 1 and caught[0] >= seq_before,
+					"back: caught_up once, with every move and is_replaying() false (%s, had %d)" % [caught, seq_before]
+				)
 				var cells_now := world.get(&"rules").get(&"cells") as PackedInt32Array
 				var same := true
 				for i in cells_before.size():
@@ -1404,7 +1427,7 @@ func _play_turns() -> void:
 		await get_tree().process_frame
 	var rules_end: Object = world.get(&"rules")
 	_check(int(rules_end.get(&"winner")) != 0, "the game ended")
-	_check(refused.size() == 1, "only this seat's own refusal reached it (%d)" % refused.size())
+	_check(refused.size() == 1 + burst, "only this seat's own refusals reached it (%d)" % refused.size())
 	_check(orders.moves().size() == orders.last_seq(), "every move kept here (%d)" % orders.last_seq())
 	_echo("TURNS BOARD %s %d %d" % [rules_end.get(&"cells"), rules_end.call(&"hash_value"), orders.last_seq()])
 

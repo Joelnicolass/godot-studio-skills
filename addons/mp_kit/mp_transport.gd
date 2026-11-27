@@ -125,6 +125,21 @@ static func client_tls_from_flags() -> TLSOptions:
 	return TLSOptions.client(ca, MpBoot.user_value("tls-common-name", ""))
 
 
+## Server: disconnects `peer_id` through `api` when it is the SceneMultiplayer on `peer`: it stops sending to that peer
+## at once (beats, sync, the notice to the other peers), so nothing goes to a connection ENet is already closing
+## ("Unable to send packet on channel 0, max channels: 0"). Its peer_disconnected comes now, as with a drop. Any other
+## API: straight on `peer`.
+static func cut_peer(api: MultiplayerAPI, peer: MultiplayerPeer, peer_id: int) -> void:
+	if api is SceneMultiplayer and api.multiplayer_peer == peer:
+		if not api.get_peers().has(peer_id):
+			return
+		## SceneMultiplayer keeps that disconnect to itself (it blocks its own peer_disconnected): say it.
+		(api as SceneMultiplayer).disconnect_peer(peer_id)
+		api.peer_disconnected.emit(peer_id)
+		return
+	peer.disconnect_peer(peer_id)
+
+
 ## `{error, peer}`. `max_clients` only applies to ENet (the WebSocket peer has no cap of its own).
 static func create_server(kind: String, port: int, max_clients: int, tls: TLSOptions = null) -> Dictionary:
 	if normalize(kind) == RELAY or has_relay_room():

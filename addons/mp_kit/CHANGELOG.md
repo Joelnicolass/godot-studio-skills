@@ -2,6 +2,19 @@
 
 Las versiones anteriores a 0.19.0 están en el historial de git del repo del kit (los commits «MpKit 0.x.y: …»).
 
+## 0.29.0
+
+- **Un cliente que manda de más no pierde nada:** pasado `custom_limit` (30 por segundo, 60 de golpe), `send_custom` guarda sus mensajes en el cliente y los manda en orden apenas puede. Antes el servidor los descartaba sin avisar, y con `MpOrders` una jugada descartada dejaba al cliente esperando para siempre (ni `applied` ni `rejected`). Lo encontró Albores con bots en los clientes.
+- **`MpKit.custom_refused(channel, data, reason)`:** en el cliente que lo mandó, un mensaje que nunca llegó a `custom_received`: `CUSTOM_TOO_BIG` (más que `custom_max_bytes`), `CUSTOM_NO_SEAT` (mandado antes de `slot_assigned`) o `CUSTOM_RATE_LIMITED` (más de 256 esperando, o el servidor igual los recibió amontonados). El servidor le avisa al cliente unos pocos por segundo como mucho. `MpOrders` lo convierte en `rejected(name, args, reason)`: cada `submit` termina en `applied` o en `rejected`.
+- **`MpOrders.caught_up(seq)`:** un cliente tiene todas las jugadas que el servidor tenía para él (después de cargar, de volver o de `resync()`) e `is_replaying()` vuelve a ser falso. Lo pidió Albores.
+- **Se acabó `Unable to send packet on channel 0, max channels: 0` en el servidor:** cuando MpKit cortaba a un peer (rechazado, o su asiento recuperado por su jugador) el servidor le seguía mandando mientras ENet cerraba la conexión. Ahora corta por `SceneMultiplayer`, que deja de mandarle en el acto; `peer_disconnected` y `peer_left` siguen llegando, ahora. El servidor de salas también.
+- **Tampoco cuando dos clientes se van en el mismo tick** (todos salen cuando termina una partida): el servidor le avisaba al segundo que se había ido el primero mientras ENet lo cerraba. El servidor de MpKit y el lobby ahora corren con `server_relay` apagado: un cliente solo habla con el servidor, como ya pasaba por el relay. Un cliente ya no puede mandarle un RPC a otro cliente a través del servidor (ningún patrón de MpKit lo hacía).
+- **Salas largas en la PC de un jugador** (privadas u online): la partida toma `rejoin_grace_s` del `MpFlow` del juego (siempre era 60 s), espera a los asientos lo que diga `load_timeout_s` cuando pasa de 60 s, y dura lo que diga el nuevo `MpFlow.match_max_s` (2 h por defecto, como antes; 0 = sin tope; `--match-max-s=`). Antes, una sala de 6 h se cerraba a las 2 h. `MpLobbyConfig.match_max_s` = 0 también es sin tope. Lo pidió Albores.
+- **`--seat-log` en un dedicado que corre una partida tras otra** imprimía cada línea una vez por cada partida anterior: sus handlers ahora se van con su `MpMatch`.
+- **Lab:** `tests/test_custom_pacing.gd` (un servidor y clientes reales en un proceso: 150 mensajes de golpe llegan todos y en orden, lo que el servidor rechaza vuelve, a un peer cortado no se le manda nada más, a dos clientes que se van juntos no se les manda nada); `run/turns.sh` manda 80 jugadas de golpe desde el cliente (todas llegan al juez) y revisa `caught_up` al volver.
+
+Qué actualizar: nada en tu proyecto. Si espaciabas a mano los mensajes de tu cliente, podés sacarlo; si esperabas el final del historial con `call_deferred`, `caught_up` lo dice. Un juego que echa peers por su cuenta debería usar `MpKit.reject_peer`. Si un cliente tuyo mandaba `rpc()` a los otros clientes, mandalo al servidor y que el servidor lo reparta (`to_all`, `broadcast_custom`). `MpKit.VERSION` pasa a 0.29.0, así que servidor y clientes tienen que correr el mismo build.
+
 ## 0.28.0
 
 - **Probar online en tu PC:** `bash addons/mp_kit/deploy/online_local.sh <game_id> [max_players]` levanta un emisor y un relay locales para tu juego (claves y secreto nuevos en cada corrida, nada escrito en el proyecto) e imprime cómo abrir cada copia. Reemplaza los scripts propios que tenían El Eternauta y la web de insultos.
